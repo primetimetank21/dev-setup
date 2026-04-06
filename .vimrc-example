@@ -1,0 +1,45 @@
+" Disable compatibility with vi
+set nocompatible
+
+" Enable file type detection
+filetype on
+filetype plugin on
+filetype indent on
+
+" Turn on syntax highlighting
+syntax on
+
+" Display line numbers
+set number
+
+" Highlight cursor line and column
+set cursorline
+set cursorcolumn
+
+" Set tab and shift width to 4 spaces
+set shiftwidth=4
+set tabstop=4
+set expandtab
+
+" Disable text wrapping
+set nowrap
+
+" Enable incremental search and ignore case
+set incsearch
+set ignorecase
+set smartcase
+
+" Show partial commands and mode
+set showcmd
+set showmode
+
+" Highlight search matches
+set hlsearch
+
+" Increase command history size
+set history=1000
+
+" Enable wildmenu for auto-completion
+set wildmenu
+set wildmode=list:longest
+set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx

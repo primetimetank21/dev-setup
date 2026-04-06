@@ -1,0 +1,41 @@
+### Personal Aliases ###
+alias pb="ping bing.com"
+alias gs="git status"
+alias ga="git add"
+alias gl="git log --graph --abbrev-commit --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'"
+alias glog="git log"
+alias gf="git fetch"
+alias gfp="git fetch --prune"
+alias ggs="git stash"
+alias ggsls="git stash list"
+alias vb="vim ~/.bashrc"
+alias sb="source ~/.bashrc"
+alias vz="vim ~/.zshrc"
+alias sz="source ~/.zshrc"
+alias vv="vim ~/.vimrc"
+alias tls="tmux ls"
+alias tks="tmux kill-server"
+alias tt="tmux new-session -s tank_dev"
+alias ta="tmux attach"
+
+### Personal Functions
+# Create tmux session
+create_tmux() {
+ # Check if tmux session exists
+ pidof tmux 1> /dev/null
+ tmux_exists=$(echo $?)
+
+ # Create tmux session if it doesn't exist
+ session_name="tankSession"
+ if [[ tmux_exists -ne 0 ]]; then
+   # Create "tankSession" and run ping command
+   tt && ta
+ fi
+}
+
+# Startup
+start_up() {
+ create_tmux
+}
+
+start_up
