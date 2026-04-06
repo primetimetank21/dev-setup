@@ -28,7 +28,7 @@ create_tmux() {
  # Create tmux session if it doesn't exist
  session_name="tankSession"
  if [[ tmux_exists -ne 0 ]]; then
-   # Create "tankSession" and run ping command
+   # Create "tankSession" and attach to it
    tt && ta
  fi
 }
