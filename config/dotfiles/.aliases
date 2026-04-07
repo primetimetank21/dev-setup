@@ -1,0 +1,87 @@
+# ~/.aliases
+#
+# Shell aliases for common developer workflows.
+# Sourced by ~/.zshrc or ~/.bashrc — see config/dotfiles/.zshrc.template.
+#
+# Categories:
+#   - Navigation
+#   - ls shortcuts
+#   - Git
+#   - GitHub CLI (gh)
+#   - Docker (optional)
+#   - Utility
+#   - Dev shortcuts
+
+# ── Navigation ───────────────────────────────────────────────────────────────
+
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias ~='cd ~'
+alias -- -='cd -'
+
+# ── ls shortcuts ─────────────────────────────────────────────────────────────
+
+alias ls='ls --color=auto'
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias lh='ls -alFh'          # human-readable sizes
+
+# ── Git ──────────────────────────────────────────────────────────────────────
+
+alias g='git'
+alias ga='git add'
+alias gaa='git add --all'
+alias gc='git commit -v'
+alias gcm='git commit -m'
+alias gco='git checkout'
+alias gcb='git checkout -b'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gl='git log --oneline --graph --decorate --all'
+alias gp='git push'
+alias gpf='git push --force-with-lease'
+alias gpl='git pull'
+alias gs='git status -sb'
+alias gst='git stash'
+alias gstp='git stash pop'
+alias grb='git rebase'
+alias grbi='git rebase -i'
+alias grs='git restore'
+alias grss='git restore --staged'
+
+# ── GitHub CLI (gh) ──────────────────────────────────────────────────────────
+
+alias ghpr='gh pr create'
+alias ghprl='gh pr list'
+alias ghprv='gh pr view'
+alias ghis='gh issue list'
+alias ghiv='gh issue view'
+
+# ── Docker (optional — only useful if Docker is installed) ───────────────────
+
+alias dk='docker'
+alias dkc='docker-compose'
+alias dkps='docker ps'
+alias dkpsa='docker ps -a'
+
+# ── Utility ──────────────────────────────────────────────────────────────────
+
+alias c='clear'
+alias h='history'
+alias path='echo $PATH | tr ":" "\n"'  # print PATH entries one per line
+alias reload='source ~/.zshrc 2>/dev/null || source ~/.bashrc'
+alias myip='curl -s ifconfig.me'
+alias ports='ss -tulnp'
+
+# ── Dev shortcuts ────────────────────────────────────────────────────────────
+
+alias py='python3'
+alias pip='pip3'
+alias uvr='uv run'
+alias uvs='uv sync'
+alias ni='npm install'
+alias nr='npm run'
+alias nrd='npm run dev'
+alias nrt='npm run test'
