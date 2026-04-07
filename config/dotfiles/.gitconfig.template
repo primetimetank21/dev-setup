@@ -1,0 +1,71 @@
+# .gitconfig.template
+#
+# Copy to $HOME/.gitconfig (done by install.sh).
+# Placeholders like YOUR_NAME are substituted by install.sh when the
+# corresponding env vars (GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL,
+# GIT_AUTHOR_SIGNING_KEY) are set; otherwise leave them as-is and edit
+# $HOME/.gitconfig manually afterwards.
+#
+# See: config/dotfiles/README.md for details.
+
+[user]
+	name  = YOUR_NAME
+	email = YOUR_EMAIL
+	# Uncomment and set to your GPG/SSH signing key fingerprint when ready:
+	# signingkey = YOUR_SIGNING_KEY
+
+[core]
+	# Normalise line endings to LF on commit; don't touch on checkout.
+	# Safe for both Linux/macOS and Windows (WSL) development.
+	autocrlf = input
+
+	# Honour $EDITOR if the user has set one; fall back to vim.
+	editor = ${EDITOR:-vim}
+
+	# Faster status in large repos.
+	untrackedCache = true
+
+	# Improve performance of git status across filesystem boundaries.
+	fsmonitor = false
+
+[init]
+	defaultBranch = main
+
+[pull]
+	# Use merge (not rebase) on pull — explicit rebase should be a
+	# deliberate choice, not a surprise default.
+	rebase = false
+
+[push]
+	# Automatically set the remote tracking branch on first push
+	# (requires Git >= 2.37).
+	autoSetupRemote = true
+
+[merge]
+	# Always create a merge commit (no fast-forward) so history is explicit.
+	ff = false
+
+[fetch]
+	# Remove local references to deleted remote branches automatically.
+	prune = true
+
+[diff]
+	# Better word-level diffing for prose and code.
+	algorithm = histogram
+	colorMoved = default
+
+[color]
+	ui = auto
+
+[alias]
+	# Short-hands used by the whole squad
+	co  = checkout
+	br  = branch
+	st  = status -sb
+	lg  = log --oneline --graph --decorate --abbrev-commit \
+	          --format='%C(bold blue)%h%C(reset) %C(green)(%ar)%C(reset) %s %C(dim white)— %an%C(reset)%C(auto)%d%C(reset)'
+
+	# Convenience
+	undo   = reset --soft HEAD~1
+	unstage = restore --staged
+	aliases = config --get-regexp alias

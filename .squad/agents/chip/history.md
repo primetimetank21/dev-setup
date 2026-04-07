@@ -43,3 +43,22 @@
 - `nvm` is a shell function, not a binary — test sources `$NVM_DIR/nvm.sh` before checking
 - `copilot-cli.sh` exits 0 with a warning when `gh` is not authenticated — test treats this as acceptable idempotent behavior
 - PR #20 (CI workflow) is not merged yet; test suite can be wired into CI once it lands
+## 2026-04-07 — Issue #12: CI Workflow for Script Validation
+
+**Branch:** `squad/12-ci-workflow`
+**PR:** https://github.com/primetimetank21/dev-setup/pull/20
+
+**What was created:**
+- `.github/workflows/validate.yml` with three jobs:
+  1. `validate-linux`: Runs `setup.sh` on `ubuntu-latest`, validates zsh, uv, nvm, Node.js, npm, gh CLI are installed and on PATH, then runs setup a second time to confirm idempotency.
+  2. `lint-shell-scripts`: Runs shellcheck on `setup.sh`, `scripts/linux/setup.sh`, and all `scripts/linux/tools/*.sh`.
+  3. `lint-powershell`: Installs PSScriptAnalyzer and runs `Invoke-ScriptAnalyzer` on `setup.ps1` and `scripts/windows/setup.ps1`.
+
+**Key validation decisions:**
+- nvm must be sourced explicitly (`. ~/.nvm/nvm.sh`) — it's a shell function, not a binary
+- uv installs to `$HOME/.local/bin` — PATH must be extended before checking
+- `DEBIAN_FRONTEND=noninteractive` prevents apt from blocking on prompts
+- Each tool validation uses `command -v` and emits ❌/✅ for clear CI output
+- Idempotency test is a hard requirement per charter — second run must complete without error
+
+**Environment note:** Shared workspace caused the initial commit to land on a different agent's branch (`squad/15-readme`). Cherry-picked onto `squad/12-ci-workflow` before pushing PR.

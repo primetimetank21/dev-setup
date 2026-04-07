@@ -22,3 +22,88 @@
 - Issue breakdown: 1 architecture, 7 tool installs, 3 config, 1 auth, 2 testing/CI
 - All issues labeled with `squad` + `squad:{member}` labels
 - Created squad labels: squad, squad:mickey, squad:donald, squad:goofy, squad:pluto, squad:chip
+
+### 2026-04-07 — Issue #3: Architecture / OS Detection Entry Point
+- Shipped PR #17: `squad/3-os-detection-entry-point` → `develop`
+- Created `setup.sh` (Unix entry point) with OS detection via `uname -s` + `/proc/version` (WSL check)
+- Created `setup.ps1` (Windows entry point) using PowerShell `$IsWindows` builtin
+- Scaffolded full directory structure: `scripts/linux/`, `scripts/linux/tools/`, `scripts/windows/`, `config/dotfiles/`, `.github/workflows/`
+- Created idempotent tool stubs for Donald: `zsh.sh`, `uv.sh`, `nvm.sh`, `gh.sh`, `copilot-cli.sh`
+- Created scaffold for Goofy: `scripts/windows/setup.ps1`
+- Wrote `ARCHITECTURE.md` covering structure, OS detection, naming conventions, team ownership, "how to add a tool" guide
+- Decision: WSL is always routed as Linux. Entry points are thin routers only — no tool installation at root level.
+- Decision: Tool scripts run via `bash <script>` (not `source`) to keep each isolated in its own subshell.
+- Decision: No package-manager abstraction layer — apt/brew per tool script, winget for Windows. Simple beats clever.
+- Dropped decision record at `.squad/decisions/mickey-architecture-entry-point.md`
+
+### 2026-04-07 — Issue #15: [Docs] Add README.md
+- Shipped PR #19: `squad/15-readme` → `develop`
+- Created `README.md` at repo root with all required sections
+- Sections: project one-liner, tool list table, supported platforms matrix, quick start per platform, repo structure, customization guide, link to ARCHITECTURE.md
+- README is user-facing; links to ARCHITECTURE.md for technical depth
+- All content sourced from ARCHITECTURE.md on `squad/3-os-detection-entry-point` for accuracy
+
+---
+
+## 2026-04-07 — Lead Review: Full PR Batch Merge (#17–#24)
+
+**Role:** Mickey (Lead) — reviewing and merging all open PRs in correct order
+
+### PRs Reviewed
+
+| PR | Title | Author | Status | Notes |
+|----|-------|--------|--------|-------|
+| #17 | [Architecture] OS detection entry point | Mickey (self) | ✅ APPROVED & MERGED | Self-review. `set -euo pipefail` ✓, logging helpers ✓, idempotent routing ✓, no hardcoded paths ✓ |
+| #18 | [Config] Dotfile templates | Pluto | ✅ APPROVED & MERGED (conflict resolved) | Add/add conflict on `install.sh` — kept 191-line superset. Unique files (.gitconfig.template, .editorconfig, .npmrc.template, README.md) accepted. |
+| #19 | [Docs] Add README.md | Mickey (self) | ✅ APPROVED & MERGED | Contains validate.yml (cross-workspace bleed from Chip's branch) — auto-resolved cleanly since content was identical |
+| #20 | [CI] GitHub Actions workflow | Chip | ✅ APPROVED & MERGED | Triggers on push+PR to main/develop ✓, validates all tools ✓, idempotency second-run test ✓, shellcheck + PSScriptAnalyzer ✓ |
+| #21 | [Config] Dev Container setup | Pluto | ✅ APPROVED & MERGED | Clean PR, no conflicts. devcontainer.json solid: Ubuntu base, postCreateCommand=`bash setup.sh`, git+gh-cli features pre-installed ✓ |
+| #22 | [Config] Shell aliases | Pluto | ✅ APPROVED & MERGED (conflict resolved) | Shared-workspace superset: contained all other agents' work. After prior merges, only unique delta was Pluto history.md update. .aliases, .zshrc.template, install.sh already on develop. |
+| #23 | [Windows] Core setup script | Goofy | ✅ APPROVED & MERGED | `Set-StrictMode` ✓, `$ErrorActionPreference = 'Stop'` ✓, winget availability check ✓, idempotent Install-* functions ✓, `Write-Err` helper ✓ |
+| #24 | [Linux/macOS] Core setup scripts + tools | Donald | ✅ APPROVED & MERGED | `set -euo pipefail` ✓ on all scripts, idempotency guards ✓, logging consistent ✓, apt/brew per-tool ✓, WSL handled as Linux ✓ |
+
+### Merge Order & Rationale
+
+1. **#17 first** — architecture base; #23 and #24 depended on it
+2. **Retarget #23, #24 → develop** — after #17 merged, per instructions
+3. **#24 (Linux)** — establishes authoritative script implementations before superset PRs
+4. **#23 (Windows)** — clean Windows implementation; shared workspace brought in Pluto's alias work
+5. **#21 (devcontainer)** — clean, no overlaps
+6. **#20 (CI)** — validate.yml already on develop from #19 branch bleed; auto-resolved
+7. **#19 (README)** — clean merge
+8. **#18 (dotfiles)** — **conflict**: install.sh 166-line vs 191-line (develop). Resolved locally: kept 191-line superset, pushed merge commit manually. GitHub auto-closed PR.
+9. **#22 (aliases)** — **apparent conflict** on GitHub; resolved locally: all cross-contaminated files already on develop, only Pluto history.md was truly new. Pushed merge commit manually.
+
+### Conflict Resolution Summary
+
+**PR #18 — install.sh conflict:**
+- Cause: PR #23's branch (shared workspace) accidentally included Pluto's 191-line install.sh before PR #18 (166-line version) was merged
+- Resolution: `git checkout --ours config/dotfiles/install.sh` — kept 191-line superset (has .aliases + .zshrc.template support)
+- Accepted unique files from #18: .gitconfig.template, .editorconfig, .npmrc.template, config/dotfiles/README.md
+
+**PR #22 — superset conflict:**
+- Cause: squad/8-shell-aliases branch contained ALL other agents' work (shared workspace contamination)
+- Resolution: After all prior merges, 3-way merge resolved all files as identical except pluto/history.md
+- Outcome: Only Pluto history.md update was the unique addition; everything else already on develop
+
+### Issues Closed
+
+All 13 issues covered by these PRs closed manually (PRs merged to develop, not main — no auto-close):
+#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #15
+
+Open (not in scope): #13 (auth auto-connect), #14 (idempotency tests — PR #26 pending)
+
+### Develop Branch State
+
+```
+develop HEAD: c875297 — Merge PR #22 [Config] Shell aliases (Pluto)
+```
+
+All deliverables present:
+- `setup.sh` / `setup.ps1` — entry points with OS detection
+- `scripts/linux/setup.sh` + all tool scripts (zsh, uv, nvm, gh, copilot-cli)
+- `scripts/windows/setup.ps1` — winget-based Windows installer
+- `config/dotfiles/` — .gitconfig.template, .editorconfig, .npmrc.template, .aliases, .zshrc.template, install.sh (191 lines), README.md
+- `.devcontainer/devcontainer.json` + README.md
+- `.github/workflows/validate.yml` — CI validation
+- `README.md` + `ARCHITECTURE.md`
