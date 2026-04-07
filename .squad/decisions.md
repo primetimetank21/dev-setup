@@ -2,6 +2,14 @@
 
 ## Active Decisions
 
+## [Sprint 4] Enable Branch Protection on `develop`
+
+**Date:** 2026-04-07
+**Decision:** Enable GitHub branch protection on `develop` requiring 1 approving review + passing CI before merge.
+**Rationale:** Ralph bypassed the Mickey approval gate in Sprint 2 and Sprint 3. Branch protection enforces this at the GitHub level.
+**Owner:** Mickey
+**Note:** GitHub API returned 403 (token lacks branch protection write scope); rules must be enabled manually in repo Settings → Branches.
+
 ### 2026-04-07T03:20:54Z: User directive
 **By:** Earl Tankard, Jr., Ph.D. (via Copilot)
 **What:** Always commit and push at the end of every session — Scribe must `git push` after the final commit, not just `git commit`.
@@ -58,6 +66,24 @@ PRs #33, #34, #35, #36 were merged to `develop` by Ralph's sub-agents without ma
 **Root cause:** Ralph's agent loop merged PRs via `gh pr merge` without waiting for a review approval.
 
 **Corrective action:** Ralph's task templates must require `gh pr review --approve` from Mickey before calling `gh pr merge`. Branch protection rules should be enabled on `develop` to enforce required reviews.
+
+## [2026-04-07] Decision: `develop → main` promotion requires Mickey's explicit green light
+
+**By:** Mickey (Lead) — Sprint 3 retro
+**What:** `develop` may only be promoted to `main` after Mickey gives explicit verbal (or written) approval. No agent, no automation, and no squad member may trigger the merge without that sign-off.
+**Why:** Sprint 3 demonstrated that unreviewed code reaching `develop` contained P1 bugs. Without Mickey's retroactive review and hold on promotion, both bugs would have shipped to `main`. The review gate is the last line of defense.
+
+## [2026-04-07] Decision: Codespace initialization must set git identity before any commits
+
+**By:** Earl Tankard, Jr., Ph.D. (via retro) — Sprint 3
+**What:** Every Codespace startup must run `git config user.name` and `git config user.email` with the owner's actual identity before any commit is made. The devcontainer must inject these values from environment variables at init time.
+**Why:** The `.gitconfig.template` placeholders (`YOUR_NAME`, `YOUR_EMAIL`) were never substituted in the Codespace, resulting in 35 commits attributed to placeholder values across the entire project history. Fixing it required `git filter-repo` history rewrite — an expensive, error-prone, and disruptive operation.
+
+## [2026-04-07] Decision: `uv` is the ONLY Python package manager — `pip` is banned
+
+**By:** Earl Tankard, Jr., Ph.D. (owner preference) — Sprint 3
+**What:** All Python tool installation in this repo must use `uv` (e.g., `uv tool install <package>`). `pip` is explicitly banned. This applies to devcontainer setup, documentation, scripts, and any ad-hoc commands run during squad work.
+**Why:** `uv` is the owner's documented preference, established in the architecture decisions from Sprint 1. Using `pip install git-filter-repo` in Sprint 3 was a direct violation of a standing directive.
 
 ## Governance
 

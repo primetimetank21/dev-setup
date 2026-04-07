@@ -2,7 +2,7 @@
     "name": "dev-setup Dev Container",
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 
-    "postCreateCommand": "bash setup.sh",
+    "postCreateCommand": ["bash", "-c", "bash setup.sh && git config --global user.name \"${GIT_AUTHOR_NAME:-Earl Tankard, Jr., Ph.D.}\" && git config --global user.email \"${GIT_AUTHOR_EMAIL:-45021016+primetimetank21@users.noreply.github.com}\""],
 
     "customizations": {
         "vscode": {

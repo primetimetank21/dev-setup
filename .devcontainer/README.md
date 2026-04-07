@@ -111,3 +111,25 @@ mcr.microsoft.com/devcontainers/base:ubuntu
 ```
 
 Microsoft's official Ubuntu-based devcontainer base image. Includes common developer tools (curl, wget, git, etc.) and the devcontainer toolchain. See the [image definition](https://github.com/devcontainers/images/tree/main/src/base-ubuntu) for full details.
+
+---
+
+## Required Codespace Secrets
+
+Set these in GitHub → Settings → Codespaces → Secrets:
+
+| Secret | Description | Default |
+|--------|-------------|---------|
+| `GIT_AUTHOR_NAME` | Your full name for git commits | `Earl Tankard, Jr., Ph.D.` |
+| `GIT_AUTHOR_EMAIL` | Your email for git commits | `45021016+primetimetank21@users.noreply.github.com` |
+
+These are applied automatically on `postCreateCommand` when the devcontainer starts.
+
+---
+
+## Python Package Management
+
+Use `uv` instead of `pip` for all Python tooling:
+- CLI tools: `uv tool install <package>`
+- Libraries: `uv pip install <package>`
+- Never use `pip install` directly.
