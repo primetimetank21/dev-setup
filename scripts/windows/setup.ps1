@@ -88,7 +88,7 @@ function Install-CopilotCli {
 function Write-PowerShellProfile {
     $sentinel = '# BEGIN dev-setup profile'
 
-    # Idempotency check — skip if already written
+    # Idempotency check - skip if already written
     if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($sentinel)) -Quiet)) {
         Write-Ok "PowerShell profile shortcuts already installed"
         return
@@ -96,7 +96,7 @@ function Write-PowerShellProfile {
 
     $profileContent = @'
 # BEGIN dev-setup profile
-# ── Linux-compatible commands ─────────────────────────────────────────────────
+# -- Linux-compatible commands --------------------------------------------------
 
 function Remove-CustomItem {
     param([string]$Path)
@@ -115,7 +115,7 @@ function Set-FileTimestamp {
 }
 Set-Alias -Name touch -Value Set-FileTimestamp
 
-# ── Git shortcuts ─────────────────────────────────────────────────────────────
+# -- Git shortcuts --------------------------------------------------------------
 
 function Get-GitStatus { git status $args }
 Set-Alias -Name gs -Value Get-GitStatus
