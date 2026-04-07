@@ -39,3 +39,18 @@
 2. Root cause analysis
 3. What should change?
 4. Action items for next iteration
+
+---
+
+## PR Review
+
+| Field | Value |
+|-------|-------|
+| **Trigger** | auto |
+| **When** | before merge |
+| **Condition** | any open PR |
+| **Facilitator** | lead |
+| **Participants** | author + reviewer |
+| **Enabled** | ✅ yes |
+
+**CI-Green Policy**: No PR may be merged unless all CI checks are green. If CI fails, the PR author must fix the failures before requesting re-review.
