@@ -203,6 +203,20 @@ These compose naturally. You can have:
 - ❌ Switching branches in the main clone while worktrees are active (use worktrees instead)
 - ❌ Using worktrees for cross-repo work (use separate clones)
 
+## Branch Protection
+
+The `develop` branch requires:
+- 1 approving review before merge (dismiss stale reviews enabled)
+- All CI checks passing: Validate Linux Setup, Lint Shell Scripts, Lint PowerShell Scripts
+- Configured via GitHub branch protection rules (enabled Sprint 4)
+
+## Merge Gates
+
+### Hard Rule: No Merge Without Mickey Approval
+Ralph MUST call `gh pr review {n} --approve` from Mickey BEFORE `gh pr merge`.
+Violation history: Sprint 2 (PRs #17-#27), Sprint 3 (PRs #33-#36).
+Branch protection on `develop` now enforces this at the GitHub level.
+
 ## Promotion Pipeline
 
 - develop → main: Mickey approves + CI green → merge, then tag for release
