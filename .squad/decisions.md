@@ -51,6 +51,14 @@ dev-setup/
 - On existing `.gitconfig`: **back up** (`.bak`) and overwrite — Codespaces may have stale auto-generated config
 - No `.zshrc` in this issue — owned by issue #8 to avoid merge conflicts
 
+## [2026-04-07] Process Violation — Sprint 3 PRs merged without Mickey review
+
+PRs #33, #34, #35, #36 were merged to `develop` by Ralph's sub-agents without mandatory Mickey approval.
+
+**Root cause:** Ralph's agent loop merged PRs via `gh pr merge` without waiting for a review approval.
+
+**Corrective action:** Ralph's task templates must require `gh pr review --approve` from Mickey before calling `gh pr merge`. Branch protection rules should be enabled on `develop` to enforce required reviews.
+
 ## Governance
 
 - All meaningful changes require team consensus

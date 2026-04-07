@@ -9,6 +9,7 @@
 #   - Git
 #   - GitHub CLI (gh)
 #   - Docker (optional)
+#   - Tmux
 #   - Utility
 #   - Dev shortcuts
 
@@ -30,26 +31,29 @@ alias lh='ls -alFh'          # human-readable sizes
 
 # ── Git ──────────────────────────────────────────────────────────────────────
 
-alias g='git'
-alias ga='git add'
-alias gaa='git add --all'
-alias gc='git commit -v'
-alias gcm='git commit -m'
-alias gco='git checkout'
-alias gcb='git checkout -b'
-alias gd='git diff'
-alias gds='git diff --staged'
-alias gl='git log --oneline --graph --decorate --all'
-alias gp='git push'
-alias gpf='git push --force-with-lease'
-alias gpl='git pull'
-alias gs='git status -sb'
-alias gst='git stash'
-alias gstp='git stash pop'
-alias grb='git rebase'
-alias grbi='git rebase -i'
-alias grs='git restore'
-alias grss='git restore --staged'
+alias ga='git add'                                                                                    # stage a file
+alias gaa='git add --all'                                                                             # stage all changes
+alias gc='git commit -v'                                                                              # commit with verbose diff
+alias gcm='git commit -m'                                                                             # commit with inline message
+alias gcb='git checkout -b'                                                                           # create and switch to new branch
+alias gco='git checkout'                                                                              # switch branch or restore file
+alias gd='git diff'                                                                                   # show unstaged diff
+alias gds='git diff --staged'                                                                         # show staged diff
+alias gf='git fetch'                                                                                  # fetch from remote
+alias gfp='git fetch --prune'                                                                         # fetch and prune stale remote branches
+alias ggs='git stash'                                                                                 # stash current changes
+alias ggsls='git stash list'                                                                          # list all stashes
+alias ggsp='git stash pop'                                                                            # pop most recent stash
+alias gl="git log --graph --abbrev-commit --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'"  # pretty graph log
+alias glog='git log'                                                                                  # full git log
+alias gp='git push'                                                                                   # push to remote
+alias gpf='git push --force-with-lease'                                                               # safe force push
+alias gpl='git pull'                                                                                  # pull from remote
+alias grb='git rebase'                                                                                # rebase onto branch
+alias grbi='git rebase -i'                                                                            # interactive rebase
+alias grs='git restore'                                                                               # discard working tree changes
+alias grss='git restore --staged'                                                                     # unstage a file
+alias gs='git status -sb'                                                                             # short branch status
 
 # ── GitHub CLI (gh) ──────────────────────────────────────────────────────────
 
@@ -66,14 +70,27 @@ alias dkc='docker-compose'
 alias dkps='docker ps'
 alias dkpsa='docker ps -a'
 
+# ── Tmux ─────────────────────────────────────────────────────────────────────
+
+alias tls="tmux ls"                           # list active tmux sessions
+alias tks="tmux kill-server"                  # kill all tmux sessions
+alias tt="tmux new-session -s tank_dev"       # create a new named tmux session
+alias ta="tmux attach"                        # attach to most recent tmux session
+
 # ── Utility ──────────────────────────────────────────────────────────────────
 
 alias c='clear'
 alias h='history'
-alias path='echo $PATH | tr ":" "\n"'  # print PATH entries one per line
+alias path='echo $PATH | tr ":" "\n"'         # print PATH entries one per line
 alias reload='source ~/.zshrc 2>/dev/null || source ~/.bashrc'
 alias myip='curl -s ifconfig.me'
+alias pb='ping bing.com'              # quick connectivity check
 alias ports='ss -tulnp'
+alias vb="vim ~/.bashrc"                      # edit bash config in vim
+alias sb="source ~/.bashrc"                   # reload bash config
+alias vz="vim ~/.zshrc"                       # edit zsh config in vim
+alias sz="source ~/.zshrc"                    # reload zsh config
+alias vv="vim ~/.vimrc"                       # edit vim config in vim
 
 # ── Dev shortcuts ────────────────────────────────────────────────────────────
 
@@ -85,3 +102,19 @@ alias ni='npm install'
 alias nr='npm run'
 alias nrd='npm run dev'
 alias nrt='npm run test'
+
+# ── Functions ────────────────────────────────────────────────────────────────
+
+# Create or attach to the tank_dev tmux session
+create_tmux() {
+  local session="tank_dev"
+  if ! tmux has-session -t "$session" 2>/dev/null; then
+    tmux new-session -d -s "$session"
+  fi
+  tmux attach -t "$session"
+}
+
+# Run on shell startup — launch tmux session
+start_up() {
+  create_tmux
+}

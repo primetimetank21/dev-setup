@@ -33,6 +33,8 @@ cd dev-setup
 bash setup.sh
 ```
 
+> **GitHub Authentication:** During setup, `auth.sh` checks whether you are already authenticated with the GitHub CLI. If not, it launches `gh auth login` interactively so you can complete authentication. In non-interactive environments (CI, GitHub Codespaces, piped stdin), the prompt is skipped automatically and a warning is printed — run `gh auth login` manually after setup completes if you need to authenticate.
+
 ### Windows (PowerShell)
 
 ```powershell
@@ -64,6 +66,7 @@ dev-setup/
 │       └── setup.ps1         — Core Windows installer (PowerShell)
 ├── config/
 │   └── dotfiles/             — Dotfile templates (.gitconfig, .editorconfig, .npmrc)
+├── examples/                 — Reference dotfiles and config templates
 ├── .github/
 │   └── workflows/            — CI validation workflows (GitHub Actions)
 └── ARCHITECTURE.md           — Technical architecture and team ownership map

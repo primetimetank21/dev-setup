@@ -40,6 +40,10 @@
 - **Preferred:** auto
 - **Rationale:** Writing test code → standard model. Test analysis → fast model may suffice. Coordinator decides.
 
+## Git Rules
+
+**Always create a branch before committing**: Never commit directly to `develop` or `main`. Always `git checkout -b squad/{issue-number}-{slug}` from a fresh `develop` before starting work.
+
 ## Collaboration
 
 Before starting work, use `TEAM ROOT` from the spawn prompt. Read `.squad/decisions.md` first.

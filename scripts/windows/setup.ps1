@@ -1,10 +1,10 @@
-# scripts/windows/setup.ps1 — Core Windows installer
+# scripts/windows/setup.ps1 - Core Windows installer
 #
 # Called by: setup.ps1 (root entry point)
 # Owner:     Goofy (#2)
 #
 # Installs developer tools on Windows using winget as the primary package manager.
-# Each install function is idempotent — safe to run multiple times.
+# Each install function is idempotent - safe to run multiple times.
 # Requires: Windows 10 1709+ with App Installer (winget) available.
 #
 # Usage (direct):
@@ -13,10 +13,10 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Write-Info  { param([string]$Msg) Write-Host "[INFO]  $Msg" -ForegroundColor Cyan }
-function Write-Ok    { param([string]$Msg) Write-Host "[OK]    $Msg" -ForegroundColor Green }
-function Write-Warn  { param([string]$Msg) Write-Host "[WARN]  $Msg" -ForegroundColor Yellow }
-function Write-Err   { param([string]$Msg) Write-Host "[ERROR] $Msg" -ForegroundColor Red }
+function Write-Info  { param([string]$Msg) Write-Output "[INFO]  $Msg" }
+function Write-Ok    { param([string]$Msg) Write-Output "[OK]    $Msg" }
+function Write-Warn  { param([string]$Msg) Write-Output "[WARN]  $Msg" }
+function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
 
 function Test-WingetAvailable {
     return $null -ne (Get-Command winget -ErrorAction SilentlyContinue)
@@ -76,13 +76,91 @@ function Install-CopilotCli {
             return
         }
     } catch {
-        Write-Warn "gh CLI not authenticated or not found — skipping Copilot CLI install"
+        Write-Warn "gh CLI not authenticated or not found - skipping Copilot CLI install"
         Write-Warn "Run 'gh auth login' then re-run this script to install Copilot CLI"
         return
     }
     Write-Info "Installing GitHub Copilot CLI..."
     gh extension install github/gh-copilot
     Write-Ok "Copilot CLI installed"
+}
+
+function Write-PowerShellProfile {
+    $sentinel = '# BEGIN dev-setup profile'
+
+    # Idempotency check - skip if already written
+    if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($sentinel)) -Quiet)) {
+        Write-Ok "PowerShell profile shortcuts already installed"
+        return
+    }
+
+    $profileContent = @'
+# BEGIN dev-setup profile
+# -- Linux-compatible commands --------------------------------------------------
+
+function Remove-CustomItem {
+    param([string[]]$Path)
+    Remove-Item -Path $Path -Recurse -Force
+}
+Remove-Item -Force Alias:\rm -ErrorAction SilentlyContinue
+Set-Alias -Name rm -Value Remove-CustomItem
+
+function Set-FileTimestamp {
+    param([string]$Path)
+    if (Test-Path $Path) {
+        (Get-Item $Path).LastWriteTime = Get-Date
+    } else {
+        New-Item -ItemType File -Path $Path | Out-Null
+    }
+}
+Set-Alias -Name touch -Value Set-FileTimestamp
+
+# -- Git shortcuts --------------------------------------------------------------
+
+function Get-GitStatus { git status $args }
+Set-Alias -Name gs -Value Get-GitStatus
+
+function Invoke-GitCommit { git commit $args }
+Remove-Item -Force Alias:\gc -ErrorAction SilentlyContinue
+Set-Alias -Name gc -Value Invoke-GitCommit
+
+function Get-GitBranch { git branch $args }
+Set-Alias -Name gb -Value Get-GitBranch
+
+function Add-GitFiles { git add $args }
+Set-Alias -Name ga -Value Add-GitFiles
+
+function Get-GitLogPretty { git log --graph --abbrev-commit --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' $args }
+Remove-Item -Force Alias:\gl -ErrorAction SilentlyContinue
+Set-Alias -Name gl -Value Get-GitLogPretty
+
+function Get-GitLog { git log $args }
+Set-Alias -Name glog -Value Get-GitLog
+
+function Invoke-GitFetch { git fetch $args }
+Set-Alias -Name gf -Value Invoke-GitFetch
+
+function Invoke-GitFetchPrune { git fetch --prune $args }
+Set-Alias -Name gfp -Value Invoke-GitFetchPrune
+
+function Invoke-GitStash { git stash $args }
+Set-Alias -Name ggs -Value Invoke-GitStash
+
+function Get-GitStashList { git stash list $args }
+Set-Alias -Name ggsls -Value Get-GitStashList
+
+# END dev-setup profile
+'@
+
+    # Ensure profile directory exists
+    $profileDir = Split-Path $PROFILE
+    if (-not (Test-Path $profileDir)) {
+        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+    }
+
+    # Append to profile (create if absent)
+    Add-Content -Path $PROFILE -Value $profileContent
+    Write-Ok "PowerShell profile shortcuts installed to $PROFILE"
 }
 
 function Main {
@@ -99,6 +177,7 @@ function Main {
     Install-Nvm
     Install-GhCli
     Install-CopilotCli
+    Write-PowerShellProfile
 
     Write-Ok ""
     Write-Ok "Setup complete!"
