@@ -22,3 +22,7 @@
 - Issue breakdown: 1 architecture, 7 tool installs, 3 config, 1 auth, 2 testing/CI
 - All issues labeled with `squad` + `squad:{member}` labels
 - Created squad labels: squad, squad:mickey, squad:donald, squad:goofy, squad:pluto, squad:chip
+
+## 2026-04-07 — Issue Triage & Priority Assignment
+
+Reviewed and prioritized all 14 open issues. Applied P1/P2/P3 labels. Posted assignment acknowledgments on every issue. #3 (Architecture) is P1 and must ship first — it blocks Donald and Goofy. Dependency order posted as comment on #3.
