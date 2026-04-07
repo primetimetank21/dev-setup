@@ -107,3 +107,31 @@ All deliverables present:
 - `.devcontainer/devcontainer.json` + README.md
 - `.github/workflows/validate.yml` — CI validation
 - `README.md` + `ARCHITECTURE.md`
+
+---
+
+## 2026-04-07 — PR #26 Review: [Testing] Idempotency test suite (Chip)
+
+**Branch:** `squad/14-idempotency-tests` → `develop`
+**Closes:** Issue #14
+**Merged by:** Earl Tankard, Jr., Ph.D. (primetimetank21)
+
+### What I reviewed
+
+- **`tests/test_idempotency.sh`** — 228-line self-contained test suite. Five sections: (1) tool script existence, (2) PATH verification, (3) each tool script second-run idempotency, (4) config file integrity (`/etc/shells`, `~/.zshrc`), (5) full `setup.sh` second-run integration test. Helpers (`pass/fail/info`, `assert_*`) are clean and readable. Exit codes correct: `0` = all pass, `1` = any fail. `set -uo pipefail` ✓. nvm sourcing handled correctly (shell function, not binary). uv PATH prepend explicit. copilot-cli auth-skip case documented and accepted.
+- **`tests/README.md`** — Complete documentation: explains idempotency, table of test sections, usage instructions, example output, known limitations table. No gaps.
+- **History entries** — chip and donald both accurate and up to date.
+
+### CI result
+
+| Job | Result |
+|-----|--------|
+| Validate Linux Setup | ✅ PASS |
+| Lint Shell Scripts | ✅ PASS |
+| Lint PowerShell Scripts | ❌ FAIL (pre-existing — failing on every develop commit before this PR) |
+
+The PowerShell lint failure is not introduced by this PR. It exists on `develop` going back to at least PR #18. The relevant jobs for this PR's content both passed.
+
+### Decision
+
+**Approved.** Work is solid. Closes issue #14. Board cleared. `develop` is complete.
