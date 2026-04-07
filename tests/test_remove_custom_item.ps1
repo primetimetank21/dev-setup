@@ -27,46 +27,42 @@ function Test-Scenario {
     }
 }
 
-# Test 1: Correct [string[]] version should delete multiple files
-Test-Scenario "Remove-CustomItem with [string[]] array parameter deletes multiple files" {
-    # Define the CORRECT version with array parameter
+# Test 1: Fixed version with ValueFromRemainingArguments must delete all files passed as separate args
+# This tests the rm-style calling convention: `rm file1 file2` = `Remove-CustomItem file1 file2`
+Test-Scenario "Remove-CustomItem with ValueFromRemainingArguments deletes multiple space-separated args" {
+    # Define the CORRECT version matching scripts/windows/setup.ps1
     function Remove-CustomItem {
-        param([string[]]$Path)
+        param(
+            [Parameter(Position=0, ValueFromRemainingArguments=$true)]
+            [string[]]$Path
+        )
         Remove-Item -Path $Path -Recurse -Force
     }
     
-    # Create test files in current directory (not /tmp)
+    # Create test files in current directory
     $TestFile1 = "test_remove_file1_$(Get-Random).txt"
     $TestFile2 = "test_remove_file2_$(Get-Random).txt"
     
     New-Item -Path $TestFile1 -ItemType File -Force | Out-Null
     New-Item -Path $TestFile2 -ItemType File -Force | Out-Null
     
-    # Verify files were created
-    if (-not (Test-Path $TestFile1)) {
-        throw "Test file 1 was not created"
-    }
-    if (-not (Test-Path $TestFile2)) {
-        throw "Test file 2 was not created"
-    }
+    if (-not (Test-Path $TestFile1)) { throw "Test file 1 was not created" }
+    if (-not (Test-Path $TestFile2)) { throw "Test file 2 was not created" }
     
-    # Call with both arguments
+    # Simulate `rm file1 file2` — space-separated positional args (the real usage pattern)
     Remove-CustomItem $TestFile1 $TestFile2
     
     # Assert BOTH files are deleted
-    if (Test-Path $TestFile1) {
-        throw "Test file 1 still exists after Remove-CustomItem"
-    }
-    if (Test-Path $TestFile2) {
-        throw "Test file 2 still exists after Remove-CustomItem"
-    }
+    if (Test-Path $TestFile1) { throw "Test file 1 still exists after Remove-CustomItem" }
+    if (Test-Path $TestFile2) { throw "Test file 2 still exists after Remove-CustomItem" }
 }
 
-# Test 2: Broken [string] scalar version should only delete first file (demonstrating the bug)
-Test-Scenario "Remove-CustomItem with [string] scalar parameter ONLY deletes first file (regression guard)" {
-    # Define the BROKEN version with scalar parameter
+# Test 2: Broken [string[]] WITHOUT ValueFromRemainingArguments silently drops the second arg
+# This is the regression guard: proves the test catches the bug if ValueFromRemainingArguments is removed
+Test-Scenario "Remove-CustomItem without ValueFromRemainingArguments silently drops second arg (regression guard)" {
+    # Define the BROKEN version — array type but missing ValueFromRemainingArguments
     function Remove-CustomItem-Broken {
-        param([string]$Path)
+        param([string[]]$Path)  # no ValueFromRemainingArguments — same as old Sprint 3 "fix"
         Remove-Item -Path $Path -Recurse -Force
     }
     
@@ -78,14 +74,10 @@ Test-Scenario "Remove-CustomItem with [string] scalar parameter ONLY deletes fir
     New-Item -Path $TestFile2 -ItemType File -Force | Out-Null
     
     # Verify files were created
-    if (-not (Test-Path $TestFile1)) {
-        throw "Test file 1 was not created"
-    }
-    if (-not (Test-Path $TestFile2)) {
-        throw "Test file 2 was not created"
-    }
+    if (-not (Test-Path $TestFile1)) { throw "Test file 1 was not created" }
+    if (-not (Test-Path $TestFile2)) { throw "Test file 2 was not created" }
     
-    # Call with both arguments - scalar param silently ignores second arg
+    # Call with both arguments — broken version silently ignores second arg
     Remove-CustomItem-Broken $TestFile1 $TestFile2
     
     # The BROKEN version should only delete the first file
@@ -93,34 +85,33 @@ Test-Scenario "Remove-CustomItem with [string] scalar parameter ONLY deletes fir
         throw "Test file 1 should have been deleted by broken version"
     }
     
-    # The second file should still exist (proving the bug)
+    # The second file should still exist (proving the bug — regression guard)
     if (-not (Test-Path $TestFile2)) {
-        throw "Test file 2 should NOT have been deleted by broken version (this proves the regression guard works)"
+        throw "Test file 2 should NOT have been deleted by broken version (regression guard failed)"
     }
     
     # Clean up the leftover file
     Remove-Item $TestFile2 -Force
 }
 
-# Test 3: Verify the correct version works with single file too
-Test-Scenario "Remove-CustomItem with [string[]] array parameter works with single file" {
+# Test 3: Verify the correct version also works with single file
+Test-Scenario "Remove-CustomItem with ValueFromRemainingArguments works with single file" {
     function Remove-CustomItem {
-        param([string[]]$Path)
+        param(
+            [Parameter(Position=0, ValueFromRemainingArguments=$true)]
+            [string[]]$Path
+        )
         Remove-Item -Path $Path -Recurse -Force
     }
     
     $TestFile = "test_single_file_$(Get-Random).txt"
     New-Item -Path $TestFile -ItemType File -Force | Out-Null
     
-    if (-not (Test-Path $TestFile)) {
-        throw "Test file was not created"
-    }
+    if (-not (Test-Path $TestFile)) { throw "Test file was not created" }
     
     Remove-CustomItem $TestFile
     
-    if (Test-Path $TestFile) {
-        throw "Test file still exists after Remove-CustomItem"
-    }
+    if (Test-Path $TestFile) { throw "Test file still exists after Remove-CustomItem" }
 }
 
 # Report results
