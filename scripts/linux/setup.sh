@@ -2,19 +2,13 @@
 # scripts/linux/setup.sh — Core Linux/macOS/WSL installer
 #
 # Called by: setup.sh (root entry point)
-# Owner:     Donald (#1, #4–#7)
+# Owner:     Donald (#1, #4–#7, #9)
 #
-# This script sources individual tool installers from scripts/linux/tools/.
-# Each tool script is idempotent — safe to run multiple times.
+# This script installs system prerequisites and runs individual tool installers
+# from scripts/linux/tools/. Each tool script is idempotent — safe to re-run.
 #
 # Usage (direct):
 #   bash scripts/linux/setup.sh
-#
-# TODO (Donald): Implement the full installer body below.
-#   - Install system packages (apt/brew depending on OS)
-#   - Source each tool script in scripts/linux/tools/
-#   - Apply dotfiles from config/dotfiles/ (coordinate with Pluto)
-#   - Set default shell to zsh if not already set
 
 set -euo pipefail
 
@@ -47,16 +41,58 @@ run_tool() {
   fi
 }
 
+detect_platform() {
+  local os
+  os="$(uname -s)"
+  if [[ "$os" == "Darwin" ]]; then
+    echo "macos"
+  elif grep -qi microsoft /proc/version 2>/dev/null; then
+    echo "wsl"
+  else
+    echo "linux"
+  fi
+}
+
+install_prerequisites() {
+  local platform="$1"
+  log_info "Installing system prerequisites..."
+
+  if [[ "$platform" == "macos" ]]; then
+    if ! command -v brew &>/dev/null; then
+      log_warn "Homebrew not found — install it from https://brew.sh and re-run setup"
+      return 0
+    fi
+    brew install curl git
+  else
+    sudo apt-get update -qq
+    sudo apt-get install -y curl git build-essential
+  fi
+
+  log_ok "Prerequisites installed"
+}
+
 main() {
+  local platform
+  platform="$(detect_platform)"
+
   log_info "Starting Linux/macOS setup"
+  log_info "Platform: ${platform}"
   log_info "Repo root: ${REPO_ROOT}"
 
-  # TODO (Donald): Uncomment and implement as each tool script is completed
-  # run_tool "zsh"
-  # run_tool "uv"
-  # run_tool "nvm"
-  # run_tool "gh"
-  # run_tool "copilot-cli"
+  install_prerequisites "$platform"
+
+  run_tool "zsh"
+  run_tool "uv"
+  run_tool "nvm"
+  run_tool "gh"
+  run_tool "copilot-cli"
+
+  # Apply dotfiles if Pluto's installer exists
+  local dotfiles_script="${REPO_ROOT}/config/dotfiles/install.sh"
+  if [[ -f "$dotfiles_script" ]]; then
+    log_info "Applying dotfiles..."
+    bash "$dotfiles_script" && log_ok "Dotfiles applied"
+  fi
 
   log_ok "Setup complete. Open a new shell to apply all changes."
 }
