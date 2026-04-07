@@ -40,3 +40,16 @@ Re-implemented from `develop` on branch `squad/13-auth-prompt`.
 - `scripts/linux/setup.sh` — added `run_tool "auth"` between `run_tool "gh"` and `run_tool "copilot-cli"`
 
 Idempotent: exits 0 immediately if already authenticated. Copilot CLI install (which follows) needs auth to work.
+PR: #24 (open, targeting `develop`)
+
+### 2026-04-07: Issue #13 — GitHub auth prompt step added to setup
+
+Implemented `scripts/linux/tools/auth.sh` on branch `squad/13-auth-prompt` (based on `squad/1-linux-core-setup`):
+
+- Checks `gh auth status` — exits 0 immediately if already authenticated (prints username)
+- Detects non-interactive environments via `CI`, `CODESPACES`, and TTY check — skips gracefully with guidance message
+- In interactive environments: launches `gh auth login` and confirms result
+- `scripts/linux/setup.sh` updated to call `run_tool "auth"` between `run_tool "gh"` and `run_tool "copilot-cli"`
+
+This ensures copilot-cli install always has an authenticated gh CLI available.
+PR: #25 (open, targeting `squad/1-linux-core-setup`)
