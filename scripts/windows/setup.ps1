@@ -85,6 +85,84 @@ function Install-CopilotCli {
     Write-Ok "Copilot CLI installed"
 }
 
+function Write-PowerShellProfile {
+    $sentinel = '# BEGIN dev-setup profile'
+
+    # Idempotency check - skip if already written
+    if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($sentinel)) -Quiet)) {
+        Write-Ok "PowerShell profile shortcuts already installed"
+        return
+    }
+
+    $profileContent = @'
+# BEGIN dev-setup profile
+# -- Linux-compatible commands --------------------------------------------------
+
+function Remove-CustomItem {
+    param([string]$Path)
+    Remove-Item -Path $Path -Recurse -Force
+}
+Remove-Item -Force Alias:\rm -ErrorAction SilentlyContinue
+Set-Alias -Name rm -Value Remove-CustomItem
+
+function Set-FileTimestamp {
+    param([string]$Path)
+    if (Test-Path $Path) {
+        (Get-Item $Path).LastWriteTime = Get-Date
+    } else {
+        New-Item -ItemType File -Path $Path | Out-Null
+    }
+}
+Set-Alias -Name touch -Value Set-FileTimestamp
+
+# -- Git shortcuts --------------------------------------------------------------
+
+function Get-GitStatus { git status $args }
+Set-Alias -Name gs -Value Get-GitStatus
+
+function Invoke-GitCommit { git commit $args }
+Remove-Item -Force Alias:\gc -ErrorAction SilentlyContinue
+Set-Alias -Name gc -Value Invoke-GitCommit
+
+function Get-GitBranch { git branch $args }
+Set-Alias -Name gb -Value Get-GitBranch
+
+function Add-GitFiles { git add $args }
+Set-Alias -Name ga -Value Add-GitFiles
+
+function Get-GitLogPretty { git log --graph --abbrev-commit --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' $args }
+Remove-Item -Force Alias:\gl -ErrorAction SilentlyContinue
+Set-Alias -Name gl -Value Get-GitLogPretty
+
+function Get-GitLog { git log $args }
+Set-Alias -Name glog -Value Get-GitLog
+
+function Invoke-GitFetch { git fetch $args }
+Set-Alias -Name gf -Value Invoke-GitFetch
+
+function Invoke-GitFetchPrune { git fetch --prune $args }
+Set-Alias -Name gfp -Value Invoke-GitFetchPrune
+
+function Invoke-GitStash { git stash $args }
+Set-Alias -Name ggs -Value Invoke-GitStash
+
+function Get-GitStashList { git stash list $args }
+Set-Alias -Name ggsls -Value Get-GitStashList
+
+# END dev-setup profile
+'@
+
+    # Ensure profile directory exists
+    $profileDir = Split-Path $PROFILE
+    if (-not (Test-Path $profileDir)) {
+        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+    }
+
+    # Append to profile (create if absent)
+    Add-Content -Path $PROFILE -Value $profileContent
+    Write-Ok "PowerShell profile shortcuts installed to $PROFILE"
+}
+
 function Main {
     Write-Info "Starting Windows setup..."
     Write-Info "Checking for winget..."
@@ -99,6 +177,7 @@ function Main {
     Install-Nvm
     Install-GhCli
     Install-CopilotCli
+    Write-PowerShellProfile
 
     Write-Ok ""
     Write-Ok "Setup complete!"
