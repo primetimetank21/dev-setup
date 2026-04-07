@@ -176,7 +176,7 @@ cd ../squad-pr && npm link squad-sdk
 # replace github.com/org/squad-sdk => ../squad-sdk
 
 # Python
-cd ../squad-sdk && pip install -e .
+cd ../squad-sdk && uv pip install -e .
 ```
 
 **Important:** Remove local links before committing. `npm link` and `go replace` are dev-only — CI must use published packages or PR-specific refs.

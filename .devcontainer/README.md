@@ -124,3 +124,12 @@ Set these in GitHub → Settings → Codespaces → Secrets:
 | `GIT_AUTHOR_EMAIL` | Your email for git commits | `45021016+primetimetank21@users.noreply.github.com` |
 
 These are applied automatically on `postCreateCommand` when the devcontainer starts.
+
+---
+
+## Python Package Management
+
+Use `uv` instead of `pip` for all Python tooling:
+- CLI tools: `uv tool install <package>`
+- Libraries: `uv pip install <package>`
+- Never use `pip install` directly.
