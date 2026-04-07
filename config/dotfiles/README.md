@@ -13,6 +13,7 @@ manual config required on day one.
 | `.gitconfig.template` | `$HOME/.gitconfig` | Copy | Editable per-machine |
 | `.editorconfig` | `$HOME/.editorconfig` | Symlink | Shared, not machine-specific |
 | `.npmrc.template` | `$HOME/.npmrc` | Copy | Editable per-machine |
+| `.vimrc` | `$HOME/.vimrc` | Symlink | Vim configuration |
 | `install.sh` | — | Script | Idempotent installer |
 
 ---
@@ -132,6 +133,32 @@ export GITHUB_TOKEN="ghp_..."
 
 Then uncomment the relevant lines in `$HOME/.npmrc`.  
 **Never hardcode tokens in any file.**
+
+---
+
+### `.vimrc`
+
+After running `install.sh`, a symlink is created at `$HOME/.vimrc` pointing to
+`config/dotfiles/.vimrc`.
+
+Edit `config/dotfiles/.vimrc` in the repo and the changes apply immediately
+(no re-run needed thanks to the symlink).
+
+**Included settings:**
+
+| Setting | Value | Reason |
+|---------|-------|--------|
+| `set nocompatible` | — | Disable vi compatibility mode |
+| `set number` | — | Show line numbers |
+| `set cursorline/column` | — | Highlight cursor position |
+| `set shiftwidth=4` | 4 | 4-space indentation |
+| `set tabstop=4` | 4 | Tab = 4 spaces |
+| `set expandtab` | — | Expand tabs to spaces |
+| `set nowrap` | — | Disable line wrapping |
+| `set incsearch` | — | Incremental search |
+| `set ignorecase` / `smartcase` | — | Smart case-insensitive search |
+| `set hlsearch` | — | Highlight search matches |
+| `set wildmenu` | — | Better command-line completion |
 
 ---
 
