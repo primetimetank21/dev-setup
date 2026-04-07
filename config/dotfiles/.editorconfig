@@ -1,0 +1,43 @@
+# .editorconfig
+# https://editorconfig.org
+#
+# Applies across the whole dev-setup repo and to any project that symlinks
+# this file to $HOME/.editorconfig (done by install.sh).
+#
+# Rules are ordered from most-general to most-specific; later blocks
+# override earlier ones for matching file types.
+
+root = true
+
+# ── Sensible defaults for every file ────────────────────────────────────────
+[*]
+indent_style              = space
+indent_size               = 2
+end_of_line               = lf
+charset                   = utf-8
+trim_trailing_whitespace  = true
+insert_final_newline      = true
+
+# ── Markdown — trailing spaces are intentional (hard line-break) ─────────────
+[*.md]
+trim_trailing_whitespace  = false
+
+# ── Makefiles require real tabs ──────────────────────────────────────────────
+[Makefile]
+indent_style              = tab
+
+# ── Shell scripts — 2-space indent (same as default, explicit for clarity) ──
+[*.sh]
+indent_size               = 2
+
+# ── PowerShell — Microsoft convention is 4 spaces ───────────────────────────
+[*.ps1]
+indent_size               = 4
+
+# ── JSON / YAML — 2 spaces is the community norm ────────────────────────────
+[*.{json,yml,yaml}]
+indent_size               = 2
+
+# ── Python — PEP 8 mandates 4 spaces ────────────────────────────────────────
+[*.py]
+indent_size               = 4
