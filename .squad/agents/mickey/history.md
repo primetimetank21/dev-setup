@@ -144,3 +144,42 @@ The PowerShell lint failure is not introduced by this PR. It exists on `develop`
 - Issues #13 and #14 closed with comments
 - Board: all 15 issues resolved — no open issues, no open PRs
 - develop: pushed clean at 6654c1f
+
+---
+
+## 2026-04-07 — PR #27 Review: [Auth] Auto-connect: prompt for GitHub auth during setup (Donald)
+
+**Branch:** `squad/13-auth-prompt` → `develop`  
+**Closes:** Issue #13  
+**Merged:** PR #27 (branch deleted: `squad/13-auth-prompt`)
+
+### What I reviewed
+
+**`scripts/linux/tools/auth.sh`** — 50-line new file:
+- `set -euo pipefail` ✓
+- Idempotent: `gh auth status` guard at top — exits 0 immediately if already authenticated ✓
+- `gh` CLI presence check — exits 0 gracefully with a warning if gh isn't installed ✓
+- Non-interactive detection: covers `CI=true`, `CODESPACES=true`, and piped stdin (`[[ -t 0 && -t 1 ]]`) — all three cases handled and skip cleanly ✓
+- Interactive path: launches `gh auth login`, then re-checks and logs outcome — no hard failure if auth is abandoned ✓
+- Logging helpers (`log_info`, `log_ok`, `log_warn`) match project conventions ✓
+
+**`scripts/linux/setup.sh`** — one-line addition: `run_tool "auth"` inserted between `run_tool "gh"` and `run_tool "copilot-cli"`. Correct placement — gh must exist before auth check, and Copilot CLI requires auth to work. ✓
+
+**`.squad/agents/donald/history.md`** — updated accurately, notes both PR #25 (lost) and re-implementation from develop ✓
+
+### CI Results
+
+| Job | Result |
+|-----|--------|
+| Validate Linux Setup | ✅ PASS |
+| Lint Shell Scripts | ✅ PASS |
+| Squad Heartbeat (Ralph) | ✅ PASS |
+| Lint PowerShell Scripts | ❌ FAIL (pre-existing — not introduced by this PR) |
+
+PowerShell lint failure is a pre-existing regression on `develop` that predates this PR. Not a blocker.
+
+### Decision
+
+**Approved and merged.** Clean, idempotent, well-guarded implementation. Closes issue #13.
+
+🏁 **THE BOARD IS CLEAR.** All 15 issues resolved. No open issues. No open PRs. `develop` is complete.
