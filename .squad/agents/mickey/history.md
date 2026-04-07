@@ -16,3 +16,9 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+### 2026-04-07
+- Created 14 GitHub issues for primetimetank21/dev-setup
+- Issue breakdown: 1 architecture, 7 tool installs, 3 config, 1 auth, 2 testing/CI
+- All issues labeled with `squad` + `squad:{member}` labels
+- Created squad labels: squad, squad:mickey, squad:donald, squad:goofy, squad:pluto, squad:chip
