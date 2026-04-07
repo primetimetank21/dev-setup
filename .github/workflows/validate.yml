@@ -1,0 +1,115 @@
+name: Validate Setup Script
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate-linux:
+    name: Validate Linux Setup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x setup.sh scripts/linux/setup.sh scripts/linux/tools/*.sh
+
+      - name: Run setup script
+        run: bash setup.sh
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Validate zsh installed
+        run: |
+          if ! command -v zsh &>/dev/null; then
+            echo "❌ FAIL: zsh not found on PATH"
+            exit 1
+          fi
+          echo "✅ zsh: $(zsh --version)"
+
+      - name: Validate uv installed
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          if ! command -v uv &>/dev/null; then
+            echo "❌ FAIL: uv not found on PATH"
+            exit 1
+          fi
+          echo "✅ uv: $(uv --version)"
+
+      - name: Validate nvm and Node.js installed
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          if ! command -v nvm &>/dev/null; then
+            echo "❌ FAIL: nvm not available"
+            exit 1
+          fi
+          if ! command -v node &>/dev/null; then
+            echo "❌ FAIL: node not found on PATH"
+            exit 1
+          fi
+          echo "✅ nvm: $(nvm --version)"
+          echo "✅ node: $(node --version)"
+          echo "✅ npm: $(npm --version)"
+
+      - name: Validate gh CLI installed
+        run: |
+          if ! command -v gh &>/dev/null; then
+            echo "❌ FAIL: gh not found on PATH"
+            exit 1
+          fi
+          echo "✅ gh: $(gh --version | head -1)"
+
+      - name: Test idempotency (run setup a second time)
+        run: |
+          echo "--- Running setup script a second time to test idempotency ---"
+          bash setup.sh
+          echo "✅ Second run completed without errors"
+
+  lint-shell-scripts:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint setup.sh
+        run: shellcheck setup.sh
+
+      - name: Lint scripts/linux/setup.sh
+        run: shellcheck scripts/linux/setup.sh
+
+      - name: Lint tool scripts
+        run: |
+          for script in scripts/linux/tools/*.sh; do
+            echo "Checking: $script"
+            shellcheck "$script"
+          done
+
+  lint-powershell:
+    name: Lint PowerShell Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PowerShell
+        run: sudo apt-get install -y powershell
+
+      - name: Install PSScriptAnalyzer
+        run: pwsh -Command "Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser"
+
+      - name: Analyze setup.ps1
+        run: pwsh -Command "Invoke-ScriptAnalyzer -Path setup.ps1 -Recurse -EnableExit"
+
+      - name: Analyze scripts/windows/setup.ps1
+        run: pwsh -Command "Invoke-ScriptAnalyzer -Path scripts/windows/setup.ps1 -EnableExit"
