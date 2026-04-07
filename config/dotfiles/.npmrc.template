@@ -1,0 +1,36 @@
+# .npmrc.template
+#
+# Copy to $HOME/.npmrc (done by install.sh).
+# Edit $HOME/.npmrc directly for machine-specific overrides.
+#
+# See: config/dotfiles/README.md for details.
+
+# ── Version pinning ──────────────────────────────────────────────────────────
+# Pin exact versions in package.json on every `npm install --save`.
+# Prevents unintended upgrades across machines and keeps lock-files stable.
+save-exact=true
+
+# ── Noise reduction ─────────────────────────────────────────────────────────
+# Suppress "funding" messages that appear after installs.
+fund=false
+
+# Suppress automatic security audit on every install.
+# Run `npm audit` deliberately instead of on every install.
+audit=false
+
+# Reduce log verbosity to warnings and errors only.
+loglevel=warn
+
+# ── Registry auth (optional) ─────────────────────────────────────────────────
+# Uncomment and set NPM_TOKEN in your shell profile (e.g. ~/.zshrc.local)
+# to authenticate with the public npm registry.
+# Never commit a real token — use an environment variable.
+#
+# //registry.npmjs.org/:_authToken=${NPM_TOKEN}
+
+# ── Private registry (optional) ──────────────────────────────────────────────
+# If you use a private registry (e.g. GitHub Packages, Artifactory), add it
+# here. Use an env var for the token.
+#
+# @my-org:registry=https://npm.pkg.github.com
+# //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
