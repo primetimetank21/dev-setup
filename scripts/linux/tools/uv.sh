@@ -4,11 +4,6 @@
 # Called by: scripts/linux/setup.sh
 # Owner:     Donald (#5)
 # Idempotent: yes — checks if uv is already installed before acting
-#
-# TODO (Donald): Implement uv installation.
-#   - Install via: curl -LsSf https://astral.sh/uv/install.sh | sh
-#   - Verify installation: uv --version
-#   - Ensure ~/.local/bin is on PATH
 
 set -euo pipefail
 
@@ -20,6 +15,10 @@ if command -v uv &>/dev/null; then
   exit 0
 fi
 
-log_info "uv not found — installation not yet implemented"
-# TODO (Donald): Add install logic here
-exit 0
+log_info "Installing uv..."
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# uv installs to ~/.local/bin — ensure it's on PATH in current session
+export PATH="$HOME/.local/bin:$PATH"
+
+log_ok "uv installed: $(uv --version)"
