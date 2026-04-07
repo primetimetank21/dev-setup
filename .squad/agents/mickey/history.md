@@ -135,3 +135,12 @@ The PowerShell lint failure is not introduced by this PR. It exists on `develop`
 ### Decision
 
 **Approved.** Work is solid. Closes issue #14. Board cleared. `develop` is complete.
+
+---
+
+## Final Merge — 2026-04-07
+- PR #26 (Chip idempotency tests) — reviewed, approved, merged (resolved conflict via develop merge)
+- PR #27 (Donald auth) — reviewed, approved, merged (resolved conflict via develop merge)
+- Issues #13 and #14 closed with comments
+- Board: all 15 issues resolved — no open issues, no open PRs
+- develop: pushed clean at 6654c1f
