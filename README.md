@@ -66,6 +66,7 @@ dev-setup/
 │       └── setup.ps1         — Core Windows installer (PowerShell)
 ├── config/
 │   └── dotfiles/             — Dotfile templates (.gitconfig, .editorconfig, .npmrc)
+├── examples/                 — Reference dotfiles and config templates
 ├── .github/
 │   └── workflows/            — CI validation workflows (GitHub Actions)
 └── ARCHITECTURE.md           — Technical architecture and team ownership map

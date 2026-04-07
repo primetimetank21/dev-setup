@@ -43,6 +43,12 @@ dev-setup/
 ├── .github/
 │   └── workflows/                  # CI (Chip)
 │
+├── examples/                       # Reference dotfiles and config templates (Pluto #29)
+│   ├── .bashrc-example             # Bash/Zsh aliases and tmux helpers
+│   ├── .vimrc-example              # Full Vim configuration
+│   ├── Microsoft.PowerShell_profile-example.ps1  # PowerShell aliases
+│   └── README.md                   # Explains each file and how to use them
+│
 ├── .squad/                         # Internal squad coordination (not shipped)
 │
 └── ARCHITECTURE.md                 # This file
