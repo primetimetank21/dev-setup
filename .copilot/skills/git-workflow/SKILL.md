@@ -8,13 +8,12 @@ source: "team-decision"
 
 ## Context
 
-Squad uses a three-branch model. **All feature work starts from `dev`, not `main`.**
+Squad uses a two-branch model. **All feature work branches from `develop`, never from `main`.**
 
-| Branch | Purpose | Publishes |
-|--------|---------|-----------|
-| `main` | Released, tagged, in-npm code only | `npm publish` on tag |
-| `dev` | Integration branch — all feature work lands here | `npm publish --tag preview` on merge |
-| `insiders` | Early-access channel — synced from dev | `npm publish --tag insiders` on sync |
+| Branch | Purpose | Rules |
+|--------|---------|-------|
+| `main` | Stable, released code only | NEVER push or PR directly — only receives merges from `develop` |
+| `develop` | Integration branch — all feature work lands here | ALWAYS the base for feature PRs |
 
 ## Branch Naming Convention
 
@@ -26,10 +25,10 @@ Examples:
 
 ## Workflow for Issue Work
 
-1. **Branch from dev:**
+1. **Branch from develop:**
    ```bash
-   git checkout dev
-   git pull origin dev
+   git checkout develop
+   git pull origin develop
    git checkout -b squad/{issue-number}-{slug}
    ```
 
@@ -38,9 +37,9 @@ Examples:
    gh issue edit {number} --add-label "status:in-progress"
    ```
 
-3. **Create draft PR targeting dev:**
+3. **Create draft PR targeting develop:**
    ```bash
-   gh pr create --base dev --title "{description}" --body "Closes #{issue-number}" --draft
+   gh pr create --base develop --title "{description}" --body "Closes #{issue-number}" --draft
    ```
 
 4. **Do the work.** Make changes, write tests, commit with issue reference.
@@ -51,10 +50,14 @@ Examples:
    gh pr ready
    ```
 
-6. **After merge to dev:**
+6. **Merge gates — BOTH must pass before merging:**
+   - ✅ Mickey has approved the PR
+   - ✅ CI checks are green
+
+7. **After merge to develop — delete the branch immediately:**
    ```bash
-   git checkout dev
-   git pull origin dev
+   git checkout develop
+   git pull origin develop
    git branch -d squad/{issue-number}-{slug}
    git push origin --delete squad/{issue-number}-{slug}
    ```
@@ -73,22 +76,22 @@ When the coordinator routes multiple issues simultaneously (e.g., "fix bugs X, Y
 
 ### Setup
 
-From the main clone (must be on dev or any branch):
+From the main clone (must be on develop or any branch):
 
 ```bash
-# Ensure dev is current
-git fetch origin dev
+# Ensure develop is current
+git fetch origin develop
 
 # Create a worktree per issue — siblings to the main clone
-git worktree add ../squad-195 -b squad/195-fix-stamp-bug origin/dev
-git worktree add ../squad-193 -b squad/193-refactor-loader origin/dev
+git worktree add ../squad-195 -b squad/195-fix-stamp-bug origin/develop
+git worktree add ../squad-193 -b squad/193-refactor-loader origin/develop
 ```
 
 **Naming convention:** `../{repo-name}-{issue-number}` (e.g., `../squad-195`, `../squad-pr-42`).
 
 Each worktree:
 - Has its own working directory and index
-- Is on its own `squad/{issue-number}-{slug}` branch from dev
+- Is on its own `squad/{issue-number}-{slug}` branch from develop
 - Shares the same `.git` object store (disk-efficient)
 
 ### Per-Worktree Agent Workflow
@@ -102,22 +105,22 @@ cd ../squad-195
 git add -A && git commit -m "fix: stamp bug (#195)"
 git push -u origin squad/195-fix-stamp-bug
 
-# Create PR targeting dev
-gh pr create --base dev --title "fix: stamp bug" --body "Closes #195" --draft
+# Create PR targeting develop
+gh pr create --base develop --title "fix: stamp bug" --body "Closes #195" --draft
 ```
 
-All PRs target `dev` independently. Agents never interfere with each other's filesystem.
+All PRs target `develop` independently. Agents never interfere with each other's filesystem.
 
 ### .squad/ State in Worktrees
 
 The `.squad/` directory exists in each worktree as a copy. This is safe because:
 - `.gitattributes` declares `merge=union` on append-only files (history.md, decisions.md, logs)
-- Each agent appends to its own section; union merge reconciles on PR merge to dev
+- Each agent appends to its own section; union merge reconciles on PR merge to develop
 - **Rule:** Never rewrite or reorder `.squad/` files in a worktree — append only
 
 ### Cleanup After Merge
 
-After a worktree's PR is merged to dev:
+After a worktree's PR is merged to develop:
 
 ```bash
 # From the main clone
@@ -189,16 +192,18 @@ These compose naturally. You can have:
 
 ## Anti-Patterns
 
-- ❌ Branching from main (branch from dev)
-- ❌ PR targeting main directly (target dev)
+- ❌ Branching from main (always branch from develop)
+- ❌ PR targeting main directly (always target develop)
+- ❌ Pushing directly to main or develop (use PRs)
 - ❌ Non-conforming branch names (must be squad/{number}-{slug})
-- ❌ Committing directly to main or dev (use PRs)
+- ❌ Merging without Mickey's approval
+- ❌ Merging without green CI
+- ❌ Leaving branches around after merge (delete immediately)
+- ❌ Deleting main or develop (never)
 - ❌ Switching branches in the main clone while worktrees are active (use worktrees instead)
 - ❌ Using worktrees for cross-repo work (use separate clones)
-- ❌ Leaving stale worktrees after PR merge (clean up immediately)
 
 ## Promotion Pipeline
 
-- dev → insiders: Automated sync on green build
-- dev → main: Manual merge when ready for stable release, then tag
-- Hotfixes: Branch from main as `hotfix/{slug}`, PR to dev, cherry-pick to main if urgent
+- develop → main: Mickey approves + CI green → merge, then tag for release
+- Hotfixes: Branch from develop as `hotfix/{slug}`, PR back to develop, then promote to main
