@@ -62,3 +62,28 @@
 - Idempotency test is a hard requirement per charter — second run must complete without error
 
 **Environment note:** Shared workspace caused the initial commit to land on a different agent's branch (`squad/15-readme`). Cherry-picked onto `squad/12-ci-workflow` before pushing PR.
+
+---
+
+### 2026-04-07 — Issue #41: Remove-CustomItem multi-argument regression test
+
+**Branch:** `squad/41-remove-customitem-test`
+**PR:** [#52](https://github.com/primetimetank21/dev-setup/pull/52)
+
+**What I built:**
+- Created `tests/test_remove_custom_item.ps1` — PowerShell regression test for Sprint 3 bug
+- Added `validate-powershell` job to `.github/workflows/validate.yml` running on `windows-latest`
+
+**Test coverage:**
+1. **Correct behavior:** `[string[]]$Path` array parameter accepts multiple arguments, deletes all files
+2. **Regression guard:** `[string]$Path` scalar parameter silently drops second argument (proves test catches the bug)
+3. **Single file:** Array parameter works with single file argument
+
+**Key patterns:**
+- Test file creates temp files in current directory (not `/tmp`) for cross-platform compatibility
+- Defines both CORRECT and BROKEN function versions to prove the test catches regressions
+- Uses `Test-Scenario` wrapper for consistent PASS/FAIL reporting
+- Random file names avoid collision in shared CI environment
+- Exits 0 on all pass, 1 on any failure for CI integration
+
+**Environment note:** Shared workspace caused initial commit to land on wrong branch (`squad/43-tmux-test-coverage`). Cherry-picked to correct branch before PR creation.
