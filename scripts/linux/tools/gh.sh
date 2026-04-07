@@ -2,13 +2,8 @@
 # scripts/linux/tools/gh.sh — Install GitHub CLI (gh)
 #
 # Called by: scripts/linux/setup.sh
-# Owner:     Donald (#7)
+# Owner:     Donald (#6)
 # Idempotent: yes — checks if gh is already installed before acting
-#
-# TODO (Donald): Implement gh CLI installation.
-#   - Linux: install via apt (GitHub's official apt repo) or brew
-#   - macOS: brew install gh
-#   - Docs: https://cli.github.com/manual/installation
 
 set -euo pipefail
 
@@ -20,6 +15,19 @@ if command -v gh &>/dev/null; then
   exit 0
 fi
 
-log_info "gh not found — installation not yet implemented"
-# TODO (Donald): Add install logic here
-exit 0
+PLATFORM="$(uname -s)"
+if [[ "$PLATFORM" == "Darwin" ]]; then
+  brew install gh
+else
+  # Linux — use GitHub's official apt repo
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+  sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
+https://cli.github.com/packages stable main" \
+    | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+  sudo apt-get update -qq
+  sudo apt-get install -y gh
+fi
+
+log_ok "gh installed: $(gh --version | head -1)"
