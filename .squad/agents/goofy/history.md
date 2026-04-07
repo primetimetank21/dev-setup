@@ -16,3 +16,21 @@
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+## 2026-04-07 — Issue #2: Windows core setup script
+
+**Branch:** `squad/2-windows-setup` (based on `squad/3-os-detection-entry-point`)
+
+Implemented `scripts/windows/setup.ps1` — the core Windows installer. Filled in Mickey's stub with five idempotent `Install-*` functions:
+
+- `Install-GitBash` — Git for Windows via winget (`Git.Git`); ships Git Bash as the unix-shell equivalent
+- `Install-Uv` — uv Python package manager via official `irm https://astral.sh/uv/install.ps1 | iex`
+- `Install-Nvm` — nvm-windows via winget (`CoreyButler.NVMforWindows`); reloads PATH post-install
+- `Install-GhCli` — GitHub CLI via winget (`GitHub.cli`)
+- `Install-CopilotCli` — `gh extension install github/gh-copilot`; gracefully skips if gh not authenticated
+
+Also added `Write-Err` helper and `Test-WingetAvailable` guard (exits 1 with helpful message if winget absent).
+
+**Decision:** winget as sole package manager — it's built into Windows 10 1709+ and covers all required tools cleanly.
+
+**Note:** Multi-agent environment required use of `git worktree` to isolate changes from concurrent branch checkouts.
