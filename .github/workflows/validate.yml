@@ -113,3 +113,14 @@ jobs:
 
       - name: Analyze scripts/windows/setup.ps1
         run: pwsh -Command "Invoke-ScriptAnalyzer -Path scripts/windows/setup.ps1 -EnableExit"
+
+  validate-powershell:
+    name: Validate PowerShell Functions
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Remove-CustomItem regression test
+        run: pwsh tests/test_remove_custom_item.ps1
