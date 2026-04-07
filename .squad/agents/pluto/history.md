@@ -72,3 +72,22 @@ Created `config/dotfiles/` with:
 ### Decision record
 
 `.squad/decisions/inbox/pluto-dotfiles.md`
+## Session: 2026-04-07 — Issue #8 Shell Aliases
+
+**Branch:** `squad/8-shell-aliases`
+**PR:** #22 — [Config] Shell shortcuts and aliases
+**Status:** PR open, base `develop`
+
+### What was done
+- Created `config/dotfiles/.aliases` with aliases grouped by category: navigation, ls, git, gh CLI, docker (optional), utility, and dev shortcuts
+- Created `config/dotfiles/.zshrc.template` — a minimal template for `$HOME/.zshrc` that sets up PATH for `uv` and `nvm`, and sources `~/.aliases`
+- Created `config/dotfiles/install.sh` by porting from `squad/11-dotfile-templates` and extending it to:
+  - Symlink `.aliases` → `$HOME/.aliases`
+  - Copy `.zshrc.template` → `$HOME/.zshrc` only if no `.zshrc` exists (never overwrites)
+
+### Design decisions
+- `.aliases` is symlinked (not copied) so repo updates propagate instantly
+- `.zshrc.template` is copied only on first install — it's the user's file to own
+- Docker aliases are marked as optional in comments
+- No hardcoded paths — all use `$HOME`, `$NVM_DIR`
+
