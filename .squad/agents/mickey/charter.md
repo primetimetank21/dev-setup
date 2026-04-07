@@ -38,6 +38,10 @@
 - **Preferred:** auto
 - **Rationale:** Architecture reviews → premium bump. Triage and planning → fast. Coordinator decides.
 
+## Git Rules
+
+**Always create a branch before committing**: Never commit directly to `develop` or `main`. Always `git checkout -b squad/{issue-number}-{slug}` from a fresh `develop` before starting work.
+
 ## Collaboration
 
 Before starting work, run `git rev-parse --show-toplevel` to find the repo root, or use the `TEAM ROOT` from the spawn prompt. All `.squad/` paths resolve relative to that root.
