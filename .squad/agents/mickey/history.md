@@ -35,3 +35,10 @@
 - Decision: Tool scripts run via `bash <script>` (not `source`) to keep each isolated in its own subshell.
 - Decision: No package-manager abstraction layer — apt/brew per tool script, winget for Windows. Simple beats clever.
 - Dropped decision record at `.squad/decisions/mickey-architecture-entry-point.md`
+
+### 2026-04-07 — Issue #15: [Docs] Add README.md
+- Shipped PR #19: `squad/15-readme` → `develop`
+- Created `README.md` at repo root with all required sections
+- Sections: project one-liner, tool list table, supported platforms matrix, quick start per platform, repo structure, customization guide, link to ARCHITECTURE.md
+- README is user-facing; links to ARCHITECTURE.md for technical depth
+- All content sourced from ARCHITECTURE.md on `squad/3-os-detection-entry-point` for accuracy
