@@ -2,6 +2,14 @@
 
 ## Active Decisions
 
+## [Sprint 4] Enable Branch Protection on `develop`
+
+**Date:** 2026-04-07
+**Decision:** Enable GitHub branch protection on `develop` requiring 1 approving review + passing CI before merge.
+**Rationale:** Ralph bypassed the Mickey approval gate in Sprint 2 and Sprint 3. Branch protection enforces this at the GitHub level.
+**Owner:** Mickey
+**Note:** GitHub API returned 403 (token lacks branch protection write scope); rules must be enabled manually in repo Settings → Branches.
+
 ### 2026-04-07T03:20:54Z: User directive
 **By:** Earl Tankard, Jr., Ph.D. (via Copilot)
 **What:** Always commit and push at the end of every session — Scribe must `git push` after the final commit, not just `git commit`.
