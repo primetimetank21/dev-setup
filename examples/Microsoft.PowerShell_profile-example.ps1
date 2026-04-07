@@ -1,6 +1,6 @@
 ### Linux Commands ###
 
-function remove-custom { param([string]$path); Remove-Item -Path $path -Recurse -Force }
+function remove-custom { param([string[]]$path); Remove-Item -Path $path -Recurse -Force }
 Remove-Item -Force Alias:\rm
 Set-Alias -Name rm -Value remove-custom
 

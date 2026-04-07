@@ -99,7 +99,7 @@ function Write-PowerShellProfile {
 # -- Linux-compatible commands --------------------------------------------------
 
 function Remove-CustomItem {
-    param([string]$Path)
+    param([string[]]$Path)
     Remove-Item -Path $Path -Recurse -Force
 }
 Remove-Item -Force Alias:\rm -ErrorAction SilentlyContinue
