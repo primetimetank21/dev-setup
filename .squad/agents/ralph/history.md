@@ -89,6 +89,38 @@ Agent Ralph initialized and ready for work.
 
 ---
 
+### Sprint 3 Retroactive — P1 Bug Fixes
+
+**Date:** 2026-04-07
+
+#### Issue #37 — Remove-CustomItem silent data loss (Goofy)
+- **Priority:** P1 | **Owner:** Goofy
+- **Branch:** `squad/37-fix-remove-custom-item`
+- **PR:** #40 — `fix(windows): Remove-CustomItem silent data loss — accept string[] param (#37)`
+- **Status:** ✅ Merged to `develop`, branch deleted, issue #37 closed
+- **Changes:**
+  - `scripts/windows/setup.ps1` — changed `[string]$Path` → `[string[]]$Path` in `Remove-CustomItem` param
+  - `examples/Microsoft.PowerShell_profile-example.ps1` — same fix to keep files in sync
+
+#### Issue #38 — create_tmux() three bugs (Donald)
+- **Priority:** P1 | **Owner:** Donald
+- **Branch:** `squad/38-fix-create-tmux`
+- **PR:** #39 — `fix(dotfiles): correct create_tmux() — named session check, remove dead var (#38)`
+- **Status:** ✅ Merged to `develop`, branch deleted, issue #38 closed
+- **Changes:**
+  - `config/dotfiles/.aliases` — replaced `create_tmux()` body:
+    1. Removed dead variable `session_name="tankSession"`
+    2. Replaced `pidof tmux` with `tmux has-session -t "$session"` (named-session check)
+    3. Replaced `tt && ta` with `tmux new-session -d -s "$session"` + `tmux attach -t "$session"`
+
+#### Sprint 3 Promotion
+- `develop` → `main` via `--no-ff` merge commit
+- Release commit: `release: sprint 3 complete — owner shortcuts, vimrc, examples, bug fixes`
+- Issues closed: #29, #32, #37, #38
+- PRs merged: #33–#36, #39–#40
+
+---
+
 ## Learnings
 
 - Always check for Unicode characters in PowerShell files — `PSUseBOMForUnicodeEncodedFile` catches box-drawing chars (`──`) and em-dashes (`—`) too; use plain ASCII dashes in here-strings
