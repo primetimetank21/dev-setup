@@ -1,0 +1,53 @@
+{
+  "agents": {
+    "lead": {
+      "persistent_name": "Mickey",
+      "universe": "Disney Classic",
+      "created_at": "2026-04-07T03:05:10Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "shell-dev": {
+      "persistent_name": "Donald",
+      "universe": "Disney Classic",
+      "created_at": "2026-04-07T03:05:10Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "cross-platform": {
+      "persistent_name": "Goofy",
+      "universe": "Disney Classic",
+      "created_at": "2026-04-07T03:05:10Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "config-eng": {
+      "persistent_name": "Pluto",
+      "universe": "Disney Classic",
+      "created_at": "2026-04-07T03:05:10Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "tester": {
+      "persistent_name": "Chip",
+      "universe": "Disney Classic",
+      "created_at": "2026-04-07T03:05:10Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "scribe": {
+      "persistent_name": "Scribe",
+      "universe": "exempt",
+      "created_at": "2026-04-07T03:05:10Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "ralph": {
+      "persistent_name": "Ralph",
+      "universe": "exempt",
+      "created_at": "2026-04-07T03:05:10Z",
+      "legacy_named": false,
+      "status": "active"
+    }
+  }
+}

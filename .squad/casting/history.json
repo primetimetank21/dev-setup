@@ -1,0 +1,16 @@
+{
+  "assignments": [
+    {
+      "assignment_id": "dev-setup-001",
+      "universe": "Disney Classic",
+      "created_at": "2026-04-07T03:05:10Z",
+      "agents": [
+        { "role": "lead", "name": "Mickey" },
+        { "role": "shell-dev", "name": "Donald" },
+        { "role": "cross-platform", "name": "Goofy" },
+        { "role": "config-eng", "name": "Pluto" },
+        { "role": "tester", "name": "Chip" }
+      ]
+    }
+  ]
+}
