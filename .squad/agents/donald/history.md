@@ -30,3 +30,13 @@ Implemented the full installer suite on branch `squad/1-linux-core-setup` (based
 
 All scripts: `set -euo pipefail`, idempotency guard at top, consistent log helpers.
 WSL treated as Linux throughout — no special-casing needed beyond what Mickey already handles in root `setup.sh`.
+
+### 2026-04-07: Issue #13 — auth.sh re-implemented from develop (PR #25 was lost)
+
+Previous PR #25 was closed because its base branch (`squad/1-linux-core-setup`) had been merged and deleted.
+Re-implemented from `develop` on branch `squad/13-auth-prompt`.
+
+- `scripts/linux/tools/auth.sh` — new file: checks `gh auth status`, prompts interactively, skips gracefully in CI/Codespaces/non-interactive
+- `scripts/linux/setup.sh` — added `run_tool "auth"` between `run_tool "gh"` and `run_tool "copilot-cli"`
+
+Idempotent: exits 0 immediately if already authenticated. Copilot CLI install (which follows) needs auth to work.

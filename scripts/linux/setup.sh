@@ -85,6 +85,7 @@ main() {
   run_tool "uv"
   run_tool "nvm"
   run_tool "gh"
+  run_tool "auth"
   run_tool "copilot-cli"
 
   # Apply dotfiles if Pluto's installer exists
