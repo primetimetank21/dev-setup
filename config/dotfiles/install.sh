@@ -171,6 +171,12 @@ install_symlink \
   "$HOME/.aliases" \
   ".aliases"
 
+# .vimrc — symlink so updates to the repo are reflected immediately
+install_symlink \
+  "$DOTFILES_DIR/.vimrc" \
+  "$HOME/.vimrc" \
+  ".vimrc"
+
 # .zshrc.template — copy only if no .zshrc exists (never overwrite the user's own)
 if [[ -f "$HOME/.zshrc" ]]; then
   if [[ "$DRY_RUN" == true ]]; then

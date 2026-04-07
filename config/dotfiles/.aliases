@@ -39,10 +39,13 @@ alias gcb='git checkout -b'                                                     
 alias gco='git checkout'                                                                              # switch branch or restore file
 alias gd='git diff'                                                                                   # show unstaged diff
 alias gds='git diff --staged'                                                                         # show staged diff
+alias gf='git fetch'                                                                                  # fetch from remote
+alias gfp='git fetch --prune'                                                                         # fetch and prune stale remote branches
 alias ggs='git stash'                                                                                 # stash current changes
 alias ggsls='git stash list'                                                                          # list all stashes
 alias ggsp='git stash pop'                                                                            # pop most recent stash
 alias gl="git log --graph --abbrev-commit --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'"  # pretty graph log
+alias glog='git log'                                                                                  # full git log
 alias gp='git push'                                                                                   # push to remote
 alias gpf='git push --force-with-lease'                                                               # safe force push
 alias gpl='git pull'                                                                                  # pull from remote
@@ -81,6 +84,7 @@ alias h='history'
 alias path='echo $PATH | tr ":" "\n"'         # print PATH entries one per line
 alias reload='source ~/.zshrc 2>/dev/null || source ~/.bashrc'
 alias myip='curl -s ifconfig.me'
+alias pb='ping bing.com'              # quick connectivity check
 alias ports='ss -tulnp'
 alias vb="vim ~/.bashrc"                      # edit bash config in vim
 alias sb="source ~/.bashrc"                   # reload bash config
@@ -98,3 +102,20 @@ alias ni='npm install'
 alias nr='npm run'
 alias nrd='npm run dev'
 alias nrt='npm run test'
+
+# ── Functions ────────────────────────────────────────────────────────────────
+
+# Create or attach to the tank_dev tmux session
+create_tmux() {
+  pidof tmux 1>/dev/null
+  tmux_exists=$?
+  session_name="tankSession"
+  if [[ $tmux_exists -ne 0 ]]; then
+    tt && ta
+  fi
+}
+
+# Run on shell startup — launch tmux session
+start_up() {
+  create_tmux
+}

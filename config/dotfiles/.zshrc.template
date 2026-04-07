@@ -17,6 +17,11 @@ export NVM_DIR="$HOME/.nvm"
 
 [ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
 
+# ── Startup ──────────────────────────────────────────────────────────────────
+
+# Launch or attach to a tmux session on shell startup (no-op if start_up not defined)
+type start_up &>/dev/null && start_up
+
 # ── Prompt (optional — customize or use oh-my-zsh/starship) ─────────────────
 
 # Uncomment to use a minimal custom prompt:
