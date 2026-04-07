@@ -107,12 +107,11 @@ alias nrt='npm run test'
 
 # Create or attach to the tank_dev tmux session
 create_tmux() {
-  pidof tmux 1>/dev/null
-  tmux_exists=$?
-  session_name="tankSession"
-  if [[ $tmux_exists -ne 0 ]]; then
-    tt && ta
+  local session="tank_dev"
+  if ! tmux has-session -t "$session" 2>/dev/null; then
+    tmux new-session -d -s "$session"
   fi
+  tmux attach -t "$session"
 }
 
 # Run on shell startup — launch tmux session
