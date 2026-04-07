@@ -1144,6 +1144,18 @@ gh pr list --state open --draft --json number,title,author,labels,checks --limit
 | **Approved PRs** | PR approved, CI green, ready to merge | Merge and close related issue |
 | **No work found** | All clear | Report: "📋 Board is clear. Ralph is idling." Suggest `npx @bradygaster/squad-cli watch` for persistent polling. |
 
+**MERGE GATE (mandatory) — applies to every "Approved PRs" action:**
+```
+MERGE GATE:
+  1. Wait for CI green (all checks passing on the PR)
+  2. Spawn Mickey to review: gh pr review {n} --repo {repo} --approve --body "LGTM — {reason}"
+  3. Verify approval is recorded on GitHub (gh pr view {n} --json reviews)
+  4. ONLY THEN: gh pr merge {n} --squash --delete-branch
+```
+Ralph MUST NOT call `gh pr merge` without first completing steps 1-3.
+Violation history: Sprint 2 (PRs #17-#27), Sprint 3 (PRs #33-#36).
+Branch protection on `develop` now enforces this gate at the GitHub level (enabled Sprint 4).
+
 **Step 3 — Act on highest-priority item:**
 - Process one category at a time, highest priority first (untriaged > assigned > CI failures > review feedback > approved PRs)
 - Spawn agents as needed, collect results
