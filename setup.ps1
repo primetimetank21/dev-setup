@@ -1,4 +1,4 @@
-# setup.ps1 — Entry point for dev-setup on Windows (PowerShell)
+# setup.ps1 - Entry point for dev-setup on Windows (PowerShell)
 #
 # This script detects the Windows environment and routes to the correct
 # platform-specific installer. It does NOT install any tools itself.
@@ -14,16 +14,16 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# ── Logging helpers ───────────────────────────────────────────────────────────
+# -- Logging helpers -----------------------------------------------------------
 
-function Write-Info  { param([string]$Msg) Write-Host "[INFO]  $Msg" -ForegroundColor Cyan }
-function Write-Ok    { param([string]$Msg) Write-Host "[OK]    $Msg" -ForegroundColor Green }
-function Write-Warn  { param([string]$Msg) Write-Host "[WARN]  $Msg" -ForegroundColor Yellow }
-function Write-Err   { param([string]$Msg) Write-Host "[ERROR] $Msg" -ForegroundColor Red }
+function Write-Info  { param([string]$Msg) Write-Output "[INFO]  $Msg" }
+function Write-Ok    { param([string]$Msg) Write-Output "[OK]    $Msg" }
+function Write-Warn  { param([string]$Msg) Write-Output "[WARN]  $Msg" }
+function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
 
-# ── OS Detection ─────────────────────────────────────────────────────────────
+# -- OS Detection -------------------------------------------------------------
 
-function Detect-Platform {
+function Get-Platform {
   if ($IsLinux -or $IsMacOS) {
     # Unlikely to be reached via PowerShell on Linux/macOS in most setups,
     # but handle gracefully if pwsh is installed there.
@@ -45,13 +45,13 @@ function Detect-Platform {
   return 'unknown'
 }
 
-# ── Routing ───────────────────────────────────────────────────────────────────
+# -- Routing -------------------------------------------------------------------
 
 function Main {
   $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-  $platform  = Detect-Platform
+  $platform  = Get-Platform
 
-  Write-Info "dev-setup — entry point (PowerShell)"
+  Write-Info "dev-setup - entry point (PowerShell)"
   Write-Info "Detected platform: $platform"
 
   switch ($platform) {
