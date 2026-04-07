@@ -30,3 +30,17 @@ Implemented the full installer suite on branch `squad/1-linux-core-setup` (based
 
 All scripts: `set -euo pipefail`, idempotency guard at top, consistent log helpers.
 WSL treated as Linux throughout — no special-casing needed beyond what Mickey already handles in root `setup.sh`.
+
+PR: #24 (open, targeting `develop`)
+
+### 2026-04-07: Issue #13 — GitHub auth prompt step added to setup
+
+Implemented `scripts/linux/tools/auth.sh` on branch `squad/13-auth-prompt` (based on `squad/1-linux-core-setup`):
+
+- Checks `gh auth status` — exits 0 immediately if already authenticated (prints username)
+- Detects non-interactive environments via `CI`, `CODESPACES`, and TTY check — skips gracefully with guidance message
+- In interactive environments: launches `gh auth login` and confirms result
+- `scripts/linux/setup.sh` updated to call `run_tool "auth"` between `run_tool "gh"` and `run_tool "copilot-cli"`
+
+This ensures copilot-cli install always has an authenticated gh CLI available.
+PR: #25 (open, targeting `squad/1-linux-core-setup`)
