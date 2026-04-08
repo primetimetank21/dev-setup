@@ -4,6 +4,12 @@ Welcome! This repo is maintained by the **Disney Classic Squad** — a team of s
 
 ---
 
+## Branch Protection
+
+The `develop` branch is protected at the GitHub level. Branch protection rules apply to **all contributors including repository admins** — the "Do not allow bypassing the above settings" option (`enforce_admins`) is enabled. Direct pushes to `develop` are blocked for everyone. All changes must go through a PR with at least one approving review and passing CI.
+
+---
+
 ## Branch Naming
 
 All work happens on a dedicated branch. **Never commit directly to `develop` or `main`.**
