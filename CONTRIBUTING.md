@@ -81,4 +81,50 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ---
 
+---
+
+## Parallel Agent Work
+
+### Why worktree isolation matters
+
+In Sprint 4, two Chip agents ran simultaneously on issues #41 and #43, both sharing the same git working tree. Chip-issue-43 checked out `squad/43` while Chip-issue-41 was mid-commit on a different branch. The result: wrong content landed on the wrong branch, and PR #51 had to be closed and recreated. This is a classic branch-checkout race condition.
+
+### How to enable it
+
+Set `SQUAD_WORKTREES=1` before starting any Squad session where parallel work is expected:
+
+```bash
+export SQUAD_WORKTREES=1
+```
+
+Or add it permanently to your `.env` / shell profile. The devcontainer sets it by default in `remoteEnv`.
+
+When enabled, the Squad coordinator creates an isolated `git worktree` for each issue before handing control to the agent. Branch checkouts inside one worktree never affect any other.
+
+### Worktree path convention
+
+```
+{repo-parent}/{repo-name}-{issue-number}
+```
+
+**Example:** for issue #56 inside `/workspaces/dev-setup`, the worktree is created at:
+
+```
+/workspaces/dev-setup-56/
+```
+
+Each worktree has its own index and working files but shares the same `.git` object store with the main repo — no extra disk space for history, just the working tree.
+
+### Cleaning up
+
+Worktrees are not automatically removed. After a PR is merged, clean up with:
+
+```bash
+git worktree remove /workspaces/dev-setup-56
+```
+
+Or list all active worktrees with `git worktree list`.
+
+---
+
 For the full technical overview, team ownership map, and architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
