@@ -355,3 +355,23 @@ Earl (repo owner) must enable "Do not allow bypassing the above settings" in Git
 ### Lesson
 
 Branch protection write via `gh api` is blocked by the Codespace token scope. This is a repeated friction point. Earl should either (a) enable enforce_admins manually in the UI, or (b) provide a PAT with `repo` or `administration:write` scope for future branch protection API work.
+
+---
+
+## 2026-04-08 — Sprint 5 Retrospective Insights
+
+### Key Learnings
+
+1. **Retro loop is working.** All 3 Sprint 4 action items shipped in Sprint 5: worktree isolation (#56), enforce_admins resolution (#54), agent timeout policy (#55). Retros produce real changes, not shelf-ware.
+
+2. **Check decisions.md before planning.** Sprint 5 re-attempted the API branch protection call despite it being a documented limitation from Sprint 3. Known constraints should be consulted during issue creation, not rediscovered during implementation.
+
+3. **`--admin` merge pattern is the standard.** `gh pr merge --admin` after Mickey approval is now the established everyday workflow for solo-repo branch protection. Documented in decisions.md and CONTRIBUTING.md.
+
+4. **Frame issues as problems, not implementations.** Issue #54 pivoted from "enable enforce_admins=true" to "document why we don't." Problem-framed issues absorb scope changes; implementation-framed issues create confusion.
+
+5. **Sequence chicken-and-egg tasks.** Pluto hit a race condition while building worktree isolation — the very feature designed to prevent race conditions. Infrastructure tasks that protect the build environment should run sequentially.
+
+6. **Persistently red CI erodes trust.** The PowerShell lint failure has been red since Sprint 4 and nobody has picked it up. Must not carry into Sprint 7.
+
+7. **Timeout policy is untested.** Agent timeout tiers (5/10/20 min) shipped as documentation but no agent triggered them. First parallel Sprint 6 session should instrument Ralph to validate the tiers.
