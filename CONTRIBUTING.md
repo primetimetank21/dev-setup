@@ -6,7 +6,9 @@ Welcome! This repo is maintained by the **Disney Classic Squad** — a team of s
 
 ## Branch Protection
 
-The `develop` branch is protected at the GitHub level. Branch protection rules apply to **all contributors including repository admins** — the "Do not allow bypassing the above settings" option (`enforce_admins`) is enabled. Direct pushes to `develop` are blocked for everyone. All changes must go through a PR with at least one approving review and passing CI.
+The `develop` branch is protected at the GitHub level. Direct pushes are blocked for everyone — all changes must go through a PR with at least one approving review and passing CI.
+
+The branch protection rule has `enforce_admins` intentionally **disabled**. Why? On a solo-owner repo, GitHub blocks self-approval — an admin can't approve their own PR. Setting `enforce_admins=true` would create a deadlock: the only approver (the admin) can't approve themselves. The solution is `enforce_admins=false`, which allows the repo owner to use `gh pr merge --admin` to bypass the approval requirement *only when necessary* (e.g., to unblock themselves). This preserves the protection goal (no direct pushes) while avoiding the self-approval deadlock.
 
 ---
 
