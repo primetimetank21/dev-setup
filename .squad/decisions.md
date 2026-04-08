@@ -250,6 +250,67 @@ With `SQUAD_WORKTREES=1`, coordinator creates isolated worktrees at `{repo-paren
 - Skill documentation: `.squad/skills/worktree-isolation/SKILL.md`
 - Contributor guidance: `CONTRIBUTING.md` § "Parallel Agent Work"
 
+## [2026-04-08] Enforce Admins = False on Solo Repo (Deliberate Design)
+
+**Date:** 2026-04-08  
+**Issue:** #54  
+**Owner:** Mickey (Lead)  
+**Status:** Closed — Decision documented
+
+### Decision
+
+Branch protection on `develop` uses `enforce_admins=false`. This is a deliberate design choice, not a security oversight.
+
+### Rationale
+
+1. **Deadlock Prevention:** With `enforce_admins=true`, repo admins cannot approve and merge their own PRs. On a solo-developer repo (Mickey), this creates a merge deadlock.
+
+2. **Review Gate Maintained:** PR requirement enforces 1 approving review + passing CI for all contributors (non-admins). This blocks direct pushes to `develop`.
+
+3. **Admin Bypass Workflow:** Mickey (admin) opens PRs, reviews code, approves externally, then merges via `--admin` flag. This ensures every merge is reviewed without deadlock.
+
+4. **Security Trade-off:** Admin can bypass PR requirement via direct push, but:
+   - Team process (Scribe + squad conventions) enforces PR-first workflow
+   - Codespace tokens prevent most direct pushes anyway (limited scope)
+   - Mickey's review gate is the practical enforcement
+
+### Going Forward
+
+- Do NOT enable `enforce_admins=true` unless solo-dev workflow changes
+- All squad PRs follow Mickey approve → admin merge pattern
+- If multi-developer team forms, revisit this decision
+
+## [2026-04-08] Admin Merge Pattern (Deliberate — NOT Emergency Override)
+
+**Date:** 2026-04-08  
+**Owner:** Ralph (Merge Coordinator)  
+**Status:** Established standard
+
+### Decision
+
+Squad merge pattern is: `gh pr merge --admin` after Mickey approval. This is NOT an emergency override; it's the documented, everyday merge workflow.
+
+### Context
+
+- **Without this:** Solo-dev on admin account cannot merge own PRs (deadlock with `enforce_admins=true`)
+- **With this:** Mickey approves → admin merge → no deadlock
+- **Enforcement:** Process (Scribe task checks) + CONTRIBUTING.md documentation
+
+### Standard Procedure
+
+1. Agent opens PR
+2. Mickey reviews and approves
+3. Ralph executes `gh pr merge --admin` (or agent if solo task)
+4. Scribe logs the merge
+
+### Never
+
+- Use `--admin` to force-merge unapproved PRs
+- Use `--admin` as an emergency bypass without review
+- Skip Mickey approval and go straight to admin merge
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
