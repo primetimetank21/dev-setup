@@ -835,7 +835,13 @@ prompt: |
 
 After each batch of agent work:
 
-1. **Collect results** via `read_agent` (wait: true, timeout: 300).
+1. **Collect results** via `read_agent` (wait: true, timeout: 300). This is the standard call pattern — always use `wait: true` so the coordinator blocks until the agent completes or the timeout fires rather than polling.
+
+   **Agent Timeout Handling:** Agents must complete within their tier's wall-clock limit (Quick: 5 min, Standard: 10 min, Complex: 20 min; default: Standard). Track elapsed time from spawn. If `read_agent` returns a timeout (agent still running after repeated calls exhausting the budget):
+   - **First timeout:** Cancel the agent. Log to orchestration log (agent name, elapsed time, last state). Retry once with a leaner or decomposed prompt.
+   - **Second timeout (same task):** Cancel. Do **not** retry. Escalate: `"⚠️ {AgentName} stalled twice on #{issue} — manual intervention needed."` Stop and wait for user direction.
+   - **Never retry silently** — every timeout is logged and surfaced to the user.
+   - See `.squad/team.md` → "Agent Timeout Policy" for the full tier table and rationale.
 
 2. **Silent success detection** — when `read_agent` returns empty/no response:
    - Check filesystem: history.md modified? New decision inbox files? Output files created?

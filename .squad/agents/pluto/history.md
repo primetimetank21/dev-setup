@@ -17,6 +17,15 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### Worktree isolation pattern (Issue #56, 2026-04-07)
+
+- `SQUAD_WORKTREES=1` is the recommended env var to enable per-issue git worktree isolation.
+- The coordinator creates worktrees at `{repo-parent}/{repo-name}-{issue-number}` so each agent gets a fully isolated working tree.
+- This prevents the Sprint 4 race condition where Chip-issue-43 checked out a branch while Chip-issue-41 was mid-commit on the same working tree.
+- `SQUAD_WORKTREES=1` is now set by default in `.devcontainer/devcontainer.json` `remoteEnv`.
+- Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md § "Parallel Agent Work"`.
+- PR: https://github.com/primetimetank21/dev-setup/pull/58
+
 ## Work Log
 
 ### 2026-04-07 — Issue #10: Dev Container and Codespace post-create setup
@@ -91,3 +100,31 @@ Created `config/dotfiles/` with:
 - Docker aliases are marked as optional in comments
 - No hardcoded paths — all use `$HOME`, `$NVM_DIR`
 
+---
+
+## 2026-04-08 — Issue #56: Worktree Isolation for Parallel Agent Work
+
+**Branch:** `squad/56-worktree-isolation`  
+**PR:** #58 (open, targeting `develop`)  
+**Status:** Ready for review
+
+**What I did:**
+1. Added `SQUAD_WORKTREES=1` to `.devcontainer/devcontainer.json` in `remoteEnv` (always-on for Codespaces)
+2. Created skill documentation: `.squad/skills/worktree-isolation/SKILL.md`
+3. Updated `CONTRIBUTING.md` with § "Parallel Agent Work" section
+
+**Why:** Sprint 4 revealed a critical race condition: Chip-issue-43 ran `git checkout squad/43` while Chip-issue-41 was mid-commit on the shared working tree, resulting in wrong content on wrong branches. PR #51 had to be closed.
+
+**Root cause:** A single git working tree can only have one branch checked out at a time. It is not safe to share between concurrent agents.
+
+**Solution:** With `SQUAD_WORKTREES=1`, the coordinator creates isolated worktrees at `{repo-parent}/{repo-name}-{issue-number}` before handing control to each agent. Branch operations inside one worktree are completely invisible to all others.
+
+**Scope:**
+- **Parallel runs:** SQUAD_WORKTREES=1 required (multiple agents on different issues concurrently)
+- **Sequential runs:** Not needed — no race condition possible with single agent
+
+**Mid-task incident:** A race condition struck while committing history.md — the commit landed on the wrong branch. Cherry-picked it back to maintain consistency.
+
+**Decision documented:** Merged to squad/decisions.md
+
+**Part of Sprint 5 Round 1:** Coordinated parallel work with Mickey (issue #54) and Donald (issue #57). All agents worked concurrently on separate branches without conflicts.

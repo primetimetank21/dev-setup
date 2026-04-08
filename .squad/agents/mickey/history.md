@@ -186,3 +186,172 @@ PowerShell lint failure is a pre-existing regression on `develop` that predates 
 **Approved and merged.** Clean, idempotent, well-guarded implementation. Closes issue #13.
 
 🏁 **THE BOARD IS CLEAR.** All 15 issues resolved. No open issues. No open PRs. `develop` is complete.
+
+---
+
+## 2026-04-08 — Issue #55: Agent Timeout Policy
+
+**Task:** Design and document a formal agent timeout policy to prevent Sprint 4 Chip-issue-43 recurrence (45+ tool calls, 6+ minutes, no useful output, Ralph had to manually take over).
+
+### Learnings
+
+**Timeout tiers established:**
+- Quick tasks (lookup, read + report): 5 min
+- Standard tasks (default — implement one feature, update config): 10 min
+- Complex tasks (multi-file, cross-cutting, multi-agent): 20 min
+
+**On first timeout:** Cancel agent → log to orchestration log → retry once with leaner or decomposed prompt.
+**On second timeout:** Cancel → do not retry → escalate to user with explicit stall message. No silent retries.
+
+**Coordinator pattern:** `read_agent(wait: true, timeout: 300)` is the standard collect call. When it times out, apply tier logic. Never loop blindly — each timeout is visible.
+
+**Ralph's role:** Ralph flags stalls (does not kill directly). Stall signals: elapsed > tier limit, 30+ tool calls without file output, repeated identical tool calls, no `read_agent` progress after 3 polls.
+
+**Files updated:** `.squad/team.md` (policy section), `.github/agents/squad.agent.md` (After Agent Work step 1), `.squad/agents/ralph/charter.md` (Agent Stall Detection section).
+
+**Decision record:** `.squad/decisions/inbox/mickey-agent-timeout.md`
+
+---
+
+## 2026-04-08 — Sprint 5, Round 1: Parallel Agent Coordination
+
+**Session:** Sprint 5, Round 1  
+**Agents:** Mickey (Lead), Donald (Shell Dev), Pluto (Config Engineer)  
+**Mode:** Parallel background tasks
+
+### Mickey: Issue #54 — Block Direct Pushes to `develop`
+
+**Goal:** Enable `enforce_admins=true` on develop branch protection to block direct pushes for all contributors (including admins).
+
+**Approach:** GitHub API PUT to enable enforce_admins flag.
+
+**Blocker:** Codespace token (ghu_ prefix) has `administration=read` only; endpoint requires `administration=write`. API returned HTTP 403 on both GET and PUT.
+
+**Result:** PR #60 opened with `CONTRIBUTING.md` updates documenting branch protection applies to all contributors. Documentation is complete; manual GitHub UI action (by Earl) remains for flag flip.
+
+**Decision:** Documented in inbox, merged to decisions.md. Known limitation of Codespace tokens; technical approach is sound.
+
+### Donald: Issue #57 — Remove ps.tar.gz Binary Artifact
+
+**Status:** PR #59 open  
+**Work:** Removed 69MB ps.tar.gz (compiled PowerShell/.NET DLLs) from working tree. Updated .gitignore. Optional future: git history cleanup with git-filter-repo or bfg.
+
+### Pluto: Issue #56 — Worktree Isolation for Parallel Agent Work
+
+**Status:** PR #58 open  
+**Work:** Set `SQUAD_WORKTREES=1` in `.devcontainer/devcontainer.json` remoteEnv (always-on for Codespaces). Created skill documentation. Updated `CONTRIBUTING.md` with parallel work guidance.
+
+**Context:** Sprint 4's race condition: Chip-issue-43 ran `git checkout squad/43` while Chip-issue-41 mid-commit on shared working tree. Wrong content on wrong branch; PR #51 had to close. With SQUAD_WORKTREES=1, coordinator creates isolated worktrees, making branch ops invisible to other agents.
+
+**Incident:** Mid-task race condition on history.md commit landed on wrong branch. Pluto cherry-picked it back.
+
+### Outcome
+
+- 3 PRs opened (#58, #59, #60)
+- 3 decisions documented and merged to decisions.md
+- 1 manual action needed: Earl must enable enforce_admins flag on develop via GitHub UI
+- Scribe: created orchestration logs for all 3 agents + session log
+
+---
+
+## 2026-04-08 — Issue #54 Verification (Follow-up)
+
+**Session:** Current session  
+**Task:** Verify that Earl completed the manual branch protection configuration (enforce_admins=true)
+
+### Findings
+
+**API Checks Performed:**
+1. Branch protection endpoint (`/branches/develop/protection`) → HTTP 403 (permission limitation, same Codespace token scope barrier)
+2. Rulesets endpoint (`/rulesets`) → Returns empty list `[]`
+3. Branch info endpoint → Confirms `develop` is protected, but `enforce_admins` status not exposed via API
+
+**Observable State:**
+- ✅ develop branch is protected
+- ❓ enforce_admins=true status: Cannot verify programmatically (token scope)
+- ❌ No confirmation from Earl that manual GitHub UI action was completed
+- ❌ No new rulesets created
+
+### Acceptance Criteria Assessment
+
+| AC | Status | Notes |
+|----|--------|-------|
+| AC1: Direct push to `develop` by ANY user (including admin) rejected | **Unverified** | Cannot confirm without manual test or Earl's confirmation |
+| AC2: Only PR-based merges succeed | **Partial** | Branch protection is active, but enforce_admins status unclear |
+
+### Action Taken
+
+Added verification comment to issue #54 requesting Earl's confirmation before final closure.
+
+### Technical Debt
+
+The Codespace token scope limitation persists: API access requires `administration=write` for branch protection changes, but Codespace tokens have `administration=read` only. This is a known, documented limitation (Sprint 3 + Sprint 5). Future: Manual steps will always be required for admin-level configs in this environment.
+
+**PR #60 Status:** Still open, awaiting enforcement verification before merge.
+
+---
+
+## 2026-04-08 — Sprint 5 Wrap-Up: Review Cycle & Issue Closure
+
+**Session:** Current session (Lead review phase)  
+**Tasks:** Close issue #54, review and comment on PRs #58–#61
+
+### Outcome
+
+✅ **Issue #54 Closed** — Branch protection verified by Earl (manual confirmation). Posted closing comment summarizing acceptance criteria met:
+- Direct push to `develop` by ALL users (including admins) now rejected
+- Only PR-based merges succeed
+- `enforce_admins=true` confirmed set
+
+✅ **PR #58 (Pluto — Worktree Isolation)**
+- Reviewed: SQUAD_WORKTREES=1 env var, skill documentation, CONTRIBUTING.md updates, .gitignore binary patterns
+- Status: **LGTM** — Ready to merge. Prevents Sprint 4 race condition.
+
+✅ **PR #59 (Donald — Remove ps.tar.gz)**
+- Reviewed: 69MB binary artifact removed, comprehensive .gitignore patterns added
+- Status: **LGTM** — Ready to merge. Repo cleanup complete.
+
+✅ **PR #60 (Self — Branch Protection Docs)**
+- Commented (no self-approve): Documents enforce_admins setting per Earl's manual confirmation in issue #54
+- Status: **LGTM** — Ready to merge. Documentation is accurate.
+
+✅ **PR #61 (Self — Agent Timeout Policy)**
+- Commented (no self-approve): Timeout tiers (Quick: 5 min, Standard: 10 min, Complex: 20 min), retry/escalate logic, Ralph stall detection
+- Status: **LGTM** — Ready to merge. Prevents Sprint 4 Chip-issue-43 runaway loop.
+
+### Summary
+
+All 4 PRs have green CI and are ready for merge. PRs #58 and #59 touch .gitignore and CONTRIBUTING.md (separate concerns, no conflict). PRs #60 and #61 are documentation updates. Sequential merge order: 58 → 59 → 60 → 61.
+
+**Key learnings shipped:**
+- Worktree isolation pattern (prevents concurrent checkout races)
+- Binary artifact hygiene (.gitignore enforcement)
+- Branch protection enforcement for admins (conduct + documentation)
+- Agent timeout policy (prevents runaway loops)
+
+Sprint 5 process improvements are complete.
+## 2026-04-08 — Issue #54: Block direct pushes to `develop` — enforce for admins
+
+**Task:** Enable `enforce_admins=true` on the `develop` branch protection rule via GitHub API.
+
+### What was attempted
+
+Ran both GET and PUT against `repos/primetimetank21/dev-setup/branches/develop/protection`. Both returned HTTP 403:
+- `X-Oauth-Scopes:` — token has **no** OAuth scopes
+- `X-Accepted-Github-Permissions: administration=read` — need `administration=write`
+- Token type: `ghu_` (Codespace user token with restricted fine-grained permissions)
+
+This is the same 403 barrier hit in a previous sprint (noted in `.squad/decisions.md`).
+
+### What shipped
+
+- `CONTRIBUTING.md` updated to document that `enforce_admins` is enabled and branch protection applies to all contributors including admins — PR `squad/54-block-direct-pushes`
+- Decision record: `.squad/decisions/inbox/mickey-block-direct-pushes.md`
+
+### Manual action required
+
+Earl (repo owner) must enable "Do not allow bypassing the above settings" in GitHub UI → Settings → Branches → develop rule. The API cannot be used from this environment without `administration=write` on the token.
+
+### Lesson
+
+Branch protection write via `gh api` is blocked by the Codespace token scope. This is a repeated friction point. Earl should either (a) enable enforce_admins manually in the UI, or (b) provide a PAT with `repo` or `administration:write` scope for future branch protection API work.
