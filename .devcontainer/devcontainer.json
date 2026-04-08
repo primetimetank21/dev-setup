@@ -35,7 +35,11 @@
     },
 
     "remoteEnv": {
-        "DEBIAN_FRONTEND": "noninteractive"
+        "DEBIAN_FRONTEND": "noninteractive",
+        // Set SQUAD_WORKTREES=1 when running parallel Squad agent sessions to enable
+        // worktree isolation. Each agent gets its own git worktree so branch checkouts
+        // never collide. See CONTRIBUTING.md § "Parallel Agent Work" for details.
+        "SQUAD_WORKTREES": "1"
     },
 
     "features": {
