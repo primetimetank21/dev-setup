@@ -17,6 +17,15 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### Worktree isolation pattern (Issue #56, 2026-04-07)
+
+- `SQUAD_WORKTREES=1` is the recommended env var to enable per-issue git worktree isolation.
+- The coordinator creates worktrees at `{repo-parent}/{repo-name}-{issue-number}` so each agent gets a fully isolated working tree.
+- This prevents the Sprint 4 race condition where Chip-issue-43 checked out a branch while Chip-issue-41 was mid-commit on the same working tree.
+- `SQUAD_WORKTREES=1` is now set by default in `.devcontainer/devcontainer.json` `remoteEnv`.
+- Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md § "Parallel Agent Work"`.
+- PR: https://github.com/primetimetank21/dev-setup/pull/58
+
 ## Work Log
 
 ### 2026-04-07 — Issue #10: Dev Container and Codespace post-create setup
