@@ -71,3 +71,15 @@ PR: #25 (open, targeting `squad/1-linux-core-setup`)
 **Future consideration:** Optional git history cleanup with `git-filter-repo` or `bfg` (cost/benefit analysis deferred)
 
 **Part of Sprint 5 Round 1:** Coordinated parallel work with Mickey (issue #54) and Pluto (issue #56). All agents worked concurrently on separate branches without conflicts.
+### 2026-04-08: Issue #57 — Removed ps.tar.gz binary artifact and updated .gitignore
+
+Cleaned up the 69MB PowerShell/.NET SDK DLL archive (`ps.tar.gz`) that was accidentally committed in Sprint 1:
+
+- Removed file from git tracking via `git rm ps.tar.gz`
+- Updated `.gitignore` to prevent future binary artifact commits: added `*.tar.gz`, `*.zip`, `*.dll`, `*.exe`
+- Created branch `squad/57-remove-ps-tar-gz` from `develop`
+- Committed with proper trailer: `chore: remove ps.tar.gz binary artifact and update .gitignore (#57)`
+- Pushed to origin and opened PR #59
+
+This reduces repo size and prevents accidental commits of compiled binaries. Note: git history rewrite skipped per issue spec (nice-to-have only).
+PR: #59 (open, targeting `develop`)
