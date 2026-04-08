@@ -5,3 +5,9 @@
 .squad/sessions/
 # Squad: SubSquad activation file (local to this machine)
 .squad-workstream
+
+# Binary artifacts — do not commit compiled binaries or archives
+*.tar.gz
+*.zip
+*.dll
+*.exe
