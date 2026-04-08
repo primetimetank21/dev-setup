@@ -53,3 +53,21 @@ Implemented `scripts/linux/tools/auth.sh` on branch `squad/13-auth-prompt` (base
 
 This ensures copilot-cli install always has an authenticated gh CLI available.
 PR: #25 (open, targeting `squad/1-linux-core-setup`)
+
+---
+
+## 2026-04-08 — Issue #57: Remove ps.tar.gz Binary Artifact
+
+**Branch:** `squad/57-remove-ps-tar-gz`  
+**PR:** #59 (open, targeting `develop`)  
+**Status:** Ready for review
+
+**What I did:**
+- Removed `ps.tar.gz` (69MB compiled PowerShell/.NET SDK DLLs) from working tree
+- Updated `.gitignore` to prevent future accidental commits
+
+**Why:** Binary artifact; no runtime purpose in a setup scripts repository. Adds significant bloat. Currently tracked in git; now prevented via .gitignore.
+
+**Future consideration:** Optional git history cleanup with `git-filter-repo` or `bfg` (cost/benefit analysis deferred)
+
+**Part of Sprint 5 Round 1:** Coordinated parallel work with Mickey (issue #54) and Pluto (issue #56). All agents worked concurrently on separate branches without conflicts.

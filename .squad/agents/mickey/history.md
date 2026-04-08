@@ -183,3 +183,68 @@ PowerShell lint failure is a pre-existing regression on `develop` that predates 
 **Approved and merged.** Clean, idempotent, well-guarded implementation. Closes issue #13.
 
 🏁 **THE BOARD IS CLEAR.** All 15 issues resolved. No open issues. No open PRs. `develop` is complete.
+
+---
+
+## 2026-04-08 — Issue #55: Agent Timeout Policy
+
+**Task:** Design and document a formal agent timeout policy to prevent Sprint 4 Chip-issue-43 recurrence (45+ tool calls, 6+ minutes, no useful output, Ralph had to manually take over).
+
+### Learnings
+
+**Timeout tiers established:**
+- Quick tasks (lookup, read + report): 5 min
+- Standard tasks (default — implement one feature, update config): 10 min
+- Complex tasks (multi-file, cross-cutting, multi-agent): 20 min
+
+**On first timeout:** Cancel agent → log to orchestration log → retry once with leaner or decomposed prompt.
+**On second timeout:** Cancel → do not retry → escalate to user with explicit stall message. No silent retries.
+
+**Coordinator pattern:** `read_agent(wait: true, timeout: 300)` is the standard collect call. When it times out, apply tier logic. Never loop blindly — each timeout is visible.
+
+**Ralph's role:** Ralph flags stalls (does not kill directly). Stall signals: elapsed > tier limit, 30+ tool calls without file output, repeated identical tool calls, no `read_agent` progress after 3 polls.
+
+**Files updated:** `.squad/team.md` (policy section), `.github/agents/squad.agent.md` (After Agent Work step 1), `.squad/agents/ralph/charter.md` (Agent Stall Detection section).
+
+**Decision record:** `.squad/decisions/inbox/mickey-agent-timeout.md`
+
+---
+
+## 2026-04-08 — Sprint 5, Round 1: Parallel Agent Coordination
+
+**Session:** Sprint 5, Round 1  
+**Agents:** Mickey (Lead), Donald (Shell Dev), Pluto (Config Engineer)  
+**Mode:** Parallel background tasks
+
+### Mickey: Issue #54 — Block Direct Pushes to `develop`
+
+**Goal:** Enable `enforce_admins=true` on develop branch protection to block direct pushes for all contributors (including admins).
+
+**Approach:** GitHub API PUT to enable enforce_admins flag.
+
+**Blocker:** Codespace token (ghu_ prefix) has `administration=read` only; endpoint requires `administration=write`. API returned HTTP 403 on both GET and PUT.
+
+**Result:** PR #60 opened with `CONTRIBUTING.md` updates documenting branch protection applies to all contributors. Documentation is complete; manual GitHub UI action (by Earl) remains for flag flip.
+
+**Decision:** Documented in inbox, merged to decisions.md. Known limitation of Codespace tokens; technical approach is sound.
+
+### Donald: Issue #57 — Remove ps.tar.gz Binary Artifact
+
+**Status:** PR #59 open  
+**Work:** Removed 69MB ps.tar.gz (compiled PowerShell/.NET DLLs) from working tree. Updated .gitignore. Optional future: git history cleanup with git-filter-repo or bfg.
+
+### Pluto: Issue #56 — Worktree Isolation for Parallel Agent Work
+
+**Status:** PR #58 open  
+**Work:** Set `SQUAD_WORKTREES=1` in `.devcontainer/devcontainer.json` remoteEnv (always-on for Codespaces). Created skill documentation. Updated `CONTRIBUTING.md` with parallel work guidance.
+
+**Context:** Sprint 4's race condition: Chip-issue-43 ran `git checkout squad/43` while Chip-issue-41 mid-commit on shared working tree. Wrong content on wrong branch; PR #51 had to close. With SQUAD_WORKTREES=1, coordinator creates isolated worktrees, making branch ops invisible to other agents.
+
+**Incident:** Mid-task race condition on history.md commit landed on wrong branch. Pluto cherry-picked it back.
+
+### Outcome
+
+- 3 PRs opened (#58, #59, #60)
+- 3 decisions documented and merged to decisions.md
+- 1 manual action needed: Earl must enable enforce_admins flag on develop via GitHub UI
+- Scribe: created orchestration logs for all 3 agents + session log
