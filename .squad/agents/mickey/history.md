@@ -266,6 +266,23 @@ PowerShell lint failure is a pre-existing regression on `develop` that predates 
 **Observable State:**
 - ✅ develop branch is protected
 - ❓ enforce_admins=true status: Cannot verify programmatically (token scope)
+
+---
+
+## 2026-04-08 — Issue #67: Fix gitattributes for shell script line endings
+
+**Session:** Current (Earl requested)  
+**Task:** Create GitHub issue to fix CRLF line-ending failures in shell scripts on Windows
+
+### Action Taken
+
+- Created Issue #67: `fix(gitattributes): add eol=lf rules for shell scripts to prevent CRLF line-ending failures`
+- Label: `bug`
+- Body documents the problem: CRLF breaks bash on Linux/Devcontainer (`set -euo pipefail\r` becomes invalid)
+- Includes fix: Add `*.sh text eol=lf` and `*.bash text eol=lf` to `.gitattributes`
+- Includes follow-up: `git add --renormalize . && git commit`
+
+**Result:** Issue #67 created successfully
 - ❌ No confirmation from Earl that manual GitHub UI action was completed
 - ❌ No new rulesets created
 
@@ -389,3 +406,37 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 ### Post-merge
 
 Squashed and merged to `develop` (commit `fe86245`). Branch `squad/64-dotfiles-append-managed-block` deleted.
+
+---
+
+## 2026-04-12 — PR #66 Review: `.gitattributes` eol=lf Rules for Shell Scripts
+
+**Issue:** #67 (not #66 — placeholder used during branch creation)  
+**Branch:** `squad/66-fix-gitattributes-eol-lf` → `develop`  
+**Author:** Donald  
+**Merged:** PR #66 (squashed and merged with admin privileges)
+
+### What I reviewed
+
+**Root cause:** On Windows, `git checkout` writes `.sh` files with CRLF by default. When volume-mounted into a Devcontainer (Linux), bash reads `set -euo pipefail\r` — the `\r` makes `pipefail\r` an invalid option, crashing all setup scripts.
+
+**Implementation:**
+- ✅ `.gitattributes` structure correct:
+  - `* text=auto` at top for general normalization
+  - `*.sh text eol=lf` and `*.bash text eol=lf` for shell scripts
+  - Duplicate squad merge=union entries removed (cleanup)
+- ✅ 114 files renormalized via `git add --renormalize .` (CRLF → LF)
+- ✅ CI passing (4/4 checks): shell lint, PowerShell lint, function validation, Linux setup validation
+- ✅ Sample verification: `setup.sh` shows clean LF endings, no `\r` characters
+
+**Problem solved:**
+- Before: Windows checkout → CRLF in `.sh` files → Devcontainer mount → `pipefail\r` bash error
+- After: All shell scripts forced to LF regardless of checkout platform
+
+### Decision
+
+**LGTM — Approved and merged.** Critical fix for Windows Devcontainer compatibility. Updated PR body to reference #67 (correct issue number). Closed #67 with merge note.
+
+### Post-merge
+
+Squashed and merged to `develop`. Branch `squad/66-fix-gitattributes-eol-lf` deleted. Issue #67 closed.
