@@ -4,6 +4,15 @@
 # Shell scripts must always use LF — CRLF breaks bash on Linux/Devcontainers
 *.sh   text eol=lf
 *.bash text eol=lf
+config/dotfiles/.aliases         text eol=lf
+config/dotfiles/.vimrc           text eol=lf
+config/dotfiles/.zshrc.template  text eol=lf
+config/dotfiles/.npmrc.template  text eol=lf
+config/dotfiles/.gitconfig.template text eol=lf
+config/dotfiles/.editorconfig    text eol=lf
+config/dotfiles/install.sh       text eol=lf
+setup.sh                         text eol=lf
+setup.ps1                        -text
 
 # Squad: union merge for append-only team state files
 .squad/decisions.md merge=union
