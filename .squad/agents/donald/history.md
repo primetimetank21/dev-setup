@@ -17,6 +17,46 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-04-12: Bug fix — gh 2.89.0+ idempotency check uses wrong command (PR #63 additional fix)
+
+`gh copilot --help` exits 0 unconditionally on gh 2.89.0+ because gh intercepts the flag
+and shows its own wrapper help — it never touches the Copilot CLI binary. This caused the
+idempotency check to always short-circuit on fresh systems, skipping the binary download.
+
+Fix: change to `gh copilot -- --help`. The `--` passes the flag through to the actual binary.
+On gh 2.89.0+ without the binary, this triggers a proactive download. On older gh without the
+extension, it exits non-zero and falls through to `gh extension install` as intended.
+
+Updated file-header comment in `scripts/linux/tools/copilot-cli.sh` to document the nuance.
+Decision dropped to `.squad/decisions/inbox/donald-idempotency-passthrough.md`.
+Branch: `squad/fix-copilot-cli-alias-conflict` — PR #63.
+
+**Rule:** Never probe a gh built-in wrapper with `--help` alone. Use `-- --help` to reach the binary.
+
+---
+
+### 2026-04-08: gh 2.x+ built-in promotion breaks extension install (PR #63 revised)
+
+`gh 2.89.0` promotes `gh copilot` to a **built-in command**. This breaks two earlier patterns:
+
+- `gh extension list | grep -q "gh-copilot"` — misses built-ins (only lists extensions)
+- `gh alias list | grep copilot` — misses built-ins (only lists aliases)
+- `gh extension install github/gh-copilot` — fails with `"copilot" matches the name of a built-in command` (stdout, not stderr)
+
+**Correct idempotency check:** `gh copilot --help &>/dev/null 2>&1` — succeeds whether copilot is a built-in, extension, or alias. Version-agnostic.
+
+**Correct install failure handling:** Use `set +e` to capture stdout+stderr from `gh extension install`, then grep for the "built-in" error string and exit 0 gracefully. Never let a version-gated "already built-in" failure propagate as a setup error.
+
+**Rule:** Never use `gh extension list` or `gh alias list` as the sole idempotency gate for gh subcommands — probe the actual command with `--help` instead.
+
+### 2026-04-08: Bug fix — gh alias conflict blocks copilot-cli extension install
+
+`gh extension install` silently fails (stdout, not stderr) when an existing gh alias matches the extension's command name. For `gh-copilot`, this means any stale `copilot` alias from a prior partial install blocks reinstall entirely.
+
+Fix pattern: guard with `gh alias list | grep -q "^copilot"` and delete before installing. Applied to `scripts/linux/tools/copilot-cli.sh` on branch `squad/fix-copilot-cli-alias-conflict`, PR #63.
+
+Also: never use `$(gh copilot --version)` in a post-install check — if the alias conflict exists, that subshell triggers the same error and leaks it into log output. Use `gh extension list | grep -q "gh-copilot"` or a plain success string instead.
+
 ### 2026-04-07: Issues #1, #4, #5, #6, #7, #9 — Core Linux/macOS setup scripts implemented
 
 Implemented the full installer suite on branch `squad/1-linux-core-setup` (based on Mickey's `squad/3-os-detection-entry-point`):

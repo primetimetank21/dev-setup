@@ -311,6 +311,48 @@ Squad merge pattern is: `gh pr merge --admin` after Mickey approval. This is NOT
 
 ---
 
+## [2026-04-08] Guard Against gh Alias Conflicts Before Extension Install
+
+**Date:** 2026-04-08  
+**Owner:** Donald (Shell Dev)  
+**Issue:** Bug — `scripts/linux/tools/copilot-cli.sh` fails with alias conflict  
+**PR:** #63  
+**Branch:** `squad/fix-copilot-cli-alias-conflict`  
+**Status:** PR Open
+
+### Problem
+
+`gh extension install github/gh-copilot` fails with:
+```
+"copilot" matches the name of a built-in command or alias
+```
+
+The `gh` CLI refuses to install an extension whose command name matches an existing alias. The error goes to stdout, not stderr — so `2>/dev/null` redirection does not suppress it. A prior partial install can leave a stale `copilot` alias that permanently blocks future installs.
+
+A secondary bug: the post-install check `$(gh copilot --version 2>/dev/null)` would trigger the same alias collision if one existed, leaking the error string into the output.
+
+### Decision
+
+Any shell script that installs a `gh` extension must:
+
+1. Check for a conflicting alias before calling `gh extension install`:
+   ```bash
+   if gh alias list 2>/dev/null | grep -q "^copilot"; then
+     log_warn "Removing conflicting gh alias 'copilot'..."
+     gh alias delete copilot
+   fi
+   ```
+
+2. Never use `$(gh <extension-cmd> --version)` as a post-install verification — it triggers the same alias lookup. Prefer `gh extension list | grep -q "<extension-name>"`.
+
+### Rationale
+
+- The `gh` alias conflict is silent from a script perspective (stdout, not stderr) and idempotency guards won't catch it if the extension was partially registered.
+- The alias delete is safe: it only fires if the alias exists, and after install the extension's native command supersedes any alias anyway.
+- Removing the `--version` subshell eliminates stdout-leaking post-install checks that could corrupt log output.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

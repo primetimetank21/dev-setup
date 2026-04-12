@@ -2,10 +2,16 @@
 # scripts/linux/tools/copilot-cli.sh — Install GitHub Copilot CLI extension
 #
 # Called by: scripts/linux/setup.sh
-# Owner:     Donald (#9)
-# Idempotent: yes — checks if gh-copilot extension is already installed
+# Owner:     Donald
+# Idempotent: yes — uses 'gh copilot -- --help' to probe the actual Copilot binary,
+#             not gh's wrapper. On gh 2.89.0+, 'gh copilot --help' exits 0 even
+#             before the binary is downloaded (shows gh's own help). The '--' pass-through
+#             hits the real binary, triggering a proactive download if needed.
 #
 # Prerequisite: gh CLI must be installed and authenticated (see gh.sh)
+#
+# Note: In gh 2.x+, 'gh copilot' may be a built-in command rather than an
+# extension. This script handles both cases gracefully.
 
 set -euo pipefail
 
@@ -18,7 +24,11 @@ if ! command -v gh &>/dev/null; then
   exit 0
 fi
 
-if gh extension list 2>/dev/null | grep -q "gh-copilot"; then
+# Check if gh copilot is fully operational — passes through to the actual binary.
+# On gh 2.89.0+, this also triggers a proactive binary download if not yet present.
+# 'gh copilot --help' is NOT sufficient: it exits 0 even before the binary is downloaded
+# because it shows gh's own wrapper help, not the CLI binary's help.
+if gh copilot -- --help &>/dev/null 2>&1; then
   log_ok "GitHub Copilot CLI already installed"
   exit 0
 fi
@@ -30,7 +40,29 @@ if ! gh auth status &>/dev/null; then
   exit 0
 fi
 
-log_info "Installing GitHub Copilot CLI..."
-gh extension install github/gh-copilot
+# Remove any conflicting gh alias that would block extension install
+if gh alias list 2>/dev/null | grep -q "^copilot"; then
+  log_warn "Removing conflicting gh alias 'copilot' (leftover from prior install)..."
+  gh alias delete copilot
+fi
 
-log_ok "Copilot CLI installed: $(gh copilot --version 2>/dev/null || echo 'installed')"
+log_info "Installing GitHub Copilot CLI..."
+
+# Temporarily disable set -e to capture install output and handle gracefully.
+# In newer gh versions, 'copilot' may be promoted to a built-in, causing
+# extension install to fail with a specific error we can detect and accept.
+set +e
+install_out="$(gh extension install github/gh-copilot 2>&1)"
+install_rc=$?
+set -e
+
+if [[ $install_rc -ne 0 ]]; then
+  if printf '%s' "$install_out" | grep -q "matches the name of a built-in"; then
+    log_ok "GitHub Copilot CLI is available as a built-in gh command"
+    exit 0
+  fi
+  printf '%s\n' "$install_out"
+  exit 1
+fi
+
+log_ok "GitHub Copilot CLI installed — run 'gh copilot --help' to get started"
