@@ -6,7 +6,9 @@
 # - Copies .npmrc.template      → $HOME/.npmrc
 # - Symlinks .editorconfig      → $HOME/.editorconfig
 # - Symlinks .aliases           → $HOME/.aliases
-# - Copies .zshrc.template      → $HOME/.zshrc  (skipped if $HOME/.zshrc exists)
+# - Copies .zshrc.template      → $HOME/.zshrc  (fresh install only)
+#   OR appends dev-setup managed block to existing $HOME/.zshrc
+# - Appends dev-setup managed block to existing $HOME/.bashrc
 #
 # Usage:
 #   ./config/dotfiles/install.sh            # install for real
@@ -72,6 +74,32 @@ install_copy() {
     cp "$src" "$dest"
     ok "Installed $label"
   fi
+}
+
+# ── Helper: append managed block to a shell rc file if not already present ───
+# Usage: append_managed_block <dest> <block> [<label>]
+append_managed_block() {
+  local dest="$1"
+  local block="$2"
+  local label="${3:-$(basename "$dest")}"
+  local marker="# --- dev-setup managed block"
+
+  if [[ "$DRY_RUN" == true ]]; then
+    if grep -qF "$marker" "$dest" 2>/dev/null; then
+      dry "$label (dev-setup block already present — would skip)"
+    else
+      dry "Would append dev-setup block to $label"
+    fi
+    return
+  fi
+
+  if grep -qF "$marker" "$dest" 2>/dev/null; then
+    skip "$label (dev-setup block already present)"
+    return
+  fi
+
+  printf '\n%s\n' "$block" >> "$dest"
+  ok "Appended dev-setup block to $label"
 }
 
 # ── Helper: create a symlink, skipping if it already points to the right file
@@ -177,14 +205,17 @@ install_symlink \
   "$HOME/.vimrc" \
   ".vimrc"
 
-# .zshrc.template — copy only if no .zshrc exists (never overwrite the user's own)
+# .zshrc — copy template on fresh install; append managed block to existing file
+ZSHRC_MANAGED_BLOCK='# --- dev-setup managed block (do not edit) ---
+export PATH="$HOME/.local/bin:$PATH"
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+[ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
+# --- end dev-setup managed block ---'
+
 if [[ -f "$HOME/.zshrc" ]]; then
-  if [[ "$DRY_RUN" == true ]]; then
-    dry "Skipping .zshrc — $HOME/.zshrc already exists (won't overwrite)"
-  else
-    info "Skipping .zshrc — $HOME/.zshrc already exists. To apply the template manually:"
-    info "  cp $DOTFILES_DIR/.zshrc.template $HOME/.zshrc"
-  fi
+  append_managed_block "$HOME/.zshrc" "$ZSHRC_MANAGED_BLOCK" ".zshrc"
 else
   if [[ "$DRY_RUN" == true ]]; then
     dry "Would copy .zshrc.template → $HOME/.zshrc"
@@ -192,6 +223,16 @@ else
     cp "$DOTFILES_DIR/.zshrc.template" "$HOME/.zshrc"
     ok "Installed .zshrc from template"
   fi
+fi
+
+# .bashrc — append managed block if file exists (nvm PATH already appended by nvm installer)
+BASHRC_MANAGED_BLOCK='# --- dev-setup managed block (do not edit) ---
+export PATH="$HOME/.local/bin:$PATH"
+[ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
+# --- end dev-setup managed block ---'
+
+if [[ -f "$HOME/.bashrc" ]]; then
+  append_managed_block "$HOME/.bashrc" "$BASHRC_MANAGED_BLOCK" ".bashrc"
 fi
 
 printf "\n${GREEN}Done.${RESET}\n\n"

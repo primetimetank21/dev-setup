@@ -102,6 +102,29 @@ Created `config/dotfiles/` with:
 
 ---
 
+## 2026-04-12 — Issue #64: Append Managed Block to Existing .zshrc/.bashrc
+
+**Branch:** `squad/64-dotfiles-append-managed-block`
+**PR:** #65 (open, targeting `develop`)
+**Status:** Ready for review
+
+**What I did:**
+- Replaced the "skip .zshrc if it exists" behavior with an append-managed-block strategy
+- Added `append_managed_block()` helper to `config/dotfiles/install.sh` — uses a marker comment for idempotency
+- `.zshrc` block: sets PATH for `$HOME/.local/bin`, inits nvm, sources `.aliases`
+- `.bashrc` block: sets PATH for `$HOME/.local/bin`, sources `.aliases` (nvm init omitted — nvm installer handles it)
+- Fresh-install (no `.zshrc`) path unchanged — still copies the template
+- `--dry-run` support wired into the new helper
+
+**Key decisions:**
+- Marker: `# --- dev-setup managed block` — simple `grep -qF` check before every append
+- `.bashrc` block is intentionally shorter than `.zshrc` — nvm appends its own init to `.bashrc` during install
+- Only append to `.bashrc` if it already exists — no template for `.bashrc`
+
+**Decision record:** `.squad/decisions/inbox/pluto-dotfiles-managed-block.md`
+
+---
+
 ## 2026-04-08 — Issue #56: Worktree Isolation for Parallel Agent Work
 
 **Branch:** `squad/56-worktree-isolation`  
