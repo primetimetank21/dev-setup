@@ -63,10 +63,10 @@ install_prerequisites() {
       log_warn "Homebrew not found — install it from https://brew.sh and re-run setup"
       return 0
     fi
-    brew install curl git
+    brew install curl git tmux
   else
     sudo apt-get update -qq
-    sudo apt-get install -y curl git build-essential vim
+    sudo apt-get install -y curl git build-essential vim tmux
   fi
 
   log_ok "Prerequisites installed"
