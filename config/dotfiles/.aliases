@@ -87,9 +87,9 @@ alias myip='curl -s ifconfig.me'
 alias pb='ping bing.com'              # quick connectivity check
 alias ports='ss -tulnp'
 alias vb="vim ~/.bashrc"                      # edit bash config in vim
-alias sb="source ~/.bashrc"                   # reload bash config
+alias sb='[[ -n "$BASH_VERSION" ]] && source ~/.bashrc || echo "[sb] Not in bash — use sz"'   # reload bash config (bash only)
 alias vz="vim ~/.zshrc"                       # edit zsh config in vim
-alias sz="source ~/.zshrc"                    # reload zsh config
+alias sz='[[ -n "$ZSH_VERSION"  ]] && source ~/.zshrc  || echo "[sz] Not in zsh — use sb"'    # reload zsh config (zsh only)
 alias vv="vim ~/.vimrc"                       # edit vim config in vim
 alias va="vim ~/.aliases"                     # edit aliases file in vim
 
