@@ -17,6 +17,20 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-04-08: gh 2.x+ built-in promotion breaks extension install (PR #63 revised)
+
+`gh 2.89.0` promotes `gh copilot` to a **built-in command**. This breaks two earlier patterns:
+
+- `gh extension list | grep -q "gh-copilot"` — misses built-ins (only lists extensions)
+- `gh alias list | grep copilot` — misses built-ins (only lists aliases)
+- `gh extension install github/gh-copilot` — fails with `"copilot" matches the name of a built-in command` (stdout, not stderr)
+
+**Correct idempotency check:** `gh copilot --help &>/dev/null 2>&1` — succeeds whether copilot is a built-in, extension, or alias. Version-agnostic.
+
+**Correct install failure handling:** Use `set +e` to capture stdout+stderr from `gh extension install`, then grep for the "built-in" error string and exit 0 gracefully. Never let a version-gated "already built-in" failure propagate as a setup error.
+
+**Rule:** Never use `gh extension list` or `gh alias list` as the sole idempotency gate for gh subcommands — probe the actual command with `--help` instead.
+
 ### 2026-04-08: Bug fix — gh alias conflict blocks copilot-cli extension install
 
 `gh extension install` silently fails (stdout, not stderr) when an existing gh alias matches the extension's command name. For `gh-copilot`, this means any stale `copilot` alias from a prior partial install blocks reinstall entirely.
