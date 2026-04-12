@@ -351,6 +351,58 @@ Any shell script that installs a `gh` extension must:
 - The alias delete is safe: it only fires if the alias exists, and after install the extension's native command supersedes any alias anyway.
 - Removing the `--version` subshell eliminates stdout-leaking post-install checks that could corrupt log output.
 
+## [2026-04-12] Append Managed Block to Existing Shell RC Files
+
+**Date:** 2026-04-12  
+**Issue:** #64  
+**Owner:** Pluto (Config Engineer)  
+**PR:** #65  
+**Branch:** `squad/64-dotfiles-append-managed-block`  
+**Status:** PR Open
+
+### Decision
+
+`install.sh` now appends a dev-setup managed block to existing `.zshrc` and `.bashrc` instead of skipping them. A marker comment guards idempotency — the block is only appended once.
+
+### Rationale
+
+Devcontainer base images always ship with a pre-existing `.zshrc` and `.bashrc`. The previous skip behavior meant nvm, `$HOME/.local/bin`, and `.aliases` were never initialized in any container-based install — defeating the purpose of the dotfile step.
+
+### Managed Block: `.zshrc`
+
+```bash
+# --- dev-setup managed block (do not edit) ---
+export PATH="$HOME/.local/bin:$PATH"
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+[ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
+# --- end dev-setup managed block ---
+```
+
+### Managed Block: `.bashrc`
+
+```bash
+# --- dev-setup managed block (do not edit) ---
+export PATH="$HOME/.local/bin:$PATH"
+[ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
+# --- end dev-setup managed block ---
+```
+
+nvm init is omitted from the `.bashrc` block — the nvm installer already appends its own initialization lines there.
+
+### Idempotency
+
+`grep -qF "# --- dev-setup managed block" <file>` before every append. Safe to run multiple times.
+
+### Fresh Install Path
+
+The "copy template if no `.zshrc`" path is preserved unchanged — correct behavior for truly new machines.
+
+### `--dry-run`
+
+`append_managed_block()` respects `$DRY_RUN` and reports what would happen without writing.
+
 ---
 
 ## Governance
