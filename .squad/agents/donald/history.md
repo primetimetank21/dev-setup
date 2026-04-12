@@ -204,6 +204,41 @@ for existing Windows checkouts.
 - `exec 2>&1` at root only: child processes inherit merged FD; tool scripts don't need it
 - Audited all 6 tool scripts — none use `>&2` redirections
 - CRLF guard is defensive: no-op on LF systems, idempotent, safe to run multiple times
+
+---
+
+## 2026-04-12 — Issue #79 / PR #80: CI=true fixes non-interactive Copilot binary download
+
+**Issue:** #79 — `fix(copilot-cli): use CI=true to bypass interactive install prompt`
+**Branch:** `squad/79-ci-true-copilot-install` (merged & deleted)
+**Status:** ✅ Merged to `develop` via squash + delete-branch
+
+### Root Cause (confirmed via cli/cli source)
+
+`pkg/cmd/copilot/copilot.go` → `runCopilot()` downloads the binary only if `CanPrompt()` (TTY)
+or `IsCI()` (`CI` env var set). In Devcontainer `postCreateCommand`: no TTY, no `CI` var → both
+false → gh prints "not installed" and exits without downloading.
+
+### Why Prior Approaches Failed
+
+1. **`printf 'y\n' | gh copilot`** (PR #73): piped stdin means `CanPrompt()` is still false — isatty() check on stdin fails.
+2. **`script(1)` PTY** (PR #78): satisfied `CanPrompt()` but the pipe from `postCreateCommand` closes (EOF) before the download finishes, killing the child process.
+
+### Fix
+
+```bash
+CI=true timeout 60 gh copilot >/dev/null 2>&1 || true
+```
+
+`CI=true` triggers `IsCI()` → `runCopilot()` skips prompt entirely and downloads unconditionally.
+Removed `set +e`/`set -e` scaffolding and `script(1)` dependency.
+
+### Rules Established
+
+- **Never use `CanPrompt()`-gated commands in postCreateCommand without `CI=true`.** No TTY = always false.
+- **Binary path:** `~/.local/share/gh/copilot/copilot` (not `gh-copilot`).
+- **`CI=true` is the correct non-interactive trigger** for any gh built-in that gates on `IsCI()`.
+- `script(1)` PTY is the right tool for isatty-gated CLIs — but not when the parent pipe may close early (e.g., container lifecycle hooks).
 - `sed -i 's/\r//'` chosen over `dos2unix` for POSIX portability
 
 ### Outcomes

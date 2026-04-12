@@ -196,3 +196,24 @@ This session completed the install script fixes that address Windows Devcontaine
 
 **Pattern learned:** When automating a CLI that gates on isatty(), wrap in: script -q /dev/null -c 'command'
 Not expect or unbuffer -- those require extra package installs.
+
+---
+
+## 2026-04-12 — Issue #79 / PR #80: Reviewed & merged — CI=true copilot install fix
+
+**Issue:** #79  
+**PR:** #80 — `fix(copilot-cli): use CI=true to bypass interactive install prompt`  
+**Branch:** `squad/79-ci-true-copilot-install` (merged & deleted)  
+**Status:** ✅ Approved and squash-merged to `develop`; issue #79 closed
+
+### Review Notes
+
+- Confirmed root cause via cli/cli source: `runCopilot()` gates download on `CanPrompt() || IsCI()`
+- `CI=true` is the cleanest trigger — no process wrapping, no pipe gymnastics, no external dependencies
+- PR #73 (`printf 'y\n'`) and PR #78 (`script(1)`) both failed due to the same misdiagnosis: they addressed the prompt, not the gate. `IsCI()` bypasses both concerns.
+- `script(1)` noted as correct for isatty-gated CLIs generally — but postCreateCommand closes the pipe too early; `CI=true` is correct here.
+- CI: 4/4 green. Approved and merged.
+
+### Pattern Added
+
+- **`CI=true` for postCreateCommand:** When a CLI gates on `IsCI()`, set `CI=true` in-line rather than wrapping in PTY or piping stdin. Simpler, portable, unconditional.
