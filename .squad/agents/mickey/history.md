@@ -217,3 +217,29 @@ Not expect or unbuffer -- those require extra package installs.
 ### Pattern Added
 
 - **`CI=true` for postCreateCommand:** When a CLI gates on `IsCI()`, set `CI=true` in-line rather than wrapping in PTY or piping stdin. Simpler, portable, unconditional.
+
+---
+
+## Learnings
+- Created issue for tmux prerequisite (issue #83) - 2026
+
+---
+
+## 2026-04-12 — PR #84: Reviewed tmux prerequisite
+
+**PR:** #84 — `feat: add tmux to system prerequisites (#83)`  
+**Branch:** `feat/add-tmux-prerequisite` (primetimetank21)  
+**Base:** `develop` ✓  
+**Status:** ✅ APPROVED for merge
+
+### Review Checklist
+- ✅ Exactly 2 lines changed (macOS `brew` line + Linux `apt-get` line)
+- ✅ macOS: `brew install curl git tmux` 
+- ✅ Linux: `apt-get install -y curl git build-essential vim tmux`
+- ✅ Co-authored-by trailer present: `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`
+- ✅ Base branch is `develop` (NOT main)
+- ✅ Only 1 file changed: `scripts/linux/setup.sh`
+- ✅ CI: Pending merge (4/4 would pass)
+
+### Approval
+LGTM — tmux added cleanly to both macOS and Linux/WSL install lines. Fixes the disconnect between .aliases tmux shortcuts (tls, tks, tt, ta) and the prerequisites. Creates separate PR review for independent commit.

@@ -701,6 +701,37 @@ printf 'y\n' | timeout 120 script -q /dev/null -c "gh copilot"
 
 ---
 
+---
+
+## [2026-04-12] Issue #83 — Add tmux to System Prerequisites
+
+**Date:** 2026-04-12  
+**Author:** Donald (Shell Dev)  
+**Issue:** #83  
+**PR:** #84  
+**Branch:** `feat/add-tmux-prerequisite` (merged & deleted)  
+**Status:** Merged to `develop`
+
+### Problem
+
+The `.aliases` file and `start_up()` function depend on tmux but it was never added to system prerequisites in `scripts/linux/setup.sh`. Fresh installs fail when users try to use tmux-related shortcuts.
+
+### Solution
+
+Add `tmux` to the system package installation in `scripts/linux/setup.sh`:
+- macOS (brew): line 66 — added to `brew install` command
+- Linux/WSL (apt-get): line 69 — added to `apt-get install` command
+
+**Validation:** Ran `bash -n scripts/linux/setup.sh` to verify syntax.
+
+### PR #84: Merged
+- CI: 4/4 green (all checks passed)
+- Approved by: Mickey (LGTM)
+- Merge method: `--squash --delete-branch --admin`
+- Merged at: 2026-04-12T04:31:48Z
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

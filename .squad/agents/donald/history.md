@@ -17,6 +17,8 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+- Added tmux to install_prerequisites() (issue #83, PR #84 opened) - brew and apt-get lines updated
+
 ### 2026-04-12: Bug fix — gh 2.89.0+ idempotency check uses wrong command (PR #63 additional fix)
 
 `gh copilot --help` exits 0 unconditionally on gh 2.89.0+ because gh intercepts the flag
