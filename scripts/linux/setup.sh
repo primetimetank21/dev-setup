@@ -11,6 +11,7 @@
 #   bash scripts/linux/setup.sh
 
 set -euo pipefail
+exec 2>&1  # Merge stderr into stdout for ordered output in piped/Devcontainer environments
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS_DIR="${SCRIPT_DIR}/tools"
