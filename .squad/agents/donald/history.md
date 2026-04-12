@@ -128,3 +128,37 @@ PR: #59 (open, targeting `develop`)
 - Fixed .gitattributes to add eol=lf for *.sh/*.bash
 - Root cause: Windows git checkout writes CRLF; Linux bash chokes on \r at line ends
 - PR #66 opened
+
+## Learnings
+
+### 2026-04-12: Issues #68 and #69 — stdout/stderr ordering and CRLF guard in devcontainer
+
+**#68 — exec 2>&1 for ordered log output (PR #70)**
+
+`log_error()` in setup.sh and scripts/linux/setup.sh writes to `stderr` (`>&2`). In a
+Devcontainer or piped environment, stderr and stdout buffers are independent — error lines
+can appear before or after unrelated INFO/OK lines, making failures hard to trace.
+
+Fix: `exec 2>&1` immediately after `set -euo pipefail` in both root scripts. This merges
+file descriptor 2 into 1 for the lifetime of the process, including all child processes
+spawned via `bash ${tool_script}`. Audited all 6 tool scripts in `scripts/linux/tools/` —
+none use `>&2` directly; no changes needed there.
+
+**Rule:** `exec 2>&1` at the root entry point is sufficient — FD inheritance covers all
+child processes. No need to add it to tool scripts.
+
+**#69 — onCreateCommand CRLF guard in devcontainer.json (PR #71)**
+
+PR #66 added `*.sh text eol=lf` to `.gitattributes` and ran `git add --renormalize .`.
+This updates git's INDEX (what git will write on future checkouts) but NOT the working tree.
+Windows users with an existing checkout still have CRLF `.sh` files. When the Devcontainer
+bind-mounts the workspace, bash sees `set: pipefail\r` errors.
+
+Fix: `onCreateCommand` in `.devcontainer/devcontainer.json` strips `\r` from all `.sh` files
+before `postCreateCommand` runs. The `find . -name '*.sh' | xargs sed -i 's/\r//'` is
+a no-op on already-LF files and in Codespaces. Placed BEFORE `postCreateCommand` for both
+readability and correct execution order.
+
+**Rule:** When adding `.gitattributes` eol rules, always add a devcontainer `onCreateCommand`
+CRLF strip as a defensive guard — index renormalization alone doesn't fix working tree files
+for existing Windows checkouts.
