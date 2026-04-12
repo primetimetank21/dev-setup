@@ -14,7 +14,9 @@ Sequence before any merge:
 1. Wait for CI green on the PR
 2. Call `gh pr review {n} --approve` as Mickey
 3. Verify approval recorded on GitHub
-4. Only then: `gh pr merge {n} --squash --delete-branch`
+4. Only then: `gh pr merge {n} --merge --delete-branch`
+
+**Important:** For sprint wrap PRs (develop → main), always use `--merge`. Regular merge commits keep develop and main histories in sync. **Never `--squash` — causes history divergence on protected branches.**
 
 Violation history: Sprint 2 (PRs #17-#27), Sprint 3 (PRs #33-#36). Branch protection on `develop` now enforces this at the GitHub level (Sprint 4).
 
