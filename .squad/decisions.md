@@ -844,6 +844,38 @@ This decision documents that the session retro was written and the board is clea
 
 ---
 
+## [2026-04-12] Copilot Directive: Develop Reset Workflow
+
+**Date:** 2026-04-12  
+**By:** Earl Tankard, Jr., Ph.D. (via Copilot)  
+**Status:** Adopted
+
+### Decision
+
+After every squash-merge sprint wrap (develop → main), reset develop by deleting and re-creating it from main. This keeps develop and main histories in sync. The old rule 'NEVER delete develop' applied to accidental mid-sprint deletion only — intentional post-sprint-wrap resets are required.
+
+### Rationale
+
+User request — captured for team memory. This directive ensures a clean state for the next sprint by maintaining synchronized histories.
+
+---
+
+## [2026-04-12] Copilot Directive: Merge Strategy
+
+**Date:** 2026-04-12  
+**By:** Earl Tankard, Jr., Ph.D. (via Copilot)  
+**Status:** Adopted
+
+### Decision
+
+Sprint wrap PRs from develop → main must use REGULAR merge commits (not squash). This keeps develop and main histories in sync without needing to reset develop. Squash merges are no longer used for the develop → main promotion.
+
+### Rationale
+
+develop is branch-protected (can't delete or force-push). Regular merges keep histories connected automatically. This eliminates the need for post-sprint develop reset operations.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
