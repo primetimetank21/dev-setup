@@ -350,3 +350,19 @@ This session completed the install script fixes that address Windows Devcontaine
 - Issues #68, #69 auto-close when PRs link them (may require manual close if not linked)
 - Windows users who pull latest + rebuild Devcontainer will get ordered, diagnostic-friendly logs
 - Users with old working trees (CRLF from before PR #66) will have files stripped on next Devcontainer create
+
+## 2026-04-11 23:01:46: Created Issue #72
+
+**Task:** Create GitHub issue for copilot-cli binary download bug
+
+**Issue:** ix(copilot-cli): binary never downloads — install prompt swallowed by output redirection
+
+**Details:** 
+- Root cause: Output suppression in installation check swallows interactive prompt, defaults to 'N'
+- Symptom: Binary never downloads; users see 'Cannot find GitHub Copilot CLI' on every invocation
+- Fix: Check directory existence, trigger download with \printf 'y\n'\, verify completion
+
+**Issue #:** 72
+
+---
+
