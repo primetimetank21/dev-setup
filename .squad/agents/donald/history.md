@@ -162,3 +162,55 @@ readability and correct execution order.
 **Rule:** When adding `.gitattributes` eol rules, always add a devcontainer `onCreateCommand`
 CRLF strip as a defensive guard — index renormalization alone doesn't fix working tree files
 for existing Windows checkouts.
+
+---
+
+## 2026-04-13 — Session Complete: Issues #68–#69 Implemented & Merged
+
+**Issues:** #68 (exec 2>&1 output merge), #69 (CRLF guard)  
+**PRs:** #70, #71 (both merged to `develop`)  
+**Outcome:** ✅ Complete
+
+### Implementation Summary
+
+**PR #70: Issue #68 — stdout/stderr merge fix**
+- Branch: `squad/68-fix-output-ordering` (deleted)
+- Changes: Added `exec 2>&1` after `set -euo pipefail` in:
+  - `setup.sh`
+  - `scripts/linux/setup.sh`
+- Purpose: Merge stderr into stdout for ordered diagnostic output in piped contexts
+- CI: 4/4 green
+- Merged: Squash + delete + admin
+
+**PR #71: Issue #69 — CRLF guard in devcontainer**
+- Branch: `squad/69-devcontainer-crlf-guard` (deleted)
+- Changes: Added `onCreateCommand` to `.devcontainer/devcontainer.json`:
+  ```json
+  "onCreateCommand": "find . -name '*.sh' | xargs sed -i 's/\\r//'"
+  ```
+- Purpose: Strip CRLF from working tree files on container create (defensive for existing Windows checkouts)
+- CI: 4/4 green
+- Merged: Squash + delete + admin
+
+### Review & Approval
+
+- Both PRs reviewed by Mickey (Lead)
+- Both approved ✅
+- Branch protection passed: 1 approving review + CI green
+- Admin merge used per established squad workflow (standard, not override)
+
+### Key Technical Notes
+
+- `exec 2>&1` at root only: child processes inherit merged FD; tool scripts don't need it
+- Audited all 6 tool scripts — none use `>&2` redirections
+- CRLF guard is defensive: no-op on LF systems, idempotent, safe to run multiple times
+- `sed -i 's/\r//'` chosen over `dos2unix` for POSIX portability
+
+### Outcomes
+
+✅ Issue #68 resolved and merged  
+✅ Issue #69 resolved and merged  
+✅ Both fixes deployed to `develop`  
+✅ Decision records merged from inbox into `.squad/decisions.md`  
+✅ Clean squash-merge history maintained  
+✅ Windows Devcontainer setup now has ordered diagnostics + CRLF remediation

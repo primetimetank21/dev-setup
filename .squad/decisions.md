@@ -419,6 +419,134 @@ Scribe must **ALWAYS commit AND push after logging**. Not just commit — push t
 
 User request — captured for team memory. Ensures that all squad work (logs, decisions, cross-agent updates) is immediately persisted to the remote branch without delay or manual intervention.
 
+## [2026-04-13] Two-Issue Split for Install Script Fixes (Issues #68–#69)
+
+**Date:** 2026-04-13  
+**Decided by:** Mickey (Lead)  
+**Issues:** #68 (stdout/stderr ordering), #69 (CRLF guard)  
+**Related PR:** #66 (prior .gitattributes fix by Donald)  
+
+### Problem Statement
+
+Windows users continue to experience failures in Devcontainer setup despite PR #66 fixing `.gitattributes` and `.sh` file line endings. Investigation revealed TWO independent issues:
+
+1. **Diagnostic Noise:** All error logs go to stderr, other logs to stdout. In piped contexts (Devcontainer `postCreateCommand`), this causes interleaved, out-of-order output that obscures failures.
+2. **Working Tree CRLF Persistence:** `git add --renormalize` only updates git's index, not on-disk working tree files. Windows users who cloned before PR #66 still have CRLF `.sh` files on their machines. Linux Devcontainer sees these CRLF files when bind-mounted, causing `pipefail\r` bash errors.
+
+### Decision
+
+**Create TWO separate issues and PRs:**
+
+#### Issue #68: Output Order (Logging Fix)
+- **Root cause:** Mixed stdout/stderr streams in captured context
+- **Fix:** `exec 2>&1` to merge stderr into stdout
+- **Scope:** Minimal (2 entry points: `setup.sh` and `scripts/linux/setup.sh`)
+- **Risk:** Very low; pure output order fix
+- **Why separate:** Orthogonal to line-ending issue; can be reviewed/merged independently
+
+#### Issue #69: CRLF Persistence (Devcontainer Remediation)
+- **Root cause:** Working tree files untouched by `git add --renormalize`
+- **Fix:** `onCreateCommand` in `.devcontainer/devcontainer.json` to strip CRLF before `postCreateCommand`
+- **Scope:** Single configuration addition; defensive (no-op on already-LF)
+- **Risk:** Very low; runs as setup step, no production impact
+- **Why separate:** Addresses a deeper git/working-tree issue distinct from logging
+
+### Rationale
+
+**Why not merge both into one issue/PR?**
+1. **Separation of concerns:** Logging order vs. line-ending normalization are different problems
+2. **Independent review:** Easier for reviewers to reason about focused changes
+3. **Test isolation:** Each can be tested and validated separately
+4. **Faster merge:** If one encounters questions, the other isn't blocked
+
+**Why this approach beats alternatives:**
+- ✅ Not fixing in PRs before issues: Allows team visibility and decision-making
+- ✅ Not bundling both into one PR: Avoids mixing unrelated concerns
+- ✅ Not leaving broken: Creates actionable items for Scribe/team to implement
+
+---
+
+## [2026-04-13] Implementation: Issues #68 and #69 (Merged)
+
+**Date:** 2026-04-13  
+**Author:** Donald (Shell Dev)  
+**PRs:** #70 (issue #68), #71 (issue #69)  
+**Status:** Merged to `develop`
+
+### Issue #68 — stdout/stderr merge with `exec 2>&1`
+
+#### Problem
+
+`log_error()` uses `>&2` in both `setup.sh` and `scripts/linux/setup.sh`. All other log helpers write to stdout. In a Devcontainer or piped environment, stderr and stdout are independently buffered — error messages can appear before or after unrelated lines, making it hard to understand which step failed.
+
+#### Solution
+
+Add `exec 2>&1` immediately after `set -euo pipefail` in both root scripts only:
+
+- `setup.sh`
+- `scripts/linux/setup.sh`
+
+**Why only root scripts?**
+
+`exec 2>&1` merges file descriptors for the running process AND all child processes it spawns (FDs are inherited via `fork/exec`). Every tool script under `scripts/linux/tools/` is launched via `bash ${tool_script}` — they inherit the merged FD. Adding `exec 2>&1` to child scripts would be redundant and misleading.
+
+**Why not modify tool scripts anyway?**
+
+Audited all 6 tool scripts (`auth.sh`, `copilot-cli.sh`, `gh.sh`, `nvm.sh`, `uv.sh`, `zsh.sh`) — none contain `>&2` redirections. Adding `exec 2>&1` to files that have no stderr output would create noise and false expectations.
+
+#### Alternatives Considered
+
+- Writing `log_error()` to stdout instead of stderr: rejected — stderr is semantically correct for errors; tools like CI log parsers and shell `2>` redirections rely on it.
+- Adding `exec 2>&1` to every script individually: rejected — redundant once the root process has merged FDs.
+
+#### PR #70: Merged
+- Branch: `squad/68-fix-output-ordering` (deleted)
+- CI: 4/4 green
+- Approved by: Mickey
+
+---
+
+### Issue #69 — CRLF guard in `devcontainer.json`
+
+#### Problem
+
+PR #66 added `*.sh text eol=lf` to `.gitattributes` and ran `git add --renormalize .`. This normalizes git's index (what it will write on future `git checkout` calls) but does NOT rewrite existing files in the working tree. Windows users who had already cloned the repo before PR #66 still have CRLF `.sh` files on disk. When the Devcontainer bind-mounts `/workspaces/dev-setup` from the Windows host, bash executes those CRLF files and fails with `set: pipefail\r: invalid option`.
+
+#### Solution
+
+Add `onCreateCommand` to `.devcontainer/devcontainer.json`:
+
+```json
+"onCreateCommand": "find . -name '*.sh' | xargs sed -i 's/\\r//'",
+```
+
+Place it BEFORE `postCreateCommand` in the JSON so the intent is clear: strip CRLF first, then run setup.
+
+**Why `onCreateCommand` and not `postCreateCommand`?**
+
+`onCreateCommand` runs once when the container is first created, before `postCreateCommand`. Stripping CRLF in `postCreateCommand` would be too late — `bash setup.sh` is called inside `postCreateCommand`, which is the script that fails.
+
+**Why `sed -i 's/\r//'` and not `dos2unix`?**
+
+`dos2unix` is not guaranteed to be available in all base images. `sed` is POSIX and present everywhere. The `find | xargs sed -i` pattern is standard and well-understood.
+
+**Safety:**
+
+- On an already-LF system (Codespaces, CI, any Linux clone): `sed 's/\r//'` is a no-op — no `\r` characters exist to remove.
+- On a Windows bind-mount: strips `\r` before any shell script runs.
+- Idempotent: can run multiple times safely.
+
+#### Alternatives Considered
+
+- Running `git checkout -- .` in `onCreateCommand`: rejected — this would discard any uncommitted working tree changes the user may have.
+- Using a `Dockerfile` `COPY` step to strip CRLF at image build time: rejected — doesn't apply to bind-mount scenarios where the host files are mounted live.
+- Relying solely on `.gitattributes` `eol=lf`: insufficient — only affects future checkouts, not existing working trees.
+
+#### PR #71: Merged
+- Branch: `squad/69-devcontainer-crlf-guard` (deleted)
+- CI: 4/4 green
+- Approved by: Mickey
+
 ---
 
 ## Governance
