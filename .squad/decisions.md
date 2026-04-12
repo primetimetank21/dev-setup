@@ -887,6 +887,29 @@ develop is branch-protected (can't delete or force-push). Regular merges keep hi
 
 ---
 
+## [2026-04-13] Documentation Update: Sprint Wrap Process Docs Aligned
+
+**Date:** 2026-04-13T15:45:00Z  
+**By:** Mickey  
+**Status:** Implemented
+
+### Decision
+
+Updated Ralph's charter (`.squad/agents/ralph/charter.md`) and issue-lifecycle template (`.squad/templates/issue-lifecycle.md`) to enforce regular merge commits (`--merge`) for develop → main promotion PRs. Squash merges explicitly banned in both process documents.
+
+### Changes
+
+- `.squad/agents/ralph/charter.md`: Updated merge gate rule from `--squash` to `--merge`
+- `.squad/agents/ralph/charter.md`: Added explicit warning that sprint wrap PRs must never use squash
+- `.squad/templates/issue-lifecycle.md`: Added context documenting sprint wrap merge strategy
+- Both files reference `.squad/decisions.md` for the no-squash rationale
+
+### Rationale
+
+Issue #97 closed. This ensures all process documentation and team member charters reflect the no-squash policy already captured in decisions.md. Squash merges create permanent history divergence on protected branches; regular merge commits keep develop and main in sync.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

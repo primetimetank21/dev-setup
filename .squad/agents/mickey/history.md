@@ -58,6 +58,8 @@ Established foundational architecture, team processes, initial feature set, and 
 
 ## Learnings
 
+Completed Issue #97 — updated Ralph charter and issue-lifecycle template to ban squash merges for sprint wrap PRs. PR #99 merged into develop, PR #100 (sprint wrap) merged into main. All process docs now consistent with no-squash policy.
+
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
 ---
