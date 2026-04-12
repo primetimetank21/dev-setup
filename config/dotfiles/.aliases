@@ -91,6 +91,7 @@ alias sb="source ~/.bashrc"                   # reload bash config
 alias vz="vim ~/.zshrc"                       # edit zsh config in vim
 alias sz="source ~/.zshrc"                    # reload zsh config
 alias vv="vim ~/.vimrc"                       # edit vim config in vim
+alias va="vim ~/.aliases"                     # edit aliases file in vim
 
 # ── Dev shortcuts ────────────────────────────────────────────────────────────
 
