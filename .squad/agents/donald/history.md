@@ -214,3 +214,42 @@ for existing Windows checkouts.
 ✅ Decision records merged from inbox into `.squad/decisions.md`  
 ✅ Clean squash-merge history maintained  
 ✅ Windows Devcontainer setup now has ordered diagnostics + CRLF remediation
+
+---
+
+## Learnings
+
+### 2026-04-13: Issue #72 — Directory-based install check replaces exit-code probe (PR #73)
+
+`gh copilot -- --help &>/dev/null 2>&1` swallows the "Install GitHub Copilot CLI? [y/N]" prompt
+on `gh 2.89.0+`. stdin gets EOF → defaults to 'N' → binary never downloads. The subsequent
+`gh extension install github/gh-copilot` fails with "matches the name of a built-in" — we
+detected that message and claimed success, but the binary was never there.
+
+Fix: check `~/.local/share/gh/copilot` directory existence for idempotency. Trigger download via
+`printf 'y\n' | timeout 60 gh copilot >/dev/null 2>&1`. Verify by re-checking the directory.
+Removed the `gh extension install` and `gh alias delete` paths entirely.
+
+**Rule:** Never use `gh copilot` exit code as an install probe — gh intercepts the command before
+the binary runs. Use filesystem state (`~/.local/share/gh/copilot`) instead.
+
+### 2026-04-13: Issue #72 — PR #73 Merged (Directory Check + printf Pipe)
+
+**Status:** Merged to `develop` via --squash --delete-branch --admin
+
+**Changes:**
+- Directory existence check: `~/.local/share/gh/copilot` (non-empty)
+- Install trigger: `printf 'y\n' | timeout 60 gh copilot >/dev/null 2>&1`
+- Removed `gh extension install` and `gh alias delete` code paths
+- Auth check moved before directory check (fail early)
+- Idempotent: safe to re-run, skips download if binary already present
+
+**Verification:**
+✓ CI: 4/4 checks passing
+✓ Tested on gh 2.89.0+ (built-in command version)
+✓ Non-interactive stdin piping works in non-TTY environments
+✓ Timeout prevents hangs from interactive binary after download
+✓ Decision documented to `.squad/decisions.md`
+
+**Reviewed by:** Mickey  
+**Merge method:** Admin bypass (standard squad workflow)

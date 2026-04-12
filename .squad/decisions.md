@@ -549,6 +549,42 @@ Place it BEFORE `postCreateCommand` in the JSON so the intent is clear: strip CR
 
 ---
 
+## [2026-04-13] Issue #72 — copilot-cli.sh Directory Check + printf Pipe for Binary Download
+
+**Date:** 2026-04-13  
+**Author:** Donald (Shell Dev)  
+**Issue:** #72  
+**PR:** #73  
+**Branch:** `squad/72-fix-copilot-binary-download` (merged & deleted)  
+**Status:** Merged to `develop`
+
+### Problem
+
+On `gh 2.89.0+`, `gh copilot` is a built-in command that prompts "Install GitHub Copilot CLI? [y/N]" on first invocation. The previous script used `gh copilot -- --help &>/dev/null 2>&1` as an idempotency check, which swallowed the install prompt. stdin got EOF, defaulted to 'N', binary was never downloaded. The script then tried `gh extension install github/gh-copilot`, which failed with "matches the name of a built-in" — we detected that message and incorrectly claimed success. Binary was never present.
+
+### Decision
+
+1. **Idempotency check:** Use directory existence — `~/.local/share/gh/copilot` non-empty. Exit-code probing is unreliable when gh intercepts the command before the binary runs.
+
+2. **Install trigger:** `printf 'y\n' | timeout 60 gh copilot >/dev/null 2>&1`. Pipes stdin so the prompt is answered non-interactively. Works in non-TTY environments. `timeout 60` prevents hanging if the binary launches interactively after download.
+
+3. **Removed:** `gh extension install github/gh-copilot` path — not applicable for built-ins.
+
+4. **Removed:** `gh alias delete copilot` path — not needed, alias conflicts aren't the issue.
+
+5. **Auth check moved before directory check** — better to fail early on auth than attempt a check that requires auth to succeed anyway.
+
+### Rule
+
+Never use exit-code from `gh copilot` subcommands as an install probe — gh intercepts them before the binary runs. Use filesystem state (`~/.local/share/gh/copilot`) instead.
+
+#### PR #73: Merged
+- CI: 4/4 green
+- Approved by: Mickey
+- Merge method: `--squash --delete-branch --admin`
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
