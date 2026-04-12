@@ -2,7 +2,7 @@
     "name": "dev-setup Dev Container",
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 
-    "onCreateCommand": "find . -name '*.sh' -o -name '.aliases' -o -name '.vimrc' -o -name '*.template' | xargs sed -i 's/\\r//'",
+    "onCreateCommand": "find . -type f \\( -name '*.sh' -o -name '.aliases' -o -name '.vimrc' -o -name '.editorconfig' -o -name '.zshrc' -o -name '.bashrc' \\) | xargs sed -i 's/\\r//'",
 
     "postCreateCommand": ["bash", "-c", "bash setup.sh && git config --global user.name \"${GIT_AUTHOR_NAME:-Earl Tankard, Jr., Ph.D.}\" && git config --global user.email \"${GIT_AUTHOR_EMAIL:-45021016+primetimetank21@users.noreply.github.com}\""],
 
