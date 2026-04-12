@@ -66,7 +66,7 @@ install_prerequisites() {
     brew install curl git
   else
     sudo apt-get update -qq
-    sudo apt-get install -y curl git build-essential
+    sudo apt-get install -y curl git build-essential vim
   fi
 
   log_ok "Prerequisites installed"
