@@ -253,3 +253,36 @@ the binary runs. Use filesystem state (`~/.local/share/gh/copilot`) instead.
 
 **Reviewed by:** Mickey  
 **Merge method:** Admin bypass (standard squad workflow)
+
+---
+
+### 2026-04-13: Issues #75 and #76 — vim prerequisites and script PTY for Copilot CLI
+
+**Issue #75 — Add vim to system prerequisites (PR #77)**
+
+Added `vim` to the `apt-get install` line in `scripts/linux/setup.sh`. The vb and vz aliases
+in Pluto's dotfiles invoke `vim` directly — without it in prerequisites, they fail on fresh
+Devcontainer builds.
+
+File changed: `scripts/linux/setup.sh` line 69
+Pattern: `sudo apt-get install -y curl git build-essential vim`
+Branch: `squad/75-add-vim-to-prerequisites`
+PR: #77 (open, targeting `develop`)
+
+**Issue #76 — Copilot CLI binary download fails in non-TTY context (PR #78)**
+
+`gh copilot` checks `isatty(stdin)` — when stdin is a pipe (non-TTY, as in Devcontainer
+`postCreateCommand`), it ignores piped input and defaults to not downloading the binary.
+
+Fix: Replace `printf 'y\n' | timeout 60 gh copilot` with `printf 'y\n' | timeout 120 script -q /dev/null -c "gh copilot"`.
+`script` (from util-linux, always on Ubuntu) creates a pseudo-TTY. The child process runs with
+stdin connected to the PTY slave, so `isatty(stdin)` returns true and accepts the piped `y`.
+Also bumped timeout from 60s to 120s to allow download time.
+
+File changed: `scripts/linux/tools/copilot-cli.sh` lines 40-46
+Pattern: `script -q /dev/null -c "gh copilot"` wraps the command in a PTY
+Branch: `squad/76-fix-copilot-cli-non-interactive`
+PR: #78 (open, targeting `develop`)
+
+**Rule:** When automating interactive CLI tools that check `isatty()`, use `script -q /dev/null -c "command"`
+to provide a pseudo-TTY. Direct piping to stdin fails if the tool ignores non-TTY input.

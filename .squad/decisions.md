@@ -585,6 +585,61 @@ Never use exit-code from `gh copilot` subcommands as an install probe — gh int
 
 ---
 
+---
+
+## [2026-04-13] Issues #75 & #76 — vim Prerequisite & Copilot CLI PTY Fix
+
+**Date:** 2026-04-13  
+**Author:** Donald (Shell Dev)  
+**Issues:** #75, #76  
+**PRs:** #77 (feat: add vim), #78 (fix: copilot-cli PTY)  
+**Status:** Open, pending review (target: develop)
+
+### Issue #75 — vim Prerequisite
+
+#### Problem
+
+Pluto's dotfiles include aliases `vb` (vim bash config) and `vz` (vim zsh config) that invoke `vim` directly. On fresh Devcontainer builds without vim in system prerequisites, these aliases fail with "vim: command not found".
+
+#### Solution
+
+Add `vim` to system packages in `scripts/linux/setup.sh` line 69:
+```bash
+sudo apt-get install -y curl git build-essential vim
+```
+
+**Why:** vim is a hard dependency for user-facing aliases. Adding to prerequisites ensures a working environment on first boot. Idempotent and backward-compatible.
+
+---
+
+### Issue #76 — Copilot CLI Non-Interactive Binary Download
+
+#### Problem
+
+`gh copilot` binary download fails in non-interactive environments (Devcontainer `postCreateCommand`). The `gh` CLI checks `isatty(stdin)` — when stdin is a pipe, it ignores piped input and defaults to not downloading. Direct piping (`echo 'y' | gh copilot`) fails silently.
+
+#### Solution
+
+Use `script` (from util-linux, always on Ubuntu) to create a pseudo-TTY in `scripts/linux/tools/copilot-cli.sh` lines 40–46:
+
+```bash
+printf 'y\n' | timeout 120 script -q /dev/null -c "gh copilot"
+```
+
+**Why `script`?**
+- Creates a pseudo-TTY; child process `gh copilot` runs with stdin connected to TTY slave
+- `isatty(stdin)` returns true → accepts piped `y` input
+- No external dependencies — script is from util-linux (base Ubuntu package)
+- Alternative (`expect`, `unbuffer`) requires additional package installs; rejected
+
+**Timeout bumped to 120s** from 60s to allow binary download on slow networks.
+
+### Rule
+
+**When automating interactive CLI tools that check `isatty()`:** Use `script -q /dev/null -c "command"` to provide pseudo-TTY. Direct piping fails if the tool ignores non-TTY input.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
