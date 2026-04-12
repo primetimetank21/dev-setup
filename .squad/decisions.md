@@ -419,6 +419,67 @@ Scribe must **ALWAYS commit AND push after logging**. Not just commit — push t
 
 User request — captured for team memory. Ensures that all squad work (logs, decisions, cross-agent updates) is immediately persisted to the remote branch without delay or manual intervention.
 
+---
+
+## Issue #81 — Copilot CLI Standalone Binary Install
+
+**Date:** 2026-04-12  
+**By:** Mickey (Lead) — Review of PR #82  
+**Status:** Approved & Merged
+
+### Decision
+
+Replace the broken `CI=true gh copilot` shim approach with the official standalone installer (`curl -fsSL https://gh.io/copilot-install | bash`).
+
+### Summary
+
+Donald identified that `gh copilot` is a shim wrapper, not the actual binary. The previous `CI=true` + timeout hack was a workaround that didn't solve the root problem. The fix delegates to the official installer, which correctly places the standalone binary at `~/.local/bin/copilot`.
+
+### Review Checklist
+
+#### ✅ Idempotency
+- Binary check: `[[ -x "$COPILOT_BIN" ]]` where `COPILOT_BIN="${HOME}/.local/bin/copilot"`
+- Exits 0 immediately if already installed
+- Correct for non-root use case
+
+#### ✅ Error Handling
+- Set -euo pipefail present
+- Install wrapped in if-then with graceful fallback
+- No silent failures; clear manual instructions on failure
+
+#### ✅ Logic & Path Coverage
+- Binary at `~/.local/bin/copilot` (non-root case)
+- PATH already includes `~/.local/bin` via dev-setup managed block
+- Removes `gh auth` dependency for install step (only needed to use the tool)
+
+#### ⚠️ Root User Case
+- **Issue:** Script checks `~/.local/bin/copilot` but root would install to `/usr/local/bin/copilot`
+- **Verdict:** **Acceptable** — Script is explicitly for non-root dev environments. Root use is outside expected scope. Trade-off for simplicity is justified.
+
+#### ✅ `curl | bash` Pattern
+- Source: Official GitHub Copilot CLI installer (https://gh.io/copilot-install)
+- Standard for dev tooling; acceptable for a dev setup script
+
+#### ✅ Simplicity
+- LOC reduced from 51 to 37 lines (14 lines removed)
+- Removed: `gh auth` check, `CI=true timeout` hack, PTY workarounds
+- Delegates to official installer — the right solution
+
+### Improvements
+
+1. **Fixes root cause:** Installs actual binary, not shim wrapper
+2. **Removes auth dependency:** `gh auth` only needed to use tool, not install
+3. **Better idempotency:** Checks for binary itself, not shim directory
+4. **Simpler:** No environment variable hacks or timeout workarounds
+5. **Post-install validation:** `copilot --version` now works correctly
+
+### Action Taken
+
+- Approved PR #82
+- Merged to `develop` (squash merge) on 2026-04-12T00:11:40Z
+- Remote branch deleted
+- Issue #81 closed
+
 ## [2026-04-13] Two-Issue Split for Install Script Fixes (Issues #68–#69)
 
 **Date:** 2026-04-13  
