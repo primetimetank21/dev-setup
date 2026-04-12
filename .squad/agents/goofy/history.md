@@ -34,3 +34,17 @@ Also added `Write-Err` helper and `Test-WingetAvailable` guard (exits 1 with hel
 **Decision:** winget as sole package manager — it's built into Windows 10 1709+ and covers all required tools cleanly.
 
 **Note:** Multi-agent environment required use of `git worktree` to isolate changes from concurrent branch checkouts.
+
+## 2026-04-12 — Issue #75: Add vim to system prerequisites (PR #77)
+
+**Branch:** `squad/75-add-vim-prerequisite` (merged, deleted)
+
+`install_prerequisites()` in `scripts/linux/setup.sh` was missing `vim` from the `apt-get install -y` list. Aliases `vb` (edit `~/.bashrc`) and `vz` (edit `~/.zshrc`) invoke `vim` directly — without it present, both aliases fail on fresh Devcontainer builds with "command not found".
+
+**Fix:** Added `vim` to the `apt-get install -y` line in `install_prerequisites()`.
+
+```bash
+sudo apt-get install -y curl git build-essential vim
+```
+
+**PR #77** reviewed by Mickey, CI 4/4 green, squash-merged to `develop`. Branch deleted.

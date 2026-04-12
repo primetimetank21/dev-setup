@@ -182,3 +182,17 @@ This session completed the install script fixes that address Windows Devcontaine
 
 ---
 
+
+## 2026-04-12: Reviewed and merged PRs #77 and #78
+
+**PR #77 - feat(setup): add vim to system prerequisites**
+- Reviewed Goofy's single-line fix adding vim to install_prerequisites() in scripts/linux/setup.sh.
+- CI: 4/4 green. Approved and squash-merged to develop. Branch squad/75-add-vim-prerequisite deleted.
+
+**PR #78 - fix(copilot-cli): use script PTY for non-interactive binary download**
+- Reviewed Donald's replacement of the piped-stdin approach with script(1) PTY wrapping.
+- script(1) is in util-linux (always on Ubuntu); pseudo-TTY is the correct solution for isatty() gating. Timeout bumped 60s to 120s.
+- CI: 4/4 green. Approved and squash-merged to develop. Branch squad/76-pty-copilot-download deleted.
+
+**Pattern learned:** When automating a CLI that gates on isatty(), wrap in: script -q /dev/null -c 'command'
+Not expect or unbuffer -- those require extra package installs.

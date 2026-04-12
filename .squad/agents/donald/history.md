@@ -286,3 +286,10 @@ PR: #78 (open, targeting `develop`)
 
 **Rule:** When automating interactive CLI tools that check `isatty()`, use `script -q /dev/null -c "command"`
 to provide a pseudo-TTY. Direct piping to stdin fails if the tool ignores non-TTY input.
+
+### 2026-04-12: PRs #77 and #78 merged to develop
+
+Both PRs reviewed by Mickey and squash-merged.
+- PR #77 (vim prerequisite): merged, branch squad/75-add-vim-prerequisite deleted.
+- PR #78 (script PTY): merged, branch squad/76-pty-copilot-download deleted.
+CI: 4/4 green on both. Issues #75 and #76 closed.
