@@ -328,3 +328,26 @@ Both PRs reviewed by Mickey and squash-merged.
 - PR #77 (vim prerequisite): merged, branch squad/75-add-vim-prerequisite deleted.
 - PR #78 (script PTY): merged, branch squad/76-pty-copilot-download deleted.
 CI: 4/4 green on both. Issues #75 and #76 closed.
+
+### 2026-04-13: Issue #76 (revised) — Standalone copilot-cli install via official script (PR #82)
+
+Replaced the entire copilot-cli installation approach. Prior attempts using `CI=true gh copilot` failed because `gh copilot` is a shim wrapper that delegates to the standalone `github/copilot-cli` binary, but the binary never actually downloads in CI environments.
+
+**Root Cause:** `gh copilot` wrapper prompts for binary install when it's not present. Setting `CI=true` or using PTY tricks only partially worked — the binary download was unreliable and `copilot --version` still failed after container setup.
+
+**Fix:** Use the official standalone install script from `github/copilot-cli` repository:
+- Install command: `curl -fsSL https://gh.io/copilot-install | bash`
+- Non-root install: binary lands at `~/.local/bin/copilot` (already in PATH via dev-setup managed block)
+- Idempotency check: `[[ -x ~/.local/bin/copilot ]]` (checks for actual binary, not shim directory)
+- **Removes dependency on `gh auth` for the install step** — auth is only needed to use the tool, not install it
+
+**Changes:**
+- Replaced entire content of `scripts/linux/tools/copilot-cli.sh`
+- Removed `gh auth status` check before install
+- Removed `CI=true timeout` hack
+- Removed `script -q` PTY workaround
+- Simplified from 51 lines to 37 lines
+
+**Branch:** `fix/copilot-cli-standalone-install`
+**Issue:** #76  
+**PR:** #82 (open, targeting `develop`)
