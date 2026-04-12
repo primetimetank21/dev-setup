@@ -3,7 +3,10 @@
 #
 # Called by: scripts/linux/setup.sh
 # Owner:     Donald
-# Idempotent: yes — checks if gh copilot is already available (built-in or extension)
+# Idempotent: yes — uses 'gh copilot -- --help' to probe the actual Copilot binary,
+#             not gh's wrapper. On gh 2.89.0+, 'gh copilot --help' exits 0 even
+#             before the binary is downloaded (shows gh's own help). The '--' pass-through
+#             hits the real binary, triggering a proactive download if needed.
 #
 # Prerequisite: gh CLI must be installed and authenticated (see gh.sh)
 #
@@ -21,9 +24,12 @@ if ! command -v gh &>/dev/null; then
   exit 0
 fi
 
-# Check if gh copilot is already available (built-in in gh 2.x+ or installed extension)
-if gh copilot --help &>/dev/null 2>&1; then
-  log_ok "GitHub Copilot CLI already available"
+# Check if gh copilot is fully operational — passes through to the actual binary.
+# On gh 2.89.0+, this also triggers a proactive binary download if not yet present.
+# 'gh copilot --help' is NOT sufficient: it exits 0 even before the binary is downloaded
+# because it shows gh's own wrapper help, not the CLI binary's help.
+if gh copilot -- --help &>/dev/null 2>&1; then
+  log_ok "GitHub Copilot CLI already installed"
   exit 0
 fi
 
