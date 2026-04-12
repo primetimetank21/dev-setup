@@ -874,6 +874,17 @@ Sprint wrap PRs from develop → main must use REGULAR merge commits (not squash
 
 develop is branch-protected (can't delete or force-push). Regular merges keep histories connected automatically. This eliminates the need for post-sprint develop reset operations.
 
+## [20260412T020010] User Directive — No-Squash for Sprint Wrap PRs
+
+**By:** Earl Tankard, Jr., Ph.D. (via Copilot)  
+**Date:** 2026-04-12T02:00:10Z
+
+**What:** Going forward, ALL sprint wrap PRs (develop → main) MUST use regular merge commits. NEVER squash.
+
+**Why:** Squash merges create permanent history divergence because develop is branch-protected. Regular merges keep both branches in sync.
+
+**Rationale:** This is a hard rule with no exceptions.
+
 ---
 
 ## Governance
