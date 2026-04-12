@@ -405,6 +405,22 @@ The "copy template if no `.zshrc`" path is preserved unchanged — correct behav
 
 ---
 
+## [2026-04-12] User Directive — Scribe Must Always Push After Commit
+
+**Date:** 2026-04-12  
+**By:** Earl Tankard, Jr., Ph.D. (via Copilot)  
+**Status:** Adopted
+
+### Decision
+
+Scribe must **ALWAYS commit AND push after logging**. Not just commit — push too. No exceptions. This is a standing directive from the repo owner.
+
+### Rationale
+
+User request — captured for team memory. Ensures that all squad work (logs, decisions, cross-agent updates) is immediately persisted to the remote branch without delay or manual intervention.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
