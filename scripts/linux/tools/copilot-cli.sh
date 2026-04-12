@@ -30,7 +30,13 @@ if ! gh auth status &>/dev/null; then
   exit 0
 fi
 
+# Remove any conflicting gh alias that would block extension install
+if gh alias list 2>/dev/null | grep -q "^copilot"; then
+  log_warn "Removing conflicting gh alias 'copilot' (leftover from prior install)..."
+  gh alias delete copilot
+fi
+
 log_info "Installing GitHub Copilot CLI..."
 gh extension install github/gh-copilot
 
-log_ok "Copilot CLI installed: $(gh copilot --version 2>/dev/null || echo 'installed')"
+log_ok "GitHub Copilot CLI installed — run 'gh copilot --help' to get started"
