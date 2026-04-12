@@ -17,6 +17,14 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-04-08: Bug fix — gh alias conflict blocks copilot-cli extension install
+
+`gh extension install` silently fails (stdout, not stderr) when an existing gh alias matches the extension's command name. For `gh-copilot`, this means any stale `copilot` alias from a prior partial install blocks reinstall entirely.
+
+Fix pattern: guard with `gh alias list | grep -q "^copilot"` and delete before installing. Applied to `scripts/linux/tools/copilot-cli.sh` on branch `squad/fix-copilot-cli-alias-conflict`, PR #63.
+
+Also: never use `$(gh copilot --version)` in a post-install check — if the alias conflict exists, that subshell triggers the same error and leaks it into log output. Use `gh extension list | grep -q "gh-copilot"` or a plain success string instead.
+
 ### 2026-04-07: Issues #1, #4, #5, #6, #7, #9 — Core Linux/macOS setup scripts implemented
 
 Implemented the full installer suite on branch `squad/1-linux-core-setup` (based on Mickey's `squad/3-os-detection-entry-point`):
