@@ -37,11 +37,12 @@ fi
 
 log_info "Installing GitHub Copilot CLI binary..."
 
-# Pipe 'y' to answer the install prompt non-interactively.
-# timeout 60 prevents hanging if the binary launches interactively after download.
+# Pipe 'y' to answer the install prompt non-interactively via script(1) PTY.
+# script creates a pseudo-TTY so gh copilot sees isatty(stdin)=true and accepts input.
+# timeout 120 prevents hanging if the binary launches interactively after download.
 # set +e / set -e because timeout exits non-zero when it kills the process.
 set +e
-printf 'y\n' | timeout 60 gh copilot >/dev/null 2>&1
+printf 'y\n' | timeout 120 script -q /dev/null -c "gh copilot" >/dev/null 2>&1
 set -e
 
 if [[ -d "$COPILOT_INSTALL_DIR" ]] && [[ -n "$(ls -A "$COPILOT_INSTALL_DIR" 2>/dev/null)" ]]; then
