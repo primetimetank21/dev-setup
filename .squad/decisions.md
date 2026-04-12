@@ -803,6 +803,47 @@ Add `tmux` to the system package installation in `scripts/linux/setup.sh`:
 
 ---
 
+## [2026-04-12] Session Retro Written — Session Wrap Complete
+
+**Date:** 2026-04-12  
+**Author:** Mickey (Lead)  
+**Status:** ✅ Complete
+
+### Summary
+
+Sprint retrospective for the 2026-04-12 session wrap has been written to `.squad/retros/2026-04-12-session-retro.md`.
+
+### Work Completed This Session
+
+1. **Verified main/develop state** — Confirmed files are identical despite commit history divergence (expected with squash-merge workflow). Explained to Earl that the divergence is normal and documented the pattern.
+2. **Branch cleanup (#95)** — Donald deleted 11 local + 2 remote stray branches. Board is clean.
+3. **Sprint wrap PR #96** — develop → main PR to sync .squad/decisions.md. CI passed (8/8). Mickey merged to main. develop preserved.
+4. **Final verification** — main is fully up to date. Only main and develop remain.
+
+### Retro Insights
+
+**What went well:**
+- Verify → Action → Close cycle. Earl's divergence question was excellent hygiene.
+- Branch cleanup executed cleanly with no rework.
+- Promotion smooth; `--admin` pattern is now documented and repeatable.
+- Process documentation is paying dividends.
+
+**What could improve:**
+- Stray branches accumulating as a pattern (2nd cleanup in project history).
+- Squash-merge behavior isn't obvious to new users.
+- No CI test validates squash-merge commit history.
+
+**Action items:**
+- [Mickey] Add "Why Main Diverges from Develop" to CONTRIBUTING.md.
+- [Mickey] Establish branch cleanup SOP with sprint-end audit.
+- [Chip] Optional: Validate squash-merge linearity in CI.
+
+### Decision
+
+This decision documents that the session retro was written and the board is clean. The action items from the retro should be incorporated into the next sprint planning cycle.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus
