@@ -512,6 +512,34 @@ Donald identified that `gh copilot` is a shim wrapper, not the actual binary. Th
 
 1. **Fixes root cause:** Installs actual binary, not shim wrapper
 2. **Removes auth dependency:** `gh auth` only needed to use tool, not install
+
+## [2026-04-12] Branch Cleanup Complete — Issue #95
+
+**Date:** 2026-04-12T05:42:16Z  
+**Team:** Mickey (issue creation), Donald (execution)
+
+**Decision:** Deleted 11 local + 2 remote stray branches from repository.
+
+**Branches Removed (Local):**
+- feat/add-va-alias
+- fix/copilot-cli-standalone-install
+- squad/66-fix-gitattributes-eol-lf
+- squad/68-fix-output-ordering
+- squad/69-devcontainer-crlf-guard
+- squad/72-fix-copilot-binary-download
+- squad/75-add-vim-to-prerequisites
+- squad/76-fix-copilot-cli-non-interactive
+- squad/79-ci-true-copilot-install
+- squad/92-guard-sb-sz-aliases
+- squad/fix-copilot-cli-alias-conflict
+
+**Branches Removed (Remote):**
+- squad/88-fix-crlf-line-endings
+- squad/92-guard-sb-sz-aliases
+
+**Rationale:** Team rule — all merged branches must be deleted promptly to maintain a clean branch list. These branches were already integrated to `develop`.
+
+**Verification:** Final `git branch -a` shows only `develop`, `main`, and their remotes.
 3. **Better idempotency:** Checks for binary itself, not shim directory
 4. **Simpler:** No environment variable hacks or timeout workarounds
 5. **Post-install validation:** `copilot --version` now works correctly
