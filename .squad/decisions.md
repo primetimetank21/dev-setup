@@ -915,3 +915,8 @@ Issue #97 closed. This ensures all process documentation and team member charter
 - All meaningful changes require team consensus
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
+### 20260412T021515: User directive
+**By:** primetimetank21 (via Copilot)
+**What:** Always delete merged branches both locally AND remotely. No stale branches ever — clean up local tracking refs at the same time as remote deletion.
+**Why:** User request — sick of seeing stale branches locally after remote branches are deleted
+
