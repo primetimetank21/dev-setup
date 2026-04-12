@@ -920,3 +920,10 @@ Issue #97 closed. This ensures all process documentation and team member charter
 **What:** Always delete merged branches both locally AND remotely. No stale branches ever — clean up local tracking refs at the same time as remote deletion.
 **Why:** User request — sick of seeing stale branches locally after remote branches are deleted
 
+
+---
+### 20260412T022446: User directive — Scribe file scope constraint
+**By:** primetimetank21 (via Copilot)
+**What:** Scribe MUST NEVER modify files outside of .squad/. Root-level project files (.gitignore, .gitattributes, README.md, setup.sh, setup.ps1, etc.) are strictly off-limits for Scribe. Scribe's only authorized write targets are .squad/ files.
+**Why:** Scribe modified .gitignore without authorization, un-ignoring log directories. This is a scope violation.
+
