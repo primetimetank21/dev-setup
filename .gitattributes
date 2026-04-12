@@ -1,8 +1,11 @@
+# Normalize line endings
+* text=auto
+
+# Shell scripts must always use LF — CRLF breaks bash on Linux/Devcontainers
+*.sh   text eol=lf
+*.bash text eol=lf
+
 # Squad: union merge for append-only team state files
-.squad/decisions.md merge=union
-.squad/agents/*/history.md merge=union
-.squad/log/** merge=union
-.squad/orchestration-log/** merge=union
 .squad/decisions.md merge=union
 .squad/agents/*/history.md merge=union
 .squad/log/** merge=union

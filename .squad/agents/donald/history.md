@@ -123,3 +123,8 @@ Cleaned up the 69MB PowerShell/.NET SDK DLL archive (`ps.tar.gz`) that was accid
 
 This reduces repo size and prevents accidental commits of compiled binaries. Note: git history rewrite skipped per issue spec (nice-to-have only).
 PR: #59 (open, targeting `develop`)
+
+## CRLF fix
+- Fixed .gitattributes to add eol=lf for *.sh/*.bash
+- Root cause: Windows git checkout writes CRLF; Linux bash chokes on \r at line ends
+- PR #66 opened
