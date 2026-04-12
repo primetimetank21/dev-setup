@@ -15,6 +15,7 @@
 #   windows-compat    — Cygwin/MSYS2/Git Bash (limited support, use setup.ps1)
 
 set -euo pipefail
+exec 2>&1  # Merge stderr into stdout for ordered output in piped/Devcontainer environments
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

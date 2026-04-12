@@ -1,8 +1,18 @@
+# Enforce LF line endings for all text files on checkout
+* text=auto eol=lf
+
+# Explicit overrides for key file types
+*.sh      text eol=lf
+*.bash    text eol=lf
+*.zsh     text eol=lf
+*.md      text eol=lf
+*.json    text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+.aliases  text eol=lf
+.vimrc    text eol=lf
+
 # Squad: union merge for append-only team state files
-.squad/decisions.md merge=union
-.squad/agents/*/history.md merge=union
-.squad/log/** merge=union
-.squad/orchestration-log/** merge=union
 .squad/decisions.md merge=union
 .squad/agents/*/history.md merge=union
 .squad/log/** merge=union
