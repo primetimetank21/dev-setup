@@ -17,6 +17,24 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-04-12: Bug fix — gh 2.89.0+ idempotency check uses wrong command (PR #63 additional fix)
+
+`gh copilot --help` exits 0 unconditionally on gh 2.89.0+ because gh intercepts the flag
+and shows its own wrapper help — it never touches the Copilot CLI binary. This caused the
+idempotency check to always short-circuit on fresh systems, skipping the binary download.
+
+Fix: change to `gh copilot -- --help`. The `--` passes the flag through to the actual binary.
+On gh 2.89.0+ without the binary, this triggers a proactive download. On older gh without the
+extension, it exits non-zero and falls through to `gh extension install` as intended.
+
+Updated file-header comment in `scripts/linux/tools/copilot-cli.sh` to document the nuance.
+Decision dropped to `.squad/decisions/inbox/donald-idempotency-passthrough.md`.
+Branch: `squad/fix-copilot-cli-alias-conflict` — PR #63.
+
+**Rule:** Never probe a gh built-in wrapper with `--help` alone. Use `-- --help` to reach the binary.
+
+---
+
 ### 2026-04-08: gh 2.x+ built-in promotion breaks extension install (PR #63 revised)
 
 `gh 2.89.0` promotes `gh copilot` to a **built-in command**. This breaks two earlier patterns:
