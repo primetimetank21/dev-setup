@@ -7,10 +7,10 @@
 #
 # Prerequisite: gh CLI must be installed and authenticated (see gh.sh, auth.sh)
 #
-# Note: On gh 2.89.0+, 'gh copilot' is a built-in that prompts interactively
-# on first use. Output suppression swallows that prompt, stdin gets EOF, and
-# the binary is never downloaded. This script pipes 'y' to trigger a
-# non-interactive download and verifies via directory existence check.
+# Note: On gh 2.89.0+, 'gh copilot' checks update.IsCI() (CI env var) before
+# showing the interactive install prompt (pkg/cmd/copilot/copilot.go). Setting
+# CI=true triggers a non-interactive binary download — no PTY or 'script' needed.
+# Binary is installed as ~/.local/share/gh/copilot/copilot (named "copilot").
 
 set -euo pipefail
 
@@ -37,13 +37,11 @@ fi
 
 log_info "Installing GitHub Copilot CLI binary..."
 
-# Pipe 'y' to answer the install prompt non-interactively via script(1) PTY.
-# script creates a pseudo-TTY so gh copilot sees isatty(stdin)=true and accepts input.
-# timeout 120 prevents hanging if the binary launches interactively after download.
-# set +e / set -e because timeout exits non-zero when it kills the process.
-set +e
-printf 'y\n' | timeout 120 script -q /dev/null -c "gh copilot" >/dev/null 2>&1
-set -e
+# gh 2.89.0+ checks update.IsCI() before showing the install prompt (pkg/cmd/copilot/copilot.go).
+# When CI=true, IsCI() returns true and gh downloads the binary non-interactively.
+# The binary is installed as ~/.local/share/gh/copilot/copilot (named "copilot", not "gh-copilot").
+# timeout 60: the copilot binary may wait for input after download — kill it once install is done.
+CI=true timeout 60 gh copilot >/dev/null 2>&1 || true
 
 if [[ -d "$COPILOT_INSTALL_DIR" ]] && [[ -n "$(ls -A "$COPILOT_INSTALL_DIR" 2>/dev/null)" ]]; then
   log_ok "GitHub Copilot CLI installed"
