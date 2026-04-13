@@ -17,6 +17,20 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### End-of-session cleanup workflow (2026-04-12)
+
+When finishing a multi-agent session with uncommitted changes on merged feature branches:
+
+1. **Stash changes** on the feature branch: `git stash`
+2. **Checkout develop** and **pull latest**: `git checkout develop && git pull origin develop`
+3. **Pop the stash**: `git stash pop` (reapply changes to develop)
+4. **Commit and push** to develop with appropriate co-authored-by trailer
+5. **Delete merged local branches**: `git branch -d <branch>` (or `-D` if needed)
+6. **Delete remote branches**: `git push origin --delete <branch>` (safe to ignore "not exists" errors)
+7. **Verify clean state**: `git branch -a` and `git status`
+
+This ensures uncommitted work on merged branches doesn't get lost, and keeps the local repo clean.
+
 ## 2026-04-07 — Issue #2: Windows core setup script
 
 **Branch:** `squad/2-windows-setup` (based on `squad/3-os-detection-entry-point`)
