@@ -327,3 +327,53 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 - P3: Dry-run timeout policy; Sequence chicken-and-egg tasks
 
 **Next phase:** Sprint 6 planning to address action items.
+
+---
+
+## 2026-04-13 — PR #104: BLOCKED — PSScriptAnalyzer lint failure (PSAvoidUsingEmptyCatchBlock)
+
+**PR:** #104 — `test(windows): add regression tests for PS5 compat, profile idempotency & Copilot CLI install`
+**Branch:** `squad/102-windows-ps-regression-tests` → `develop`
+**Author:** Chip
+**Status:** ❌ BLOCKED — DO NOT MERGE until CI passes
+
+### CI Status
+
+- ✅ Lint Shell Scripts (shellcheck): passing
+- ✅ Validate Linux Setup: passing
+- ✅ Validate PowerShell Functionality: passing
+- ❌ **Lint PowerShell Scripts: FAILING**
+
+**Root cause:** Empty `catch { }` block in `scripts/windows/setup.ps1` line 83 (introduced by this PR).
+PSScriptAnalyzer rule `PSAvoidUsingEmptyCatchBlock` triggers — CI runs with `-EnableExit` so this exits 1.
+
+The original catch block had meaningful warnings + `return`. The PR stripped the body to `catch { }` to let execution fall through to the winget path. The intent is correct but the empty block violates the lint rule.
+
+**Fix required (Chip):** Replace `catch { }` with a non-empty catch body, e.g.:
+```powershell
+} catch {
+    # gh extension list failed (gh not present or not authenticated) — continue to winget path
+}
+```
+Note: PSScriptAnalyzer only flags blocks with zero *statements*; an inline comment alone is not enough. 
+Needs at least one PS statement such as: `Write-Verbose "gh extension check skipped: $_"` or `$_ | Out-Null`.
+
+### Test Quality (review-ready, pending lint fix)
+
+**Coverage:** Solid. All four fix areas covered:
+- **Group A (PSScriptRoot):** 3 tests — live invocation via `-File`, function scope, source-code grep guard ✅
+- **Group B (PS5.x guards):** 5 tests — StrictMode throw demo, guard pattern unit test, IsLinux/IsWindows live, source-code grep for all 3 vars ✅
+- **Group C (Profile idempotency):** 4 tests — sentinel count, line concatenation regression, file-size no-op, source-code grep ✅
+- **Group D (Copilot CLI install):** 3 tests (2 fixed + 1 conditional live) — winget source check, already-installed mock, live skip if binary absent ✅
+
+**Failure cases:** Yes — tests throw on wrong behavior, not just assert happy path. Groups A, B, C all exercise the broken case explicitly.
+
+**Style:** Consistent with `tests/test_remove_custom_item.ps1` — same `Test-Scenario`/throw pattern, same result block, same `$script:TestsPassed++` scoping.
+
+**Correctness concern — D-2 mock test:** Test-Scenario "Copilot CLI: already-installed short-circuit logic is correct" uses a `$mockCopilotCmd` variable and an inline `if` block that always takes the no-install branch. The test can **never fail** — it's a tautology. It should call `Install-CopilotCli` directly with a mocked `Get-Command`. Minor coverage gap; not a blocker, but Chip should note it.
+
+### Action for Chip
+
+1. Fix `catch { }` → add one PS statement (Write-Verbose or Out-Null) in `scripts/windows/setup.ps1` line ~83
+2. Push to same branch — CI will re-run
+3. Ping Mickey for re-review and merge

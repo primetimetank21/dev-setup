@@ -24,13 +24,19 @@ function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
 # -- OS Detection -------------------------------------------------------------
 
 function Get-Platform {
-  if ($IsLinux -or $IsMacOS) {
+  # $IsLinux / $IsMacOS / $IsWindows are PowerShell Core (7+) only.
+  # Use Test-Path Variable: to guard so the script works on Windows PowerShell 5.x too.
+  $isLinuxOS   = (Test-Path Variable:IsLinux)   -and $IsLinux
+  $isMacOSOS   = (Test-Path Variable:IsMacOS)   -and $IsMacOS
+  $isWindowsOS = ((Test-Path Variable:IsWindows) -and $IsWindows) -or ($env:OS -eq 'Windows_NT')
+
+  if ($isLinuxOS -or $isMacOSOS) {
     # Unlikely to be reached via PowerShell on Linux/macOS in most setups,
     # but handle gracefully if pwsh is installed there.
     return 'unix'
   }
 
-  if ($IsWindows) {
+  if ($isWindowsOS) {
     # Detect WSL from within PowerShell (edge case: pwsh running inside WSL)
     $procVersion = '/proc/version'
     if (Test-Path $procVersion) {
@@ -48,7 +54,7 @@ function Get-Platform {
 # -- Routing -------------------------------------------------------------------
 
 function Main {
-  $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+  $ScriptDir = $PSScriptRoot
   $platform  = Get-Platform
 
   Write-Info "dev-setup - entry point (PowerShell)"
