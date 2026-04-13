@@ -80,7 +80,9 @@ function Install-CopilotCli {
             Write-Ok "GitHub Copilot CLI (gh extension) already installed"
             return
         }
-    } catch { }
+    } catch {
+        Write-Verbose "gh extension check skipped: $_"
+    }
 
     Write-Info "Installing GitHub Copilot CLI..."
     # Mirrors the official install script (https://gh.io/copilot-install) on Windows:
