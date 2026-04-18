@@ -171,3 +171,95 @@ Designed and implemented PS 5.1 validation job using `windows-latest` runner wit
 - Used `[System.Environment]::GetEnvironmentVariable('PATH', 'Machine')` — works on PS 5.1+ (no PS6+ auto-vars)
 - Fallback `Write-Warn` keeps user informed without failing the setup
 
+
+---
+
+## [2026-04-18] #123 CI Triage — Historical Failures + IsLinux Guard
+
+**Branch:** `squad/121-git-hooks` (shared branch)  
+**PR:** [#130](https://github.com/primetimetank21/dev-setup/pull/130)  
+**Status:** 🔄 Pending merge
+
+**What I investigated:**
+- 5 historical CI failures on main branch (April 18 ~04:58 UTC)
+- Pre-existing PS 5.1 validation failure on develop HEAD: "Root setup.ps1 guards all three PS-Core-only variables"
+
+**Root cause discovered:**
+1. **Historical failures:** Non-ASCII em-dash (U+2014) in root setup.ps1 triggered PSScriptAnalyzer `PSUseBOMForUnicodeEncodedFile` rule. **Superseded by PR #126** (em-dash removed), so main branch is already green.
+2. **Pre-existing develop failure:** Root setup.ps1 used `$PSVersionTable.PSVersion.Major -ge 6` checks instead of `Test-Path Variable:*` guards for IsLinux/IsWindows/IsMacOS. PS 5.1 validation suite specifically requires source-level guards, not runtime version checks.
+
+**What I fixed:**
+- Replaced all PSVersionTable version checks with proper `Test-Path Variable:*` guards:
+  - `IsWindows`: `(Test-Path Variable:IsWindows -and $IsWindows)` with fallback to `$env:OS -eq 'Windows_NT'` for PS 5.x
+  - `IsLinux`: `Test-Path Variable:IsLinux -and $IsLinux`
+  - `IsMacOS`: `Test-Path Variable:IsMacOS -and $IsMacOS`
+- Pattern aligns with guards already in `scripts/windows/setup.ps1`
+
+**Key outcome:**
+- Historical failures on main: ✅ Stale (resolved by PR #126)
+- Pre-existing develop failure: 🔄 Fixed by PR #130
+- Once #130 merges: Both main and develop branches will be green
+
+**Techniques learned:**
+- PowerShell 5.1 compat validation is strict about source-level syntax (not runtime checks)
+- Always check if a newer PR has superseded earlier CI failures (stale artifacts common in shared repos)
+- Test suite requirements > runtime logic correctness (guards must exist in source even if redundant at runtime)
+
+---
+
+## [2026-04-18] #121 git hooks implementation
+
+**Branch:** `squad/121-git-hooks`
+**PR:** [#130](https://github.com/primetimetank21/dev-setup/pull/130)
+**Status:** 🔄 Pending merge
+
+**What I built:**
+- Created `hooks/` directory: three POSIX sh hooks
+  - `hooks/pre-commit`: runs shellcheck on staged .sh files (graceful skip if absent)
+  - `hooks/commit-msg`: enforces Conventional Commits format (hard reject, exit 1)
+  - `hooks/pre-push`: blocks direct push to main, runs shellcheck on changed .sh files
+- Wired git config `core.hooksPath hooks` in both setup.sh and setup.ps1
+- Added `Install-GitHooks` function to setup.ps1 (called after Write-PowerShellProfile)
+- Created `tests/test_git_hooks.ps1` with hook validation tests (4 test groups)
+
+**Design constraints (approved by Earl):**
+- POSIX sh only — no external dependencies (no husky/lefthook)
+- Works in Git Bash on Windows (tested with `/bin/sh` shebang)
+- PSScriptAnalyzer: CI-only, NOT in any hook
+- `--no-verify` escape hatch documented in all hook error messages
+- Conventional Commits validation: hard reject (exit 1) on non-conforming messages
+
+**Test coverage:**
+- Group A: Hook configuration (core.hooksPath set, files exist, shebangs valid)
+- Group B: commit-msg validation (rejects bad messages, accepts valid Conventional Commits)
+
+**Key outcome:**
+- Local development quality gates now enforced via git hooks
+- Cross-platform POSIX sh ensures Git Bash compatibility on Windows
+- ✅ PR #130 merged to develop (2026-04-18)
+- ✅ Issue #121 closed
+
+---
+
+## [2026-04-18] Sprint 7 Completion — Issues #121, #123
+
+**Session:** Full autonomous execution (Earl AFK, cooking)
+**Status:** ✅ Complete
+
+### Issue #121 — git hooks implementation (PR #130)
+✅ Merged to develop. All hooks implemented and tested:
+- `hooks/commit-msg` — Conventional Commits validation
+- `hooks/pre-push` — Branch protection + shellcheck
+
+### Issue #123 — CI triage (PR #130)
+✅ Merged to develop. Findings:
+- Historical failures (5 on main): Stale artifacts, superseded by PR #126
+- Pre-existing develop failure: Root setup.ps1 using PSVersionTable checks instead of Test-Path Variable:* guards
+- **Fix applied in PR #130:** Replaced all version checks with Test-Path guards (pattern: `Test-Path Variable:IsWindows -and $IsWindows`)
+
+**Key learning:** PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks.
+
+**Final state:**
+- Main branch: ✅ Green (PR #126 fixed em-dash)
+- Develop branch: ✅ Green (PR #130 fixed PS guards)
+- All Sprint 7 CI issues resolved

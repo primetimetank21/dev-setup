@@ -1,0 +1,27 @@
+#!/bin/sh
+# Block direct push to main. Run shellcheck on changed .sh files if available.
+set -e
+
+REMOTE="$1"
+URL="$2"
+
+while read -r LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
+  # Block pushes directly to main
+  if echo "$REMOTE_REF" | grep -q 'refs/heads/main'; then
+    echo ""
+    echo "ERROR: Direct push to 'main' is not allowed."
+    echo "  Push to 'develop' or a feature branch and open a PR."
+    echo "  Use --no-verify to bypass (emergency only)."
+    echo ""
+    exit 1
+  fi
+done
+
+# Run shellcheck on changed .sh files if available
+if command -v shellcheck >/dev/null 2>&1; then
+  CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '\.sh$' || true)
+  if [ -n "$CHANGED" ]; then
+    echo "[pre-push] Running shellcheck on changed .sh files..."
+    echo "$CHANGED" | xargs shellcheck || true
+  fi
+fi

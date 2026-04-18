@@ -1,0 +1,12 @@
+#!/bin/sh
+# Run shellcheck on staged .sh files (skip gracefully if absent)
+set -e
+if ! command -v shellcheck >/dev/null 2>&1; then
+  exit 0
+fi
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.sh$' || true)
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+echo "[pre-commit] Running shellcheck on staged .sh files..."
+echo "$STAGED" | xargs shellcheck

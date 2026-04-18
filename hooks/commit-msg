@@ -1,0 +1,27 @@
+#!/bin/sh
+# Enforce Conventional Commits format. Hard reject on non-conforming messages.
+COMMIT_MSG_FILE="$1"
+MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Strip comments and blank lines for validation
+STRIPPED=$(echo "$MSG" | grep -v '^#' | grep -v '^$' | head -1)
+
+# Conventional Commits regex: type(scope): description
+# Types: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert
+if ! echo "$STRIPPED" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert)(\([a-zA-Z0-9/_-]+\))?!?: .+'; then
+  echo ""
+  echo "ERROR: Commit message does not follow Conventional Commits format."
+  echo ""
+  echo "  Got: $STRIPPED"
+  echo ""
+  echo "  Expected format: type(scope): description"
+  echo "  Examples:"
+  echo "    feat(setup): add vim installation"
+  echo "    fix(windows): correct PATH for git bash"
+  echo "    docs(contributing): add branch isolation rule"
+  echo ""
+  echo "  Valid types: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert"
+  echo "  Use --no-verify to bypass (emergency only)"
+  echo ""
+  exit 1
+fi
