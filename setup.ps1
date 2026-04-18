@@ -24,13 +24,23 @@ function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
 # -- OS Detection -------------------------------------------------------------
 
 function Get-Platform {
-  if ($IsLinux -or $IsMacOS) {
+  # $IsLinux, $IsMacOS, and $IsWindows are automatic variables introduced in PowerShell 6 (Core).
+  # On Windows PowerShell 5.x they do NOT exist, so referencing them directly under Set-StrictMode
+  # causes a hard "variable not set" error. To stay PS 5.1-compatible we guard every reference
+  # behind a version check. $PSVersionTable.PSVersion.Major has been available since PS 2.
+  # On PS 5.x Windows, $env:OS is always 'Windows_NT', giving us a reliable fallback.
+  $isWin = ($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows) -or
+            ($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')
+  $isLin = $PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux
+  $isMac = $PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS
+
+  if ($isLin -or $isMac) {
     # Unlikely to be reached via PowerShell on Linux/macOS in most setups,
     # but handle gracefully if pwsh is installed there.
     return 'unix'
   }
 
-  if ($IsWindows) {
+  if ($isWin) {
     # Detect WSL from within PowerShell (edge case: pwsh running inside WSL)
     $procVersion = '/proc/version'
     if (Test-Path $procVersion) {
