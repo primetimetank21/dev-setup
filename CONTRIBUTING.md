@@ -111,6 +111,29 @@ Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manu
 
 ---
 
+## Direct-Push Override Policy
+
+Normally, all changes flow through PRs into `develop`. Direct pushes to `main` are **never** allowed as routine workflow.
+
+**Exception: Hotfix Override**
+
+A direct push to `main` is permitted ONLY when ALL of the following conditions are met:
+
+1. A critical regression or broken state is on `main` that blocks users
+2. The fix is small, surgical, and fully understood (not exploratory)
+3. `develop` itself is broken or the PR pipeline cannot be expedited
+4. The repo owner (Earl Tankard) explicitly authorizes the override in session
+
+**Required audit trail:**
+
+- Commit message must include `[hotfix-override]` annotation
+- A squad decision record must be written to `.squad/decisions/inbox/` documenting: what was pushed, why, and who authorized
+- The override must be referenced in the next sprint retro
+
+**Reference:** The 2026-04-18 hotfix session (PS 5.x `$MyInvocation.MyCommand.Path` regression) is the canonical example of an authorized override.
+
+---
+
 ---
 
 ## Parallel Agent Work
