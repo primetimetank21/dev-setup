@@ -76,7 +76,15 @@ function Install-Vim {
     }
     Write-Info "Installing vim..."
     winget install --id vim.vim --silent --accept-source-agreements --accept-package-agreements
-    Write-Ok "vim installed"
+    # Refresh PATH so vim is available in the current session without restarting
+    $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
+                [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+    if (Get-Command vim -ErrorAction SilentlyContinue) {
+        Write-Ok "vim installed"
+    } else {
+        Write-Ok "vim installed"
+        Write-Warn "vim not yet on PATH -- restart your terminal to use it"
+    }
 }
 
 function Install-CopilotCli {
