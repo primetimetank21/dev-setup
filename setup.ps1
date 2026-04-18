@@ -24,19 +24,23 @@ function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
 # -- OS Detection -------------------------------------------------------------
 
 function Get-Platform {
-  # $IsLinux / $IsMacOS / $IsWindows are PowerShell Core (7+) only.
-  # Use Test-Path Variable: to guard so the script works on Windows PowerShell 5.x too.
-  $isLinuxOS   = (Test-Path Variable:IsLinux)   -and $IsLinux
-  $isMacOSOS   = (Test-Path Variable:IsMacOS)   -and $IsMacOS
-  $isWindowsOS = ((Test-Path Variable:IsWindows) -and $IsWindows) -or ($env:OS -eq 'Windows_NT')
+  # $IsLinux, $IsMacOS, and $IsWindows are automatic variables introduced in PowerShell 6 (Core).
+  # On Windows PowerShell 5.x they do NOT exist, so referencing them directly under Set-StrictMode
+  # causes a hard "variable not set" error. To stay PS 5.1-compatible we guard every reference
+  # behind a version check. $PSVersionTable.PSVersion.Major has been available since PS 2.
+  # On PS 5.x Windows, $env:OS is always 'Windows_NT', giving us a reliable fallback.
+  $isWin = ($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows) -or
+            ($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')
+  $isLin = $PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux
+  $isMac = $PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS
 
-  if ($isLinuxOS -or $isMacOSOS) {
+  if ($isLin -or $isMac) {
     # Unlikely to be reached via PowerShell on Linux/macOS in most setups,
     # but handle gracefully if pwsh is installed there.
     return 'unix'
   }
 
-  if ($isWindowsOS) {
+  if ($isWin) {
     # Detect WSL from within PowerShell (edge case: pwsh running inside WSL)
     $procVersion = '/proc/version'
     if (Test-Path $procVersion) {
@@ -54,7 +58,10 @@ function Get-Platform {
 # -- Routing -------------------------------------------------------------------
 
 function Main {
-  $ScriptDir = $PSScriptRoot
+  # $PSScriptRoot is the reliable automatic variable for the script's directory (PS 3.0+).
+  # Fallback to $MyInvocation.MyCommand.Definition for dot-sourced or hosted execution contexts
+  # where $PSScriptRoot may be empty. Avoid .Path — it is null in several common host environments.
+  $ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
   $platform  = Get-Platform
 
   Write-Info "dev-setup - entry point (PowerShell)"

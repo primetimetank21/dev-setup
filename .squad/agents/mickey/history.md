@@ -224,3 +224,67 @@ Issues #107, #108, #113 closed manually (GitHub doesn't auto-close on develop me
 **Open questions for Earl:** (1) Hard error vs warning on commit-msg, (2) PSScriptAnalyzer in pre-push or CI-only, (3) Whether to add a separate pre-commit hook.
 
 **Status:** Awaiting Earl's approval before implementation.
+### Lesson
+
+Branch protection write via `gh api` is blocked by the Codespace token scope. This is a repeated friction point. Earl should either (a) enable enforce_admins manually in the UI, or (b) provide a PAT with `repo` or `administration:write` scope for future branch protection API work.
+
+---
+
+## 2026-04-08 — Sprint 5 Retrospective Insights
+
+### Key Learnings
+
+1. **Retro loop is working.** All 3 Sprint 4 action items shipped in Sprint 5: worktree isolation (#56), enforce_admins resolution (#54), agent timeout policy (#55). Retros produce real changes, not shelf-ware.
+
+2. **Check decisions.md before planning.** Sprint 5 re-attempted the API branch protection call despite it being a documented limitation from Sprint 3. Known constraints should be consulted during issue creation, not rediscovered during implementation.
+
+3. **`--admin` merge pattern is the standard.** `gh pr merge --admin` after Mickey approval is now the established everyday workflow for solo-repo branch protection. Documented in decisions.md and CONTRIBUTING.md.
+
+4. **Frame issues as problems, not implementations.** Issue #54 pivoted from "enable enforce_admins=true" to "document why we don't." Problem-framed issues absorb scope changes; implementation-framed issues create confusion.
+
+5. **Sequence chicken-and-egg tasks.** Pluto hit a race condition while building worktree isolation — the very feature designed to prevent race conditions. Infrastructure tasks that protect the build environment should run sequentially.
+
+6. **Persistently red CI erodes trust.** The PowerShell lint failure has been red since Sprint 4 and nobody has picked it up. Must not carry into Sprint 7.
+
+7. **Timeout policy is untested.** Agent timeout tiers (5/10/20 min) shipped as documentation but no agent triggered them. First parallel Sprint 6 session should instrument Ralph to validate the tiers.
+
+---
+
+## Sprint 5 Closure
+
+**Status:** ✅ Complete  
+**All 4 issues resolved:** #54, #55, #56, #57  
+**All 5 PRs merged to develop:** #58, #59, #60, #61, #62
+
+**6 action items queued for Sprint 6:**
+- P1: Promote develop → main
+- P2: Consult decisions.md during planning; Fix PowerShell lint; Frame issues as problems
+- P3: Dry-run timeout policy; Sequence chicken-and-egg tasks
+
+**Next phase:** Sprint 6 planning to address action items.
+
+---
+
+## Learnings
+
+### 2026-04-18 — PS 5.x Hotfix Session Retro
+
+**Session type:** Hotfix + triage (direct push to `main`, Earl override)
+
+#### What happened
+- Confirmed Sprint 5 → main was already promoted (PR #101). No action needed.
+- Fixed two PS 5.x bugs in `setup.ps1` caught by Earl on a stock Windows machine:
+  1. `$MyInvocation.MyCommand.Path` → `$PSScriptRoot` (null in hosted/dot-sourced contexts)
+  2. `$IsLinux`/`$IsMacOS`/`$IsWindows` unguarded on PS 5.x under `Set-StrictMode -Version Latest` → version-guarded short-circuit pattern
+- Answered Windows shortcuts scope question (aliases are Linux/macOS only currently)
+- Created issue #108: add `.aliases` to Windows PowerShell profile
+- Created issue #107: install vim on Windows via winget
+- Retro written to `.squad/log/retro-2026-04-18.md`
+- Action items written to `.squad/decisions/inbox/mickey-retro-actions.md`
+
+#### Durable learnings
+- **Always use `$PSScriptRoot`** in `.ps1` files for self-relative paths. `$MyInvocation.MyCommand.Path` is null in hosted, dot-sourced, and piped contexts.
+- **PS 6+ auto-vars must be version-guarded.** `$IsLinux`, `$IsMacOS`, `$IsWindows` do not exist on PS 5.x. Under `Set-StrictMode`, referencing them is a hard crash. Guard pattern: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux`.
+- **Windows code reviewed on PS 7+ will miss PS 5.x bugs.** We need a compat checklist and ideally a CI path on PS 5.1.
+- **Windows shell parity gap is real.** `.aliases` shortcuts (tmux, git, etc.) are fully absent for Windows PS users. Issue #108 is the entry point but the scope is broader.
+- **Direct-push-to-main override policy needs documentation.** Earl can authorize it, but it should leave a visible audit trail beyond squad notes alone.

@@ -30,6 +30,25 @@ When finishing a multi-agent session with uncommitted changes on merged feature 
 7. **Verify clean state**: `git branch -a` and `git status`
 
 This ensures uncommitted work on merged branches doesn't get lost, and keeps the local repo clean.
+## PS 5.x Automatic Variable Pattern (`$IsLinux` / `$IsMacOS` / `$IsWindows`)
+
+`$IsLinux`, `$IsMacOS`, and `$IsWindows` are **PS 6+ only**. Referencing them directly on PS 5.x under `Set-StrictMode -Version Latest` causes a hard error:
+```
+The variable '$IsLinux' cannot be retrieved because it has not been set.
+```
+
+**Safe pattern for PS 5.1 compatibility:**
+```powershell
+$isWin = ($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows) -or
+          ($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')
+$isLin = $PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux
+$isMac = $PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS
+```
+
+Key facts:
+- `$PSVersionTable.PSVersion.Major` has existed since PS 2 — always safe to read
+- `$env:OS` is `Windows_NT` on all Windows versions in PS 5.x
+- Short-circuit `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux` means the RHS is never evaluated on PS 5.x, so no strict-mode error
 
 ## 2026-04-07 — Issue #2: Windows core setup script
 
@@ -145,3 +164,29 @@ Added `squad-cli` (`@bradygaster/squad-cli`) global install to both Windows and 
 
 ### Design decision
 If npm/Node.js is not present, skip with `[WARN]`. Do not force-install Node -- matches team decision in decisions.md.
+## 2026-04-08 — Hotfix: $PSScriptRoot for ScriptDir resolution
+
+**Reported by:** Earl Tankard  
+**File:** `setup.ps1` line 51
+
+### The Bug
+`$MyInvocation.MyCommand.Path` is `$null` in certain PowerShell host environments (e.g., `./` invocation in strict mode, some remote or hosted contexts). This caused:
+```
+The property 'Path' cannot be found on this object.
+```
+
+### The Fix Pattern (memorize this)
+Always use `$PSScriptRoot` for directory resolution. It is a PowerShell automatic variable (PS 3.0+) that always contains the directory of the executing script file.
+
+```powershell
+# CORRECT: reliable across all invocation contexts
+$ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
+
+# WRONG: null in many host environments
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+```
+
+### Rule
+- **Never use** `$MyInvocation.MyCommand.Path` — it's unreliable
+- **Always prefer** `$PSScriptRoot` as primary
+- **Safe fallback:** `$MyInvocation.MyCommand.Definition` (works in dot-sourced and hosted contexts)
