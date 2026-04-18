@@ -327,3 +327,29 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 - P3: Dry-run timeout policy; Sequence chicken-and-egg tasks
 
 **Next phase:** Sprint 6 planning to address action items.
+
+---
+
+## Learnings
+
+### 2026-04-18 — PS 5.x Hotfix Session Retro
+
+**Session type:** Hotfix + triage (direct push to `main`, Earl override)
+
+#### What happened
+- Confirmed Sprint 5 → main was already promoted (PR #101). No action needed.
+- Fixed two PS 5.x bugs in `setup.ps1` caught by Earl on a stock Windows machine:
+  1. `$MyInvocation.MyCommand.Path` → `$PSScriptRoot` (null in hosted/dot-sourced contexts)
+  2. `$IsLinux`/`$IsMacOS`/`$IsWindows` unguarded on PS 5.x under `Set-StrictMode -Version Latest` → version-guarded short-circuit pattern
+- Answered Windows shortcuts scope question (aliases are Linux/macOS only currently)
+- Created issue #108: add `.aliases` to Windows PowerShell profile
+- Created issue #107: install vim on Windows via winget
+- Retro written to `.squad/log/retro-2026-04-18.md`
+- Action items written to `.squad/decisions/inbox/mickey-retro-actions.md`
+
+#### Durable learnings
+- **Always use `$PSScriptRoot`** in `.ps1` files for self-relative paths. `$MyInvocation.MyCommand.Path` is null in hosted, dot-sourced, and piped contexts.
+- **PS 6+ auto-vars must be version-guarded.** `$IsLinux`, `$IsMacOS`, `$IsWindows` do not exist on PS 5.x. Under `Set-StrictMode`, referencing them is a hard crash. Guard pattern: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux`.
+- **Windows code reviewed on PS 7+ will miss PS 5.x bugs.** We need a compat checklist and ideally a CI path on PS 5.1.
+- **Windows shell parity gap is real.** `.aliases` shortcuts (tmux, git, etc.) are fully absent for Windows PS users. Issue #108 is the entry point but the scope is broader.
+- **Direct-push-to-main override policy needs documentation.** Earl can authorize it, but it should leave a visible audit trail beyond squad notes alone.
