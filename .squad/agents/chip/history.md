@@ -156,3 +156,18 @@
 
 Designed and implemented PS 5.1 validation job using `windows-latest` runner with Windows PowerShell 5.1. Used `shell: powershell` to invoke native PS 5.1, Parser::ParseFile for syntax validation, and PSScriptAnalyzer for linting. Dual-runtime coverage now active (PS 7+ and PS 5.1). Issue closed.
 
+---
+
+### 2026-04-18 — Hotfix: CI em-dash + vim PATH (Issues #123, #107)
+
+**Branch:** `squad/fix-ci-vim-path`
+**PR:** [#126](https://github.com/primetimetank21/dev-setup/pull/126)
+
+**What I fixed:**
+1. **CI failure (PSUseBOMForUnicodeEncodedFile):** Replaced UTF-8 em-dash (U+2014) on line 63 of root `setup.ps1` with ASCII `--`. This non-ASCII byte triggered PSScriptAnalyzer's `PSUseBOMForUnicodeEncodedFile` rule, breaking both `Lint PowerShell Scripts` and `Validate PowerShell 5.1 Compatibility` CI jobs. Verified zero non-ASCII bytes remain.
+2. **Vim not on PATH after install:** Added `$env:PATH` refresh in `Install-Vim` (`scripts/windows/setup.ps1`) after `winget install`. Reads Machine + User PATH from the registry so vim is available immediately without restarting the terminal. Added fallback warning if vim still not found on PATH.
+
+**Key decisions:**
+- Used `[System.Environment]::GetEnvironmentVariable('PATH', 'Machine')` — works on PS 5.1+ (no PS6+ auto-vars)
+- Fallback `Write-Warn` keeps user informed without failing the setup
+
