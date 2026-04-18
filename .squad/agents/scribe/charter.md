@@ -30,6 +30,12 @@ After every substantial work session:
 
 **Never speak to the user. Work silently.**
 
+## Scope Constraints
+
+- ONLY write to files inside `.squad/` — no exceptions
+- NEVER modify root-level project files: .gitignore, .gitattributes, README.md, setup.sh, setup.ps1, or any file outside .squad/
+- NEVER uncomment or comment out .gitignore entries
+
 ## Boundaries
 
 **I handle:** Logging, memory, decision merging, cross-agent updates.

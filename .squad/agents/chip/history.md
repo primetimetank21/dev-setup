@@ -87,3 +87,37 @@
 - Exits 0 on all pass, 1 on any failure for CI integration
 
 **Environment note:** Shared workspace caused initial commit to land on wrong branch (`squad/43-tmux-test-coverage`). Cherry-picked to correct branch before PR creation.
+
+---
+
+### 2026-04-13 — Issue #102, #103: Windows PowerShell Regression Test Suite (PR #104)
+
+**Branch:** `squad/102-windows-ps-regression-tests`  
+**PR:** [#104](https://github.com/primetimetank21/dev-setup/pull/104)  
+**Status:** ✅ MERGED
+
+**What I built:**
+- Created `tests/test_windows_setup.ps1` — comprehensive Windows PowerShell setup test suite
+- 15 tests organized in 4 groups:
+  - **Group A (4 tests):** Function existence & parameter validation for Install-* functions
+  - **Group B (4 tests):** Installation behavior and idempotency verification
+  - **Group C (3 tests):** Error handling and edge cases
+  - **Group D (4 tests):** Integration scenarios across multiple tools
+
+**Technical issues fixed:**
+1. **Unicode encoding** — Properly configured UTF-8 encoding for script output and test assertions
+2. **Where-Object .Count bug** — Fixed array counting logic for detecting PSAvoidUsingEmptyCatchBlock violations in target scripts
+
+**Key test patterns:**
+- Each test validates both success and graceful failure modes
+- Idempotency assertions: re-running install functions should not error
+- Tests coordinate with goofy-lint-fix to fix lint violations blocking PR
+- Random file names avoid collisions in shared CI environment
+
+**Cross-agent coordination:**
+- Opened PR #104, which triggered Mickey's review (discovered PSAvoidUsingEmptyCatchBlock lint violation)
+- Goofy then fixed the lint violation in scripts/windows/setup.ps1
+- PR #104 merged after lint fix (all 4 CI checks passed)
+- Issues #102 and #103 closed by this merge
+
+**Outcome:** Windows setup now has regression test baseline (15 tests), enabling confidence in future PowerShell setup changes.

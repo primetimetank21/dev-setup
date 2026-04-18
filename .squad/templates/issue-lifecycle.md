@@ -254,8 +254,11 @@ gh pr merge {pr-number} --merge --delete-branch
 
 **GitHub (squash):**
 ```bash
+# ⚠️ NEVER use for sprint wrap PRs (develop → main)
 gh pr merge {pr-number} --squash --delete-branch
 ```
+
+**Sprint Wrap PRs (develop → main):** Always use `--merge` (regular merge commits). Squash merges cause permanent history divergence on protected branches. See `.squad/decisions.md` for rationale.
 
 **Azure DevOps:**
 ```bash

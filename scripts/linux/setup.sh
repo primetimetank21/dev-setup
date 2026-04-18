@@ -11,6 +11,7 @@
 #   bash scripts/linux/setup.sh
 
 set -euo pipefail
+exec 2>&1  # Merge stderr into stdout for ordered output in piped/Devcontainer environments
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS_DIR="${SCRIPT_DIR}/tools"
@@ -62,10 +63,10 @@ install_prerequisites() {
       log_warn "Homebrew not found — install it from https://brew.sh and re-run setup"
       return 0
     fi
-    brew install curl git
+    brew install curl git tmux
   else
     sudo apt-get update -qq
-    sudo apt-get install -y curl git build-essential
+    sudo apt-get install -y curl git build-essential vim tmux
   fi
 
   log_ok "Prerequisites installed"

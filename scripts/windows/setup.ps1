@@ -69,19 +69,25 @@ function Install-GhCli {
 }
 
 function Install-CopilotCli {
+    # Accept either the standalone binary (winget) or the legacy gh extension
+    if (Get-Command copilot -ErrorAction SilentlyContinue) {
+        Write-Ok "GitHub Copilot CLI already installed"
+        return
+    }
     try {
         $extensions = gh extension list 2>&1
         if ($extensions -match "gh-copilot") {
-            Write-Ok "GitHub Copilot CLI already installed"
+            Write-Ok "GitHub Copilot CLI (gh extension) already installed"
             return
         }
     } catch {
-        Write-Warn "gh CLI not authenticated or not found - skipping Copilot CLI install"
-        Write-Warn "Run 'gh auth login' then re-run this script to install Copilot CLI"
-        return
+        Write-Verbose "gh extension check skipped: $_"
     }
+
     Write-Info "Installing GitHub Copilot CLI..."
-    gh extension install github/gh-copilot
+    # Mirrors the official install script (https://gh.io/copilot-install) on Windows:
+    # on Windows it routes to `winget install GitHub.Copilot` (standalone binary).
+    winget install --id GitHub.Copilot --silent --accept-source-agreements --accept-package-agreements
     Write-Ok "Copilot CLI installed"
 }
 
@@ -161,7 +167,11 @@ Set-Alias -Name ggsls -Value Get-GitStashList
         New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
     }
 
-    # Append to profile (create if absent)
+    # Append to profile (create if absent).
+    # Always prepend a blank line so we don't concatenate onto any existing last line.
+    if (Test-Path $PROFILE) {
+        Add-Content -Path $PROFILE -Value ""
+    }
     Add-Content -Path $PROFILE -Value $profileContent
     Write-Ok "PowerShell profile shortcuts installed to $PROFILE"
 }
