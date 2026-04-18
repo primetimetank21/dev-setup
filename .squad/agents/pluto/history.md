@@ -178,3 +178,11 @@ Created `config/dotfiles/` with:
 ### 2026-04-19 — PR #115 Merged; Issue #108 Closed
 
 PR #115 merged to `develop`. Mickey reviewed and approved — all 30 aliases correct, CI green (4/4), PS 5.x safe, test group F (6 tests) passing. Issue #108 closed manually (GitHub doesn't auto-close on develop merges).
+
+## Sprint 6: PowerShell Aliases (Issue #108)
+
+**PR:** #115  
+**Date:** 2026-04-18  
+
+Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for reserved names, $args passthrough on all functions, inline comments, and PS 5.x strict-mode compatibility. High craft level. Issue closed.
+

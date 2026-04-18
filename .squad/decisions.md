@@ -1,5 +1,417 @@
 # Squad Decisions
 
+## Decision Records
+
+## # Decision: CI PS 5.1 Validation Path
+
+**Issue:** #109
+**PR:** #116
+**Agent:** Chip (Tester)
+**Date:** 2026-04-18
+
+## Context
+
+All prior PowerShell CI validation ran under PS 7+ (`pwsh`). The existing `lint-powershell` job uses `pwsh` on `ubuntu-latest`, and `validate-powershell` uses `pwsh` on `windows-latest`. Neither tests compatibility with Windows PowerShell 5.1, which is the default shell on most Windows 10/11 machines.
+
+## Decisions
+
+### 1. `windows-latest` runner
+**Choice:** `runs-on: windows-latest`
+**Why:** Windows Server runners come with PS 5.1 pre-installed. No setup needed — just use `shell: powershell` to invoke it.
+
+### 2. `shell: powershell` vs `shell: pwsh`
+**Choice:** All steps use `shell: powershell`
+**Why:** `powershell` invokes Windows PowerShell 5.1. `pwsh` invokes PowerShell 7+. Since the goal is PS 5.1 validation, every step must use the `powershell` shell directive. This is the single most important detail in the job.
+
+### 3. Syntax check via Parser::ParseFile
+**Choice:** Use `[System.Management.Automation.Language.Parser]::ParseFile()` for syntax validation
+**Why:** This is the native PS AST parser — catches syntax errors that would prevent the script from loading. It runs without executing the script, so it's safe in CI.
+
+### 4. PSScriptAnalyzer under PS 5.1
+**Choice:** Install and run PSScriptAnalyzer in the PS 5.1 shell
+**Why:** PSScriptAnalyzer may flag different issues under PS 5.1 than under PS 7+. Running it under both runtimes (existing `lint-powershell` job for PS 7+, new job for PS 5.1) gives full coverage.
+
+### 5. Both scripts validated
+**Choice:** Validate both `setup.ps1` (root) and `scripts/windows/setup.ps1`
+**Why:** The root `setup.ps1` is the entry point that users run. If it has PS 5.1 syntax issues, nothing works. Both must pass.
+
+## What's NOT validated (known limitations)
+
+- **Winget installs** — Cannot test actual `winget install` on CI runners (winget may not be available or may require interactive session)
+- **User profile changes** — Tests mock profile paths; real `$PROFILE` behavior differs
+- **Network-dependent installs** — Tool download URLs may fail in CI but work locally
+- **Full end-to-end** — This is syntax + lint + unit test, not a full setup run
+
+## Outcome
+
+PS scripts now have dual-runtime CI coverage: PS 7+ (existing `lint-powershell`) and PS 5.1 (new `validate-ps51`).
+
+---
+
+## ### 2026-04-18T20:15: User directive — no squash merges, ever
+**By:** Earl Tankard (via Copilot)
+**What:** Never use squash merges anywhere in this repo. All merges (feature PRs to develop AND sprint wraps develop→main) must use regular merge commits. `--squash` is banned.
+**Why:** User request — captured for team memory
+
+### 2026-04-18T20:15: User directive — delete stale branches at end of session
+**By:** Earl Tankard (via Copilot)
+**What:** At the end of every session, always delete stale branches both locally and remotely.
+**Why:** User request — captured for team memory
+
+---
+
+## # Decision: squad-cli install — skip+warn pattern (Issue #106)
+
+**Date:** 2026-04-18
+**Author:** Goofy (Cross-Platform Developer)
+**Issue:** #106
+**PR:** #118
+
+## Context
+
+squad-cli (`@bradygaster/squad-cli`) requires npm to install globally. Not all environments have Node.js/npm pre-installed (e.g., fresh Devcontainers without nvm setup complete).
+
+## Decision
+
+If npm is not present at install time, **skip with `[WARN]`** — do not force-install Node.js.
+
+This matches the existing pattern used by other npm-dependent tools and avoids injecting a heavyweight Node.js install into the setup flow.
+
+## Install placement
+
+- **Windows:** `Install-SquadCli` called after `Install-CopilotCli` in `Main` (setup.ps1)
+- **Linux:** `run_tool "squad-cli"` called after `run_tool "copilot-cli"` in `main()` (setup.sh)
+
+Both are positioned at the end of the tool install sequence since squad-cli depends on npm, which is installed earlier via nvm.
+
+## Alternatives considered
+
+- **Force-install Node via nvm if missing:** Rejected — too aggressive, and nvm install may not have completed PATH reload yet.
+- **Use npx instead of global install:** Rejected — squad-cli is used frequently enough to warrant a global install.
+
+---
+
+## # Decision Record: Issues #110 and #111 — Documentation Updates
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**Status:** PRs open
+
+## Context
+
+Sprint 6 retro (2026-04-18) identified two documentation gaps from the PS 5.x hotfix session:
+1. No written policy for when direct pushes to `main` are acceptable
+2. No checklist for PS 5.x compatibility when reviewing `.ps1` changes
+
+## What was written
+
+### Issue #110 — Direct-Push Override Policy (PR #117)
+
+- **File:** `CONTRIBUTING.md` (new section after "Code Review")
+- **Content:** Defines the four conditions for a hotfix override, required audit trail (`[hotfix-override]` annotation, decision record, retro reference), and references the 2026-04-18 hotfix as canonical precedent.
+- **Branch:** `squad/110-direct-push-policy` → `develop`
+
+### Issue #111 — PowerShell 5.x Compatibility Checklist (PR #119)
+
+- **File:** `CONTRIBUTING.md` (new section after "Code Review")
+- **Content:** 5-item checklist (`$PSScriptRoot`, guarded auto-vars, StrictMode, ASCII-only strings, alias conflicts), testing guidance (manual PS 5.1, CI track in #109), and known regressions table.
+- **Branch:** `squad/111-ps5x-checklist` → `develop`
+
+## Design decisions
+
+- Both sections placed in `CONTRIBUTING.md` (not `docs/PROCESS.md`) because `docs/` directory does not exist and `CONTRIBUTING.md` is the established process document.
+- Sections placed between "Code Review" and "Parallel Agent Work" for logical grouping with workflow/review content.
+- Each issue on its own branch with independent PR to keep concerns separated.
+
+## Impact
+
+Once merged, all contributors and squad agents have explicit reference material for:
+- Override authorization (prevents unauthorized direct pushes)
+- PS 5.x review (prevents the class of regressions seen on 2026-04-18)
+
+---
+
+## # Git Hooks Recommendation
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**Requested by:** Earl Tankard, Jr., Ph.D.
+**Status:** Awaiting Earl's approval
+
+---
+
+**TL;DR:** Use `core.hooksPath` pointing to a committed `hooks/` directory — zero dependencies, version-controlled, cross-platform via Git Bash — with three hooks: `commit-msg` (conventional commits regex), `pre-push` (branch protection + lightweight lint), and one-liner installs in both setup scripts.
+
+---
+
+## Framework
+
+**Choice: `core.hooksPath` + committed `hooks/` directory. No framework.**
+
+This repo has no `package.json` and no Node/Go runtime requirement. Husky needs npm; lefthook needs Go; both add dependencies to a repo whose job is *installing* dependencies. A committed `hooks/` directory with `git config core.hooksPath hooks` is zero-dependency, version-controlled, and works identically on every platform (Git Bash runs POSIX shell hooks on Windows). The setup scripts already configure the dev environment — adding one `git config` line is trivial.
+
+---
+
+## Hook 1: `commit-msg` — Conventional Commits Enforcement
+
+**What it does:** Validates the commit message against Conventional Commits before the commit is recorded.
+
+**Tool:** POSIX shell regex — no external tooling. `commitlint` requires npm, `commitizen` requires npm/Python. A regex covers 95% of what we need.
+
+**Proposed regex:**
+```sh
+pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?(!)?: .{1,}'
+```
+
+This validates:
+- Type is one of the standard prefixes
+- Optional scope in parentheses: `feat(windows):`
+- Optional breaking change marker: `feat!:`
+- Colon + space + non-empty description
+- Does NOT enforce body/footer format (too restrictive for dev workflow)
+
+**Enforcement level: Hard error (exit 1).** The commit is rejected with a clear message showing the expected format. Rationale: conventional commits are only useful if they're consistent. A warning that people ignore defeats the purpose. Developers can always `git commit --no-verify` for WIP commits they plan to rebase.
+
+**Exceptions:**
+- Merge commits (`Merge branch ...`) — auto-detected and allowed
+- Fixup/squash commits (`fixup!`, `squash!`) — allowed for interactive rebase workflows
+
+---
+
+## Hook 2: `pre-push` — Lightweight Validation
+
+**What it runs:**
+1. **shellcheck** on changed `.sh` files (if `shellcheck` is installed) — fast, catches real bugs
+2. That's it.
+
+**What it does NOT run:**
+- PSScriptAnalyzer — requires `pwsh`, slow to invoke, platform-dependent. Leave to CI.
+- Full setup validation (`bash setup.sh`) — too heavyweight for a pre-push hook (installs packages).
+- PowerShell tests (`test_windows_setup.ps1`) — Windows-only, requires winget/registry access.
+
+**Rationale:** The CI pipeline (`validate.yml`) already runs shellcheck, PSScriptAnalyzer, Linux validation, and PS tests on every push. Duplicating the full pipeline locally is slow, fragile, and platform-inconsistent. The pre-push hook should catch the fast, high-signal stuff. CI is the source of truth.
+
+**Escape hatch:** `git push --no-verify` bypasses the hook. This is standard Git behavior, no extra work needed. Document it in the hook's error output.
+
+**Changed-files detection:**
+```sh
+# Get files being pushed (compared to remote)
+changed_files=$(git diff --name-only "$local_sha" "$remote_sha" -- '*.sh')
+```
+
+---
+
+## Hook 3: `pre-push` — Branch Protection
+
+**Combined into the same `pre-push` hook** (runs before the lint step above).
+
+**The check:** Parse the remote ref from stdin. If any ref targets `main` (or `refs/heads/main`), reject the push with a clear message:
+
+```
+🚫 Direct push to 'main' is blocked.
+   Workflow: push to your branch → PR to develop → sprint wrap PR to main.
+   Override: git push --no-verify (see CONTRIBUTING.md direct-push policy)
+```
+
+**What it blocks:**
+- `git push origin main` — blocked
+- `git push origin HEAD:main` — blocked
+- `git push --force origin main` — blocked (pre-push fires before force push too)
+
+**What it allows:**
+- Sprint wrap merges via GitHub UI (PR merge button) — hooks don't run server-side
+- `git push --no-verify origin main` — allowed, for documented hotfix overrides (Issue #110)
+- Pushes to `develop`, feature branches, `squad/*` branches — all allowed
+
+**Edge case considered:** The `--no-verify` escape aligns with the direct-push override policy already documented in CONTRIBUTING.md (Issue #110). The hook message references that policy.
+
+---
+
+## Installation Strategy
+
+**Mechanism:** `git config core.hooksPath hooks`
+
+This tells Git to look for hooks in `hooks/` (repo root) instead of `.git/hooks/`. The `hooks/` directory is committed and version-controlled. Everyone gets the same hooks automatically after running setup.
+
+**Where it's wired:**
+
+- **`scripts/linux/setup.sh`** — Add near the end, after tool installs:
+  ```sh
+  git config core.hooksPath hooks
+  log_ok "Git hooks installed (core.hooksPath → hooks/)"
+  ```
+
+- **`scripts/windows/setup.ps1`** — Add near the end:
+  ```powershell
+  git config core.hooksPath hooks
+  Write-Ok "Git hooks installed (core.hooksPath -> hooks/)"
+  ```
+
+**Git LFS compatibility:** The current `.git/hooks/` has git-lfs hooks (pre-push, post-commit, post-checkout, post-merge). When `core.hooksPath` is set, Git ignores `.git/hooks/` entirely. Our committed hooks must chain to git-lfs if it's installed:
+```sh
+# At the end of hooks/pre-push:
+command -v git-lfs >/dev/null 2>&1 && git lfs pre-push "$@"
+```
+
+---
+
+## Files to Create
+
+```
+hooks/
+├── commit-msg    # Conventional commits regex validation
+└── pre-push      # Branch protection + shellcheck on changed files + git-lfs chain
+```
+
+- **`hooks/commit-msg`** — POSIX sh, ~30 lines. Reads `$1` (commit msg file), validates regex, exits 1 on failure with example format. Allows merge/fixup/squash commits.
+- **`hooks/pre-push`** — POSIX sh, ~60 lines. Reads stdin for refs. (1) Rejects pushes to `main`. (2) Runs shellcheck on changed `.sh` files if available. (3) Chains to `git lfs pre-push` if git-lfs is present.
+- **One-liner in `scripts/linux/setup.sh`:** `git config core.hooksPath hooks`
+- **One-liner in `scripts/windows/setup.ps1`:** `git config core.hooksPath hooks`
+
+All hooks must be `chmod +x` and committed with executable bit. The `.gitattributes` should ensure `hooks/*` keeps `eol=lf` (Git Bash on Windows needs Unix line endings for shell scripts).
+
+---
+
+## Cross-Platform Notes
+
+| Concern | Approach |
+|---------|----------|
+| Hook shell | All hooks use `#!/bin/sh` (POSIX). Git Bash on Windows provides this. |
+| shellcheck | Skip gracefully if not installed (`command -v shellcheck` guard). |
+| PSScriptAnalyzer | Not run in hooks. CI only. |
+| Line endings | Add `hooks/* text eol=lf` to `.gitattributes`. |
+| Git LFS | Chain calls in hooks that have LFS counterparts. |
+
+---
+
+## Open Questions for Earl
+
+1. **Hard error vs. warning on commit-msg?** I recommend hard error (reject non-conforming commits) with `--no-verify` as escape hatch. Are you comfortable with that, or do you prefer a warning-only mode during a transition period?
+
+2. **Scope of pre-push lint:** I scoped it to shellcheck-only (fast, high-signal). Do you want PSScriptAnalyzer also attempted when `pwsh` is available, accepting it'll be slow (~5-10s)? Or keep it CI-only?
+
+3. **Should we add a `pre-commit` hook too?** Earl's original question mentioned pre-commit. I folded everything into `commit-msg` (message validation) and `pre-push` (code validation + branch protection). A `pre-commit` hook could run shellcheck on staged files for even faster feedback, but it adds friction to every commit. Worth it?
+
+---
+
+*This recommendation is ready for implementation as a single PR once Earl approves. Estimated scope: 3 new files (`hooks/commit-msg`, `hooks/pre-push`, `.gitattributes` update) + 2 one-liners in existing setup scripts.*
+
+---
+
+## # Decision Record: Sprint 6 Retrospective — Action Items
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**Type:** Retrospective Action Items
+**Status:** Queued for Sprint 7
+
+## Context
+
+Sprint 6 retrospective identified process friction in three areas: branch isolation, merge strategy confusion, and PR hygiene. All 8 issues shipped (100% closure), but the delivery process had recurring problems that need structural fixes before Sprint 7 work begins.
+
+## Action Items
+
+### P1 — Must address at Sprint 7 kickoff
+
+**1. Branch isolation rule — CONTRIBUTING.md update**
+- **Owner:** Mickey
+- **What:** Add explicit rule: "All feature branches MUST be created from `develop` HEAD. Never branch from another feature branch."
+- **Include:** Verification command: `git log --oneline develop..HEAD` before opening PR
+- **Why:** Branch ancestry bleed occurred 3 times in Sprint 6 (PRs #114, #116, #118). Inflated diffs and confused reviews.
+
+**2. Merge strategy documentation — Sprint 7 kickoff**
+- **Owner:** Mickey
+- **What:** Sprint 7 kickoff notes must explicitly state: "Regular merge commit for all merges to develop and main. No squash merges."
+- **Why:** PRs #116–#119 were squash-merged before Earl's late-sprint directive. Strategy must be stated up front, not discovered mid-sprint.
+
+### P2 — Sprint 7 work items
+
+**3. Git hooks implementation**
+- **Owner:** Mickey
+- **What:** Implement `commit-msg` + `pre-push` hooks per approved design (`mickey-githooks-design.md`). `core.hooksPath` approach, committed `hooks/` directory.
+- **Why:** Automates commit message validation and blocks direct push to main. Reduces reliance on human discipline for enforceable rules.
+
+**4. Triage historical CI failures on main**
+- **Owner:** Chip
+- **What:** Investigate 5 CI failures from April 18 on main. Fix, re-run, or document as known. Actions tab must not show unexplained red.
+- **Why:** Stale failures confused the team and erode CI trust. If red is normal, green means nothing.
+
+**5. One-concern-per-PR enforcement**
+- **Owner:** Mickey (review gate)
+- **What:** Hard-reject PRs carrying unrelated file changes during code review. No exceptions for "non-blocking" leaks.
+- **Why:** 4 of 7 Sprint 6 PRs carried unrelated `.squad/` changes. Degrades review quality and scope verification.
+
+### P3 — Ongoing practice
+
+**6. Separate squad metadata commits**
+- **Owner:** All agents
+- **What:** `.squad/` file changes must be committed separately from feature work. Either a separate commit in the same branch or a dedicated end-of-session PR.
+- **Why:** Root cause fix for unrelated-files-in-PR problem. Eliminates the issue at the source.
+
+## Impact
+
+These six items target the three friction areas identified in the Sprint 6 retro. Items 1–2 are process documentation (low effort, high leverage). Items 3–4 are implementation work (medium effort). Items 5–6 are behavioral rules enforced through review.
+
+---
+
+## # Decision: Batch Review — PRs #116, #117, #118, #119
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**Type:** Code Review
+
+## Verdicts
+
+| PR | Author | Title | Verdict |
+|----|--------|-------|---------|
+| #116 | Chip | `ci: add PS 5.1 validation job on Windows runner` | ✅ APPROVED |
+| #117 | Mickey | `docs: codify direct-push-to-main override policy` | ✅ SELF-VERIFIED |
+| #118 | Goofy | `feat(setup): install squad-cli globally in Windows and Linux setup` | ✅ APPROVED |
+| #119 | Mickey | `docs(contributing): add PowerShell 5.x compatibility checklist` | ✅ SELF-VERIFIED |
+
+## Summary
+
+All four PRs pass review. CI green on all. Code quality and PS 5.x compatibility verified.
+
+## Recommended merge order
+
+1. **PR #116** first (CI job — smallest surface area, resolves shared commits)
+2. **PR #117** (docs — independent, single file)
+3. **PR #118** (squad-cli — after #116 merge, diff collapses to only squad-cli changes)
+4. **PR #119** (docs — independent)
+
+## Process Issue: Branch Ancestry Bleed
+
+PRs #116 and #118 share commits because their branches were created off each other rather than from `develop`. This causes both PRs to show the other's changes in the diff. This is the **third occurrence** of cross-branch contamination (previously flagged in PRs #114 and #115).
+
+**Recommendation for Sprint 7:** Enforce that all feature branches are created from `develop` HEAD, never from another feature branch. Add this to the branching section of CONTRIBUTING.md.
+
+---
+
+## # Sprint 7 Issues Created
+
+**Created by:** Mickey (Lead)
+**Date:** 2026-04-19
+
+## Issues
+
+| Issue | Title | Labels |
+|-------|-------|--------|
+| #121 | `feat(hooks): implement git hooks for commit-msg, pre-commit, and pre-push enforcement` | `squad`, `enhancement` |
+| #122 | `docs(contributing): add branch isolation rule — always fork from develop HEAD` | `squad`, `documentation` |
+| #123 | `ci: triage and resolve 5 historical CI failures on main branch` | `squad`, `bug` |
+
+## Priority Mapping
+- **P1:** #122 (branch isolation — blocks clean PRs)
+- **P2:** #121 (git hooks), #123 (CI triage)
+
+## Notes
+- All issues use repo issue templates (feature_request, documentation, ci_infra)
+- Git hooks design approved by Earl Tankard — see `decisions/inbox/mickey-githooks-design.md`
+- Branch isolation addresses the #1 process problem from Sprint 6 (3 occurrences of ancestry bleed)
+
+---
+
 ## Active Decisions
 
 ## [2026-04-08] Use $PSScriptRoot for Script Directory Resolution in PowerShell

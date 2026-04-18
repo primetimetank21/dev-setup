@@ -148,3 +148,11 @@
 - Cannot test actual winget installs on CI runner — syntax and lint only for install functions
 
 **Outcome:** PowerShell scripts are now validated under the same PS 5.1 runtime that real Windows users have.
+
+## Sprint 6: PS 5.1 CI Validation (Issue #109)
+
+**PR:** #116  
+**Date:** 2026-04-18  
+
+Designed and implemented PS 5.1 validation job using `windows-latest` runner with Windows PowerShell 5.1. Used `shell: powershell` to invoke native PS 5.1, Parser::ParseFile for syntax validation, and PSScriptAnalyzer for linting. Dual-runtime coverage now active (PS 7+ and PS 5.1). Issue closed.
+

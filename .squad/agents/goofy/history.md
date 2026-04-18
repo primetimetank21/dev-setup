@@ -190,3 +190,11 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 - **Never use** `$MyInvocation.MyCommand.Path` — it's unreliable
 - **Always prefer** `$PSScriptRoot` as primary
 - **Safe fallback:** `$MyInvocation.MyCommand.Definition` (works in dot-sourced and hosted contexts)
+
+## Sprint 6: Squad CLI Install (Issue #106)
+
+**PR:** #118  
+**Date:** 2026-04-18  
+
+Implemented squad-cli global install for Windows and Linux with skip+warn pattern when npm is absent. Established reusable precedent for optional npm-dependent tools. Work shipped as planned. Issue closed.
+
