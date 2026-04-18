@@ -35,6 +35,22 @@ git checkout -b squad/{issue-number}-{slug}
 
 ---
 
+## Branch Isolation
+
+**Always create new branches from the tip of `develop`:**
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b squad/{issue-number}-{slug}
+```
+
+**Never fork a squad branch from another squad branch.** Branching from a peer's branch pulls in their unmerged commits, inflating your PR diff and making review harder. If you see commits in your PR that don't belong to your issue, your branch was not forked from `develop`.
+
+> This rule exists because "branch ancestry bleed" occurred 3 times in Sprint 6. Every time it's violated, PR review quality degrades.
+
+---
+
 ## PR Checklist
 
 Before opening a pull request, confirm all of the following:
@@ -80,6 +96,16 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 - **CI must be green** before requesting review. Do not ask for review on a failing PR.
 - Reviewers may request changes or reassign work to a different squad member.
 - If Mickey rejects a PR, a *different* agent (not the original author) will be assigned to revise.
+
+---
+
+## Merge Strategy
+
+**ALL merges use regular merge commits** (`--merge` or `gh pr merge --no-squash`).
+
+**Never squash** — not for feature PRs to `develop`, not for sprint wrap PRs (`develop` → `main`). This is a hard team rule.
+
+**Why?** Regular merge commits preserve history and make debugging (`git log`, `git blame`) clear. Squash collapses history, making it harder to trace which issue introduced a bug.
 
 ---
 
