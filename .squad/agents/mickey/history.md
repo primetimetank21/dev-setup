@@ -387,3 +387,8 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 - Reviewed and approved PR #126
 - Merged via `--merge --delete-branch --admin` (regular merge commit, branch deleted)
 - Closed #124 and #125 with closing comments
+
+## [2026-04-18] Sprint 7 wrap
+- PR #131: develop → main, regular merge, --admin
+- Sprint 7 complete: hooks (#121), branch isolation docs (#122), CI guards (#123)
+- Stale squad/* branches cleaned up
