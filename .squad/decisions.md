@@ -1063,3 +1063,86 @@ Converted three untracked retro action items from the 2026-04-18 PS 5.x hotfix s
 **By:** Earl Tankard (via Copilot)
 **What:** For issue #106 (install squad-cli globally in setup scripts), if npm/Node.js is not available, gracefully skip with a warning — do not force install Node.js as a prerequisite.
 **Why:** User request — captured for team memory
+
+---
+
+## [2026-04-18] User Directive — Default Model Policy
+
+**Date:** 2026-04-18T19:48Z
+**By:** Earl Tankard (via Copilot)
+**Status:** Adopted
+
+**What:** Always use claude-opus-4.6 as the default model for every task — no model usage limits apply.
+**Why:** User request — captured for team memory.
+
+---
+
+## [2026-04-19] PR #115 Review — feat(windows): add missing aliases to PowerShell profile
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**PR:** #115
+**Branch:** `squad/108-powershell-alias-parity` → `develop`
+**Closes:** #108
+**Verdict:** ✅ APPROVED
+
+**Summary:** 30 new aliases across 3 new section groups plus 14 in existing git section. All with PS 5.x compatibility, conflict guards, `$args` forwarding, inline comments, and test coverage (group F, 6 tests).
+
+**Key points:**
+- `gs` fix confirmed: `git status -sb` replaces `git status`
+- Conflict guards: `gp`, `grb`, `grs`, `ni`, `h` all guarded with `Remove-Item -Force`
+- Strict mode safe: All functions use `function Name { cmd $args }` pattern
+- CI: All 4 checks green
+- Tests: F-1 through F-6, `Test-Scenario` framework, ASCII-only, no Pester
+
+**Non-blocking note:** Diff includes unrelated `.squad/agents/mickey/history.md` changes. Future PRs should keep one concern per PR.
+
+---
+
+## [2026-04-19] PR Review Verdicts: #112 and #114
+
+**Date:** 2026-04-19
+**Reviewer:** Mickey (Lead)
+**Status:** Both approved
+
+### PR #112 — feat(windows): install vim via winget
+- **Verdict:** ✅ APPROVED
+- **Issue:** #107
+- **Branch:** `squad/107-install-vim-winget` → `develop`
+- **CI:** All 4 checks green
+- **Assessment:** Clean idempotent install pattern. PS 5.x compatible. Group E tests (E-1 through E-5) cover function existence, Main integration, winget package ID, and compat checks.
+- **Note:** Test framework uses emoji instead of `[PASS]`/`[FAIL]` — pre-existing, track separately.
+
+### PR #114 — feat(github): add GitHub issue templates
+- **Verdict:** ✅ APPROVED
+- **Issue:** #113
+- **Branch:** `squad/113-github-issue-templates` → `develop`
+- **CI:** All 4 checks green
+- **Assessment:** All four template types present. Consistent structure, proper front matter, checkbox acceptance criteria.
+- **Scope note:** PR bundles unrelated `.squad/` changes. Non-blocking, flagged for future discipline.
+
+---
+
+## [2026-04-19] Pluto Decision Log — Issue #108: PowerShell Alias Parity
+
+**Date:** 2026-04-19
+**Author:** Pluto (Config Engineer)
+**Branch:** `squad/108-powershell-alias-parity`
+
+### Aliases Added (30 total)
+
+**Git (14 new + 1 fix):** Fixed `gs` → `git status -sb`. Added: `gaa`, `gcm`, `gcb`, `gco`, `gd`, `gds`, `ggsp`, `gp`, `gpf`, `gpl`, `grb`, `grbi`, `grs`, `grss`
+**GitHub CLI (5):** `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
+**Dev Shortcuts (8):** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
+**Utility (3):** `myip`, `pb`, `h`
+
+### PS 5.1 Compatibility Decisions
+
+- `Remove-Item -Force Alias:\<name>` before `Set-Alias` for built-in conflicts: `gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`
+- No `$MyInvocation.MyCommand.Path` anywhere
+- All functions follow `function Name { command $args }` pattern for PS 5.1 strict mode
+- No unguarded PS 6+ auto-vars
+
+### Aliases Skipped
+
+Shell-specific (navigation, ls, tmux, docker, reload), `path`, `ports`, `pip` — not applicable to PowerShell or not in scope for #108.
