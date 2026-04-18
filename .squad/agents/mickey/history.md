@@ -387,3 +387,37 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 - Reviewed and approved PR #126
 - Merged via `--merge --delete-branch --admin` (regular merge commit, branch deleted)
 - Closed #124 and #125 with closing comments
+
+## [2026-04-18] Sprint 7 wrap
+- PR #131: develop → main, regular merge, --admin
+- Sprint 7 complete: hooks (#121), branch isolation docs (#122), CI guards (#123)
+- Stale squad/* branches cleaned up
+
+---
+
+## [2026-04-18] Created bug issue for PR #130 regressions (Issue #132)
+
+**Task:** File combined bug issue covering two regressions from PR #130 merge.
+
+**Bugs identified:**
+1. **PSScriptAnalyzer CI warnings in `scripts/windows/setup.ps1`:**
+   - Line 320: `Install-GitHooks` plural noun → `PSUseSingularNouns` warning (should be `Install-GitHook`)
+   - Line 322: `$gitDir` assigned but never used → `PSUseDeclaredVarsMoreThanAssignments` warning
+   - Affects both lint jobs on CI
+
+2. **Windows PS 5.1 runtime crash in `setup.ps1` (root, line ~32):**
+   - Error: `The variable '$IsWindows' cannot be retrieved because it has not been set.`
+   - Root cause: Chip's PR #130 replaced PSVersion-based guards with `Test-Path Variable:*` guards
+   - Under `Set-StrictMode -Version Latest` on PS 5.1, `$IsWindows` is undefined and throws even with short-circuit `-and`
+   - Fix: Revert to approved PSVersion-based guard pattern (already in decisions.md)
+
+**Issue created:** [#132](https://github.com/primetimetank21/dev-setup/issues/132)
+**Assigned to:** Goofy (via `squad:goofy` label)
+**Acceptance criteria:** Includes all fixes, CI passes, PS 5.1 compat verified
+
+**Key learning:** PR #130 merged with both a linting regression (unused var + function name convention) and a runtime regression (guard pattern incompatible with PS 5.1 strict mode). Demonstrates need for stricter pre-merge validation of PowerShell changes under strict mode before landing on develop/main.
+
+## [2026-04-18] #132 PS 5.1 guard regression review
+- Test-Path Variable:* is WRONG under strict mode — always use PSVersion-based short-circuit
+- Merged PR #133: Goofy's fix restoring correct guards
+
