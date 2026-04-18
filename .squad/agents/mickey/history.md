@@ -151,3 +151,19 @@ All three Sprint 6 PRs merged to `develop`:
 Issues #107, #108, #113 closed manually (GitHub doesn't auto-close on develop merges).
 
 **Earl directive captured:** Always use claude-opus-4.6 as default model — no usage limits.
+
+---
+
+## 2026-04-19 — Issues #110 and #111 Implemented
+
+**Task:** Implement two documentation issues from Sprint 6 retro action items.
+
+- **Issue #110** (direct-push override policy) → **PR #117** (`squad/110-direct-push-policy` → `develop`)
+  - Added "Direct-Push Override Policy" section to `CONTRIBUTING.md`
+  - Documents hotfix conditions, audit trail, and 2026-04-18 precedent
+
+- **Issue #111** (PS 5.x compatibility checklist) → **PR #119** (`squad/111-ps5x-checklist` → `develop`)
+  - Added "PowerShell 5.x Compatibility" section to `CONTRIBUTING.md`
+  - 5-item checklist, testing guidance, known regressions table
+
+**Status:** Both PRs open, targeting `develop`. Awaiting review and merge.

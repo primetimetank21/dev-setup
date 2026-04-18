@@ -119,3 +119,29 @@ Added `Install-Vim` to `scripts/windows/setup.ps1` and Group E tests to `tests/t
   - Existing Groups A-D cover PSScriptRoot, PS 5.x guards, profile idempotency, Copilot CLI
   - Group E (added this issue) covers Install-Vim function existence, Main call, winget ID, and compat checks
 - **Install position:** `Install-Vim` inserted after `Install-GhCli` and before `Install-CopilotCli` in Main, ensuring vim is available for any vim-based workflows during Copilot CLI setup
+
+## 2026-04-18 -- Issue #106: feat(setup): install squad-cli globally (PR #118)
+
+**Branch:** `squad/106-squad-cli-install`
+
+Added `squad-cli` (`@bradygaster/squad-cli`) global install to both Windows and Linux setup scripts.
+
+### Windows (`scripts/windows/setup.ps1`)
+- New `Install-SquadCli` function following `Install-CopilotCli` pattern
+- PS 5.x safe: uses `$PSScriptRoot`, no unguarded PS 6+ auto-vars
+- Skips with `[WARN]` if npm is not found (does NOT force-install Node)
+- Called from `Main` after `Install-CopilotCli`
+
+### Linux (`scripts/linux/tools/squad-cli.sh`)
+- New tool script following existing `run_tool` / tool-script pattern
+- Skips with `[WARN]` if npm not found
+- Called from `main()` in `scripts/linux/setup.sh` after `copilot-cli`
+
+### Tests (`tests/test_windows_setup.ps1` - Group G)
+- G-1: `Install-SquadCli` function exists
+- G-2: `Install-SquadCli` is called from `Main`
+- G-3: npm availability check with skip+warn pattern
+- G-4: No `$MyInvocation.MyCommand.Path` (PS 5.x compat)
+
+### Design decision
+If npm/Node.js is not present, skip with `[WARN]`. Do not force-install Node -- matches team decision in decisions.md.
