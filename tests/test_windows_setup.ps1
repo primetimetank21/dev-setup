@@ -462,6 +462,47 @@ Test-Scenario "F-6: PS 5.x compat - no banned patterns in profile content block"
 }
 
 # ---------------------------------------------------------------------------
+# Group G: Install-SquadCli (Issue #106)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group G: Install-SquadCli (Issue #106)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "G-1: Install-SquadCli function exists in scripts/windows/setup.ps1" {
+    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
+                            -Pattern 'function Install-SquadCli' -Quiet
+    if (-not $found) {
+        throw "Install-SquadCli function not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "G-2: Install-SquadCli is called in Main" {
+    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
+                            -Pattern '^\s*Install-SquadCli\s*$' -Quiet
+    if (-not $found) {
+        throw "Install-SquadCli is not called in Main"
+    }
+}
+
+Test-Scenario "G-3: Install-SquadCli contains npm availability check (skip+warn)" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($content -notmatch 'Get-Command npm') {
+        throw "Install-SquadCli does not check for npm availability"
+    }
+    if ($content -notmatch 'npm not found -- skipping squad-cli') {
+        throw "Install-SquadCli does not warn when npm is missing"
+    }
+}
+
+Test-Scenario "G-4: No MyInvocation.MyCommand.Path in Install-SquadCli" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($content -match '\$MyInvocation\.MyCommand\.Path') {
+        throw "scripts/windows/setup.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
