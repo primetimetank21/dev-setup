@@ -68,6 +68,17 @@ function Install-GhCli {
     Write-Ok "gh CLI installed"
 }
 
+# Vim - modal text editor; used by vb/vz aliases and general terminal editing.
+function Install-Vim {
+    if (Get-Command vim -ErrorAction SilentlyContinue) {
+        Write-Ok "vim already installed: $(vim --version | Select-Object -First 1)"
+        return
+    }
+    Write-Info "Installing vim..."
+    winget install --id vim.vim --silent --accept-source-agreements --accept-package-agreements
+    Write-Ok "vim installed"
+}
+
 function Install-CopilotCli {
     # Accept either the standalone binary (winget) or the legacy gh extension
     if (Get-Command copilot -ErrorAction SilentlyContinue) {
@@ -189,6 +200,7 @@ function Main {
     Install-Uv
     Install-Nvm
     Install-GhCli
+    Install-Vim
     Install-CopilotCli
     Write-PowerShellProfile
 

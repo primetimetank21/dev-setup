@@ -333,6 +333,66 @@ else {
 }
 
 # ---------------------------------------------------------------------------
+# Group E: Install-Vim (Issue #107)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group E: Install-Vim" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "E-1: Install-Vim function exists in scripts/windows/setup.ps1" {
+    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
+                            -Pattern 'function Install-Vim' -Quiet
+    if (-not $found) {
+        throw "Install-Vim function not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "E-2: Install-Vim is called in Main" {
+    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
+                            -Pattern '^\s*Install-Vim\s*$' -Quiet
+    if (-not $found) {
+        throw "Install-Vim is not called in Main"
+    }
+}
+
+Test-Scenario "E-3: winget package ID vim.vim is present" {
+    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
+                            -Pattern '--id vim\.vim' -Quiet
+    if (-not $found) {
+        throw "winget package ID 'vim.vim' not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "E-4: No MyInvocation.MyCommand.Path usage (PS 5.x compat)" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($content -match '\$MyInvocation\.MyCommand\.Path') {
+        throw "scripts/windows/setup.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
+    }
+}
+
+Test-Scenario "E-5: No unguarded PS 6+ auto-vars (`$IsLinux/`$IsMacOS/`$IsWindows)" {
+    $content  = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    $badVars  = @('IsLinux', 'IsMacOS', 'IsWindows')
+    foreach ($v in $badVars) {
+        # An unguarded reference looks like: $IsLinux used directly, without a PSVersion guard or
+        # a Test-Path Variable: guard on the same logical line / nearby.
+        # Acceptable patterns: ($PSVersionTable.PSVersion.Major -ge 6 -and $IsX)
+        #                  or  (Test-Path Variable:IsX) -and $IsX
+        # Simple check: if the var appears, ensure a version-guard or Test-Path guard is adjacent.
+        if ($content -match "\`$$v") {
+            # OK only when accompanied by a PSVersion guard on the same line.
+            $lines = $content -split "`n" | Where-Object { $_ -match "\`$$v" }
+            foreach ($line in $lines) {
+                if ($line -notmatch 'PSVersion|Test-Path Variable') {
+                    throw "Unguarded `$$v on line: $line"
+                }
+            }
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
