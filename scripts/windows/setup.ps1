@@ -317,6 +317,17 @@ function Install-SquadCli {
     Write-Ok "squad-cli installed"
 }
 
+function Install-GitHooks {
+    Write-Info "Configuring git hooks..."
+    $gitDir = & git rev-parse --git-dir 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        & git config core.hooksPath hooks
+        Write-Ok "Git hooks configured (core.hooksPath=hooks)"
+    } else {
+        Write-Warn "Not inside a git repo - skipping hooks config"
+    }
+}
+
 function Main {
     Write-Info "Starting Windows setup..."
     Write-Info "Checking for winget..."
@@ -334,6 +345,7 @@ function Main {
     Install-CopilotCli
     Install-SquadCli
     Write-PowerShellProfile
+    Install-GitHooks
 
     Write-Ok ""
     Write-Ok "Setup complete!"

@@ -97,6 +97,12 @@ main() {
     bash "$dotfiles_script" && log_ok "Dotfiles applied"
   fi
 
+  # Configure git hooks
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    git config core.hooksPath hooks
+    log_ok "Git hooks configured (core.hooksPath=hooks)"
+  fi
+
   log_ok "Setup complete. Open a new shell to apply all changes."
 }
 
