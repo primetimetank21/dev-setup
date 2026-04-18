@@ -157,8 +157,8 @@ Created `config/dotfiles/` with:
 ## 2026-04-07 — Issue #108: PowerShell Alias Parity
 
 **Branch:** `squad/108-powershell-alias-parity`
-**PR:** pending
-**Status:** Implemented, pushed
+**PR:** #115 → `develop` (merged)
+**Status:** ✅ Complete
 
 **What I did:**
 - Fixed `gs` alias: updated `Get-GitStatus` body from `git status` to `git status -sb`
@@ -174,3 +174,7 @@ Created `config/dotfiles/` with:
 - Shell-only aliases (navigation, ls, tmux, docker, reload) skipped — no PS parity needed
 - All functions use `function Name { cmd $args }` pattern for PS 5.1 strict mode compat
 - Decision record: `.squad/decisions/inbox/pluto-108-alias-parity.md`
+
+### 2026-04-19 — PR #115 Merged; Issue #108 Closed
+
+PR #115 merged to `develop`. Mickey reviewed and approved — all 30 aliases correct, CI green (4/4), PS 5.x safe, test group F (6 tests) passing. Issue #108 closed manually (GitHub doesn't auto-close on develop merges).
