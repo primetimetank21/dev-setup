@@ -417,7 +417,25 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 
 **Key learning:** PR #130 merged with both a linting regression (unused var + function name convention) and a runtime regression (guard pattern incompatible with PS 5.1 strict mode). Demonstrates need for stricter pre-merge validation of PowerShell changes under strict mode before landing on develop/main.
 
-## [2026-04-18] #132 PS 5.1 guard regression review
-- Test-Path Variable:* is WRONG under strict mode — always use PSVersion-based short-circuit
-- Merged PR #133: Goofy's fix restoring correct guards
+## [2026-04-18] #132 PS 5.1 guard regression review & PR #133 merge
+**Agent:** Mickey (review & merge)
+**PR #133:** Goofy's regression fix
+**Status:** ✅ Merged to develop with --admin flag
+
+**What I reviewed:**
+1. **PSScriptAnalyzer regressions (both fixed):**
+   - Function rename: `Install-GitHooks` → `Install-GitHook` (singular noun requirement met)
+   - Variable cleanup: `$gitDir` removed (no longer needed after refactor)
+   
+2. **PS 5.1 strict mode regression (fixed):**
+   - Root cause confirmed: `Test-Path Variable:IsWindows -and $IsWindows` pattern is broken under strict mode on PS 5.1
+   - Strict mode validates all variables at parse time, before short-circuit `-and` can prevent execution
+   - Fix applied: Restored PSVersion-based short-circuit pattern (`$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows`)
+   - This pattern was already approved in decisions.md from Sprint 6 retro; PR #130 accidentally reverted it
+
+**Key decision reaffirmed:** PSVersion-based short-circuit checks are the ONLY safe pattern for PS 5.1 strict mode compatibility. The RHS of `-and` is never evaluated when LHS is false, so PS 6+ variables are never accessed on PS 5.x.
+
+**Follow-up noted:** Test "Root setup.ps1 guards all three PS-Core-only variables" still expects the broken Test-Path Variable:* pattern. Needs stale test expectation update in future work.
+
+**Issue #132 closed.**
 
