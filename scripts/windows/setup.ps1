@@ -76,7 +76,23 @@ function Install-Vim {
     }
     Write-Info "Installing vim..."
     winget install --id vim.vim --silent --accept-source-agreements --accept-package-agreements
-    Write-Ok "vim installed"
+    # winget does not reliably add vim to PATH -- find and register it manually
+    $vimExe = Get-ChildItem 'C:\Program Files*\Vim\*\vim.exe' -ErrorAction SilentlyContinue |
+              Sort-Object -Property FullName -Descending |
+              Select-Object -First 1
+    if ($vimExe) {
+        $vimDir = $vimExe.DirectoryName
+        $userPath = [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+        if ($userPath -notlike "*$vimDir*") {
+            [System.Environment]::SetEnvironmentVariable('PATH', "$userPath;$vimDir", 'User')
+        }
+        $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
+                    [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+        Write-Ok "vim installed"
+    } else {
+        Write-Ok "vim installed"
+        Write-Warn "vim not found on PATH -- restart your terminal or verify C:\Program Files\Vim"
+    }
 }
 
 function Install-CopilotCli {

@@ -190,3 +190,27 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 - **Never use** `$MyInvocation.MyCommand.Path` — it's unreliable
 - **Always prefer** `$PSScriptRoot` as primary
 - **Safe fallback:** `$MyInvocation.MyCommand.Definition` (works in dot-sourced and hosted contexts)
+
+## Sprint 6: Squad CLI Install (Issue #106)
+
+**PR:** #118  
+**Date:** 2026-04-18  
+
+Implemented squad-cli global install for Windows and Linux with skip+warn pattern when npm is absent. Established reusable precedent for optional npm-dependent tools. Work shipped as planned. Issue closed.
+
+## Issue #125: Permanently add vim to User PATH after winget install (PR #126)
+
+**Branch:** `squad/fix-ci-vim-path`  
+**Date:** 2026-04-18  
+
+**Problem:** winget's `vim.vim` package does not add vim's directory to the system or user PATH. A simple `$env:PATH` session refresh is not enough — vim is unavailable even after opening a new terminal.
+
+**Fix:** After `winget install`, search `C:\Program Files*\Vim\*\vim.exe` (covers both Program Files and Program Files (x86), plus versioned subfolders like `vim91/`). If found, permanently write the directory to the User PATH registry entry via `[System.Environment]::SetEnvironmentVariable('PATH', ..., 'User')`, then refresh the current session PATH.
+
+**Key details:**
+- `Get-ChildItem` with wildcard glob finds the versioned install directory
+- `Sort-Object -Descending` picks the latest version if multiple exist
+- `SetEnvironmentVariable(..., 'User')` persists across new terminal sessions (registry write)
+- Session PATH also refreshed immediately so vim works without restart
+- PS 5.x compatible: no `$IsWindows`, no `$MyInvocation.MyCommand.Path`, ASCII-only
+
