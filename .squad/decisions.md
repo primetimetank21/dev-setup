@@ -1850,3 +1850,9 @@ Both are scoped, small, and ready. Include in next sprint planning pass.
 
 Issue #108 was created because `.aliases` shortcuts are currently only applied on Linux/macOS (via `.zshrc`). Windows users running PowerShell get no shell shortcuts at all. This is a feature parity gap. Ensure Sprint 6 planning accounts for the full scope: discovering which aliases are useful in PS context, and adapting them to PS syntax (not just copying bash aliases).
 
+
+## [2026-04-18]: Sprint 7 wrap — develop → main
+
+**By:** Mickey
+**What:** Merged develop → main via PR #131 (regular merge commit). Sprint 7 complete: git hooks (#121), branch isolation docs (#122), CI PS guards (#123).
+**Why:** Sprint 7 all issues closed, develop ahead of main.
