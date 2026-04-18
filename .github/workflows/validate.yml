@@ -129,3 +129,65 @@ jobs:
 
       - name: Run Remove-CustomItem regression test
         run: pwsh tests/test_remove_custom_item.ps1
+
+  validate-ps51:
+    name: Validate PowerShell 5.1 Compatibility
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check PowerShell version
+        shell: powershell
+        run: |
+          Write-Host "PowerShell version: $($PSVersionTable.PSVersion)"
+
+      - name: Syntax check setup.ps1 (PS 5.1)
+        shell: powershell
+        run: |
+          $errors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            "$env:GITHUB_WORKSPACE\scripts\windows\setup.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "Syntax check passed"
+
+      - name: Syntax check setup.ps1 (root)
+        shell: powershell
+        run: |
+          $errors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            "$env:GITHUB_WORKSPACE\setup.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "Syntax check passed"
+
+      - name: Run PSScriptAnalyzer under PS 5.1
+        shell: powershell
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          $results = @()
+          $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\scripts\windows\setup.ps1"
+          $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\setup.ps1"
+          if ($results.Count -gt 0) {
+            $results | Format-Table -AutoSize
+            Write-Error "PSScriptAnalyzer found $($results.Count) issue(s)"
+            exit 1
+          }
+          Write-Host "PSScriptAnalyzer passed (PS 5.1)"
+
+      - name: Run PS 5.1 compatibility tests
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File tests\test_windows_setup.ps1
