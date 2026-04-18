@@ -48,3 +48,29 @@ sudo apt-get install -y curl git build-essential vim
 ```
 
 **PR #77** reviewed by Mickey, CI 4/4 green, squash-merged to `develop`. Branch deleted.
+## 2026-04-08 — Hotfix: $PSScriptRoot for ScriptDir resolution
+
+**Reported by:** Earl Tankard  
+**File:** `setup.ps1` line 51
+
+### The Bug
+`$MyInvocation.MyCommand.Path` is `$null` in certain PowerShell host environments (e.g., `./` invocation in strict mode, some remote or hosted contexts). This caused:
+```
+The property 'Path' cannot be found on this object.
+```
+
+### The Fix Pattern (memorize this)
+Always use `$PSScriptRoot` for directory resolution. It is a PowerShell automatic variable (PS 3.0+) that always contains the directory of the executing script file.
+
+```powershell
+# CORRECT: reliable across all invocation contexts
+$ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
+
+# WRONG: null in many host environments
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+```
+
+### Rule
+- **Never use** `$MyInvocation.MyCommand.Path` — it's unreliable
+- **Always prefer** `$PSScriptRoot` as primary
+- **Safe fallback:** `$MyInvocation.MyCommand.Definition` (works in dot-sourced and hosted contexts)

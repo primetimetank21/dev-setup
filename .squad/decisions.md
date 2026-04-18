@@ -2,6 +2,41 @@
 
 ## Active Decisions
 
+## [2026-04-08] Use $PSScriptRoot for Script Directory Resolution in PowerShell
+
+**Date:** 2026-04-08  
+**Author:** Goofy (Cross-Platform Developer)  
+**Status:** Adopted  
+**Context:** Hotfix for Earl Tankard's bug report — `setup.ps1` line 51 crash on Windows
+
+### Decision
+
+All PowerShell scripts in this repo must use `$PSScriptRoot` (with a `$MyInvocation.MyCommand.Definition` fallback) to resolve the current script's directory. Use of `$MyInvocation.MyCommand.Path` is banned.
+
+### Pattern to use
+
+```powershell
+$ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
+```
+
+### Rationale
+
+`$MyInvocation.MyCommand.Path` is `$null` in several common invocation contexts:
+
+- Script run via `./` notation in strict mode
+- Script run from certain IDE or hosted PowerShell environments
+- Dot-sourced execution (`. ./setup.ps1`)
+
+`$PSScriptRoot` is a PowerShell automatic variable (available since PS 3.0) that is explicitly designed for this purpose and is populated reliably in all non-interactive script contexts.
+
+`$MyInvocation.MyCommand.Definition` is the correct fallback — it contains the full path or script body and works in dot-sourced scenarios where `$PSScriptRoot` is empty.
+
+### Scope
+
+Applies to all `.ps1` files in this repo: `setup.ps1`, `scripts/windows/setup.ps1`, and any future PowerShell scripts.
+
+---
+
 ## [Sprint 4] Enable Branch Protection on `develop`
 
 **Date:** 2026-04-07

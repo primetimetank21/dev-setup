@@ -48,7 +48,10 @@ function Get-Platform {
 # -- Routing -------------------------------------------------------------------
 
 function Main {
-  $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+  # $PSScriptRoot is the reliable automatic variable for the script's directory (PS 3.0+).
+  # Fallback to $MyInvocation.MyCommand.Definition for dot-sourced or hosted execution contexts
+  # where $PSScriptRoot may be empty. Avoid .Path — it is null in several common host environments.
+  $ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
   $platform  = Get-Platform
 
   Write-Info "dev-setup - entry point (PowerShell)"
