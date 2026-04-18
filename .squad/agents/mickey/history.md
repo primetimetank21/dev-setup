@@ -458,3 +458,17 @@ Standard issue sections going forward: `## Summary`, then type-specific sections
 - **Scope note:** PR bundles unrelated `.squad/` changes (Goofy's vim history, sprint 6 decisions, user directive). Not blocking since no functional impact, but flagged — future PRs should keep one concern per PR.
 
 **Overall:** Both PRs ready to merge.
+
+---
+
+## 2026-04-19 — Code Review: PR #115
+
+**Reviewer:** Mickey (Lead)
+
+### PR #115 — feat(windows): add missing aliases to PowerShell profile
+- **Verdict:** ✅ APPROVED
+- **Branch:** `squad/108-powershell-alias-parity` → `develop`
+- **CI:** All 4 checks green
+- **Author:** Pluto (Config Engineer)
+- **Assessment:** All 30 aliases present and correct (14 git, 5 gh CLI, 8 dev shortcuts, 3 utility). `gs` fix applied (`git status -sb`). All 5 built-in alias conflicts (`gp`, `grb`, `grs`, `ni`, `h`) properly guarded. Every function passes `$args` correctly, inline comments on all functions, PS 5.x strict mode compatible. Test group F (6 tests) covers all alias groups plus compat. ASCII-only throughout.
+- **Minor note:** Diff includes unrelated `.squad/agents/mickey/history.md` additions (prior review notes). Non-blocking, flagged for future discipline.
