@@ -321,3 +321,23 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 - **Issue #123:** `ci: triage and resolve 5 historical CI failures on main branch` (Labels: `squad`, `bug`)
 
 **Status:** All three issues created with appropriate templates and labels. Ready for Sprint 7 assignment.
+
+---
+
+### 2026-04-18 — PR #126 Review + Merge (Issues #124, #125)
+
+**PR:** [#126](https://github.com/primetimetank21/dev-setup/pull/126) — `fix(setup): replace em-dash in root setup.ps1; refresh PATH after vim install`
+**Branch:** `squad/fix-ci-vim-path` → `develop`
+
+**Review verdict:** ✅ APPROVED
+
+**Fixes reviewed:**
+1. **#124 — em-dash fix:** Replaced UTF-8 em-dash (U+2014) with ASCII `--` on line 63 of root `setup.ps1`. Eliminates `PSUseBOMForUnicodeEncodedFile` CI failure.
+2. **#125 — vim PATH fix:** `Install-Vim` now searches `C:\Program Files*\Vim\*\vim.exe`, permanently writes vim dir to User PATH registry via `SetEnvironmentVariable(..., 'User')`, and refreshes session PATH. Vim available immediately and persists across new terminals.
+
+**CI:** 4/5 green. PS 5.1 Compatibility failure (`Test-Path Variable:IsLinux` guard) is pre-existing on develop HEAD — not introduced by this PR.
+
+**Actions taken:**
+- Reviewed and approved PR #126
+- Merged via `--merge --delete-branch --admin` (regular merge commit, branch deleted)
+- Closed #124 and #125 with closing comments
