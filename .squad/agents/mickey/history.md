@@ -393,3 +393,46 @@ Needs at least one PS statement such as: `Write-Verbose "gh extension check skip
 ## 2026-04-13 — PR #104 Merged; Issues #102 and #103 Closed
 
 PR #104 merged after Goofy's lint fix (commit `7f80b5f`) replaced the empty `catch {}` with `catch { Write-Verbose "gh extension check skipped: $_" }` in `scripts/windows/setup.ps1`. All 4 CI checks passed (PowerShell lint, shell lint, Linux setup validation, PowerShell function validation). Merged to `develop` via `--admin` flag (own-PR approval bypass). Issues #102 and #103 closed with references to fixing commits and PR #104.
+
+---
+
+## 2026-04-18 — Sprint 6 Retro Action Items: Created Issues #109–#111
+
+**Task:** Convert retro action items from 2026-04-18 PS 5.x hotfix session into tracked GitHub issues for Sprint 6 visibility.
+
+**Issues Created:**
+- **Issue #111:** `docs(contributing): add PowerShell 5.x compatibility checklist` (Label: `enhancement`, Owner: Mickey)
+  - Adds PS 5.x review checklist to CONTRIBUTING.md
+  - Covers: `$PSScriptRoot` usage, version-guarded auto-vars, strict mode validation
+  
+- **Issue #109:** `ci: investigate PS 5.1 validation path on GitHub Actions` (Label: `enhancement`, Owner: Chip)
+  - Research Windows runner PS version availability
+  - Design PS 5.1 syntax/runtime validation step for CI
+  - Implement in `.github/workflows/`
+  
+- **Issue #110:** `docs: codify direct-push-to-main override policy` (Label: `documentation`, Owner: Mickey)
+  - Document override policy in CONTRIBUTING.md or docs/PROCESS.md
+  - Specify: acceptable conditions, required annotations, authorization rules
+  - Reference 2026-04-18 hotfix as precedent
+
+**Status:** All three issues created and visible on board. No assignee set for Mickey-owned issues (#111, #110) per established policy. Chip-owned issue (#109) assignee optional (repo assignment attempted if applicable).
+
+**Next:** Issues queued for Sprint 6 planning pass. All three are small-scoped, problem-framed, and ready to assign.
+
+---
+
+## 2026-04-19 — Issue Templates + Issue Fixes
+
+### Templates created (Issue #113, PR #114)
+- `.github/ISSUE_TEMPLATE/bug_report.md` — bug template with environment, steps, acceptance criteria
+- `.github/ISSUE_TEMPLATE/feature_request.md` — feature template with motivation, proposed change, idempotency criteria
+- `.github/ISSUE_TEMPLATE/documentation.md` — docs template with problem/proposed change structure
+- `.github/ISSUE_TEMPLATE/ci_infra.md` — CI/infra template for workflow and tooling changes
+- Branch: `squad/113-github-issue-templates` → PR #114 targeting `develop`
+
+### Issues fixed
+- **#106:** Replaced garbled body (backslashes replacing backticks, broken code fences) with correctly formatted version using `gh issue edit --body-file`
+- **#111:** Added `## Background` section above `## Problem` to capture orphaned intro paragraph; normalized heading style from `## Acceptance Criteria` to `## Acceptance criteria`
+
+### Decision
+Standard issue sections going forward: `## Summary`, then type-specific sections, then `## Acceptance criteria`. Templates enforce this automatically.

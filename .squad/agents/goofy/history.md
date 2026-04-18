@@ -101,3 +101,21 @@ catch {
 - PR #104 then passed all CI checks and was merged
 
 **Outcome:** PSScriptAnalyzer now passes on scripts/windows/setup.ps1. Windows setup lint baseline established.
+
+## 2026-04-13 -- Issue #107: feat(windows): install vim via winget (PR #112)
+
+**Branch:** `squad/107-install-vim-winget`
+
+Added `Install-Vim` to `scripts/windows/setup.ps1` and Group E tests to `tests/test_windows_setup.ps1`.
+
+### Learnings
+
+- **winget package ID for vim:** `vim.vim` (use `winget install --id vim.vim`)
+- **PS 5.1 compat patterns confirmed:**
+  - No `$MyInvocation.MyCommand.Path` -- always use `$PSScriptRoot`
+  - No unguarded `$IsLinux` / `$IsMacOS` / `$IsWindows` -- must be wrapped with `$PSVersionTable.PSVersion.Major -ge 6 -and $IsX`
+  - Verified by E-4 and E-5 tests
+- **Test file location:** `tests/test_windows_setup.ps1`
+  - Existing Groups A-D cover PSScriptRoot, PS 5.x guards, profile idempotency, Copilot CLI
+  - Group E (added this issue) covers Install-Vim function existence, Main call, winget ID, and compat checks
+- **Install position:** `Install-Vim` inserted after `Install-GhCli` and before `Install-CopilotCli` in Main, ensuring vim is available for any vim-based workflows during Copilot CLI setup
