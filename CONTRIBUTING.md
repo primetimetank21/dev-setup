@@ -83,6 +83,57 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ---
 
+## PowerShell 5.x Compatibility
+
+All `.ps1` scripts in this repo must run on **PowerShell 5.1** (the version shipped with Windows 10/11). PS 7+ runs on Linux Codespaces; PS 5.1 is what end users actually have.
+
+### Checklist for any `.ps1` changes
+
+- [ ] **No `$MyInvocation.MyCommand.Path`** — use `$PSScriptRoot` instead. `MyCommand.Path` returns null in PS 5.x when dot-sourced.
+- [ ] **PS 6+ automatic variables are guarded** — `$IsLinux`, `$IsMacOS`, `$IsWindows` do not exist in PS 5.x. Always guard:
+  ```powershell
+  if ($PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux) { ... }
+  ```
+- [ ] **Works under `Set-StrictMode -Version Latest`** — `setup.ps1` runs with StrictMode on. Uninitialized variables and undefined properties are hard errors, not silent nils.
+- [ ] **String literals are ASCII-only in test files** — Characters whose UTF-8 encoding contains byte `0x94` (em-dash `—`, curly quotes `""`, box-drawing chars) corrupt PS 5.x parsing under CP1252. Use plain hyphens and straight quotes in all test strings.
+- [ ] **Built-in alias conflicts handled** — Before `Set-Alias`, remove conflicts: `Remove-Item -Force Alias:\{name} -ErrorAction SilentlyContinue`
+
+### Testing on PS 5.1
+
+Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manual testing on a Windows machine is the current standard. See issue #109 for the CI validation track.
+
+### Reference: Known PS 5.x regressions caught in this repo
+
+| Date | Bug | Fix |
+|------|-----|-----|
+| 2026-04-18 | `$MyInvocation.MyCommand.Path` returned null in PS 5.x | Replaced with `$PSScriptRoot` |
+| 2026-04-18 | `Remove-CustomItem` missing `Recurse` flag, broke under StrictMode | Added `-Recurse -Force` to `Remove-Item` call |
+
+---
+
+## Direct-Push Override Policy
+
+Normally, all changes flow through PRs into `develop`. Direct pushes to `main` are **never** allowed as routine workflow.
+
+**Exception: Hotfix Override**
+
+A direct push to `main` is permitted ONLY when ALL of the following conditions are met:
+
+1. A critical regression or broken state is on `main` that blocks users
+2. The fix is small, surgical, and fully understood (not exploratory)
+3. `develop` itself is broken or the PR pipeline cannot be expedited
+4. The repo owner (Earl Tankard) explicitly authorizes the override in session
+
+**Required audit trail:**
+
+- Commit message must include `[hotfix-override]` annotation
+- A squad decision record must be written to `.squad/decisions/inbox/` documenting: what was pushed, why, and who authorized
+- The override must be referenced in the next sprint retro
+
+**Reference:** The 2026-04-18 hotfix session (PS 5.x `$MyInvocation.MyCommand.Path` regression) is the canonical example of an authorized override.
+
+---
+
 ---
 
 ## Parallel Agent Work

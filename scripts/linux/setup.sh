@@ -88,6 +88,7 @@ main() {
   run_tool "gh"
   run_tool "auth"
   run_tool "copilot-cli"
+  run_tool "squad-cli"
 
   # Apply dotfiles if Pluto's installer exists
   local dotfiles_script="${REPO_ROOT}/config/dotfiles/install.sh"

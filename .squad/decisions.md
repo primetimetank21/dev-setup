@@ -965,6 +965,222 @@ Issue #97 closed. This ensures all process documentation and team member charter
 
 ---
 
+# Decision: Vim Install Pattern for Windows (Issue #107)
+
+**Date:** 2026-04-13
+**Author:** Goofy (Cross-Platform Developer)
+**Status:** Proposed
+**Issue:** #107
+
+## winget Package ID
+
+```
+vim.vim
+```
+
+Full install command:
+```powershell
+winget install --id vim.vim --silent --accept-source-agreements --accept-package-agreements
+```
+
+## Idempotency Pattern
+
+Follows the established pattern used by Install-GitBash, Install-GhCli, etc.:
+
+```powershell
+function Install-Vim {
+    if (Get-Command vim -ErrorAction SilentlyContinue) {
+        Write-Ok "vim already installed: $(vim --version | Select-Object -First 1)"
+        return
+    }
+    Write-Info "Installing vim..."
+    winget install --id vim.vim --silent --accept-source-agreements --accept-package-agreements
+    Write-Ok "vim installed"
+}
+```
+
+- Check `Get-Command vim` first -- if it exists, print `[OK]` and return immediately
+- No PATH reload required (vim.vim adds to PATH via the installer; new terminal picks it up)
+- No post-install steps or warnings needed
+
+## Call Order in Main
+
+Inserted after `Install-GhCli` and before `Install-CopilotCli`:
+
+```
+Install-GitBash
+Install-Uv
+Install-Nvm
+Install-GhCli
+Install-Vim          <-- here
+Install-CopilotCli
+Write-PowerShellProfile
+```
+
+Rationale: vim is a prerequisite for the vb/vz aliases (edit .bashrc / .zshrc) and should be
+available before Copilot CLI in case any vim-based workflows are triggered during setup.
+
+## PS 5.1 Compatibility
+
+- No `$MyInvocation.MyCommand.Path` used
+- No unguarded `$IsLinux` / `$IsMacOS` / `$IsWindows` references
+- Works under `Set-StrictMode -Version Latest`
+- Validated by Group E tests in `tests/test_windows_setup.ps1`
+
+---
+
+# Sprint 6 Retro Action Items — GitHub Issues Created
+
+**Date:** 2026-04-18 (Session timestamp)  
+**Source:** 2026-04-18 PS 5.x hotfix retro action items  
+**Created by:** Mickey (Lead)  
+**Status:** ✅ All three issues created and tracked
+
+## Summary
+
+Converted three untracked retro action items from the 2026-04-18 PS 5.x hotfix session into GitHub issues for Sprint 6 visibility. All issues are problem-framed, scoped, and ready for sprint planning assignment.
+
+## Issues Created
+
+### Issue #111: PS 5.x Compatibility Checklist
+- **Title:** `docs(contributing): add PowerShell 5.x compatibility checklist`
+- **Label:** `enhancement`
+- **Owner:** Mickey
+- **Goal:** Add documented PS 5.x review gate to CONTRIBUTING.md
+- **Key items:**
+  - Require `$PSScriptRoot` over `$MyInvocation.MyCommand.Path`
+  - Mandate version guards for PS 6+ auto-vars (`$IsLinux`, `$IsMacOS`, `$IsWindows`)
+  - Validate `Set-StrictMode -Version Latest` behavior
+
+### Issue #109: CI PS 5.1 Validation Path
+- **Title:** `ci: investigate PS 5.1 validation path on GitHub Actions`
+- **Label:** `enhancement`
+- **Owner:** Chip
+- **Goal:** Research and implement PS 5.1 validation step in CI
+- **Scope:** Windows runner investigation, syntax/runtime check design, workflow implementation, limitation documentation
+
+### Issue #110: Direct-Push-to-Main Override Policy
+- **Title:** `docs: codify direct-push-to-main override policy`
+- **Label:** `documentation`
+- **Owner:** Mickey
+- **Goal:** Document exceptions to PR-only merge policy
+- **Key items:**
+  - Define acceptable override conditions (hotfix-only?)
+  - Require explicit authorization record (Earl, squad log annotation)
+  - Reference 2026-04-18 hotfix as precedent
+
+## Rationale
+
+**Why now:** These three items were identified as critical in the 2026-04-18 retro but had no GitHub home. Without issues, they risk being lost or forgotten between retrospectives. GitHub issues ensure:
+- Visibility in sprint planning and burndown
+- Traceable ownership (Mickey, Chip)
+- Clear acceptance criteria for reviewers
+- Audit trail of retro → implementation → merge
+
+**Problem-framed:** Each issue frames the underlying problem (PS 5.x regressions, CI blind spot, undocumented override) rather than prescribing exact implementation. This allows flexibility during implementation while keeping the goal clear.
+
+## Next Steps
+
+1. Include issues #109–#111 in Sprint 6 planning pass
+2. Assign to Mickey and Chip per issue ownership
+3. Ensure checklist items are incorporated into acceptance criteria during sprint start
+4. Reference this decision when closing issues (link back to retro)
+
+## Learnings
+
+- **Retro action items → GitHub issues:** Ensures accountability and visibility. Retros without GitHub homes risk being shelf-ware.
+- **Problem-framing vs. implementation:** Framing issues as problems absorbs scope changes and pivot requests without expanding scope creep.
+- **Durable documentation:** Decisions like this one create an audit trail. Future readers will see *why* these issues were created, *when*, and *what problem they solve*.
+
+---
+
+### 2026-04-18T19:19:41Z: User directive
+**By:** Earl Tankard (via Copilot)
+**What:** For issue #106 (install squad-cli globally in setup scripts), if npm/Node.js is not available, gracefully skip with a warning — do not force install Node.js as a prerequisite.
+**Why:** User request — captured for team memory
+
+---
+
+## [2026-04-18] User Directive — Default Model Policy
+
+**Date:** 2026-04-18T19:48Z
+**By:** Earl Tankard (via Copilot)
+**Status:** Adopted
+
+**What:** Always use claude-opus-4.6 as the default model for every task — no model usage limits apply.
+**Why:** User request — captured for team memory.
+
+---
+
+## [2026-04-19] PR #115 Review — feat(windows): add missing aliases to PowerShell profile
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**PR:** #115
+**Branch:** `squad/108-powershell-alias-parity` → `develop`
+**Closes:** #108
+**Verdict:** ✅ APPROVED
+
+**Summary:** 30 new aliases across 3 new section groups plus 14 in existing git section. All with PS 5.x compatibility, conflict guards, `$args` forwarding, inline comments, and test coverage (group F, 6 tests).
+
+**Key points:**
+- `gs` fix confirmed: `git status -sb` replaces `git status`
+- Conflict guards: `gp`, `grb`, `grs`, `ni`, `h` all guarded with `Remove-Item -Force`
+- Strict mode safe: All functions use `function Name { cmd $args }` pattern
+- CI: All 4 checks green
+- Tests: F-1 through F-6, `Test-Scenario` framework, ASCII-only, no Pester
+
+**Non-blocking note:** Diff includes unrelated `.squad/agents/mickey/history.md` changes. Future PRs should keep one concern per PR.
+
+---
+
+## [2026-04-19] PR Review Verdicts: #112 and #114
+
+**Date:** 2026-04-19
+**Reviewer:** Mickey (Lead)
+**Status:** Both approved
+
+### PR #112 — feat(windows): install vim via winget
+- **Verdict:** ✅ APPROVED
+- **Issue:** #107
+- **Branch:** `squad/107-install-vim-winget` → `develop`
+- **CI:** All 4 checks green
+- **Assessment:** Clean idempotent install pattern. PS 5.x compatible. Group E tests (E-1 through E-5) cover function existence, Main integration, winget package ID, and compat checks.
+- **Note:** Test framework uses emoji instead of `[PASS]`/`[FAIL]` — pre-existing, track separately.
+
+### PR #114 — feat(github): add GitHub issue templates
+- **Verdict:** ✅ APPROVED
+- **Issue:** #113
+- **Branch:** `squad/113-github-issue-templates` → `develop`
+- **CI:** All 4 checks green
+- **Assessment:** All four template types present. Consistent structure, proper front matter, checkbox acceptance criteria.
+- **Scope note:** PR bundles unrelated `.squad/` changes. Non-blocking, flagged for future discipline.
+
+---
+
+## [2026-04-19] Pluto Decision Log — Issue #108: PowerShell Alias Parity
+
+**Date:** 2026-04-19
+**Author:** Pluto (Config Engineer)
+**Branch:** `squad/108-powershell-alias-parity`
+
+### Aliases Added (30 total)
+
+**Git (14 new + 1 fix):** Fixed `gs` → `git status -sb`. Added: `gaa`, `gcm`, `gcb`, `gco`, `gd`, `gds`, `ggsp`, `gp`, `gpf`, `gpl`, `grb`, `grbi`, `grs`, `grss`
+**GitHub CLI (5):** `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
+**Dev Shortcuts (8):** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
+**Utility (3):** `myip`, `pb`, `h`
+
+### PS 5.1 Compatibility Decisions
+
+- `Remove-Item -Force Alias:\<name>` before `Set-Alias` for built-in conflicts: `gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`
+- No `$MyInvocation.MyCommand.Path` anywhere
+- All functions follow `function Name { command $args }` pattern for PS 5.1 strict mode
+- No unguarded PS 6+ auto-vars
+
+### Aliases Skipped
+
+Shell-specific (navigation, ls, tmux, docker, reload), `path`, `ports`, `pip` — not applicable to PowerShell or not in scope for #108.
 ## [2026-04-18] PS 5.1-Safe Platform Detection in `Get-Platform`
 
 **Date:** 2026-04-12  

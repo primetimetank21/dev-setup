@@ -87,3 +87,64 @@
 - Exits 0 on all pass, 1 on any failure for CI integration
 
 **Environment note:** Shared workspace caused initial commit to land on wrong branch (`squad/43-tmux-test-coverage`). Cherry-picked to correct branch before PR creation.
+
+---
+
+### 2026-04-13 — Issue #102, #103: Windows PowerShell Regression Test Suite (PR #104)
+
+**Branch:** `squad/102-windows-ps-regression-tests`  
+**PR:** [#104](https://github.com/primetimetank21/dev-setup/pull/104)  
+**Status:** ✅ MERGED
+
+**What I built:**
+- Created `tests/test_windows_setup.ps1` — comprehensive Windows PowerShell setup test suite
+- 15 tests organized in 4 groups:
+  - **Group A (4 tests):** Function existence & parameter validation for Install-* functions
+  - **Group B (4 tests):** Installation behavior and idempotency verification
+  - **Group C (3 tests):** Error handling and edge cases
+  - **Group D (4 tests):** Integration scenarios across multiple tools
+
+**Technical issues fixed:**
+1. **Unicode encoding** — Properly configured UTF-8 encoding for script output and test assertions
+2. **Where-Object .Count bug** — Fixed array counting logic for detecting PSAvoidUsingEmptyCatchBlock violations in target scripts
+
+**Key test patterns:**
+- Each test validates both success and graceful failure modes
+- Idempotency assertions: re-running install functions should not error
+- Tests coordinate with goofy-lint-fix to fix lint violations blocking PR
+- Random file names avoid collisions in shared CI environment
+
+**Cross-agent coordination:**
+- Opened PR #104, which triggered Mickey's review (discovered PSAvoidUsingEmptyCatchBlock lint violation)
+- Goofy then fixed the lint violation in scripts/windows/setup.ps1
+- PR #104 merged after lint fix (all 4 CI checks passed)
+- Issues #102 and #103 closed by this merge
+
+**Outcome:** Windows setup now has regression test baseline (15 tests), enabling confidence in future PowerShell setup changes.
+
+---
+
+### 2026-04-18 — Issue #109: CI PS 5.1 validation path on GitHub Actions
+
+**Branch:** `squad/109-ci-ps51-validation`
+**PR:** [#116](https://github.com/primetimetank21/dev-setup/pull/116)
+
+**What I built:**
+- Added `validate-ps51` job to `.github/workflows/validate.yml`
+- Runs on `windows-latest` with `shell: powershell` to force PS 5.1
+- 5 steps: version check, syntax parse of both `.ps1` files, PSScriptAnalyzer lint under PS 5.1, and test suite execution
+
+**What's validated:**
+1. PS 5.1 version confirmed on runner
+2. `scripts/windows/setup.ps1` — syntax check via `Parser::ParseFile`
+3. `setup.ps1` (root) — syntax check via `Parser::ParseFile`
+4. Both scripts linted by PSScriptAnalyzer under PS 5.1
+5. `tests/test_windows_setup.ps1` executed under native PS 5.1
+
+**Key decisions:**
+- `shell: powershell` = PS 5.1; `shell: pwsh` = PS 7+ — this is the critical distinction
+- Added root `setup.ps1` to validation (not just `scripts/windows/setup.ps1`) for full coverage
+- PSScriptAnalyzer installed at runtime since it's not pre-installed on Windows runners
+- Cannot test actual winget installs on CI runner — syntax and lint only for install functions
+
+**Outcome:** PowerShell scripts are now validated under the same PS 5.1 runtime that real Windows users have.

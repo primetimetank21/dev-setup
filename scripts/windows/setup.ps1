@@ -68,20 +68,37 @@ function Install-GhCli {
     Write-Ok "gh CLI installed"
 }
 
+# Vim - modal text editor; used by vb/vz aliases and general terminal editing.
+function Install-Vim {
+    if (Get-Command vim -ErrorAction SilentlyContinue) {
+        Write-Ok "vim already installed: $(vim --version | Select-Object -First 1)"
+        return
+    }
+    Write-Info "Installing vim..."
+    winget install --id vim.vim --silent --accept-source-agreements --accept-package-agreements
+    Write-Ok "vim installed"
+}
+
 function Install-CopilotCli {
+    # Accept either the standalone binary (winget) or the legacy gh extension
+    if (Get-Command copilot -ErrorAction SilentlyContinue) {
+        Write-Ok "GitHub Copilot CLI already installed"
+        return
+    }
     try {
         $extensions = gh extension list 2>&1
         if ($extensions -match "gh-copilot") {
-            Write-Ok "GitHub Copilot CLI already installed"
+            Write-Ok "GitHub Copilot CLI (gh extension) already installed"
             return
         }
     } catch {
-        Write-Warn "gh CLI not authenticated or not found - skipping Copilot CLI install"
-        Write-Warn "Run 'gh auth login' then re-run this script to install Copilot CLI"
-        return
+        Write-Verbose "gh extension check skipped: $_"
     }
+
     Write-Info "Installing GitHub Copilot CLI..."
-    gh extension install github/gh-copilot
+    # Mirrors the official install script (https://gh.io/copilot-install) on Windows:
+    # on Windows it routes to `winget install GitHub.Copilot` (standalone binary).
+    winget install --id GitHub.Copilot --silent --accept-source-agreements --accept-package-agreements
     Write-Ok "Copilot CLI installed"
 }
 
@@ -120,7 +137,7 @@ Set-Alias -Name touch -Value Set-FileTimestamp
 
 # -- Git shortcuts --------------------------------------------------------------
 
-function Get-GitStatus { git status $args }
+function Get-GitStatus { git status -sb $args }   # short branch status
 Set-Alias -Name gs -Value Get-GitStatus
 
 function Invoke-GitCommit { git commit $args }
@@ -152,6 +169,105 @@ Set-Alias -Name ggs -Value Invoke-GitStash
 function Get-GitStashList { git stash list $args }
 Set-Alias -Name ggsls -Value Get-GitStashList
 
+function Add-GitAllFiles { git add --all $args }            # stage all changes
+Set-Alias -Name gaa -Value Add-GitAllFiles
+
+function Invoke-GitCommitMessage { git commit -m $args }    # commit with inline message
+Set-Alias -Name gcm -Value Invoke-GitCommitMessage
+
+function New-GitBranch { git checkout -b $args }            # create and switch to new branch
+Set-Alias -Name gcb -Value New-GitBranch
+
+function Invoke-GitCheckout { git checkout $args }          # switch branch or restore file
+Set-Alias -Name gco -Value Invoke-GitCheckout
+
+function Get-GitDiff { git diff $args }                     # show unstaged diff
+Set-Alias -Name gd -Value Get-GitDiff
+
+function Get-GitDiffStaged { git diff --staged $args }      # show staged diff
+Set-Alias -Name gds -Value Get-GitDiffStaged
+
+function Invoke-GitStashPop { git stash pop $args }         # pop most recent stash
+Set-Alias -Name ggsp -Value Invoke-GitStashPop
+
+function Invoke-GitPush { git push $args }                  # push to remote
+Remove-Item -Force Alias:\gp -ErrorAction SilentlyContinue
+Set-Alias -Name gp -Value Invoke-GitPush
+
+function Invoke-GitPushForce { git push --force-with-lease $args }  # safe force push
+Set-Alias -Name gpf -Value Invoke-GitPushForce
+
+function Invoke-GitPull { git pull $args }                  # pull from remote
+Set-Alias -Name gpl -Value Invoke-GitPull
+
+function Invoke-GitRebase { git rebase $args }              # rebase onto branch
+Remove-Item -Force Alias:\grb -ErrorAction SilentlyContinue
+Set-Alias -Name grb -Value Invoke-GitRebase
+
+function Invoke-GitRebaseInteractive { git rebase -i $args }  # interactive rebase
+Set-Alias -Name grbi -Value Invoke-GitRebaseInteractive
+
+function Invoke-GitRestore { git restore $args }            # discard working tree changes
+Remove-Item -Force Alias:\grs -ErrorAction SilentlyContinue
+Set-Alias -Name grs -Value Invoke-GitRestore
+
+function Invoke-GitRestoreStaged { git restore --staged $args }  # unstage a file
+Set-Alias -Name grss -Value Invoke-GitRestoreStaged
+
+# -- GitHub CLI shortcuts -------------------------------------------------------
+
+function New-GhPR { gh pr create $args }                    # open a pull request
+Set-Alias -Name ghpr -Value New-GhPR
+
+function Get-GhPRList { gh pr list $args }                  # list pull requests
+Set-Alias -Name ghprl -Value Get-GhPRList
+
+function Get-GhPRView { gh pr view $args }                  # view a pull request
+Set-Alias -Name ghprv -Value Get-GhPRView
+
+function Get-GhIssueList { gh issue list $args }            # list issues
+Set-Alias -Name ghis -Value Get-GhIssueList
+
+function Get-GhIssueView { gh issue view $args }            # view an issue
+Set-Alias -Name ghiv -Value Get-GhIssueView
+
+# -- Dev shortcuts --------------------------------------------------------------
+
+function Invoke-UvRun { uv run $args }                      # run with uv
+Set-Alias -Name uvr -Value Invoke-UvRun
+
+function Invoke-UvSync { uv sync $args }                    # sync uv environment
+Set-Alias -Name uvs -Value Invoke-UvSync
+
+function Invoke-NpmInstall { npm install $args }            # npm install
+Remove-Item -Force Alias:\ni -ErrorAction SilentlyContinue
+Set-Alias -Name ni -Value Invoke-NpmInstall
+
+function Invoke-NpmRun { npm run $args }                    # npm run <script>
+Set-Alias -Name nr -Value Invoke-NpmRun
+
+function Invoke-NpmRunDev { npm run dev $args }             # npm run dev
+Set-Alias -Name nrd -Value Invoke-NpmRunDev
+
+function Invoke-NpmRunTest { npm run test $args }           # npm run test
+Set-Alias -Name nrt -Value Invoke-NpmRunTest
+
+function Invoke-Python { python $args }                     # python shorthand
+Set-Alias -Name py -Value Invoke-Python
+
+Set-Alias -Name c -Value Clear-Host                         # clear the screen
+
+# -- Utility --------------------------------------------------------------------
+
+function Get-MyIp { curl -s ifconfig.me $args }             # show public IP
+Set-Alias -Name myip -Value Get-MyIp
+
+function Invoke-PingBing { ping bing.com $args }            # quick connectivity check
+Set-Alias -Name pb -Value Invoke-PingBing
+
+Remove-Item -Force Alias:\h -ErrorAction SilentlyContinue
+Set-Alias -Name h -Value Get-History                        # command history
+
 # END dev-setup profile
 '@
 
@@ -161,9 +277,28 @@ Set-Alias -Name ggsls -Value Get-GitStashList
         New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
     }
 
-    # Append to profile (create if absent)
+    # Append to profile (create if absent).
+    # Always prepend a blank line so we don't concatenate onto any existing last line.
+    if (Test-Path $PROFILE) {
+        Add-Content -Path $PROFILE -Value ""
+    }
     Add-Content -Path $PROFILE -Value $profileContent
     Write-Ok "PowerShell profile shortcuts installed to $PROFILE"
+}
+
+# install squad-cli globally via npm
+function Install-SquadCli {
+    if (Get-Command squad -ErrorAction SilentlyContinue) {
+        Write-Ok "squad-cli already installed: $(squad --version 2>&1)"
+        return
+    }
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        Write-Warn "npm not found -- skipping squad-cli install"
+        return
+    }
+    Write-Info "Installing squad-cli..."
+    npm install -g "@bradygaster/squad-cli"
+    Write-Ok "squad-cli installed"
 }
 
 function Main {
@@ -179,7 +314,9 @@ function Main {
     Install-Uv
     Install-Nvm
     Install-GhCli
+    Install-Vim
     Install-CopilotCli
+    Install-SquadCli
     Write-PowerShellProfile
 
     Write-Ok ""
