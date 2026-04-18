@@ -962,3 +962,101 @@ Issue #97 closed. This ensures all process documentation and team member charter
 **What:** Scribe MUST NEVER modify files outside of .squad/. Root-level project files (.gitignore, .gitattributes, README.md, setup.sh, setup.ps1, etc.) are strictly off-limits for Scribe. Scribe's only authorized write targets are .squad/ files.
 **Why:** Scribe modified .gitignore without authorization, un-ignoring log directories. This is a scope violation.
 
+
+---
+
+## [2026-04-18] PS 5.1-Safe Platform Detection in `Get-Platform`
+
+**Date:** 2026-04-12  
+**Author:** Goofy (Cross-Platform Developer)  
+**Requested by:** Earl Tankard  
+**File affected:** `setup.ps1` — `Get-Platform` function
+
+### Context
+
+`setup.ps1` uses `Set-StrictMode -Version Latest`. On Windows PowerShell 5.x, the automatic variables `$IsLinux`, `$IsMacOS`, and `$IsWindows` do not exist — they were introduced in PowerShell 6 (Core). Under strict mode, referencing an unset variable is a hard error.
+
+### Decision
+
+Replace bare references to `$IsLinux`/`$IsMacOS`/`$IsWindows` with version-guarded expressions that short-circuit on PS 5.x:
+
+```powershell
+$isWin = ($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows) -or
+          ($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')
+$isLin = $PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux
+$isMac = $PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS
+```
+
+### Why This Works
+
+- PowerShell's `-and` operator short-circuits: if the left side is `$false`, the right side is never evaluated. So on PS 5.x (`Major -lt 6`), `$IsLinux` and `$IsMacOS` are never touched.
+- `$PSVersionTable.PSVersion.Major` is available from PS 2 onwards — safe everywhere.
+- `$env:OS` is `Windows_NT` on every Windows version under PS 5.x — a reliable Windows fingerprint without needing `$IsWindows`.
+
+### Outcome
+
+`Get-Platform` now works correctly on PS 5.1 and PS 7+. On PS 5.x Windows:
+- `$isWin` → `$true` (via `$env:OS -eq 'Windows_NT'`)
+- `$isLin` → `$false` (short-circuited, `$IsLinux` never evaluated)
+- `$isMac` → `$false` (short-circuited, `$IsMacOS` never evaluated)
+
+---
+
+## [2026-04-18] Retro Action Items — PS 5.x Hotfix Session
+
+**Source:** Session retro facilitated by Mickey  
+**Date:** 2026-04-18  
+**Session:** PS 5.x hotfix (bugs in setup.ps1)
+
+### Action Items from Retro
+
+#### 1. PS 5.x Compatibility Checklist (new process gate)
+
+**Owner:** Mickey  
+**Priority:** P2
+
+Create and document a PS 5.x review checklist to be applied to any new `.ps1` code:
+1. No use of `$MyInvocation.MyCommand.Path` — use `$PSScriptRoot` always
+2. All PS 6+ automatic variables (`$IsLinux`, `$IsMacOS`, `$IsWindows`) must be guarded behind `$PSVersionTable.PSVersion.Major -ge 6` short-circuit
+3. Strict mode behavior (`Set-StrictMode -Version Latest`) must be validated for all variable references
+4. Any new Windows code must explicitly note whether it was tested on PS 5.1 or PS 7+
+
+Add this checklist to CONTRIBUTING.md under "Windows / PowerShell Review Gate."
+
+#### 2. CI: PS 5.1 Validation Path
+
+**Owner:** Chip  
+**Priority:** P2
+
+Investigate adding a Windows runner to GitHub Actions that validates `setup.ps1` on PowerShell 5.1. At minimum, a syntax check (`powershell -Version 5 -File setup.ps1 -WhatIf` or PSScriptAnalyzer) would catch this category of bugs before they reach `main`.
+
+#### 3. Direct-Push-to-Main Override Policy
+
+**Owner:** Mickey  
+**Priority:** P3
+
+The current PR policy has no documented exception path. Earl authorized direct push to `main` for today's session. We need a short policy:
+- Direct pushes to `main` require explicit Earl authorization
+- The commit message or squad log must note the override (e.g., `[main-override: Earl Tankard YYYY-MM-DD]`)
+- Not for use outside genuine hotfix scenarios
+
+Add to CONTRIBUTING.md under "Merge Policy > Emergency Hotfix."
+
+#### 4. Sprint 6 Issue Assignment
+
+**Owner:** Mickey  
+**Priority:** P1
+
+Assign existing issues to Sprint 6:
+- Issue #107 (install vim on Windows via winget) → Goofy
+- Issue #108 (add .aliases to Windows PowerShell profile) → Pluto or Goofy
+
+Both are scoped, small, and ready. Include in next sprint planning pass.
+
+#### 5. Windows Shortcuts Coverage Gap
+
+**Owner:** Mickey / Pluto  
+**Priority:** P2
+
+Issue #108 was created because `.aliases` shortcuts are currently only applied on Linux/macOS (via `.zshrc`). Windows users running PowerShell get no shell shortcuts at all. This is a feature parity gap. Ensure Sprint 6 planning accounts for the full scope: discovering which aliases are useful in PS context, and adapting them to PS syntax (not just copying bash aliases).
+

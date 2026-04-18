@@ -17,6 +17,26 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+## PS 5.x Automatic Variable Pattern (`$IsLinux` / `$IsMacOS` / `$IsWindows`)
+
+`$IsLinux`, `$IsMacOS`, and `$IsWindows` are **PS 6+ only**. Referencing them directly on PS 5.x under `Set-StrictMode -Version Latest` causes a hard error:
+```
+The variable '$IsLinux' cannot be retrieved because it has not been set.
+```
+
+**Safe pattern for PS 5.1 compatibility:**
+```powershell
+$isWin = ($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows) -or
+          ($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')
+$isLin = $PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux
+$isMac = $PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS
+```
+
+Key facts:
+- `$PSVersionTable.PSVersion.Major` has existed since PS 2 — always safe to read
+- `$env:OS` is `Windows_NT` on all Windows versions in PS 5.x
+- Short-circuit `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux` means the RHS is never evaluated on PS 5.x, so no strict-mode error
+
 ## 2026-04-07 — Issue #2: Windows core setup script
 
 **Branch:** `squad/2-windows-setup` (based on `squad/3-os-detection-entry-point`)
