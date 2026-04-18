@@ -236,4 +236,30 @@ Designed and implemented PS 5.1 validation job using `windows-latest` runner wit
 **Key outcome:**
 - Local development quality gates now enforced via git hooks
 - Cross-platform POSIX sh ensures Git Bash compatibility on Windows
-- PR #130 open on squad/121-git-hooks → develop
+- ✅ PR #130 merged to develop (2026-04-18)
+- ✅ Issue #121 closed
+
+---
+
+## [2026-04-18] Sprint 7 Completion — Issues #121, #123
+
+**Session:** Full autonomous execution (Earl AFK, cooking)
+**Status:** ✅ Complete
+
+### Issue #121 — git hooks implementation (PR #130)
+✅ Merged to develop. All hooks implemented and tested:
+- `hooks/commit-msg` — Conventional Commits validation
+- `hooks/pre-push` — Branch protection + shellcheck
+
+### Issue #123 — CI triage (PR #130)
+✅ Merged to develop. Findings:
+- Historical failures (5 on main): Stale artifacts, superseded by PR #126
+- Pre-existing develop failure: Root setup.ps1 using PSVersionTable checks instead of Test-Path Variable:* guards
+- **Fix applied in PR #130:** Replaced all version checks with Test-Path guards (pattern: `Test-Path Variable:IsWindows -and $IsWindows`)
+
+**Key learning:** PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks.
+
+**Final state:**
+- Main branch: ✅ Green (PR #126 fixed em-dash)
+- Develop branch: ✅ Green (PR #130 fixed PS guards)
+- All Sprint 7 CI issues resolved

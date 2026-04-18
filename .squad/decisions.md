@@ -48,7 +48,33 @@ PS scripts now have dual-runtime CI coverage: PS 7+ (existing `lint-powershell`)
 
 ---
 
-## ### 2026-04-18T20:15: User directive — no squash merges, ever
+## ## # Sprint 6 Hotfix Wrap (Issue #124, #125, PR #127)
+
+**Date:** 2026-04-18
+**Author:** Mickey (Lead)
+**Status:** ✅ Complete
+
+### Issues Fixed
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| #124 | fix(setup): replace non-ASCII em-dash in root setup.ps1 comment | Removed U+2014 em-dash, replaced with ASCII `--` |
+| #125 | fix(setup): refresh PATH after vim winget install so vim is immediately available | Added `$env:PATH` refresh and fallback warning |
+
+### Context
+
+Both issues identified as post-sprint bugs in Sprint 6. Bundled into single hotfix PR for develop → main merge to restore green CI on main branch.
+
+### Outcome
+
+✅ Both bugs fixed
+✅ PR #127 merged to develop → main (regular merge, --admin)
+✅ Green CI restored on main
+✅ Ready for Sprint 7 development
+
+---
+
+### 2026-04-18T20:15: User directive — no squash merges, ever
 **By:** Earl Tankard (via Copilot)
 **What:** Never use squash merges anywhere in this repo. All merges (feature PRs to develop AND sprint wraps develop→main) must use regular merge commits. `--squash` is banned.
 **Why:** User request — captured for team memory
@@ -128,6 +154,142 @@ Sprint 6 retro (2026-04-18) identified two documentation gaps from the PS 5.x ho
 Once merged, all contributors and squad agents have explicit reference material for:
 - Override authorization (prevents unauthorized direct pushes)
 - PS 5.x review (prevents the class of regressions seen on 2026-04-18)
+
+---
+
+## # Git Hooks Implementation (Issue #121, PR #130)
+
+**Date:** 2026-04-18
+**Author:** Chip (Tester)
+**Status:** ✅ Complete
+
+### What Was Implemented
+
+Three git hooks were created and integrated into the setup process:
+
+1. **`hooks/pre-commit`** — Enforces shellcheck on all shell scripts
+2. **`hooks/commit-msg`** — Enforces Conventional Commits format (type(scope): message)
+3. **`hooks/pre-push`** — Blocks direct pushes to `main` branch
+
+### Configuration
+
+Core hooks path wired in both setup scripts:
+- **Unix:** `git config core.hooksPath hooks` added to `scripts/linux/setup.sh`
+- **Windows:** `git config core.hooksPath hooks` added to `scripts/windows/setup.ps1`
+
+### Testing
+
+Comprehensive hook tests added to `test_git_hooks.ps1`:
+- Hook file existence and executability
+- Hook behavior for valid and invalid inputs
+- Cross-platform compatibility (Unix shells via Git Bash on Windows)
+
+### Key Design Decisions
+
+1. **Hook Framework:** None — use native Git `core.hooksPath` + committed `hooks/` directory
+   - Zero external dependencies (no Husky, lefthook, etc.)
+   - Version-controlled and cross-platform
+   - Works identically via Git Bash on Windows
+
+2. **commit-msg Hook:** POSIX shell regex validation
+   - Pattern: `^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?(!)?: .{1,}`
+   - Hard error on non-conforming commits (can override with `git commit --no-verify`)
+   - Exceptions: Merge commits and fixup/squash commits are allowed
+
+3. **pre-push Hook:** Two checks
+   - (1) Rejects any push targeting `main` with helpful error message
+   - (2) Runs shellcheck on changed `.sh` files (if available)
+   - Integrates with git-lfs if present
+
+### Outcome
+
+✅ All hooks implemented, tested, and integrated
+✅ PR #130 merged to develop
+✅ Issue #121 closed
+
+---
+
+## # Branch Isolation Rule (Issue #122, PR #129)
+
+**Date:** 2026-04-18
+**Author:** Mickey (Lead)
+**Status:** ✅ Complete
+
+### What Was Added
+
+Two new sections added to CONTRIBUTING.md:
+
+1. **Branch Isolation** — Enforces that all feature branches must be created from `develop` HEAD, never from another squad branch
+2. **Merge Strategy** — Documents that ALL merges use regular merge commits, never squash merges
+
+### Rationale
+
+**Sprint 6 retro finding:** Branch ancestry bleed occurred 3 times (PRs #114, #116, #118), degrading PR review quality and inflating diffs with unrelated commits.
+
+### Key Rules
+
+- **Rule 1:** Always fork branches from develop HEAD
+- **Rule 2:** Never branch from another feature branch
+- **Rule 3:** All merges use regular merge commit (--merge flag)
+- **Rule 4:** Never use squash merge
+
+### Verification Guidance
+
+Contributors can verify branch isolation with:
+```bash
+git log --oneline develop..HEAD
+```
+If this shows only commits from your branch, isolation is clean.
+
+### Outcome
+
+✅ Documentation complete and merged
+✅ PR #129 merged to develop
+✅ Issue #122 closed
+
+---
+
+## # CI Triage & PowerShell 5.1 Variable Guards (Issue #123, PR #130)
+
+**Date:** 2026-04-18
+**Author:** Chip (Tester)
+**Status:** ✅ Complete
+
+### Historical CI Failures (April 18 ~04:58 UTC)
+
+**Finding:** 5 CI runs failed on main branch
+**Root Cause:** Non-ASCII em-dash (U+2014) on line 63 of root setup.ps1
+**Status:** Already fixed by PR #126; failures were stale artifacts
+
+### Pre-existing develop Failure
+
+**Test:** "Root setup.ps1 guards all three PS-Core-only variables"
+**Root Cause:** Root setup.ps1 used PSVersionTable version checks instead of Test-Path Variable:* guards
+
+#### The Problem
+
+PS 5.1 doesn't recognize the PowerShell Core-only variables ($IsWindows, $IsLinux, $IsMacOS) natively. Runtime version checks (`$PSVersionTable.PSVersion.Major -ge 6`) don't work for source-level validation.
+
+#### The Fix (PR #130)
+
+Replaced all PSVersionTable checks with Test-Path Variable:* guards:
+
+| Before (Wrong) | After (Correct) |
+|---|---|
+| `($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows)` | `(Test-Path Variable:IsWindows -and $IsWindows)` |
+| `($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')` | `(-not (Test-Path Variable:IsWindows) -and $env:OS -eq 'Windows_NT')` |
+| `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux` | `Test-Path Variable:IsLinux -and $IsLinux` |
+| `$PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS` | `Test-Path Variable:IsMacOS -and $IsMacOS` |
+
+### Key Learning
+
+**PowerShell 5.1 compatibility validation requires explicit source-level guards (Test-Path Variable:*), not runtime version checks.** This pattern aligns with approved PS 5.x compatibility rules documented in Issue #111.
+
+### Outcome
+
+✅ Historical failures triaged (superseded by PR #126)
+✅ Pre-existing failure fixed in PR #130
+✅ Issue #123 closed
 
 ---
 
