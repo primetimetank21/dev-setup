@@ -1856,3 +1856,43 @@ Issue #108 was created because `.aliases` shortcuts are currently only applied o
 **By:** Mickey
 **What:** Merged develop → main via PR #131 (regular merge commit). Sprint 7 complete: git hooks (#121), branch isolation docs (#122), CI PS guards (#123).
 **Why:** Sprint 7 all issues closed, develop ahead of main.
+
+---
+
+## [2026-04-18]: PR #130 Regressions Fixed — PS 5.1 Guard Pattern Confirmed
+
+**Issues:** #132 (Goofy + Mickey regression reports)
+**PR:** #133 (Goofy fix)
+**Status:** ✅ Merged to develop
+
+### What
+PR #130 (git hooks + CI guards) inadvertently introduced two regressions:
+
+1. **PSScriptAnalyzer warnings** — Function name violated `PSUseSingularNouns` rule; missing function reference
+2. **PS 5.1 crash** — Test-Path Variable:* guard pattern (`Test-Path Variable:IsWindows -and $IsWindows`) throws `VariableIsUndefined` under `Set-StrictMode -Version Latest` on PowerShell 5.1, even with short-circuit `-and`
+
+### Root Cause Analysis
+- **PSAnalyzer:** `Install-GitHooks` → `Install-GitHook` (singular noun required); function was referenced but assignment not used
+- **PS 5.1 strict mode:** Even though `-and` short-circuits at runtime, strict mode validates ALL operands at parse time. The `Test-Path Variable:*` check doesn't prevent evaluation of `$IsWindows` on PS 5.1.
+
+### Correct Pattern
+The ONLY safe pattern for PS 5.1 strict mode compatibility:
+```powershell
+# Correct: PSVersion check short-circuits BEFORE $IsWindows is evaluated
+($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows)
+
+# BROKEN on PS 5.1 strict mode (even with -and short-circuit)
+(Test-Path Variable:IsWindows -and $IsWindows)
+```
+
+### Fixes Applied (PR #133)
+- Renamed `Install-GitHooks` → `Install-GitHook`
+- Removed unused `$gitDir` variable
+- Restored PSVersion guards in `setup.ps1` guards (revert to pre-#130 pattern)
+- All PSScriptAnalyzer checks now pass
+
+### Key Learning for Future Work
+Test-Path Variable:* pattern is **NOT** a valid substitute for PSVersion-based guards under strict mode on PS 5.1. The approved pattern (`$PSVersionTable.PSVersion.Major -ge 6 -and ...`) must always be used for PS 6+ automatic variables.
+
+### Follow-up
+Test "Root setup.ps1 guards all three PS-Core-only variables" still expects Test-Path Variable:* pattern and will fail. Needs stale test update in follow-up work.

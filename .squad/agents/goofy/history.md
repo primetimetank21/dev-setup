@@ -17,6 +17,13 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### [2026-04-18] Fix PR #130 regressions
+- Test-Path Variable:* guard is BROKEN under Set-StrictMode -Version Latest on PS 5.1
+- Even with short-circuit -and, strict mode throws VariableIsUndefined on $IsWindows
+- CORRECT pattern: PSVersion-based short-circuit (Major -ge 6 -and $IsWindows)
+- PSUseSingularNouns: PowerShell cmdlets/functions MUST use singular nouns
+- PSUseDeclaredVarsMoreThanAssignments: any assigned var must be used or removed
+
 ### End-of-session cleanup workflow (2026-04-12)
 
 When finishing a multi-agent session with uncommitted changes on merged feature branches:
@@ -213,4 +220,24 @@ Implemented squad-cli global install for Windows and Linux with skip+warn patter
 - `SetEnvironmentVariable(..., 'User')` persists across new terminal sessions (registry write)
 - Session PATH also refreshed immediately so vim works without restart
 - PS 5.x compatible: no `$IsWindows`, no `$MyInvocation.MyCommand.Path`, ASCII-only
+
+## [2026-04-18] Fix PR #130 regressions (Issue #132, PR #133)
+**Branch:** `squad/fix-pr130-regressions`
+**Status:** ✅ Merged to develop
+
+**What I found:** PR #130 introduced two regressions:
+1. **PSScriptAnalyzer:** Function `Install-GitHooks` uses plural noun (rule: must be singular `Install-GitHook`)
+2. **PSScriptAnalyzer:** Variable `$gitDir` assigned but never used (rule: declare only what's used)
+3. **Runtime crash on PS 5.1:** Strict mode rejects `Test-Path Variable:IsWindows -and $IsWindows` pattern because strict mode validates all variables at parse time. Even though `-and` short-circuits at runtime, strict mode throws `VariableIsUndefined` on `$IsWindows` before execution.
+
+**Root cause:** PR #130 reverted guards from approved PSVersion-based pattern (`$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows`) to the broken `Test-Path Variable:*` pattern.
+
+**What I fixed:**
+- Renamed `Install-GitHooks` → `Install-GitHook`
+- Removed `$gitDir` assignment
+- Restored all PSVersion-based guards in setup.ps1
+
+**Key learning:** PSVersion short-circuit checks are the ONLY safe pattern for PS 5.1 strict mode. The RHS of `-and` is never evaluated when LHS is false, so `$IsWindows` is never accessed on PS 5.x.
+
+**PR #133 merged** by Mickey with --admin flag. Issue #132 closed.
 
