@@ -1896,3 +1896,71 @@ Test-Path Variable:* pattern is **NOT** a valid substitute for PSVersion-based g
 
 ### Follow-up
 Test "Root setup.ps1 guards all three PS-Core-only variables" still expects Test-Path Variable:* pattern and will fail. Needs stale test update in follow-up work.
+
+---
+
+## # Decision: Issue #135 Stale Test Fix (PR #136)
+
+**Date:** 2026-04-18
+**Agent:** Chip (Tester), Mickey (Lead)
+**Issue:** #135
+**PR:** #136
+**Branch:** `squad/135-fix-stale-ps-guard-test`
+**Status:** ✅ Merged to develop
+
+### What Changed
+
+Updated the stale test assertion in `tests/test_windows_setup.ps1`:
+
+**Test:** "Root setup.ps1 guards all three PS-Core-only variables"
+
+**Before (broken — checked for obsolete pattern):**
+```powershell
+$setupContent = Get-Content (Join-Path $RepoRoot 'setup.ps1') -Raw
+foreach ($varName in @('IsLinux', 'IsMacOS', 'IsWindows')) {
+    if ($setupContent -notmatch "Test-Path Variable:$varName") {
+        throw "Root setup.ps1 is missing 'Test-Path Variable:$varName' guard"
+    }
+}
+```
+
+**After (correct — validates actual PSVersion-based guards):**
+```powershell
+$setupLines = Get-Content (Join-Path $RepoRoot 'setup.ps1')
+foreach ($varName in @('IsLinux', 'IsMacOS', 'IsWindows')) {
+    $guarded = @($setupLines | Where-Object { $_ -match ('\$' + $varName) -and $_ -match 'PSVersionTable\.PSVersion\.Major' })
+    if ($guarded.Count -eq 0) {
+        throw "Root setup.ps1 is missing PSVersion-based guard for '$varName'"
+    }
+}
+```
+
+Also updated header comment to describe the PSVersion-based guard pattern.
+
+### Why
+
+The test was checking for `Test-Path Variable:` guards that no longer exist in `setup.ps1`. The actual implementation (merged via PR #130) uses PSVersion-based guards.
+
+The `Test-Path Variable:` pattern was the original broken pattern (fails under PS 5.1 strict mode). The PSVersion-based pattern is the correct, currently-in-production pattern.
+
+### Key Learning
+
+**Test assertions must match the actual implementation pattern, not historical patterns.**
+
+When a guard strategy changes in production code (e.g., from `Test-Path Variable:` to PSVersion checks), the test that validates the guard must be updated in sync. Stale tests checking for a superseded implementation are false failures — they block CI and mislead developers about what is actually broken.
+
+### Verification
+
+✅ `setup.ps1` *does* use PSVersion-based guards:
+- Line 32: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows`
+- Line 34: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux`
+- Line 35: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS`
+
+✅ No Unicode/smart quotes in test file (ASCII only)
+✅ Test logic validates the right thing (PSVersion pattern, not Test-Path Variable:*)
+
+### Outcome
+
+✅ PR #136 merged to develop
+✅ Issue #135 closed
+✅ Test now reliable and validates correct guard pattern
