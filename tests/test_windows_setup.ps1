@@ -393,6 +393,75 @@ Test-Scenario "E-5: No unguarded PS 6+ auto-vars (`$IsLinux/`$IsMacOS/`$IsWindow
 }
 
 # ---------------------------------------------------------------------------
+# Group F: PowerShell alias parity (Issue #108)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group F: PowerShell alias parity (Issue #108)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$windowsSetupProfileContent = $windowsSetupContent
+
+Test-Scenario "F-1: All new git aliases present in profile content" {
+    $requiredAliases = @('gaa', 'gcm', 'gcb', 'gco', 'gd', 'gds', 'ggsp', 'gp', 'gpf', 'gpl', 'grb', 'grbi', 'grs', 'grss')
+    foreach ($alias in $requiredAliases) {
+        if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
+            throw "Missing alias '$alias' in scripts/windows/setup.ps1"
+        }
+    }
+}
+
+Test-Scenario "F-2: gs fix - profile contains 'git status -sb'" {
+    if ($windowsSetupProfileContent -notmatch 'git status -sb') {
+        throw "scripts/windows/setup.ps1 does not contain 'git status -sb' - gs alias fix is missing"
+    }
+}
+
+Test-Scenario "F-3: GitHub CLI aliases present (ghpr, ghprl, ghprv, ghis, ghiv)" {
+    $ghAliases = @('ghpr', 'ghprl', 'ghprv', 'ghis', 'ghiv')
+    foreach ($alias in $ghAliases) {
+        if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
+            throw "Missing GitHub CLI alias '$alias' in scripts/windows/setup.ps1"
+        }
+    }
+}
+
+Test-Scenario "F-4: Dev shortcut aliases present (uvr, uvs, ni, nr, nrd, nrt, py, c)" {
+    $devAliases = @('uvr', 'uvs', 'ni', 'nr', 'nrd', 'nrt', 'py', 'c')
+    foreach ($alias in $devAliases) {
+        if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
+            throw "Missing dev shortcut alias '$alias' in scripts/windows/setup.ps1"
+        }
+    }
+}
+
+Test-Scenario "F-5: Utility aliases present (myip, pb, h)" {
+    $utilAliases = @('myip', 'pb', 'h')
+    foreach ($alias in $utilAliases) {
+        if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
+            throw "Missing utility alias '$alias' in scripts/windows/setup.ps1"
+        }
+    }
+}
+
+Test-Scenario "F-6: PS 5.x compat - no banned patterns in profile content block" {
+    if ($windowsSetupProfileContent -match '\$MyInvocation\.MyCommand\.Path') {
+        throw "scripts/windows/setup.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
+    }
+    $badVars = @('IsLinux', 'IsMacOS', 'IsWindows')
+    foreach ($v in $badVars) {
+        if ($windowsSetupProfileContent -match "\`$$v") {
+            $lines = $windowsSetupProfileContent -split "`n" | Where-Object { $_ -match "\`$$v" }
+            foreach ($line in $lines) {
+                if ($line -notmatch 'PSVersion|Test-Path Variable') {
+                    throw "Unguarded `$$v found on line: $line"
+                }
+            }
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 

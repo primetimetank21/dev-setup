@@ -436,3 +436,25 @@ PR #104 merged after Goofy's lint fix (commit `7f80b5f`) replaced the empty `cat
 
 ### Decision
 Standard issue sections going forward: `## Summary`, then type-specific sections, then `## Acceptance criteria`. Templates enforce this automatically.
+
+---
+
+## 2026-04-19 — Code Review: PR #112 and PR #114
+
+**Reviewer:** Mickey (Lead)
+
+### PR #112 — feat(windows): install vim via winget
+- **Verdict:** ✅ APPROVED
+- **Branch:** `squad/107-install-vim-winget` → `develop`
+- **CI:** All 4 checks green
+- **Assessment:** Clean implementation. Idempotent install pattern matches existing functions. PS 5.x compatible — no banned patterns. Group E tests (E-1 through E-5) cover function existence, Main integration, winget package ID, and compat checks. No scope creep.
+- **Note:** Test framework uses emoji (✅/❌) instead of `[PASS]`/`[FAIL]` brackets — pre-existing, flagged for future housekeeping.
+
+### PR #114 — feat(github): add GitHub issue templates
+- **Verdict:** ✅ APPROVED
+- **Branch:** `squad/113-github-issue-templates` → `develop`
+- **CI:** All 4 checks green
+- **Assessment:** All four template types present (bug, feature, docs, ci/infra). Consistent structure, proper front matter, checkbox acceptance criteria. Well done.
+- **Scope note:** PR bundles unrelated `.squad/` changes (Goofy's vim history, sprint 6 decisions, user directive). Not blocking since no functional impact, but flagged — future PRs should keep one concern per PR.
+
+**Overall:** Both PRs ready to merge.

@@ -151,3 +151,26 @@ Created `config/dotfiles/` with:
 **Decision documented:** Merged to squad/decisions.md
 
 **Part of Sprint 5 Round 1:** Coordinated parallel work with Mickey (issue #54) and Donald (issue #57). All agents worked concurrently on separate branches without conflicts.
+
+---
+
+## 2026-04-07 — Issue #108: PowerShell Alias Parity
+
+**Branch:** `squad/108-powershell-alias-parity`
+**PR:** pending
+**Status:** Implemented, pushed
+
+**What I did:**
+- Fixed `gs` alias: updated `Get-GitStatus` body from `git status` to `git status -sb`
+- Added 14 new git aliases: `gaa`, `gcm`, `gcb`, `gco`, `gd`, `gds`, `ggsp`, `gp`, `gpf`, `gpl`, `grb`, `grbi`, `grs`, `grss`
+- Added 5 GitHub CLI aliases: `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
+- Added 8 dev shortcut aliases: `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
+- Added 3 utility aliases: `myip`, `pb`, `h`
+- Organized new aliases under `# -- GitHub CLI shortcuts`, `# -- Dev shortcuts`, `# -- Utility` section headers
+- Added test group F (6 tests) to `tests/test_windows_setup.ps1`
+- Used `Remove-Item -Force Alias:\<name>` guards for all built-in alias conflicts (`gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`)
+
+**Key decisions:**
+- Shell-only aliases (navigation, ls, tmux, docker, reload) skipped — no PS parity needed
+- All functions use `function Name { cmd $args }` pattern for PS 5.1 strict mode compat
+- Decision record: `.squad/decisions/inbox/pluto-108-alias-parity.md`
