@@ -26,13 +26,13 @@ function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
 function Get-Platform {
   # $IsLinux, $IsMacOS, and $IsWindows are automatic variables introduced in PowerShell 6 (Core).
   # On Windows PowerShell 5.x they do NOT exist, so referencing them directly under Set-StrictMode
-  # causes a hard "variable not set" error. To stay PS 5.1-compatible we guard every reference
-  # behind Test-Path Variable:* checks. $PSVersionTable.PSVersion.Major has been available since PS 2.
+  # causes a hard "variable not set" error. To stay PS 5.1-compatible we use PSVersion-based guards.
+  # $PSVersionTable.PSVersion.Major has been available since PS 2.
   # On PS 5.x Windows, $env:OS is always 'Windows_NT', giving us a reliable fallback.
-  $isWin = (Test-Path Variable:IsWindows -and $IsWindows) -or
-            (-not (Test-Path Variable:IsWindows) -and $env:OS -eq 'Windows_NT')
-  $isLin = Test-Path Variable:IsLinux -and $IsLinux
-  $isMac = Test-Path Variable:IsMacOS -and $IsMacOS
+  $isWin = ($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows) -or `
+            ($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')
+  $isLin = $PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux
+  $isMac = $PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS
 
   if ($isLin -or $isMac) {
     # Unlikely to be reached via PowerShell on Linux/macOS in most setups,
