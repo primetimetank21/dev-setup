@@ -121,3 +121,30 @@
 - Issues #102 and #103 closed by this merge
 
 **Outcome:** Windows setup now has regression test baseline (15 tests), enabling confidence in future PowerShell setup changes.
+
+---
+
+### 2026-04-18 — Issue #109: CI PS 5.1 validation path on GitHub Actions
+
+**Branch:** `squad/109-ci-ps51-validation`
+**PR:** [#116](https://github.com/primetimetank21/dev-setup/pull/116)
+
+**What I built:**
+- Added `validate-ps51` job to `.github/workflows/validate.yml`
+- Runs on `windows-latest` with `shell: powershell` to force PS 5.1
+- 5 steps: version check, syntax parse of both `.ps1` files, PSScriptAnalyzer lint under PS 5.1, and test suite execution
+
+**What's validated:**
+1. PS 5.1 version confirmed on runner
+2. `scripts/windows/setup.ps1` — syntax check via `Parser::ParseFile`
+3. `setup.ps1` (root) — syntax check via `Parser::ParseFile`
+4. Both scripts linted by PSScriptAnalyzer under PS 5.1
+5. `tests/test_windows_setup.ps1` executed under native PS 5.1
+
+**Key decisions:**
+- `shell: powershell` = PS 5.1; `shell: pwsh` = PS 7+ — this is the critical distinction
+- Added root `setup.ps1` to validation (not just `scripts/windows/setup.ps1`) for full coverage
+- PSScriptAnalyzer installed at runtime since it's not pre-installed on Windows runners
+- Cannot test actual winget installs on CI runner — syntax and lint only for install functions
+
+**Outcome:** PowerShell scripts are now validated under the same PS 5.1 runtime that real Windows users have.

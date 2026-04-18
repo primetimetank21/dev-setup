@@ -286,6 +286,21 @@ Set-Alias -Name h -Value Get-History                        # command history
     Write-Ok "PowerShell profile shortcuts installed to $PROFILE"
 }
 
+# install squad-cli globally via npm
+function Install-SquadCli {
+    if (Get-Command squad -ErrorAction SilentlyContinue) {
+        Write-Ok "squad-cli already installed: $(squad --version 2>&1)"
+        return
+    }
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        Write-Warn "npm not found -- skipping squad-cli install"
+        return
+    }
+    Write-Info "Installing squad-cli..."
+    npm install -g "@bradygaster/squad-cli"
+    Write-Ok "squad-cli installed"
+}
+
 function Main {
     Write-Info "Starting Windows setup..."
     Write-Info "Checking for winget..."
@@ -301,6 +316,7 @@ function Main {
     Install-GhCli
     Install-Vim
     Install-CopilotCli
+    Install-SquadCli
     Write-PowerShellProfile
 
     Write-Ok ""
