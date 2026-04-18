@@ -151,3 +151,76 @@ All three Sprint 6 PRs merged to `develop`:
 Issues #107, #108, #113 closed manually (GitHub doesn't auto-close on develop merges).
 
 **Earl directive captured:** Always use claude-opus-4.6 as default model — no usage limits.
+
+---
+
+## 2026-04-19 — Issues #110 and #111 Implemented
+
+**Task:** Implement two documentation issues from Sprint 6 retro action items.
+
+- **Issue #110** (direct-push override policy) → **PR #117** (`squad/110-direct-push-policy` → `develop`)
+  - Added "Direct-Push Override Policy" section to `CONTRIBUTING.md`
+  - Documents hotfix conditions, audit trail, and 2026-04-18 precedent
+
+- **Issue #111** (PS 5.x compatibility checklist) → **PR #119** (`squad/111-ps5x-checklist` → `develop`)
+  - Added "PowerShell 5.x Compatibility" section to `CONTRIBUTING.md`
+  - 5-item checklist, testing guidance, known regressions table
+
+**Status:** Both PRs open, targeting `develop`. Awaiting review and merge.
+
+---
+
+## 2026-04-19 — Batch Code Review: PRs #116, #117, #118, #119
+
+**Reviewer:** Mickey (Lead)
+
+### PR #116 — Chip — `ci: add PS 5.1 validation job on Windows runner` (closes #109)
+- **Verdict:** ✅ APPROVED
+- **Branch:** `squad/109-ci-ps51-validation` → `develop`
+- **CI:** 5/5 green (including the new PS 5.1 job)
+- **Assessment:** Well-constructed CI job. All steps use `shell: powershell` (PS 5.1). `Parser::ParseFile` syntax checks correct. PSScriptAnalyzer without `-EnableExit`. Test path correct.
+- **Scope note:** Carries 5 unrelated files from #106/#110 due to branch ancestry bleed. Non-blocking.
+
+### PR #117 — Mickey (self) — `docs: codify direct-push-to-main override policy` (closes #110)
+- **Verdict:** ✅ SELF-VERIFIED
+- **Branch:** `squad/110-direct-push-policy` → `develop`
+- **CI:** 4/4 green
+- **Assessment:** Content complete per #110 acceptance criteria. 4 conditions, audit trail, 2026-04-18 reference.
+
+### PR #118 — Goofy — `feat(setup): install squad-cli globally in Windows and Linux setup` (closes #106)
+- **Verdict:** ✅ APPROVED
+- **Branch:** `squad/106-squad-cli-install` → `develop`
+- **CI:** 5/5 green
+- **Assessment:** Clean implementation. Idempotent check, npm guard, PS 5.x compatible. Linux follows run_tool pattern. Group G tests (G-1 through G-4) all present, ASCII-only.
+- **Scope note:** Carries unrelated validate.yml from #109 and CONTRIBUTING.md from #110. Non-blocking.
+
+### PR #119 — Mickey (self) — `docs(contributing): add PowerShell 5.x compatibility checklist` (closes #111)
+- **Verdict:** ✅ SELF-VERIFIED
+- **Branch:** `squad/111-ps5x-checklist` → `develop`
+- **CI:** 4/4 green
+- **Assessment:** 5-item checklist, testing guidance, known regressions table — all present per #111 criteria.
+
+**Process note:** PRs #116 and #118 have cross-branch contamination (shared commits from branching off each other instead of `develop`). Flagged in reviews — third occurrence. Recommending stricter branch isolation enforcement in Sprint 7.
+
+---
+
+## 2026-04-19 — Git Hooks Design Consultation
+
+**Requested by:** Earl Tankard, Jr., Ph.D.
+**Type:** Architecture consultation (no code produced)
+
+**Question:** How to implement pre-commit/pre-push hooks for conventional commits, validation pipeline, and branch protection.
+
+**Recommendation delivered** → `.squad/decisions/inbox/mickey-githooks-design.md`
+
+**Key decisions recommended:**
+- **Framework:** `core.hooksPath` + committed `hooks/` directory — zero-dependency, cross-platform
+- **commit-msg hook:** POSIX shell regex for Conventional Commits, hard error with `--no-verify` escape
+- **pre-push hook:** Branch protection (block direct push to main) + shellcheck on changed `.sh` files
+- **Validation pipeline:** Full pipeline left to CI (`validate.yml`); hooks run only fast, high-signal checks
+- **Installation:** One-liner `git config core.hooksPath hooks` added to both setup scripts
+- **LFS compat:** Committed hooks chain to `git lfs` when installed
+
+**Open questions for Earl:** (1) Hard error vs warning on commit-msg, (2) PSScriptAnalyzer in pre-push or CI-only, (3) Whether to add a separate pre-commit hook.
+
+**Status:** Awaiting Earl's approval before implementation.
