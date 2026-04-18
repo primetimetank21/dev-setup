@@ -9,7 +9,8 @@
 #
 #   B. PS 5.x variable guards in root setup.ps1
 #      Fix (c06ceb2): $IsLinux / $IsMacOS / $IsWindows are PS 7+ only; guarded with
-#      (Test-Path Variable:VarName) -and $VarName so the script runs on Windows PS 5.x.
+#      PSVersion-based checks ($PSVersionTable.PSVersion.Major -ge 6 -and $IsX) so the
+#      script runs safely on Windows PS 5.x without triggering strict-mode errors.
 #
 #   C. Profile append corruption in scripts/windows/setup.ps1
 #      Fix (9a63720): Add-Content now prepends a blank line so the # BEGIN sentinel
@@ -183,10 +184,11 @@ Test-Scenario "PS5.x compat: IsWindows guard returns true on Windows" {
 }
 
 Test-Scenario "Root setup.ps1 guards all three PS-Core-only variables" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'setup.ps1') -Raw
+    $setupLines = Get-Content (Join-Path $RepoRoot 'setup.ps1')
     foreach ($varName in @('IsLinux', 'IsMacOS', 'IsWindows')) {
-        if ($setupContent -notmatch "Test-Path Variable:$varName") {
-            throw "Root setup.ps1 is missing 'Test-Path Variable:$varName' guard"
+        $guarded = @($setupLines | Where-Object { $_ -match ('\$' + $varName) -and $_ -match 'PSVersionTable\.PSVersion\.Major' })
+        if ($guarded.Count -eq 0) {
+            throw "Root setup.ps1 is missing PSVersion-based guard for '$varName'"
         }
     }
 }
