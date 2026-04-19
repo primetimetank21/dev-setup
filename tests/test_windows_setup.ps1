@@ -224,6 +224,7 @@ Test-Scenario "Write-PowerShellProfile uses profilePath/profilePaths (post-refac
 
 # --- C-2: No line concatenation on file without trailing newline ----------
 
+$savedProfile = $PROFILE
 $c2Profile = Join-Path $PSScriptRoot "temp_profile_c2_$(Get-Random).ps1"
 [System.IO.File]::WriteAllText($c2Profile, "Set-Alias -Name ggsls -Value Get-GitStashList")
 $PROFILE = $c2Profile
@@ -246,6 +247,7 @@ if (Test-Path $c2Profile) { Remove-Item $c2Profile -Force }
 
 # --- C-3: Second run on already-patched profile does not grow the file ---
 
+$savedProfile = $PROFILE
 $c3Profile = Join-Path $PSScriptRoot "temp_profile_c3_$(Get-Random).ps1"
 [System.IO.File]::WriteAllText($c3Profile, "Set-Alias -Name ggsls -Value Get-GitStashList")
 $PROFILE = $c3Profile
