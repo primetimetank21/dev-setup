@@ -421,3 +421,41 @@ Goofy's branch `squad/147-prepush-psscriptanalyzer` already existed with the hoo
 ✅ Tests ready for CI validation once branch is merged
 
 **Testing Philosophy:** Static validation tests like these catch structural issues (missing guards, wrong shebang, accidental hard-fail) without requiring a full git environment or execution context. They complement integration tests and catch regressions early.
+
+---
+
+## 2025-01-XX: PS 5.1 Compatibility Fix - Group L Tests (#147)
+
+### Problem
+
+All 5 Group L tests (L-1 through L-5) were failing in CI with:
+```
+Error: A positional parameter cannot be found that accepts argument 'pre-push'.
+```
+
+Root cause: PS 5.1's `Join-Path` only accepts 2 positional arguments. Multi-segment calls like:
+```powershell
+Join-Path $RepoRoot 'hooks' 'pre-push'
+```
+fail on PS 5.1 (the third argument `'pre-push'` has no positional parameter). PS 7+ allows multiple child segments, but PS 5.1 does not.
+
+### Fix
+
+Replaced all 5 occurrences of multi-segment `Join-Path` in Group L (lines 734, 745, 756, 769, 783) with nested two-argument calls:
+```powershell
+# PS 5.1 + PS 7+ compatible:
+$hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
+```
+
+### Key Lesson
+
+**ALWAYS use nested `Join-Path` calls with exactly 2 arguments for PS 5.1 compatibility.**
+
+This applies to ALL test code and any PowerShell scripts that must run on both PS 5.1 and PS 7+. Never assume multi-segment positional syntax is available.
+
+### Outcome
+
+✅ Fixed all 5 Group L tests in `tests/test_windows_setup.ps1`
+✅ Commit 4dfacfe pushed to `squad/147-prepush-psscriptanalyzer`
+✅ Tests should now pass on both PS 5.1 and PS 7+ in CI
+
