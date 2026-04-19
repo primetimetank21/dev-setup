@@ -95,6 +95,17 @@ function Install-Vim {
     }
 }
 
+# psmux - tmux equivalent for Windows PowerShell terminal multiplexer.
+function Install-Psmux {
+    if (Get-Command psmux -ErrorAction SilentlyContinue) {
+        Write-Ok "psmux already installed: $(psmux --version 2>&1)"
+        return
+    }
+    Write-Info "Installing psmux..."
+    winget install --id psmux --silent --accept-source-agreements --accept-package-agreements
+    Write-Ok "psmux installed"
+}
+
 function Install-CopilotCli {
     # Accept either the standalone binary (winget) or the legacy gh extension
     if (Get-Command copilot -ErrorAction SilentlyContinue) {
@@ -284,6 +295,30 @@ Set-Alias -Name pb -Value Invoke-PingBing
 Remove-Item -Force Alias:\h -ErrorAction SilentlyContinue
 Set-Alias -Name h -Value Get-History                        # command history
 
+# -- psmux (tmux for Windows) -----------------------------------------------
+
+function Invoke-PsmuxList { psmux ls $args }                    # list active psmux sessions
+Set-Alias -Name tls -Value Invoke-PsmuxList
+
+function Invoke-PsmuxKillServer { psmux kill-server $args }     # kill all psmux sessions
+Set-Alias -Name tks -Value Invoke-PsmuxKillServer
+
+function Invoke-PsmuxNewSession { psmux new-session -s tank_dev $args }  # create new named psmux session
+Set-Alias -Name tt -Value Invoke-PsmuxNewSession
+
+function Invoke-PsmuxAttach { psmux attach $args }              # attach to most recent psmux session
+Set-Alias -Name ta -Value Invoke-PsmuxAttach
+
+# Create or attach to the tank_dev psmux session (Windows equivalent of create_tmux)
+function New-PsmuxSession {
+    $session = 'tank_dev'
+    $exists = psmux ls 2>$null | Select-String -Pattern $session -Quiet
+    if (-not $exists) {
+        psmux new-session -d -s $session
+    }
+    psmux attach -t $session
+}
+
 # END dev-setup profile
 '@
 
@@ -342,6 +377,7 @@ function Main {
     Install-Nvm
     Install-GhCli
     Install-Vim
+    Install-Psmux
     Install-CopilotCli
     Install-SquadCli
     Write-PowerShellProfile
