@@ -488,3 +488,26 @@ Test now correctly validates the actual implementation pattern. This resolves th
 
 **This closes the follow-up from the earlier PR #130/PR #133 regression work.**
 
+## [2026-04-19] PR #145 Review — Write-PowerShellProfile strip+re-inject fix
+
+**PR:** #145 (`squad/fix-sentinel-update-logic` → `develop`)
+**Author:** Goofy (via Copilot)
+**Issue:** #144 (child of #138)
+**Verdict:** ✅ APPROVED
+
+Reviewed strip+re-inject logic replacing the old "skip if sentinel present" pattern. All checklist items passed:
+- Regex `(?s)\r?\n<BEGIN>.*?<END>\r?\n?` handles both LF and CRLF
+- No `return` in sentinel path — strips old block, falls through to inject fresh
+- `Write-Info` message shown on update (not first install)
+- `Set-Content -NoNewline` preserves raw content correctly
+- Group J tests (J-1 to J-4) cover markers, no-return, and strip logic
+- Groups A-I unaffected
+- Conventional commit format correct
+
+**Non-blocking nit:** PR body says "Closes #138" instead of "Closes #144". #144 is the specific child issue; #138 is the broader parent.
+
+### Learnings
+
+- Sentinel-based idempotency that skips entirely breaks incremental feature additions. "Strip managed block + re-inject fresh" is the correct pattern for evolving config blocks.
+- When reviewing regex for profile management, always verify the leading/trailing newline anchors handle both LF and CRLF.
+

@@ -589,6 +589,67 @@ Test-Scenario "I-3: Install-Psmux is idempotent (checks before installing)" {
 }
 
 # ---------------------------------------------------------------------------
+# Group J: Write-PowerShellProfile strip+re-inject logic (Issue #138)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group J: Write-PowerShellProfile strip+re-inject logic (Issue #138)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "J-1: Write-PowerShellProfile body contains the begin marker string" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    if ($fnBody -notmatch 'BEGIN dev-setup profile') {
+        throw "Write-PowerShellProfile body does not contain 'BEGIN dev-setup profile' marker"
+    }
+}
+
+Test-Scenario "J-2: Write-PowerShellProfile body contains the end marker string" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    if ($fnBody -notmatch 'END dev-setup profile') {
+        throw "Write-PowerShellProfile body does not contain 'END dev-setup profile' marker"
+    }
+}
+
+Test-Scenario "J-3: Write-PowerShellProfile body does NOT contain return after sentinel check" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    # The old skip logic had "return" right after the sentinel check
+    # The new strip logic should NOT have "return" — it strips and falls through
+    if ($fnBody -match 'Select-String.*BEGIN dev-setup profile.*\)\s*\{\s*[^}]*?\breturn\b') {
+        throw "Write-PowerShellProfile still has 'return' after sentinel check - should strip+re-inject instead"
+    }
+}
+
+Test-Scenario "J-4: Write-PowerShellProfile body contains Get-Content and Set-Content (strip logic)" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    if ($fnBody -notmatch 'Get-Content') {
+        throw "Write-PowerShellProfile does not contain 'Get-Content' - strip logic missing"
+    }
+    if ($fnBody -notmatch 'Set-Content') {
+        throw "Write-PowerShellProfile does not contain 'Set-Content' - strip logic missing"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
