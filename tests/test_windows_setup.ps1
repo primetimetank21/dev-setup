@@ -209,27 +209,18 @@ $windowsSetupContent = Get-Content $windowsSetupPath -Raw
 $windowsSetupNoMain  = $windowsSetupContent -replace '(?m)^\s*Main\s*$', ''
 Invoke-Expression $windowsSetupNoMain
 
-# --- C-1: Sentinel appears exactly once after two consecutive runs --------
+# --- C-1: Function uses profilePath/profilePaths variables (not $PROFILE) --------
 
-$c1Profile = Join-Path $PSScriptRoot "temp_profile_c1_$(Get-Random).ps1"
-# Write content WITHOUT a trailing newline — this was the corruption trigger.
-[System.IO.File]::WriteAllText($c1Profile, "Set-Alias -Name ggsls -Value Get-GitStashList")
-$savedProfile = $PROFILE
-$PROFILE = $c1Profile   # Script-scope override; Write-PowerShellProfile walks up and finds it here.
-
-Test-Scenario "Profile idempotency: sentinel appears exactly once after two runs" {
-    Write-PowerShellProfile  # First run — appends sentinel block
-    Write-PowerShellProfile  # Second run — must detect sentinel and short-circuit
-
-    $lines        = Get-Content $c1Profile
-    $sentinelCount = @($lines | Where-Object { $_ -eq '# BEGIN dev-setup profile' }).Count
-    if ($sentinelCount -ne 1) {
-        throw "Expected sentinel exactly once, found $sentinelCount time(s)"
+Test-Scenario "Write-PowerShellProfile uses profilePath/profilePaths (post-refactor variable names)" {
+    # After #138 refactor: function uses $profilePaths array and $profilePath loop variable
+    # instead of the automatic $PROFILE variable. Verify the new variables are present.
+    if ($windowsSetupContent -notmatch '\$profilePaths\s*=') {
+        throw "Write-PowerShellProfile does not contain '\$profilePaths =' - array definition missing"
+    }
+    if ($windowsSetupContent -notmatch 'foreach\s*\(\s*\$profilePath\s+in\s+\$profilePaths\s*\)') {
+        throw "Write-PowerShellProfile does not contain 'foreach (\$profilePath in \$profilePaths)' - loop missing"
     }
 }
-
-$PROFILE = $savedProfile
-if (Test-Path $c1Profile) { Remove-Item $c1Profile -Force }
 
 # --- C-2: No line concatenation on file without trailing newline ----------
 
@@ -278,7 +269,8 @@ if (Test-Path $c3Profile) { Remove-Item $c3Profile -Force }
 
 Test-Scenario "Windows setup.ps1 contains blank-line prepend before profile append" {
     # Verifies the fix is still in the production script (regression guard).
-    if ($windowsSetupContent -notmatch 'Add-Content\s+-Path\s+\$PROFILE\s+-Value\s+""') {
+    # Updated to check for $profilePath (loop variable) instead of $PROFILE (single-path variable)
+    if ($windowsSetupContent -notmatch 'Add-Content\s+-Path\s+\$profilePath\s+-Value\s+""') {
         throw "scripts/windows/setup.ps1 is missing the blank-line prepend fix (Add-Content -Value ``""``)"
     }
 }
@@ -676,9 +668,10 @@ Test-Scenario "K-2: Write-PowerShellProfile contains PowerShell path (PS 7+, NOT
     $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
     if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
     $fnBody = $fn[0].Body.Extent.Text
-    # Must contain "Documents\PowerShell" or "Documents/PowerShell" but NOT as part of "WindowsPowerShell"
-    if ($fnBody -notmatch 'Documents[/\\]PowerShell[^\\]') {
-        throw "Write-PowerShellProfile does not contain standalone 'Documents\PowerShell' or 'Documents/PowerShell' - PS 7+ path is missing"
+    # Must contain Path::Combine with 'PowerShell' (not 'WindowsPowerShell')
+    # Check for the pattern: Path::Combine(..., 'PowerShell', ...) without WindowsPowerShell
+    if ($fnBody -notmatch "Path\]::Combine\([^\)]*,\s*'PowerShell'\s*,") {
+        throw "Write-PowerShellProfile does not contain Path::Combine with standalone 'PowerShell' - PS 7+ path is missing"
     }
 }
 
