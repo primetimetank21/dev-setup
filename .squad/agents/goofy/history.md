@@ -333,3 +333,23 @@ This session delivered the strip+re-inject pattern for Write-PowerShellProfile, 
 **Key learning:** `$PROFILE` is version-specific — always write to explicit paths for both PS 5.1 and PS 7+ to ensure cross-version compatibility.
 
 **Related:** Issue #138 (parent), PR #145 (sentinel fix, cause ③)
+
+## 2026-04-19 — Issue #138 Fix Complete: Implementation Session Wrap-up
+
+**Session ID:** issue-138-fix-complete  
+**Date:** 2026-04-19T21:59:45Z  
+
+**Implementation Details:**
+PR #146 implemented three complementary fixes for Issue #138 (Windows PowerShell aliases):
+1. Dual-path profile injection — Write to both PS 5.1 (`WindowsPowerShell`) and PS 7+ (`PowerShell`) paths using explicit `[System.IO.Path]::Combine()`
+2. Robust alias registration — Added `-Force -Scope Global` to all 44+ Set-Alias calls in profile content
+3. Execution policy diagnostic — Check policy after write, warn if `Restricted` or `Undefined`
+
+**Branch:** `squad/138-fix-profile-aliases`  
+**PR:** #146 (merged to develop)  
+
+**Outcome:** Feature fully shipped via PR #148 (develop→main, 10/10 CI green).
+
+**Key Learning:** `$PROFILE` is version-specific — always write to explicit paths for cross-version compatibility. The refactor from `$PROFILE` to explicit `$profilePaths` array solved the root cause of aliases not loading in PS 5.1 terminals even though setup ran in PS 7+.
+
+**Related Issues:** #138 (parent), #144 (sentinel skip), #141/#142 (psmux aliases that triggered discovery)

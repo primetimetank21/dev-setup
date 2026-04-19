@@ -578,3 +578,24 @@ This session completed the sentinel fix lifecycle: scoped issue #144, reviewed a
 
 **Key Learning:** Distinguish between "CI-only as hard gate" and "CI-only means never local." Advisory local checks that gracefully degrade add value without the platform-dependency problems that motivated the original CI-only decision.
 
+
+## 2026-04-19 — Issue #138 Fix Complete: Lead Role Session Wrap-up
+
+**Session ID:** issue-138-fix-complete  
+**Date:** 2026-04-19T21:59:45Z  
+
+**Lead Tasks Completed:**
+1. Reviewed PR #146 (Issue #138, dual-path profile + force-alias + exec-policy diagnostic)
+   - Initial review: REJECTED due to 3 test failures (K-2, C-1, C-4)
+   - Identified root causes and assigned Donald for test fixes
+   - Re-review after fixes: APPROVED with non-blocking note on `$savedProfile` teardown
+
+2. Evaluated PSScriptAnalyzer + PS 5.1 hooks in pre-push (Earl's request)
+   - Feasibility: PSScriptAnalyzer via pwsh (feasible as advisory), PS 5.1 (not feasible locally)
+   - Decision: Partial adoption — advisory check for PSScriptAnalyzer in pre-push, PS 5.1 stays CI-only
+   - Reversed Sprint 7 CI-only decision based on advisory-check distinction
+   - Created Issue #147 with implementation guidance
+
+**Outcome:** PR #146 merged to develop. Issue #138 closed. PR #148 (develop→main) merged with 10/10 CI green. Issue #147 created for future pre-hook enhancement.
+
+**Key Reflection:** The PSScriptAnalyzer evaluation highlighted the importance of distinguishing between "CI-only as hard gate" vs. "CI-only means never local." Advisory soft checks with graceful degradation add developer convenience without the platform-dependency problems of hard gates.

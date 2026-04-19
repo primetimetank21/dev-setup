@@ -360,3 +360,19 @@ Goofy's branch `squad/138-fix-profile-aliases` did not exist after 5 polling att
 ✅ 5 new tests added (Group K) to `tests/test_windows_setup.ps1`
 ✅ Commit `82544ef` pushed to `chip/138-group-k-tests-temp`
 🔄 Awaiting Goofy's branch for final merge target
+
+## 2026-04-19 — Issue #138 Fix Complete: Test Design Session Wrap-up
+
+**Session ID:** issue-138-fix-complete  
+**Date:** 2026-04-19T21:59:45Z  
+
+**Test Design Contributions:**
+Anticipatory test design for Group K (Issue #138 profile fixes) before implementation:
+- K-2: Regex pattern for dual-path profile detection (later updated by Donald to match Combine() syntax)
+- K-3: Heredoc extraction + line-by-line validation for `-Force -Scope Global` on Set-Alias calls
+
+**Note on K-2 Mismatch:** Designed test expecting literal path string, but implementation used `[System.IO.Path]::Combine()` method calls. Donald updated the test pattern in regression fix phase. This is normal in anticipatory testing — spec validation happens during implementation review.
+
+**Outcome:** Test design contributed to comprehensive validation of dual-path profile fix. All Group K tests now passing as part of PR #146 merged to main.
+
+**Key Reflection:** Anticipatory testing per charter ("work from specs, not implementations") sometimes requires test adaptation when implementation details differ from predicted patterns. This is expected and healthy — the alternative of writing tests after implementation introduces "testing to the code" bias.

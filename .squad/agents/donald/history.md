@@ -381,3 +381,17 @@ Replaced the entire copilot-cli installation approach. Prior attempts using `CI=
 **Fix:** Added `$savedProfile = $PROFILE` before both C-2 and C-3 setup blocks (lines 227 and 250). The orphaned teardown lines now work correctly because `$savedProfile` is defined.
 
 **Lesson:** When refactoring functional tests to source inspection tests, audit ALL setup/teardown code. Removing a variable save in one location can orphan teardown lines elsewhere. In strict mode shells (PS 5.1, bash -u), undefined variable references are fatal errors, not warnings.
+
+## 2026-04-19 — Issue #138 Fix Complete: Session Wrap-up
+
+**Session ID:** issue-138-fix-complete  
+**Date:** 2026-04-19T21:59:45Z  
+
+**Completed Tasks:**
+1. Fixed test regressions K-2, C-1, C-4 on `squad/138-fix-profile-aliases` branch in PR #146
+2. All 3 tests now passing; CI restored to 3/3 green
+3. Accepted Mickey's non-blocking note: `$savedProfile` teardown in test setup needs cleanup (post-merge task)
+
+**Outcome:** PR #146 merged to develop. Issue #138 fully closed. Feature shipped via PR #148 (develop→main).
+
+**Reflection:** Test regression fixes on this session reinforced the pattern: when a refactor changes variable names or implementation structure, source inspection tests must adapt. The fix was straightforward once the root causes (K-2 regex, C-1 variable name, C-4 loop variable) were identified in Mickey's rejection.
