@@ -731,7 +731,7 @@ Write-Host " Group L: PSScriptAnalyzer block in pre-push hook (Issue #147)" -For
 Write-Host "========================================================" -ForegroundColor Cyan
 
 Test-Scenario "L-1: Hook file contains command -v pwsh guard (graceful skip path)" {
-    $hookPath = Join-Path $RepoRoot 'hooks' 'pre-push'
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
     if (-not (Test-Path $hookPath)) {
         throw "Hook file not found: $hookPath"
     }
@@ -742,7 +742,7 @@ Test-Scenario "L-1: Hook file contains command -v pwsh guard (graceful skip path
 }
 
 Test-Scenario "L-2: Hook file contains Invoke-ScriptAnalyzer invocation" {
-    $hookPath = Join-Path $RepoRoot 'hooks' 'pre-push'
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
     if (-not (Test-Path $hookPath)) {
         throw "Hook file not found: $hookPath"
     }
@@ -753,7 +753,7 @@ Test-Scenario "L-2: Hook file contains Invoke-ScriptAnalyzer invocation" {
 }
 
 Test-Scenario "L-3: Hook file contains PSScriptAnalyzer not installed message OR module check" {
-    $hookPath = Join-Path $RepoRoot 'hooks' 'pre-push'
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
     if (-not (Test-Path $hookPath)) {
         throw "Hook file not found: $hookPath"
     }
@@ -766,7 +766,7 @@ Test-Scenario "L-3: Hook file contains PSScriptAnalyzer not installed message OR
 }
 
 Test-Scenario "L-4: Hook file does NOT contain exit 1 on PSScriptAnalyzer lines (advisory only)" {
-    $hookPath = Join-Path $RepoRoot 'hooks' 'pre-push'
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
     if (-not (Test-Path $hookPath)) {
         throw "Hook file not found: $hookPath"
     }
@@ -780,7 +780,7 @@ Test-Scenario "L-4: Hook file does NOT contain exit 1 on PSScriptAnalyzer lines 
 }
 
 Test-Scenario "L-5: Hook file shebang is #!/bin/sh (not bash, must stay POSIX)" {
-    $hookPath = Join-Path $RepoRoot 'hooks' 'pre-push'
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
     if (-not (Test-Path $hookPath)) {
         throw "Hook file not found: $hookPath"
     }
