@@ -137,6 +137,39 @@ Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manu
 
 ---
 
+## Pre-push Hook
+
+The hook lives at `hooks/pre-push`. Install it once after cloning:
+
+```bash
+cp hooks/pre-push .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+### What it does
+
+| Check | Platform | Behavior |
+|-------|----------|----------|
+| Block push to `main` | All | **Hard block** — exits 1, push is rejected |
+| `shellcheck` on changed `.sh` files | Linux / macOS | Advisory — warnings printed, push continues |
+| `PSScriptAnalyzer` on changed `.ps1` files | Any with `pwsh` | Advisory — warnings printed, push continues |
+
+### Advisory-only rule
+
+The lint checks (shellcheck and PSScriptAnalyzer) are **advisory only** — they print warnings but always exit 0. They will never block a push. Fixes are expected before opening a PR, not before every push.
+
+### Installing PSScriptAnalyzer locally
+
+To get PS lint feedback locally, install the module once in PowerShell:
+
+```powershell
+Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
+```
+
+The hook auto-detects `pwsh` and the module. If either is absent the PS check is silently skipped — no action needed on Linux/macOS-only machines.
+
+---
+
 ## Direct-Push Override Policy
 
 Normally, all changes flow through PRs into `develop`. Direct pushes to `main` are **never** allowed as routine workflow.
