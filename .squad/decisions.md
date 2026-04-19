@@ -2305,3 +2305,25 @@ Advisory check sidesteps platform-dependency concern by gracefully skipping when
 
 - Sprint 7 decision: PSScriptAnalyzer in CI only (hard gate)
 - Issue #147: feat(hooks) — add PSScriptAnalyzer warn-only check to pre-push hook (future implementation)
+
+---
+
+## # Decision: PSScriptAnalyzer Hook Implementation Complete
+
+**Date:** 2026-04-19  
+**Agent:** Goofy  
+**Status:** ✅ Implemented and merged (PR #149, #150)
+
+### Implementation Summary
+
+PSScriptAnalyzer advisory check added to `hooks/pre-push` per Issue #147.
+
+**Behavior:**
+- Warn-only (exit 0 all paths — never blocks push)
+- Silent skip when `pwsh` unavailable (platform graceful degradation)
+- Notice skip when PSScriptAnalyzer module missing (helpful feedback)
+- POSIX `/bin/sh` syntax only (no bashisms)
+
+**Motivation:** Reduce revision cycles on PS script changes by catching PSScriptAnalyzer violations in local pre-push hook before CI-stage reviews.
+
+**Related Decisions:** Builds on Sprint 7 PSScriptAnalyzer CI-only decision; extends to local advisory-only hook as soft-check complement.

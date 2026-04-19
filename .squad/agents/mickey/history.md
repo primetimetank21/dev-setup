@@ -633,3 +633,58 @@ Reviewed Goofy's hook implementation and Chip's Group L tests. All 7 acceptance 
 - **Advisory hook pattern is now proven end-to-end.** The `command -v` → module check → `|| true` → `Write-Warning` chain established in Issue #147 is the canonical pattern for optional-tooling hooks. Future hooks (e.g., markdownlint, yamllint) should copy this structure.
 - **Static tests are sufficient for hook structural validation.** Group L demonstrates that reading the hook file and asserting patterns (guards, shebang, no `exit 1` co-occurrence) catches the important regressions without requiring a full git execution environment.
 - **`set -e` requires explicit `|| true` on every non-if command substitution.** Both the shellcheck block and PSScriptAnalyzer block use this correctly, but it's easy to forget on new additions.
+
+---
+
+## 2026-04-19 — Issue #151 Documentation Review & Approval
+
+**Session ID:** issue-151-docs-review  
+**PR:** #152 (squad/151-update-docs → develop)  
+**Branch Completion:** PR #153 (develop → main)
+
+**Role:** Reviewer/Approver  
+
+### Review Summary (PR #152)
+
+**Files Changed:** README.md, CONTRIBUTING.md, ARCHITECTURE.md
+
+**README.md changes:**
+- ✅ Added Windows PowerShell aliases section with full 6-alias table (`ta`, `tt`, `tls`, `tks`, `gpl`, `ggsls`)
+- ✅ Documented dual-path profile injection pattern from Issue #138
+- ✅ Added pre-push hook overview referencing shellcheck + PSScriptAnalyzer advisory
+
+**CONTRIBUTING.md changes:**
+- ✅ Added pre-push hook workflow section with shellcheck + PSScriptAnalyzer steps
+- ✅ Documented advisory-only behavior of PSScriptAnalyzer check ("warns, never blocks")
+- ✅ Added local PSScriptAnalyzer installation instructions
+
+**ARCHITECTURE.md changes:**
+- ✅ Added `hooks/` directory to directory structure table with description
+- ✅ Added PowerShell conventions and rules rows to OS/Stack matrix
+- ✅ Updated ownership map with Goofy as hooks owner
+
+### Acceptance Criteria Verification
+
+All 4 acceptance criteria from Issue #151 met:
+1. ✅ Windows PowerShell aliases documented with explanation and reference table
+2. ✅ Dual-path profile injection from Issue #138 clearly explained in README
+3. ✅ Pre-push hook workflow explained (shellcheck + PSScriptAnalyzer advisory)
+4. ✅ Content adds only — no rewrites; all additions follow existing file style conventions
+
+### Quality Gates
+
+- **Style consistency:** All additions match existing heading styles, table formats, and voice in respective files
+- **No content rewrites:** All changes are additive; existing sections left untouched
+- **Clarity on advisory:** PSScriptAnalyzer check clearly labeled "warn-only" to prevent confusion
+- **CI:** 5/5 checks passing
+
+**Verdict:** ✅ APPROVED — ready to merge
+
+### Release (PR #153)
+
+Merged PR #153 (develop → main) — 10/10 CI checks passing. Documentation now reflects Issues #138 and #147 work.
+
+### Key Learnings
+
+- **Documentation PRs that span multiple files need careful attention to existing patterns.** The formats and voice differ across README (bullet lists, technical details), CONTRIBUTING (procedural step lists), and ARCHITECTURE (tables, ownership structures). Respecting these patterns requires reading the full current state, not just the "add here" spots.
+- **Advisory-only hooks need explicit documentation.** Without clear labeling that PSScriptAnalyzer "warns but never blocks," users may panic on warnings or misunderstand why a push wasn't rejected.
