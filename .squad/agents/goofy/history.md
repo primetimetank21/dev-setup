@@ -241,3 +241,24 @@ Implemented squad-cli global install for Windows and Linux with skip+warn patter
 
 **PR #133 merged** by Mickey with --admin flag. Issue #132 closed.
 
+## [2026-04-18] Fix Write-PowerShellProfile sentinel skip logic (Issue #144, PR #145)
+**Branch:** `squad/fix-sentinel-update-logic`
+**Status:** ✅ Committed, PR opened
+
+**Problem:** Write-PowerShellProfile used "skip if sentinel present" logic. Users who ran setup.ps1 before PRs #141/#142 (psmux aliases) never got the new aliases — `ta`, `tks`, `tls`, `tt` were undefined because the function returned early.
+
+**Fix:** Changed to "strip + re-inject" pattern:
+- When BEGIN/END markers found, remove the old managed block entirely with regex
+- Fall through to inject the current fresh block (never skip)
+- Regex: `(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?`
+- Handles both CRLF (Windows) and LF line endings
+- Added `Write-Info "Updating PowerShell profile shortcuts..."` when updating existing profile
+
+**Tests added (Group J):**
+- J-1: BEGIN marker present in function body
+- J-2: END marker present in function body
+- J-3: No 'return' after sentinel check (verifies skip removed)
+- J-4: Get-Content/Set-Content present (verifies strip logic)
+
+**Key learning:** Sentinel-based idempotency that skips updates breaks incremental feature additions. Always use "strip managed content + re-inject fresh" for configuration blocks that evolve over time.
+
