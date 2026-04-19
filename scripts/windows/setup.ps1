@@ -130,12 +130,16 @@ function Install-CopilotCli {
 }
 
 function Write-PowerShellProfile {
-    $sentinel = '# BEGIN dev-setup profile'
+    $beginMarker = '# BEGIN dev-setup profile'
+    $endMarker   = '# END dev-setup profile'
 
-    # Idempotency check - skip if already written
-    if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($sentinel)) -Quiet)) {
-        Write-Ok "PowerShell profile shortcuts already installed"
-        return
+    # If the managed block already exists, strip it out so we can re-inject fresh
+    if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($beginMarker)) -Quiet)) {
+        Write-Info "Updating PowerShell profile shortcuts..."
+        $raw = Get-Content $PROFILE -Raw
+        # Strip the managed block (handles both LF and CRLF)
+        $raw = $raw -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''
+        Set-Content $PROFILE $raw -NoNewline
     }
 
     $profileContent = @'
