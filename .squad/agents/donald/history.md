@@ -371,3 +371,13 @@ Replaced the entire copilot-cli installation approach. Prior attempts using `CI=
 **Key Learning:** When a refactor changes variable names used by a function, source code inspection tests must be updated to match the new names. Functional tests that relied on overriding automatic variables like `$PROFILE` may need to be rewritten as source inspection tests if the implementation no longer uses those variables.
 
 **Outcome:** All 3 test failures resolved. Tests now validate the correct post-refactor implementation patterns without requiring changes to the implementation itself.
+
+### 2026-04-13: PR #146 CI Failure — Orphaned teardown from C-1 refactor
+
+**Branch:** `squad/138-fix-profile-aliases`  
+**PR:** #146 (CI failing on PS 5.1 strict mode)  
+**Root Cause:** When C-1 was converted from functional to source inspection test, the `$savedProfile = $PROFILE` save line was removed but the teardown line `$PROFILE = $savedProfile` after C-2 (and C-3) was left in place. On PS 5.1 with strict mode, this triggers: `The variable '$savedProfile' cannot be retrieved because it has not been set.`
+
+**Fix:** Added `$savedProfile = $PROFILE` before both C-2 and C-3 setup blocks (lines 227 and 250). The orphaned teardown lines now work correctly because `$savedProfile` is defined.
+
+**Lesson:** When refactoring functional tests to source inspection tests, audit ALL setup/teardown code. Removing a variable save in one location can orphan teardown lines elsewhere. In strict mode shells (PS 5.1, bash -u), undefined variable references are fatal errors, not warnings.
