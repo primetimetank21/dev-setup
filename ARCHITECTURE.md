@@ -49,6 +49,9 @@ dev-setup/
 │   ├── Microsoft.PowerShell_profile-example.ps1  # PowerShell aliases
 │   └── README.md                   # Explains each file and how to use them
 │
+├── hooks/
+│   └── pre-push                # Pre-push hook: blocks pushes to main; advisory shellcheck (.sh) and PSScriptAnalyzer (.ps1)
+│
 ├── .squad/                         # Internal squad coordination (not shipped)
 │
 └── ARCHITECTURE.md                 # This file
@@ -131,6 +134,8 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 | Idempotency | `Get-Command <tool> -ErrorAction SilentlyContinue` before installing |
 | Logging | Use `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err` helpers (copy from `setup.ps1`) |
 | Install method | Prefer `winget`; fall back to `scoop` or direct download |
+| Profile injection | `Write-PowerShellProfile` writes aliases to **both** PS 5.1 (`Documents\WindowsPowerShell\`) and PS 7+ (`Documents\PowerShell\`) paths; sentinel strip+re-inject makes it idempotent |
+| Alias registration | All `Set-Alias` calls use `-Force -Scope Global` so aliases work in the current session immediately |
 
 ---
 
@@ -214,5 +219,6 @@ This means running `bash setup.sh` on a fully-configured machine is a no-op.
 | `scripts/linux/tools/gh.sh` | Donald | #7 |
 | `scripts/linux/tools/copilot-cli.sh` | Donald | #7 |
 | `scripts/windows/setup.ps1` | Goofy | #2 |
+| `hooks/pre-push` | Goofy | #138, #147 |
 | `config/dotfiles/` | Pluto | #8, #10, #11 |
 | `.github/workflows/` | Chip | #12, #13 |
