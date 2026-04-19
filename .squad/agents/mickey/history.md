@@ -439,3 +439,52 @@ Branch protection write via `gh api` is blocked by the Codespace token scope. Th
 
 **Issue #132 closed.**
 
+---
+
+## [2026-04-18] #135 Stale Test Fix Review & Merge (PR #136)
+
+**Agent:** Mickey (review & merge)
+**PR:** #136
+**Issue:** #135
+**Status:** ✅ Merged to develop
+
+### What This Was
+
+PR #136 fixed the stale test "Root setup.ps1 guards all three PS-Core-only variables" in `tests/test_windows_setup.ps1`.
+
+**Background:** Earlier on 2026-04-18, I noted that the test was checking for a broken `Test-Path Variable:*` pattern that doesn't exist in setup.ps1. The actual implementation uses PSVersion-based guards. Chip opened PR #136 to correct the test.
+
+### What I Reviewed
+
+1. **Test logic verification:**
+   - Old test checked for obsolete `Test-Path Variable:` pattern
+   - New test correctly validates PSVersion-based guards:
+     ```powershell
+     $guarded = @($setupLines | Where-Object { 
+       $_ -match ('\$' + $varName) -and $_ -match 'PSVersionTable\.PSVersion\.Major' 
+     })
+     ```
+   - Per-line matching ensures both variable reference and PSVersion check are present
+
+2. **Verification that setup.ps1 actually has these guards:**
+   - ✅ Line 32: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows`
+   - ✅ Line 34: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux`
+   - ✅ Line 35: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS`
+
+3. **Encoding check:**
+   - ✅ No Unicode smart quotes (ASCII only)
+   - ✅ File is properly formatted
+
+### Actions Taken
+
+✅ Approved PR #136
+✅ Merged with regular merge commit (--merge, not squash)
+✅ Deleted feature branch locally and remotely
+✅ Closed issue #135
+
+### Key Outcome
+
+Test now correctly validates the actual implementation pattern. This resolves the false failures that were blocking CI. Test assertions must always match the actual implementation — when patterns change, tests must be updated in sync.
+
+**This closes the follow-up from the earlier PR #130/PR #133 regression work.**
+

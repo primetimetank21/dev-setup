@@ -263,3 +263,55 @@ Designed and implemented PS 5.1 validation job using `windows-latest` runner wit
 - Main branch: ✅ Green (PR #126 fixed em-dash)
 - Develop branch: ✅ Green (PR #130 fixed PS guards)
 - All Sprint 7 CI issues resolved
+
+---
+
+## [2026-04-18] Issue #135 — Stale Test Fix (PR #136)
+
+**Session:** Post-merge follow-up (same day)
+**Branch:** `squad/135-fix-stale-ps-guard-test`
+**PR:** #136
+**Status:** ✅ Merged to develop
+
+### What Happened
+
+The test "Root setup.ps1 guards all three PS-Core-only variables" was failing because it was checking for an obsolete pattern.
+
+**Root Cause:**
+- Test expected `Test-Path Variable:$varName` guards
+- Actual implementation uses PSVersion-based guards (from PR #130)
+- This was a false failure — setup.ps1 was actually correct
+
+### What I Did
+
+Updated `tests/test_windows_setup.ps1` to check for the correct guard pattern:
+
+**Before (broken):**
+```powershell
+if ($setupContent -notmatch "Test-Path Variable:$varName") {
+    throw "Root setup.ps1 is missing 'Test-Path Variable:$varName' guard"
+}
+```
+
+**After (correct):**
+```powershell
+$guarded = @($setupLines | Where-Object { 
+    $_ -match ('\$' + $varName) -and $_ -match 'PSVersionTable\.PSVersion\.Major' 
+})
+if ($guarded.Count -eq 0) {
+    throw "Root setup.ps1 is missing PSVersion-based guard for '$varName'"
+}
+```
+
+Also updated the test header comment to describe the actual pattern.
+
+### Key Learning
+
+**Test assertions must match the actual implementation pattern.** When implementation patterns change, tests must be updated in sync. Stale tests checking for superseded patterns are false failures that block CI and mislead developers.
+
+### Outcome
+
+✅ PR #136 merged to develop
+✅ Issue #135 closed
+✅ Test now correctly validates PSVersion-based guards
+✅ CI no longer reports false failures
