@@ -547,6 +547,48 @@ Test-Scenario "H-4: New-PsmuxSession checks for existing session before creating
 }
 
 # ---------------------------------------------------------------------------
+# Group I: psmux install (Issue #139)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group I: psmux install (Issue #139)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "I-1: Install-Psmux function exists in setup.ps1" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
+    if ($fn.Count -eq 0) {
+        throw "Install-Psmux function not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "I-2: Install-Psmux is called in Main" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $mainFn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Main' }, $true)
+    if ($mainFn.Count -eq 0) { throw "Main function not found" }
+    $mainBody = $mainFn[0].Body.Extent.Text
+    if ($mainBody -notmatch 'Install-Psmux') {
+        throw "Install-Psmux is not called in Main"
+    }
+}
+
+Test-Scenario "I-3: Install-Psmux is idempotent (checks before installing)" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
+    if ($fn.Count -eq 0) { throw "Install-Psmux function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    if ($fnBody -notmatch 'Get-Command psmux') {
+        throw "Install-Psmux does not check for psmux before installing (missing Get-Command psmux)"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
