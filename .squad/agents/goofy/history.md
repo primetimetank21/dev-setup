@@ -241,3 +241,95 @@ Implemented squad-cli global install for Windows and Linux with skip+warn patter
 
 **PR #133 merged** by Mickey with --admin flag. Issue #132 closed.
 
+## [2026-04-18] Fix Write-PowerShellProfile sentinel skip logic (Issue #144, PR #145)
+**Branch:** `squad/fix-sentinel-update-logic`
+**Status:** ✅ Committed, PR opened
+
+**Problem:** Write-PowerShellProfile used "skip if sentinel present" logic. Users who ran setup.ps1 before PRs #141/#142 (psmux aliases) never got the new aliases — `ta`, `tks`, `tls`, `tt` were undefined because the function returned early.
+
+**Fix:** Changed to "strip + re-inject" pattern:
+- When BEGIN/END markers found, remove the old managed block entirely with regex
+- Fall through to inject the current fresh block (never skip)
+- Regex: `(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?`
+- Handles both CRLF (Windows) and LF line endings
+- Added `Write-Info "Updating PowerShell profile shortcuts..."` when updating existing profile
+
+**Tests added (Group J):**
+- J-1: BEGIN marker present in function body
+- J-2: END marker present in function body
+- J-3: No 'return' after sentinel check (verifies skip removed)
+- J-4: Get-Content/Set-Content present (verifies strip logic)
+
+**Key learning:** Sentinel-based idempotency that skips updates breaks incremental feature additions. Always use "strip managed content + re-inject fresh" for configuration blocks that evolve over time.
+
+
+## [2026-04-19] Sentinel Fix Implementation — PR #145 merged to develop
+
+**Orchestration log:** 2026-04-19T21-19-08Z-goofy-sentinel-fix.md
+**Issue:** #144 (child of #138)
+**PR:** #145 (`squad/144-sentinel-fix` → `develop`)
+**Status:** ✅ Merged
+
+This session delivered the strip+re-inject pattern for Write-PowerShellProfile, replacing the old "skip if sentinel" logic that prevented incremental profile updates.
+
+**Implementation details:**
+- Modified Write-PowerShellProfile in scripts/windows/setup.ps1
+- Removed early `return` after sentinel check
+- Added strip logic with regex that handles both CRLF and LF line endings
+- Falls through to inject fresh current block (never skips)
+- Write-Info message shown when updating existing profile block
+
+**Test coverage (Group J):**
+- J-1: BEGIN marker present in function
+- J-2: END marker present in function
+- J-3: No 'return' after sentinel (confirms skip logic removed)
+- J-4: Get-Content/Set-Content present (confirms strip logic)
+
+**Outcome:**
+✅ All 4 Group J tests passing
+✅ PR #145 created and pushed
+✅ PR awaited Mickey's review (PR #145 approved)
+✅ PR merged to develop (5/5 CI green)
+
+**Key learning:** Regex pattern `(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?` is the correct approach for safe, cross-platform stripping of managed config blocks. The `(?s)` flag enables dot-matches-newline, and the `\r?\n?` handles both LF and CRLF line endings.
+
+**Cross-team context:**
+- Mickey created issue #144 scope document and reviewed implementation
+- PR body referenced #144 correctly (Mickey noted nit: says #138 instead, but issue linkage correct)
+- Related to issues #138 (parent: Windows PowerShell aliases), #141/#142 (psmux aliases)
+
+**Decision artifacts merged to decisions.md:**
+- goofy-sentinel-fix.md (implementation decision + alternatives)
+- mickey-sentinel-fix-scope.md (scope boundaries, risk analysis)
+- mickey-pr145-review.md (pattern adoption statement)
+
+
+## [2026-04-19] Issue #138: Fix Windows PowerShell aliases not fully working (PR #146)
+**Branch:** `squad/138-fix-profile-aliases`
+**Status:** ✅ PR opened, awaiting Mickey review
+
+**Three fixes implemented:**
+
+1. **Dual-path profile injection** - Write to BOTH PS 5.1 and PS 7+ profile paths explicitly:
+   - `~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1` (PS 5.1)
+   - `~/Documents/PowerShell/Microsoft.PowerShell_profile.ps1` (PS 7+)
+   - Each path gets strip+re-inject treatment (no skip on sentinel)
+   - Solves: setup in PS 7+ now writes aliases that work in PS 5.1 terminals
+
+2. **Robust alias registration** - Added `-Force -Scope Global` to ALL 44+ `Set-Alias` calls in `$profileContent` heredoc:
+   - `-Force` overrides ReadOnly aliases (prevents silent failures)
+   - `-Scope Global` ensures aliases persist across scopes
+   - Pre-emptive `Remove-Item` lines remain as belt-and-suspenders
+
+3. **Execution policy diagnostic** - Check policy after profile write, warn if `Restricted` or `Undefined`:
+   ```powershell
+   $execPolicy = Get-ExecutionPolicy -Scope CurrentUser
+   if ($execPolicy -eq 'Restricted' -or $execPolicy -eq 'Undefined') {
+       Write-Warn "Execution policy is '$execPolicy' -- profile aliases may not load in new terminals."
+       Write-Warn "To fix: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
+   }
+   ```
+
+**Key learning:** `$PROFILE` is version-specific — always write to explicit paths for both PS 5.1 and PS 7+ to ensure cross-version compatibility.
+
+**Related:** Issue #138 (parent), PR #145 (sentinel fix, cause ③)

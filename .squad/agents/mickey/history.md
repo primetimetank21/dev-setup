@@ -488,3 +488,93 @@ Test now correctly validates the actual implementation pattern. This resolves th
 
 **This closes the follow-up from the earlier PR #130/PR #133 regression work.**
 
+## [2026-04-19] PR #145 Review — Write-PowerShellProfile strip+re-inject fix
+
+**PR:** #145 (`squad/fix-sentinel-update-logic` → `develop`)
+**Author:** Goofy (via Copilot)
+**Issue:** #144 (child of #138)
+**Verdict:** ✅ APPROVED
+
+Reviewed strip+re-inject logic replacing the old "skip if sentinel present" pattern. All checklist items passed:
+- Regex `(?s)\r?\n<BEGIN>.*?<END>\r?\n?` handles both LF and CRLF
+- No `return` in sentinel path — strips old block, falls through to inject fresh
+- `Write-Info` message shown on update (not first install)
+- `Set-Content -NoNewline` preserves raw content correctly
+- Group J tests (J-1 to J-4) cover markers, no-return, and strip logic
+- Groups A-I unaffected
+- Conventional commit format correct
+
+**Non-blocking nit:** PR body says "Closes #138" instead of "Closes #144". #144 is the specific child issue; #138 is the broader parent.
+
+### Learnings
+
+- Sentinel-based idempotency that skips entirely breaks incremental feature additions. "Strip managed block + re-inject fresh" is the correct pattern for evolving config blocks.
+- When reviewing regex for profile management, always verify the leading/trailing newline anchors handle both LF and CRLF.
+
+
+## [2026-04-19] Sentinel Fix — Issue #144 scoped, PR #145 merged, #144 closed
+
+**Orchestration log:** 2026-04-19T21-19-08Z-mickey-review-145.md
+
+This session completed the sentinel fix lifecycle: scoped issue #144, reviewed and approved PR #145 (Goofy's implementation), merged to develop with 5/5 CI checks passing, and closed the issue.
+
+**Actions taken:**
+1. Reviewed PR #145: Write-PowerShellProfile strip+re-inject logic
+2. Verified Group J tests (4 tests) all passing
+3. Approved PR #145 with comment on body nit (closes #144, not #138)
+4. Merged to develop via `git merge --no-ff` (preserve commit history)
+5. Deleted remote branch `squad/144-sentinel-fix`
+6. Closed issue #144
+
+**Key outcome:** Users will now receive incremental profile updates (e.g., new aliases) when re-running setup.ps1, instead of silently skipping because the sentinel was present.
+
+**Cross-team learnings:**
+- Sentinel-based "skip if present" pattern breaks incremental feature delivery
+- Always use "strip managed block + re-inject" for evolving configuration blocks
+- Group J test organization (separate test group per feature) prevents test conflicts
+- PR body linkage matters (Closes #144 vs #138) — though GitHub UI linkage is correct
+
+**Related decisions merged to decisions.md:**
+- mickey-sentinel-fix-scope.md (scope document)
+- goofy-sentinel-fix.md (implementation rationale)
+- mickey-pr145-review.md (approval + pattern adoption)
+
+---
+
+## 2026-04-19 — PR #146 Review: REJECTED (3 CI failures)
+
+**PR:** #146 (`squad/138-fix-profile-aliases` → `develop`)
+**Issue:** #138 — remaining two causes after PR #145 sentinel fix
+**Verdict:** REJECTED — assign Donald to revise
+
+### What's correct
+- Fix ① dual profile paths (PS 5.1 + PS 7+) — correct paths, strip+re-inject on each
+- Fix ② all 46 Set-Alias calls have `-Force -Scope Global`
+- Fix ③ execution policy diagnostic with `Get-ExecutionPolicy -Scope CurrentUser` and `RemoteSigned` hint
+- Commits are conventional format with Co-authored-by trailers
+- PR body references `Closes #138`
+
+### Three CI failures
+1. **K-2 false-negative:** Regex `Documents[/\\]PowerShell[^\\]` expects joined path but implementation uses `Path::Combine` with separate args — no `Documents\PowerShell` in source text
+2. **C-1 regression:** Test overrides `$PROFILE` but function now writes to explicit `$profilePaths` array, not `$PROFILE` — temp file never written to
+3. **C-4 regression:** Regex checks `$PROFILE` but code now uses `$profilePath` loop variable
+
+### Learning
+- When refactoring variable names (`$PROFILE` → `$profilePath`), grep existing tests for the old name — static-analysis tests that match source patterns will break silently
+- Anticipatory tests (Chip wrote K-2 before seeing implementation) can mismatch the final code pattern — always validate tests against actual implementation before merging
+
+---
+
+## 2026-04-20 — Pre-push PSScriptAnalyzer Hook Evaluation (Issue #147)
+
+**Task:** Earl requested evaluation of adding PSScriptAnalyzer + PS 5.1 compatibility checks to the pre-push git hook to catch CI failures locally.
+
+**Evaluation:**
+- PSScriptAnalyzer via `pwsh` in pre-push: feasible as advisory (warn-only) check. `pwsh` available on Windows/macOS, installable in Codespaces. Graceful skip when absent.
+- PS 5.1 compatibility in pre-push: **not feasible**. `powershell.exe` is Windows-only; cannot run on Linux Codespaces. Must remain CI-only (`validate-ps51` on `windows-latest`).
+- Sprint 7 decision (PSScriptAnalyzer = CI-only) was for hard-gating. Advisory soft check is a different contract — acceptable reversal.
+
+**Decision:** Recommend partial adoption — PSScriptAnalyzer advisory check in pre-push (warn, don't block), PS 5.1 stays CI-only. Created Issue #147. Decision doc written to `.squad/decisions/inbox/mickey-prepush-hook-eval.md`.
+
+**Key Learning:** Distinguish between "CI-only as hard gate" and "CI-only means never local." Advisory local checks that gracefully degrade add value without the platform-dependency problems that motivated the original CI-only decision.
+

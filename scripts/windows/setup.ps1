@@ -130,12 +130,24 @@ function Install-CopilotCli {
 }
 
 function Write-PowerShellProfile {
-    $sentinel = '# BEGIN dev-setup profile'
+    $beginMarker = '# BEGIN dev-setup profile'
+    $endMarker   = '# END dev-setup profile'
 
-    # Idempotency check - skip if already written
-    if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($sentinel)) -Quiet)) {
-        Write-Ok "PowerShell profile shortcuts already installed"
-        return
+    # Write to BOTH PS 5.1 and PS 7+ profile paths explicitly
+    $profilePaths = @(
+        [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),  # PS 5.1
+        [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')          # PS 7+
+    )
+
+    foreach ($profilePath in $profilePaths) {
+        # If the managed block already exists, strip it out so we can re-inject fresh
+        if ((Test-Path $profilePath) -and (Select-String -Path $profilePath -Pattern ([regex]::Escape($beginMarker)) -Quiet)) {
+            Write-Info "Updating PowerShell profile shortcuts in $profilePath..."
+            $raw = Get-Content $profilePath -Raw
+            # Strip the managed block (handles both LF and CRLF)
+            $raw = $raw -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''
+            Set-Content $profilePath $raw -NoNewline
+        }
     }
 
     $profileContent = @'
@@ -150,7 +162,7 @@ function Remove-CustomItem {
     Remove-Item -Path $Path -Recurse -Force
 }
 Remove-Item -Force Alias:\rm -ErrorAction SilentlyContinue
-Set-Alias -Name rm -Value Remove-CustomItem
+Set-Alias -Name rm -Value Remove-CustomItem -Force -Scope Global
 
 function Set-FileTimestamp {
     param([string]$Path)
@@ -160,154 +172,154 @@ function Set-FileTimestamp {
         New-Item -ItemType File -Path $Path | Out-Null
     }
 }
-Set-Alias -Name touch -Value Set-FileTimestamp
+Set-Alias -Name touch -Value Set-FileTimestamp -Force -Scope Global
 
 # -- Git shortcuts --------------------------------------------------------------
 
 function Get-GitStatus { git status -sb $args }   # short branch status
-Set-Alias -Name gs -Value Get-GitStatus
+Set-Alias -Name gs -Value Get-GitStatus -Force -Scope Global
 
 function Invoke-GitCommit { git commit $args }
 Remove-Item -Force Alias:\gc -ErrorAction SilentlyContinue
-Set-Alias -Name gc -Value Invoke-GitCommit
+Set-Alias -Name gc -Value Invoke-GitCommit -Force -Scope Global
 
 function Get-GitBranch { git branch $args }
-Set-Alias -Name gb -Value Get-GitBranch
+Set-Alias -Name gb -Value Get-GitBranch -Force -Scope Global
 
 function Add-GitFiles { git add $args }
-Set-Alias -Name ga -Value Add-GitFiles
+Set-Alias -Name ga -Value Add-GitFiles -Force -Scope Global
 
 function Get-GitLogPretty { git log --graph --abbrev-commit --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' $args }
 Remove-Item -Force Alias:\gl -ErrorAction SilentlyContinue
-Set-Alias -Name gl -Value Get-GitLogPretty
+Set-Alias -Name gl -Value Get-GitLogPretty -Force -Scope Global
 
 function Get-GitLog { git log $args }
-Set-Alias -Name glog -Value Get-GitLog
+Set-Alias -Name glog -Value Get-GitLog -Force -Scope Global
 
 function Invoke-GitFetch { git fetch $args }
-Set-Alias -Name gf -Value Invoke-GitFetch
+Set-Alias -Name gf -Value Invoke-GitFetch -Force -Scope Global
 
 function Invoke-GitFetchPrune { git fetch --prune $args }
-Set-Alias -Name gfp -Value Invoke-GitFetchPrune
+Set-Alias -Name gfp -Value Invoke-GitFetchPrune -Force -Scope Global
 
 function Invoke-GitStash { git stash $args }
-Set-Alias -Name ggs -Value Invoke-GitStash
+Set-Alias -Name ggs -Value Invoke-GitStash -Force -Scope Global
 
 function Get-GitStashList { git stash list $args }
-Set-Alias -Name ggsls -Value Get-GitStashList
+Set-Alias -Name ggsls -Value Get-GitStashList -Force -Scope Global
 
 function Add-GitAllFiles { git add --all $args }            # stage all changes
-Set-Alias -Name gaa -Value Add-GitAllFiles
+Set-Alias -Name gaa -Value Add-GitAllFiles -Force -Scope Global
 
 function Invoke-GitCommitMessage { git commit -m $args }    # commit with inline message
-Set-Alias -Name gcm -Value Invoke-GitCommitMessage
+Set-Alias -Name gcm -Value Invoke-GitCommitMessage -Force -Scope Global
 
 function New-GitBranch { git checkout -b $args }            # create and switch to new branch
-Set-Alias -Name gcb -Value New-GitBranch
+Set-Alias -Name gcb -Value New-GitBranch -Force -Scope Global
 
 function Invoke-GitCheckout { git checkout $args }          # switch branch or restore file
-Set-Alias -Name gco -Value Invoke-GitCheckout
+Set-Alias -Name gco -Value Invoke-GitCheckout -Force -Scope Global
 
 function Get-GitDiff { git diff $args }                     # show unstaged diff
-Set-Alias -Name gd -Value Get-GitDiff
+Set-Alias -Name gd -Value Get-GitDiff -Force -Scope Global
 
 function Get-GitDiffStaged { git diff --staged $args }      # show staged diff
-Set-Alias -Name gds -Value Get-GitDiffStaged
+Set-Alias -Name gds -Value Get-GitDiffStaged -Force -Scope Global
 
 function Invoke-GitStashPop { git stash pop $args }         # pop most recent stash
-Set-Alias -Name ggsp -Value Invoke-GitStashPop
+Set-Alias -Name ggsp -Value Invoke-GitStashPop -Force -Scope Global
 
 function Invoke-GitPush { git push $args }                  # push to remote
 Remove-Item -Force Alias:\gp -ErrorAction SilentlyContinue
-Set-Alias -Name gp -Value Invoke-GitPush
+Set-Alias -Name gp -Value Invoke-GitPush -Force -Scope Global
 
 function Invoke-GitPushForce { git push --force-with-lease $args }  # safe force push
-Set-Alias -Name gpf -Value Invoke-GitPushForce
+Set-Alias -Name gpf -Value Invoke-GitPushForce -Force -Scope Global
 
 function Invoke-GitPull { git pull $args }                  # pull from remote
-Set-Alias -Name gpl -Value Invoke-GitPull
+Set-Alias -Name gpl -Value Invoke-GitPull -Force -Scope Global
 
 function Invoke-GitRebase { git rebase $args }              # rebase onto branch
 Remove-Item -Force Alias:\grb -ErrorAction SilentlyContinue
-Set-Alias -Name grb -Value Invoke-GitRebase
+Set-Alias -Name grb -Value Invoke-GitRebase -Force -Scope Global
 
 function Invoke-GitRebaseInteractive { git rebase -i $args }  # interactive rebase
-Set-Alias -Name grbi -Value Invoke-GitRebaseInteractive
+Set-Alias -Name grbi -Value Invoke-GitRebaseInteractive -Force -Scope Global
 
 function Invoke-GitRestore { git restore $args }            # discard working tree changes
 Remove-Item -Force Alias:\grs -ErrorAction SilentlyContinue
-Set-Alias -Name grs -Value Invoke-GitRestore
+Set-Alias -Name grs -Value Invoke-GitRestore -Force -Scope Global
 
 function Invoke-GitRestoreStaged { git restore --staged $args }  # unstage a file
-Set-Alias -Name grss -Value Invoke-GitRestoreStaged
+Set-Alias -Name grss -Value Invoke-GitRestoreStaged -Force -Scope Global
 
 # -- GitHub CLI shortcuts -------------------------------------------------------
 
 function New-GhPR { gh pr create $args }                    # open a pull request
-Set-Alias -Name ghpr -Value New-GhPR
+Set-Alias -Name ghpr -Value New-GhPR -Force -Scope Global
 
 function Get-GhPRList { gh pr list $args }                  # list pull requests
-Set-Alias -Name ghprl -Value Get-GhPRList
+Set-Alias -Name ghprl -Value Get-GhPRList -Force -Scope Global
 
 function Get-GhPRView { gh pr view $args }                  # view a pull request
-Set-Alias -Name ghprv -Value Get-GhPRView
+Set-Alias -Name ghprv -Value Get-GhPRView -Force -Scope Global
 
 function Get-GhIssueList { gh issue list $args }            # list issues
-Set-Alias -Name ghis -Value Get-GhIssueList
+Set-Alias -Name ghis -Value Get-GhIssueList -Force -Scope Global
 
 function Get-GhIssueView { gh issue view $args }            # view an issue
-Set-Alias -Name ghiv -Value Get-GhIssueView
+Set-Alias -Name ghiv -Value Get-GhIssueView -Force -Scope Global
 
 # -- Dev shortcuts --------------------------------------------------------------
 
 function Invoke-UvRun { uv run $args }                      # run with uv
-Set-Alias -Name uvr -Value Invoke-UvRun
+Set-Alias -Name uvr -Value Invoke-UvRun -Force -Scope Global
 
 function Invoke-UvSync { uv sync $args }                    # sync uv environment
-Set-Alias -Name uvs -Value Invoke-UvSync
+Set-Alias -Name uvs -Value Invoke-UvSync -Force -Scope Global
 
 function Invoke-NpmInstall { npm install $args }            # npm install
 Remove-Item -Force Alias:\ni -ErrorAction SilentlyContinue
-Set-Alias -Name ni -Value Invoke-NpmInstall
+Set-Alias -Name ni -Value Invoke-NpmInstall -Force -Scope Global
 
 function Invoke-NpmRun { npm run $args }                    # npm run <script>
-Set-Alias -Name nr -Value Invoke-NpmRun
+Set-Alias -Name nr -Value Invoke-NpmRun -Force -Scope Global
 
 function Invoke-NpmRunDev { npm run dev $args }             # npm run dev
-Set-Alias -Name nrd -Value Invoke-NpmRunDev
+Set-Alias -Name nrd -Value Invoke-NpmRunDev -Force -Scope Global
 
 function Invoke-NpmRunTest { npm run test $args }           # npm run test
-Set-Alias -Name nrt -Value Invoke-NpmRunTest
+Set-Alias -Name nrt -Value Invoke-NpmRunTest -Force -Scope Global
 
 function Invoke-Python { python $args }                     # python shorthand
-Set-Alias -Name py -Value Invoke-Python
+Set-Alias -Name py -Value Invoke-Python -Force -Scope Global
 
-Set-Alias -Name c -Value Clear-Host                         # clear the screen
+Set-Alias -Name c -Value Clear-Host -Force -Scope Global    # clear the screen
 
 # -- Utility --------------------------------------------------------------------
 
 function Get-MyIp { curl -s ifconfig.me $args }             # show public IP
-Set-Alias -Name myip -Value Get-MyIp
+Set-Alias -Name myip -Value Get-MyIp -Force -Scope Global
 
 function Invoke-PingBing { ping bing.com $args }            # quick connectivity check
-Set-Alias -Name pb -Value Invoke-PingBing
+Set-Alias -Name pb -Value Invoke-PingBing -Force -Scope Global
 
 Remove-Item -Force Alias:\h -ErrorAction SilentlyContinue
-Set-Alias -Name h -Value Get-History                        # command history
+Set-Alias -Name h -Value Get-History -Force -Scope Global   # command history
 
 # -- psmux (tmux for Windows) -----------------------------------------------
 
 function Invoke-PsmuxList { psmux ls $args }                    # list active psmux sessions
-Set-Alias -Name tls -Value Invoke-PsmuxList
+Set-Alias -Name tls -Value Invoke-PsmuxList -Force -Scope Global
 
 function Invoke-PsmuxKillServer { psmux kill-server $args }     # kill all psmux sessions
-Set-Alias -Name tks -Value Invoke-PsmuxKillServer
+Set-Alias -Name tks -Value Invoke-PsmuxKillServer -Force -Scope Global
 
 function Invoke-PsmuxNewSession { psmux new-session -s tank_dev $args }  # create new named psmux session
-Set-Alias -Name tt -Value Invoke-PsmuxNewSession
+Set-Alias -Name tt -Value Invoke-PsmuxNewSession -Force -Scope Global
 
 function Invoke-PsmuxAttach { psmux attach $args }              # attach to most recent psmux session
-Set-Alias -Name ta -Value Invoke-PsmuxAttach
+Set-Alias -Name ta -Value Invoke-PsmuxAttach -Force -Scope Global
 
 # Create or attach to the tank_dev psmux session (Windows equivalent of create_tmux)
 function New-PsmuxSession {
@@ -322,19 +334,29 @@ function New-PsmuxSession {
 # END dev-setup profile
 '@
 
-    # Ensure profile directory exists
-    $profileDir = Split-Path $PROFILE
-    if (-not (Test-Path $profileDir)) {
-        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+    # Write to each profile path
+    foreach ($profilePath in $profilePaths) {
+        # Ensure profile directory exists
+        $profileDir = Split-Path $profilePath
+        if (-not (Test-Path $profileDir)) {
+            New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+        }
+
+        # Append to profile (create if absent).
+        # Always prepend a blank line so we don't concatenate onto any existing last line.
+        if (Test-Path $profilePath) {
+            Add-Content -Path $profilePath -Value ""
+        }
+        Add-Content -Path $profilePath -Value $profileContent
+        Write-Ok "PowerShell profile shortcuts installed to $profilePath"
     }
 
-    # Append to profile (create if absent).
-    # Always prepend a blank line so we don't concatenate onto any existing last line.
-    if (Test-Path $PROFILE) {
-        Add-Content -Path $PROFILE -Value ""
+    # Check execution policy and warn if restricted
+    $execPolicy = Get-ExecutionPolicy -Scope CurrentUser
+    if ($execPolicy -eq 'Restricted' -or $execPolicy -eq 'Undefined') {
+        Write-Warn "Execution policy is '$execPolicy' -- profile aliases may not load in new terminals."
+        Write-Warn "To fix: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
     }
-    Add-Content -Path $PROFILE -Value $profileContent
-    Write-Ok "PowerShell profile shortcuts installed to $PROFILE"
 }
 
 # install squad-cli globally via npm
