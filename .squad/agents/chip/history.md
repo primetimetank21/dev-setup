@@ -315,3 +315,48 @@ Also updated the test header comment to describe the actual pattern.
 ✅ Issue #135 closed
 ✅ Test now correctly validates PSVersion-based guards
 ✅ CI no longer reports false failures
+
+---
+
+## [2026-04-18] Issue #138 — Group K Tests for Profile Fixes
+
+**Branch:** `chip/138-group-k-tests-temp` (awaiting Goofy's branch)
+**Status:** 🔄 Commit ready, awaiting merge target
+
+### What I Built
+
+Created Group K tests (K-1 through K-5) for issue #138 fix, adding them to `tests/test_windows_setup.ps1`:
+
+**Fix A — Dual profile paths:**
+- K-1: Verifies `Write-PowerShellProfile` contains `WindowsPowerShell` (PS 5.1 path)
+- K-2: Verifies `Write-PowerShellProfile` contains `Documents\PowerShell` (PS 7+ path, not WindowsPowerShell)
+
+**Fix B — Robust Set-Alias:**
+- K-3: Verifies all `Set-Alias` calls in `$profileContent` heredoc have `-Force` flag
+
+**Fix C — Execution policy diagnostic:**
+- K-4: Verifies `Write-PowerShellProfile` contains `Get-ExecutionPolicy` check
+- K-5: Verifies `Write-PowerShellProfile` contains `RemoteSigned` remediation hint
+
+### Technical Approach
+
+All tests use AST parsing and static string analysis:
+- Tests K-1, K-2, K-4, K-5: Parse AST to extract `Write-PowerShellProfile` function body, then use regex matching
+- Test K-3: Reads file as raw text, extracts heredoc with regex `(?s)\$profileContent\s*=\s*@'(.*?)'@`, then validates each `Set-Alias` line
+
+### Key Decisions
+
+1. **Test pattern consistency:** Followed existing Group J pattern (AST + string matching)
+2. **K-2 specificity:** Regex `Documents[/\\]PowerShell[^\\]` ensures match is NOT part of `WindowsPowerShell`
+3. **K-3 heredoc extraction:** Used raw file read + regex instead of AST to capture literal string content
+4. **Anticipatory testing:** Tests written before seeing Goofy's implementation (per charter: "write from specs, not implementation")
+
+### Coordination Issue
+
+Goofy's branch `squad/138-fix-profile-aliases` did not exist after 5 polling attempts (50 seconds). Per task instructions, created temp branch `chip/138-group-k-tests-temp` with commit ready for cherry-pick or rebase once Goofy's branch is available.
+
+### Outcome
+
+✅ 5 new tests added (Group K) to `tests/test_windows_setup.ps1`
+✅ Commit `82544ef` pushed to `chip/138-group-k-tests-temp`
+🔄 Awaiting Goofy's branch for final merge target

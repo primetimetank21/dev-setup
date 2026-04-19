@@ -539,3 +539,42 @@ This session completed the sentinel fix lifecycle: scoped issue #144, reviewed a
 - goofy-sentinel-fix.md (implementation rationale)
 - mickey-pr145-review.md (approval + pattern adoption)
 
+---
+
+## 2026-04-19 — PR #146 Review: REJECTED (3 CI failures)
+
+**PR:** #146 (`squad/138-fix-profile-aliases` → `develop`)
+**Issue:** #138 — remaining two causes after PR #145 sentinel fix
+**Verdict:** REJECTED — assign Donald to revise
+
+### What's correct
+- Fix ① dual profile paths (PS 5.1 + PS 7+) — correct paths, strip+re-inject on each
+- Fix ② all 46 Set-Alias calls have `-Force -Scope Global`
+- Fix ③ execution policy diagnostic with `Get-ExecutionPolicy -Scope CurrentUser` and `RemoteSigned` hint
+- Commits are conventional format with Co-authored-by trailers
+- PR body references `Closes #138`
+
+### Three CI failures
+1. **K-2 false-negative:** Regex `Documents[/\\]PowerShell[^\\]` expects joined path but implementation uses `Path::Combine` with separate args — no `Documents\PowerShell` in source text
+2. **C-1 regression:** Test overrides `$PROFILE` but function now writes to explicit `$profilePaths` array, not `$PROFILE` — temp file never written to
+3. **C-4 regression:** Regex checks `$PROFILE` but code now uses `$profilePath` loop variable
+
+### Learning
+- When refactoring variable names (`$PROFILE` → `$profilePath`), grep existing tests for the old name — static-analysis tests that match source patterns will break silently
+- Anticipatory tests (Chip wrote K-2 before seeing implementation) can mismatch the final code pattern — always validate tests against actual implementation before merging
+
+---
+
+## 2026-04-20 — Pre-push PSScriptAnalyzer Hook Evaluation (Issue #147)
+
+**Task:** Earl requested evaluation of adding PSScriptAnalyzer + PS 5.1 compatibility checks to the pre-push git hook to catch CI failures locally.
+
+**Evaluation:**
+- PSScriptAnalyzer via `pwsh` in pre-push: feasible as advisory (warn-only) check. `pwsh` available on Windows/macOS, installable in Codespaces. Graceful skip when absent.
+- PS 5.1 compatibility in pre-push: **not feasible**. `powershell.exe` is Windows-only; cannot run on Linux Codespaces. Must remain CI-only (`validate-ps51` on `windows-latest`).
+- Sprint 7 decision (PSScriptAnalyzer = CI-only) was for hard-gating. Advisory soft check is a different contract — acceptable reversal.
+
+**Decision:** Recommend partial adoption — PSScriptAnalyzer advisory check in pre-push (warn, don't block), PS 5.1 stays CI-only. Created Issue #147. Decision doc written to `.squad/decisions/inbox/mickey-prepush-hook-eval.md`.
+
+**Key Learning:** Distinguish between "CI-only as hard gate" and "CI-only means never local." Advisory local checks that gracefully degrade add value without the platform-dependency problems that motivated the original CI-only decision.
+
