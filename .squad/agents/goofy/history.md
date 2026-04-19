@@ -17,6 +17,17 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### [2026-04-19] Issue #151: Documentation update for #138 and #147 (PR TBD)
+**Branch:** `squad/151-update-docs`
+**Status:** ✅ PR opened
+
+Targeted additions to README.md, CONTRIBUTING.md, and ARCHITECTURE.md to document:
+- Windows PowerShell alias table (`ta`, `tt`, `tls`, `tks`, `gpl`, `ggsls`) and the dual-path profile injection pattern from #138
+- Pre-push hook workflow (shellcheck + PSScriptAnalyzer advisory) from #147
+- How to install PSScriptAnalyzer locally
+
+**Key learning:** Docs PRs should only add what is missing — never rewrite existing content. Use the existing heading style and table formats of each file. Advisory-only hooks should be clearly labelled as such in docs to prevent confusion about push failures.
+
 ### [2026-04-19] Issue #147: PSScriptAnalyzer advisory check in pre-push hook (PR #149)
 **Branch:** `squad/147-prepush-psscriptanalyzer`
 **Status:** ✅ PR opened

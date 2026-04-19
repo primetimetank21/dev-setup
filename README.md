@@ -74,6 +74,40 @@ dev-setup/
 
 Root entry points (`setup.sh`, `setup.ps1`) are thin routers — they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
 
+## Windows PowerShell Aliases
+
+After running `setup.ps1`, a set of shortcuts is injected into your PowerShell profile automatically — on **both** the PS 5.1 path (`Documents\WindowsPowerShell\`) and the PS 7+ path (`Documents\PowerShell\`). The injection is idempotent: re-running setup strips the old block and writes a fresh one.
+
+**Confirmed working aliases:**
+
+| Alias | Command |
+|-------|---------|
+| `ta` | tmux/psmux attach |
+| `tt` | new tmux/psmux session |
+| `tls` | list tmux/psmux sessions |
+| `tks` | kill tmux/psmux server |
+| `gpl` | `git pull` |
+| `ggsls` | `git stash list` |
+
+Full alias list lives in `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function). All aliases use `-Force -Scope Global` so they are available immediately in the current session after sourcing the profile.
+
+## Pre-push Hook
+
+`hooks/pre-push` runs automatically when you push. It:
+
+1. **Blocks** direct pushes to `main` (hard stop).
+2. **Runs shellcheck** on changed `.sh` files — advisory, never blocks (Linux/macOS).
+3. **Runs PSScriptAnalyzer** on changed `.ps1` files — advisory, never blocks (requires `pwsh` + PSScriptAnalyzer module; silently skipped if absent).
+
+Install the hook once after cloning:
+
+```bash
+cp hooks/pre-push .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+---
+
 ## Customization
 
 **Dotfiles:** Edit or add templates in `config/dotfiles/`. Each file is copied into your home directory on first run. Existing files are not overwritten unless you pass `--force`.
