@@ -505,6 +505,48 @@ Test-Scenario "G-4: No MyInvocation.MyCommand.Path in Install-SquadCli" {
 }
 
 # ---------------------------------------------------------------------------
+# Group H: psmux aliases in PowerShell profile (Issue #140)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group H: psmux aliases in PowerShell profile (Issue #140)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "H-1: psmux alias functions exist in profile content" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    $requiredFunctions = @('Invoke-PsmuxList', 'Invoke-PsmuxKillServer', 'Invoke-PsmuxNewSession', 'Invoke-PsmuxAttach')
+    foreach ($fn in $requiredFunctions) {
+        if ($setupContent -notmatch $fn) {
+            throw "Missing psmux alias function '$fn' in scripts/windows/setup.ps1"
+        }
+    }
+}
+
+Test-Scenario "H-2: psmux Set-Alias entries exist for tls, tks, tt, ta" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    $requiredAliases = @('tls', 'tks', 'tt', 'ta')
+    foreach ($alias in $requiredAliases) {
+        if ($setupContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
+            throw "Missing Set-Alias for '$alias' in scripts/windows/setup.ps1"
+        }
+    }
+}
+
+Test-Scenario "H-3: New-PsmuxSession function exists in profile content" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'function New-PsmuxSession') {
+        throw "New-PsmuxSession function not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "H-4: New-PsmuxSession checks for existing session before creating" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'psmux ls') {
+        throw "New-PsmuxSession does not contain 'psmux ls' session check"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
