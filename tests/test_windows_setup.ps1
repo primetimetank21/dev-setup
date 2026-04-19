@@ -650,6 +650,84 @@ Test-Scenario "J-4: Write-PowerShellProfile body contains Get-Content and Set-Co
 }
 
 # ---------------------------------------------------------------------------
+# Group K: Dual profile paths and robust alias registration (Issue #138)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group K: Dual profile paths and robust alias registration (Issue #138)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "K-1: Write-PowerShellProfile contains WindowsPowerShell path (PS 5.1)" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    if ($fnBody -notmatch 'WindowsPowerShell') {
+        throw "Write-PowerShellProfile does not contain 'WindowsPowerShell' - PS 5.1 path is missing"
+    }
+}
+
+Test-Scenario "K-2: Write-PowerShellProfile contains PowerShell path (PS 7+, NOT WindowsPowerShell)" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    # Must contain "Documents\PowerShell" or "Documents/PowerShell" but NOT as part of "WindowsPowerShell"
+    if ($fnBody -notmatch 'Documents[/\\]PowerShell[^\\]') {
+        throw "Write-PowerShellProfile does not contain standalone 'Documents\PowerShell' or 'Documents/PowerShell' - PS 7+ path is missing"
+    }
+}
+
+Test-Scenario "K-3: All Set-Alias calls in profile content heredoc have -Force" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $setupContent = Get-Content $setupPath -Raw
+    # Extract the $profileContent heredoc (between @' and '@)
+    if ($setupContent -match "(?s)\`$profileContent\s*=\s*@'(.*?)'@") {
+        $profileContent = $Matches[1]
+        # Find all Set-Alias lines
+        $setAliasLines = $profileContent -split "`n" | Where-Object { $_ -match 'Set-Alias' }
+        if ($setAliasLines.Count -eq 0) {
+            throw "No Set-Alias lines found in profileContent heredoc"
+        }
+        foreach ($line in $setAliasLines) {
+            if ($line -notmatch '-Force') {
+                throw "Set-Alias line lacks -Force: $line"
+            }
+        }
+    } else {
+        throw "Could not find profileContent heredoc in scripts\windows\setup.ps1"
+    }
+}
+
+Test-Scenario "K-4: Write-PowerShellProfile contains Get-ExecutionPolicy (execution policy check)" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    if ($fnBody -notmatch 'Get-ExecutionPolicy') {
+        throw "Write-PowerShellProfile does not contain 'Get-ExecutionPolicy' - execution policy check is missing"
+    }
+}
+
+Test-Scenario "K-5: Write-PowerShellProfile contains RemoteSigned (remediation hint)" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
+    if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
+    $fnBody = $fn[0].Body.Extent.Text
+    if ($fnBody -notmatch 'RemoteSigned') {
+        throw "Write-PowerShellProfile does not contain 'RemoteSigned' - remediation hint is missing"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
