@@ -563,3 +563,18 @@ This session completed the sentinel fix lifecycle: scoped issue #144, reviewed a
 - When refactoring variable names (`$PROFILE` → `$profilePath`), grep existing tests for the old name — static-analysis tests that match source patterns will break silently
 - Anticipatory tests (Chip wrote K-2 before seeing implementation) can mismatch the final code pattern — always validate tests against actual implementation before merging
 
+---
+
+## 2026-04-20 — Pre-push PSScriptAnalyzer Hook Evaluation (Issue #147)
+
+**Task:** Earl requested evaluation of adding PSScriptAnalyzer + PS 5.1 compatibility checks to the pre-push git hook to catch CI failures locally.
+
+**Evaluation:**
+- PSScriptAnalyzer via `pwsh` in pre-push: feasible as advisory (warn-only) check. `pwsh` available on Windows/macOS, installable in Codespaces. Graceful skip when absent.
+- PS 5.1 compatibility in pre-push: **not feasible**. `powershell.exe` is Windows-only; cannot run on Linux Codespaces. Must remain CI-only (`validate-ps51` on `windows-latest`).
+- Sprint 7 decision (PSScriptAnalyzer = CI-only) was for hard-gating. Advisory soft check is a different contract — acceptable reversal.
+
+**Decision:** Recommend partial adoption — PSScriptAnalyzer advisory check in pre-push (warn, don't block), PS 5.1 stays CI-only. Created Issue #147. Decision doc written to `.squad/decisions/inbox/mickey-prepush-hook-eval.md`.
+
+**Key Learning:** Distinguish between "CI-only as hard gate" and "CI-only means never local." Advisory local checks that gracefully degrade add value without the platform-dependency problems that motivated the original CI-only decision.
+
