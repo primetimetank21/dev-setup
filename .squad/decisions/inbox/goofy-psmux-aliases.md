@@ -22,9 +22,9 @@ The Linux/macOS setup defines tmux aliases (`tls`, `tks`, `tt`, `ta`) and a `cre
 **Choice:** `New-PsmuxSession` is called by name, not aliased.
 **Why:** Mirrors `create_tmux` on Linux which is a function called directly. PowerShell verb-noun naming is idiomatic here.
 
-### 4. Test group placed as Group I
-**Choice:** Tests go in Group I (not Group F as originally specified in the issue).
-**Why:** Groups F, G, and H were already taken by existing tests. Used next available letter.
+### 4. Test group placed as Group H
+**Choice:** Tests go in Group H, the next available letter after Group G (Install-SquadCli).
+**Why:** Groups A through G were already taken by existing test groups.
 
 ## Outcome
 

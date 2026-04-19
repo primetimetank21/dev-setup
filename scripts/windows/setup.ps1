@@ -102,7 +102,7 @@ function Install-Psmux {
         return
     }
     Write-Info "Installing psmux..."
-    winget install psmux --silent --accept-source-agreements --accept-package-agreements
+    winget install --id psmux --silent --accept-source-agreements --accept-package-agreements
     Write-Ok "psmux installed"
 }
 
