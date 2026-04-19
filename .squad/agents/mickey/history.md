@@ -511,3 +511,31 @@ Reviewed strip+re-inject logic replacing the old "skip if sentinel present" patt
 - Sentinel-based idempotency that skips entirely breaks incremental feature additions. "Strip managed block + re-inject fresh" is the correct pattern for evolving config blocks.
 - When reviewing regex for profile management, always verify the leading/trailing newline anchors handle both LF and CRLF.
 
+
+## [2026-04-19] Sentinel Fix — Issue #144 scoped, PR #145 merged, #144 closed
+
+**Orchestration log:** 2026-04-19T21-19-08Z-mickey-review-145.md
+
+This session completed the sentinel fix lifecycle: scoped issue #144, reviewed and approved PR #145 (Goofy's implementation), merged to develop with 5/5 CI checks passing, and closed the issue.
+
+**Actions taken:**
+1. Reviewed PR #145: Write-PowerShellProfile strip+re-inject logic
+2. Verified Group J tests (4 tests) all passing
+3. Approved PR #145 with comment on body nit (closes #144, not #138)
+4. Merged to develop via `git merge --no-ff` (preserve commit history)
+5. Deleted remote branch `squad/144-sentinel-fix`
+6. Closed issue #144
+
+**Key outcome:** Users will now receive incremental profile updates (e.g., new aliases) when re-running setup.ps1, instead of silently skipping because the sentinel was present.
+
+**Cross-team learnings:**
+- Sentinel-based "skip if present" pattern breaks incremental feature delivery
+- Always use "strip managed block + re-inject" for evolving configuration blocks
+- Group J test organization (separate test group per feature) prevents test conflicts
+- PR body linkage matters (Closes #144 vs #138) — though GitHub UI linkage is correct
+
+**Related decisions merged to decisions.md:**
+- mickey-sentinel-fix-scope.md (scope document)
+- goofy-sentinel-fix.md (implementation rationale)
+- mickey-pr145-review.md (approval + pattern adoption)
+

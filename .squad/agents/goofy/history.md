@@ -262,3 +262,44 @@ Implemented squad-cli global install for Windows and Linux with skip+warn patter
 
 **Key learning:** Sentinel-based idempotency that skips updates breaks incremental feature additions. Always use "strip managed content + re-inject fresh" for configuration blocks that evolve over time.
 
+
+## [2026-04-19] Sentinel Fix Implementation — PR #145 merged to develop
+
+**Orchestration log:** 2026-04-19T21-19-08Z-goofy-sentinel-fix.md
+**Issue:** #144 (child of #138)
+**PR:** #145 (`squad/144-sentinel-fix` → `develop`)
+**Status:** ✅ Merged
+
+This session delivered the strip+re-inject pattern for Write-PowerShellProfile, replacing the old "skip if sentinel" logic that prevented incremental profile updates.
+
+**Implementation details:**
+- Modified Write-PowerShellProfile in scripts/windows/setup.ps1
+- Removed early `return` after sentinel check
+- Added strip logic with regex that handles both CRLF and LF line endings
+- Falls through to inject fresh current block (never skips)
+- Write-Info message shown when updating existing profile block
+
+**Test coverage (Group J):**
+- J-1: BEGIN marker present in function
+- J-2: END marker present in function
+- J-3: No 'return' after sentinel (confirms skip logic removed)
+- J-4: Get-Content/Set-Content present (confirms strip logic)
+
+**Outcome:**
+✅ All 4 Group J tests passing
+✅ PR #145 created and pushed
+✅ PR awaited Mickey's review (PR #145 approved)
+✅ PR merged to develop (5/5 CI green)
+
+**Key learning:** Regex pattern `(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?` is the correct approach for safe, cross-platform stripping of managed config blocks. The `(?s)` flag enables dot-matches-newline, and the `\r?\n?` handles both LF and CRLF line endings.
+
+**Cross-team context:**
+- Mickey created issue #144 scope document and reviewed implementation
+- PR body referenced #144 correctly (Mickey noted nit: says #138 instead, but issue linkage correct)
+- Related to issues #138 (parent: Windows PowerShell aliases), #141/#142 (psmux aliases)
+
+**Decision artifacts merged to decisions.md:**
+- goofy-sentinel-fix.md (implementation decision + alternatives)
+- mickey-sentinel-fix-scope.md (scope boundaries, risk analysis)
+- mickey-pr145-review.md (pattern adoption statement)
+

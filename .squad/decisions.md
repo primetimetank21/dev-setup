@@ -1964,3 +1964,149 @@ When a guard strategy changes in production code (e.g., from `Test-Path Variable
 ✅ PR #136 merged to develop
 ✅ Issue #135 closed
 ✅ Test now reliable and validates correct guard pattern
+
+---
+
+## # Decision: Sentinel Fix Scope — Write-PowerShellProfile
+
+**Issue:** #144 (child of #138)
+**Agent:** Mickey (Lead)
+**Date:** 2026-04-20
+
+## Context
+
+`Write-PowerShellProfile` in `scripts/windows/setup.ps1` uses a sentinel check (`# BEGIN dev-setup profile`) to guard against duplicate profile injection. When the sentinel is found, the function returns early — skipping all injection. This made sense when the profile block was static, but now that aliases are being added incrementally (e.g., psmux aliases in PRs #141/#142), the skip logic means returning users never pick up new content.
+
+Earl reported `ta`, `tks`, `tls`, `tt` are undefined after re-running setup.ps1. Root cause confirmed: his profile has the sentinel from a prior run, so setup skips injection of the now-larger block.
+
+## Decision
+
+**Change sentinel semantics from "skip" to "replace."**
+
+1. If the `# BEGIN dev-setup profile` ... `# END dev-setup profile` block exists, strip it from the profile file content.
+2. Fall through to inject the full current block (same path as first-time install).
+3. Preserve all user content outside the managed block markers.
+
+This keeps the idempotency contract: re-running setup converges to the latest desired state, regardless of how many times it's been run or what version was previously installed.
+
+## Scope Boundaries
+
+- **In scope:** Sentinel logic change in `Write-PowerShellProfile`, tests for re-injection, line ending handling (CRLF/LF).
+- **Out of scope:** Alias conflict resolution with built-in cmdlets (separate concern tracked in #138), profile auto-load behavior across PS versions (separate diagnostic).
+
+## Risk
+
+Low. The managed block is clearly delimited by markers. Stripping between markers and re-injecting is a well-understood pattern (same approach used in the Unix `install.sh` managed block logic). The main risk is regex edge cases with line endings, which is why CRLF/LF handling is an explicit acceptance criterion.
+
+## Outcome
+
+Issue #144 created with full acceptance criteria. Comment added to parent issue #138 linking the fix. Ready for assignment in next sprint planning pass.
+
+---
+
+## # Decision: Strip+Re-inject Pattern for Managed Config Blocks
+
+**Date:** 2026-04-18  
+**Author:** Goofy (Developer)  
+**Status:** Adopted  
+**PR:** #145  
+**Issue:** #144
+
+## Context
+
+Write-PowerShellProfile in scripts/windows/setup.ps1 used "skip if sentinel present" logic:
+```powershell
+if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($sentinel)) -Quiet)) {
+    Write-Ok "PowerShell profile shortcuts already installed"
+    return  # ❌ SKIP — never updates
+}
+```
+
+When psmux aliases were added in PRs #141/#142, users who had already run setup.ps1 never received the new aliases (`ta`, `tks`, `tls`, `tt`) because the function returned early.
+
+## Decision
+
+Change Write-PowerShellProfile (and similar managed-content functions) to use **strip + re-inject** instead of **skip**:
+
+```powershell
+# If the managed block already exists, strip it out so we can re-inject fresh
+if ((Test-Path $PROFILE) -and (Select-String -Path $PROFILE -Pattern ([regex]::Escape($beginMarker)) -Quiet)) {
+    Write-Info "Updating PowerShell profile shortcuts..."
+    $raw = Get-Content $PROFILE -Raw
+    # Strip the managed block (handles both LF and CRLF)
+    $raw = $raw -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''
+    Set-Content $PROFILE $raw -NoNewline
+}
+# Fall through to inject fresh current block
+```
+
+## Rationale
+
+- **Never skip** — always update when content changes
+- **Safe removal** — regex only strips content between BEGIN/END markers
+- **Preserves user content** — anything outside the markers is untouched
+- **Cross-platform** — handles both CRLF (Windows) and LF line endings
+- **Incremental features** — new aliases/functions automatically delivered to existing users
+
+## Consequences
+
+### Positive
+- Users always get the latest profile content on next setup run
+- No need to manually delete managed blocks to force updates
+- Supports iterative feature additions (like psmux aliases)
+
+### Negative
+- Slightly more complex than skip logic (regex strip required)
+- Profile rewrites on every run (but only managed block, user content safe)
+
+### Neutral
+- Must ensure BEGIN/END markers are always present in managed content
+- Regex must handle both CRLF and LF (already implemented)
+
+## Alternatives Considered
+
+1. **Manual deletion instructions** — Ask users to delete the old block manually
+   - ❌ Poor UX, error-prone
+2. **Version number in sentinel** — Track version, update when version changes
+   - ❌ Still requires version bump logic, not idempotent
+3. **Content hash check** — Skip only if hash matches current content
+   - ❌ Complex, doesn't handle partial edits by users
+
+## Testing
+
+Added test group J (4 tests) to verify:
+- BEGIN/END markers present in function body
+- No 'return' after sentinel check (confirms skip removed)
+- Get-Content/Set-Content present (confirms strip logic)
+- Regex handles both CRLF and LF
+
+## Related
+
+- Issue #144: Write-PowerShellProfile should update existing profile block, not skip it
+- Issue #138: Windows PowerShell aliases not fully working after setup
+- PRs #141/#142: Added psmux aliases (ta, tks, tls, tt)
+
+## Recommendation
+
+**Adopt strip+re-inject as the standard pattern for ALL managed configuration blocks** (PowerShell profile, shell rc files, git hooks, etc.) to ensure users always receive incremental updates without manual intervention.
+
+---
+
+## # Decision: Adopt strip+re-inject pattern for managed config blocks
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**Context:** PR #145 review (Issue #144)
+
+## Decision
+
+All managed config blocks (e.g., `# BEGIN dev-setup profile` / `# END dev-setup profile`) must use the **strip + re-inject** pattern instead of **skip if sentinel present**. This ensures re-running setup always converges to the latest managed content.
+
+## Rationale
+
+The old skip pattern silently dropped new aliases/functions for users who ran setup before those features were added. The strip+re-inject pattern preserves user content outside the markers while always injecting the current block.
+
+## Applies To
+
+- `Write-PowerShellProfile` in `scripts/windows/setup.ps1`
+- Any future managed block injection (Linux shell configs, etc.)
