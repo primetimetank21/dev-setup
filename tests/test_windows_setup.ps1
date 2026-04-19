@@ -723,6 +723,74 @@ Test-Scenario "K-5: Write-PowerShellProfile contains RemoteSigned (remediation h
 }
 
 # ---------------------------------------------------------------------------
+# Group L: PSScriptAnalyzer block in pre-push hook (Issue #147)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group L: PSScriptAnalyzer block in pre-push hook (Issue #147)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "L-1: Hook file contains command -v pwsh guard (graceful skip path)" {
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
+    if (-not (Test-Path $hookPath)) {
+        throw "Hook file not found: $hookPath"
+    }
+    $hookContent = Get-Content $hookPath -Raw
+    if ($hookContent -notmatch 'command -v pwsh') {
+        throw "pre-push hook does not contain 'command -v pwsh' guard - graceful skip path is missing"
+    }
+}
+
+Test-Scenario "L-2: Hook file contains Invoke-ScriptAnalyzer invocation" {
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
+    if (-not (Test-Path $hookPath)) {
+        throw "Hook file not found: $hookPath"
+    }
+    $hookContent = Get-Content $hookPath -Raw
+    if ($hookContent -notmatch 'Invoke-ScriptAnalyzer') {
+        throw "pre-push hook does not contain 'Invoke-ScriptAnalyzer' - PS lint check is missing"
+    }
+}
+
+Test-Scenario "L-3: Hook file contains PSScriptAnalyzer not installed message OR module check" {
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
+    if (-not (Test-Path $hookPath)) {
+        throw "Hook file not found: $hookPath"
+    }
+    $hookContent = Get-Content $hookPath -Raw
+    $hasSkipMessage = $hookContent -match 'PSScriptAnalyzer not installed'
+    $hasModuleCheck = $hookContent -match 'Get-Module.*PSScriptAnalyzer'
+    if (-not ($hasSkipMessage -or $hasModuleCheck)) {
+        throw "pre-push hook does not contain skip message or module check for PSScriptAnalyzer"
+    }
+}
+
+Test-Scenario "L-4: Hook file does NOT contain exit 1 on PSScriptAnalyzer lines (advisory only)" {
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
+    if (-not (Test-Path $hookPath)) {
+        throw "Hook file not found: $hookPath"
+    }
+    $hookLines = Get-Content $hookPath
+    foreach ($line in $hookLines) {
+        # Check if line mentions PSScriptAnalyzer AND contains exit 1
+        if (($line -match 'PSScriptAnalyzer') -and ($line -match 'exit 1')) {
+            throw "pre-push hook contains 'exit 1' on a PSScriptAnalyzer line - check must be advisory: $line"
+        }
+    }
+}
+
+Test-Scenario "L-5: Hook file shebang is #!/bin/sh (not bash, must stay POSIX)" {
+    $hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
+    if (-not (Test-Path $hookPath)) {
+        throw "Hook file not found: $hookPath"
+    }
+    $firstLine = Get-Content $hookPath -TotalCount 1
+    if ($firstLine -ne '#!/bin/sh') {
+        throw "pre-push hook shebang is '$firstLine' but must be '#!/bin/sh' for POSIX compatibility"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 

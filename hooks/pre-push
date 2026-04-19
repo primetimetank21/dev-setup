@@ -25,3 +25,22 @@ if command -v shellcheck >/dev/null 2>&1; then
     echo "$CHANGED" | xargs shellcheck || true
   fi
 fi
+
+# Run PSScriptAnalyzer on changed .ps1 files if pwsh is available (advisory)
+if command -v pwsh >/dev/null 2>&1; then
+  PS1_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '\.ps1$' || true)
+  if [ -n "$PS1_CHANGED" ]; then
+    PSANALYZER_AVAIL=$(pwsh -NoProfile -Command "if (Get-Module -ListAvailable -Name 'PSScriptAnalyzer') { 'yes' } else { 'no' }" 2>/dev/null)
+    if [ "$PSANALYZER_AVAIL" = "yes" ]; then
+      echo "[pre-push] Running PSScriptAnalyzer on changed .ps1 files (advisory)..."
+      echo "$PS1_CHANGED" | while read -r ps1file; do
+        pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Path '$ps1file' | ForEach-Object { Write-Warning \$_.Message }" 2>/dev/null || true
+      done
+    else
+      echo "[pre-push] PSScriptAnalyzer not installed -- skipping PS lint check."
+    fi
+  fi
+else
+  # pwsh not available (common on Linux/macOS without PS Core)
+  : # silent skip
+fi

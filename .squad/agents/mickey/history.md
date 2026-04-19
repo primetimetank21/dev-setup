@@ -578,3 +578,58 @@ This session completed the sentinel fix lifecycle: scoped issue #144, reviewed a
 
 **Key Learning:** Distinguish between "CI-only as hard gate" and "CI-only means never local." Advisory local checks that gracefully degrade add value without the platform-dependency problems that motivated the original CI-only decision.
 
+
+## 2026-04-19 — Issue #138 Fix Complete: Lead Role Session Wrap-up
+
+**Session ID:** issue-138-fix-complete  
+**Date:** 2026-04-19T21:59:45Z  
+
+**Lead Tasks Completed:**
+1. Reviewed PR #146 (Issue #138, dual-path profile + force-alias + exec-policy diagnostic)
+   - Initial review: REJECTED due to 3 test failures (K-2, C-1, C-4)
+   - Identified root causes and assigned Donald for test fixes
+   - Re-review after fixes: APPROVED with non-blocking note on `$savedProfile` teardown
+
+2. Evaluated PSScriptAnalyzer + PS 5.1 hooks in pre-push (Earl's request)
+   - Feasibility: PSScriptAnalyzer via pwsh (feasible as advisory), PS 5.1 (not feasible locally)
+   - Decision: Partial adoption — advisory check for PSScriptAnalyzer in pre-push, PS 5.1 stays CI-only
+   - Reversed Sprint 7 CI-only decision based on advisory-check distinction
+   - Created Issue #147 with implementation guidance
+
+**Outcome:** PR #146 merged to develop. Issue #138 closed. PR #148 (develop→main) merged with 10/10 CI green. Issue #147 created for future pre-hook enhancement.
+
+**Key Reflection:** The PSScriptAnalyzer evaluation highlighted the importance of distinguishing between "CI-only as hard gate" vs. "CI-only means never local." Advisory soft checks with graceful degradation add developer convenience without the platform-dependency problems of hard gates.
+
+---
+
+## 2026-04-19 — PR #149 Review: PSScriptAnalyzer pre-push hook (Issue #147)
+
+**Branch:** `squad/147-prepush-psscriptanalyzer`
+**Verdict:** ✅ APPROVED
+
+### Review Summary
+
+Reviewed Goofy's hook implementation and Chip's Group L tests. All 7 acceptance criteria from Issue #147 verified:
+1. Hook updated with PSScriptAnalyzer advisory section
+2. Only pushed `.ps1` files checked (via `git diff --name-only`)
+3. Graceful skip when `pwsh` absent (silent `:` no-op)
+4. Graceful skip when PSScriptAnalyzer module absent (prints notice)
+5. Violations printed as `Write-Warning`, never blocks push (all paths exit 0)
+6. Existing main-branch guard and shellcheck sections untouched
+7. `--no-verify` bypass unaffected (standard git behavior)
+
+**POSIX compliance:** Clean — no `[[`, `local`, arrays, `$(( ))`, or other bash-isms. Shebang is `#!/bin/sh`. `set -e` interactions handled correctly with `|| true` guards and `if` conditions.
+
+**Group L tests (L-1 through L-5):** Structurally sound static validation. Each test reads `hooks/pre-push` and asserts a specific structural requirement with meaningful failure messages. L-4's line-by-line scan correctly avoids false positives from the unrelated `exit 1` in the main-branch guard.
+
+**Commits:** All 3 follow conventional format (`feat`, `test`, `docs` scopes).
+
+**Files modified:** Only expected files — `hooks/pre-push`, `tests/test_windows_setup.ps1`, `.squad/agents/chip/history.md`.
+
+## Learnings
+
+### 2026-04-19 — Advisory Hook Pattern Validated
+
+- **Advisory hook pattern is now proven end-to-end.** The `command -v` → module check → `|| true` → `Write-Warning` chain established in Issue #147 is the canonical pattern for optional-tooling hooks. Future hooks (e.g., markdownlint, yamllint) should copy this structure.
+- **Static tests are sufficient for hook structural validation.** Group L demonstrates that reading the hook file and asserting patterns (guards, shebang, no `exit 1` co-occurrence) catches the important regressions without requiring a full git execution environment.
+- **`set -e` requires explicit `|| true` on every non-if command substitution.** Both the shellcheck block and PSScriptAnalyzer block use this correctly, but it's easy to forget on new additions.

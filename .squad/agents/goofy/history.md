@@ -17,6 +17,23 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### [2026-04-19] Issue #147: PSScriptAnalyzer advisory check in pre-push hook (PR #149)
+**Branch:** `squad/147-prepush-psscriptanalyzer`
+**Status:** ✅ PR opened
+
+Added PSScriptAnalyzer lint check to `hooks/pre-push` following the existing shellcheck pattern. Advisory only -- prints warnings but never blocks push (exit 0 all paths).
+
+**Implementation:**
+- Check if `pwsh` is available before attempting to run PSScriptAnalyzer
+- Check if PSScriptAnalyzer module is installed via `Get-Module -ListAvailable`
+- Only scan changed `.ps1` files from push diff (`git diff --name-only HEAD~1 HEAD`)
+- Use `Write-Warning` to display violations in pwsh
+- Silent skip when `pwsh` not found (common on Linux/macOS without PS Core)
+- Notice skip when PSScriptAnalyzer module not installed
+- Follows POSIX sh -- no bash-isms, no `[[`, no arrays, no `local`
+
+**Key learning:** Hook patterns for optional lint tools should have three-tier graceful degradation: (1) silent skip when tool unavailable, (2) notice skip when dependencies missing, (3) advisory-only output when available. Never block on optional quality checks in pre-push hooks.
+
 ### [2026-04-18] Fix PR #130 regressions
 - Test-Path Variable:* guard is BROKEN under Set-StrictMode -Version Latest on PS 5.1
 - Even with short-circuit -and, strict mode throws VariableIsUndefined on $IsWindows
@@ -333,3 +350,43 @@ This session delivered the strip+re-inject pattern for Write-PowerShellProfile, 
 **Key learning:** `$PROFILE` is version-specific — always write to explicit paths for both PS 5.1 and PS 7+ to ensure cross-version compatibility.
 
 **Related:** Issue #138 (parent), PR #145 (sentinel fix, cause ③)
+
+## 2026-04-19 — Issue #138 Fix Complete: Implementation Session Wrap-up
+
+**Session ID:** issue-138-fix-complete  
+**Date:** 2026-04-19T21:59:45Z  
+
+**Implementation Details:**
+PR #146 implemented three complementary fixes for Issue #138 (Windows PowerShell aliases):
+1. Dual-path profile injection — Write to both PS 5.1 (`WindowsPowerShell`) and PS 7+ (`PowerShell`) paths using explicit `[System.IO.Path]::Combine()`
+2. Robust alias registration — Added `-Force -Scope Global` to all 44+ Set-Alias calls in profile content
+3. Execution policy diagnostic — Check policy after write, warn if `Restricted` or `Undefined`
+
+**Branch:** `squad/138-fix-profile-aliases`  
+**PR:** #146 (merged to develop)  
+
+**Outcome:** Feature fully shipped via PR #148 (develop→main, 10/10 CI green).
+
+**Key Learning:** `$PROFILE` is version-specific — always write to explicit paths for cross-version compatibility. The refactor from `$PROFILE` to explicit `$profilePaths` array solved the root cause of aliases not loading in PS 5.1 terminals even though setup ran in PS 7+.
+
+**Related Issues:** #138 (parent), #144 (sentinel skip), #141/#142 (psmux aliases that triggered discovery)
+
+## [2026-04-19] Issue #147: Fix CI test L-4 failure — PSScriptAnalyzer exit 1 check (PR #149)
+**Branch:** `squad/147-prepush-psscriptanalyzer`
+**Status:** ✅ Committed and pushed
+
+**Problem:** Test L-4 checks that no line in `hooks/pre-push` contains both `PSScriptAnalyzer` AND `exit 1` (to verify the check is advisory-only). The module availability check used `exit 1` inside a quoted PowerShell command string, which triggered the regex even though the shell never actually exits 1.
+
+**Fix:** Replaced exit-code-based module check with output-based check:
+```sh
+# BEFORE (exit 1 in string triggered L-4):
+if pwsh -NoProfile -Command "if (Get-Module -ListAvailable PSScriptAnalyzer) { exit 0 } else { exit 1 }" 2>/dev/null; then
+
+# AFTER (no exit codes, output-based):
+PSANALYZER_AVAIL=$(pwsh -NoProfile -Command "if (Get-Module -ListAvailable -Name 'PSScriptAnalyzer') { 'yes' } else { 'no' }" 2>/dev/null)
+if [ "$PSANALYZER_AVAIL" = "yes" ]; then
+```
+
+**Result:** L-4 now passes correctly. Behavior is identical — module check still works, PSScriptAnalyzer runs if available, skips with message if not. Zero logic change, purely syntax refactor to satisfy test constraint.
+
+**Key learning:** When tests enforce regex-based line checks, avoid using forbidden patterns even in quoted strings or comments. Output-based checks (`'yes'`/`'no'`) are cleaner than exit-code-based checks when the exit code itself is what's being tested.

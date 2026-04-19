@@ -2110,3 +2110,198 @@ The old skip pattern silently dropped new aliases/functions for users who ran se
 
 - `Write-PowerShellProfile` in `scripts/windows/setup.ps1`
 - Any future managed block injection (Linux shell configs, etc.)
+
+---
+
+## # Decision: Group K Test Design — Issue #138 Profile Fixes
+
+**Date:** 2026-04-18
+**Author:** Chip (Tester)
+**Issue:** #138
+**Status:** ✅ Implemented
+
+### Context
+
+Issue #138 fixes three profile-related bugs requiring comprehensive test coverage:
+1. Write to both PS 5.1 and PS 7+ profile paths
+2. All `Set-Alias` calls in profile content must have `-Force -Scope Global`
+3. Check execution policy and warn if `Restricted` or `Undefined`
+
+### Test Design Decisions
+
+**1. Static Analysis Only (No Execution)**
+
+- All Group K tests use AST parsing + string matching, with no PowerShell execution
+- Tests run on Linux CI runners (no PS 5.1 available)
+- Static analysis validates source correctness before runtime
+- Follows existing pattern from Groups J and F
+
+**2. K-2 Regex Specificity**
+
+- Test K-2 uses regex to match PS 7+ profile path in source code
+- Must match both `Documents\PowerShell` and `Documents/PowerShell` (path separator variations)
+- Must NOT match `WindowsPowerShell` (false positive prevention)
+
+**3. K-3 Heredoc Extraction Method**
+
+- Test K-3 reads raw file and extracts heredoc with regex, rather than using AST
+- Regex captures exact source text with line breaks intact: `(?s)\$profileContent\s*=\s*@'(.*?)'@`
+- Per-line validation requires preserving newlines
+- Validates `-Force -Scope Global` presence on all Set-Alias calls
+
+**4. Anticipatory Testing**
+
+- Tests written before implementation (per charter: "work from specs, not implementations")
+- Validates that fix spec is testable and unambiguous
+- Reduces risk of "testing to the implementation" bias
+
+### Implementation Notes
+
+- Once implementation completed, cherry-pick relevant test commits from test branch
+- Tests anticipate final implementation structure, but may require minor syntax adjustments
+- All three test cases (K-1, K-2, K-3) critical for full profile fix validation
+
+---
+
+## # Decision: Test Regression Fix — Source Code Inspection vs. Functional Testing
+
+**Date:** 2026-04-19
+**Author:** Donald (Shell Dev)
+**Context:** PR #146 test regressions (C-1, C-4, K-2)
+
+### Problem
+
+PR #146 refactored `Write-PowerShellProfile` from using automatic `$PROFILE` variable to explicit `$profilePaths` array with two hardcoded paths (PS 5.1 + PS 7+). This broke three existing tests designed for the old `$PROFILE` pattern.
+
+### Decision
+
+Convert affected tests from functional to source code inspection pattern:
+- **C-1:** Changed from mocking `$PROFILE` to validating presence of `$profilePaths` array variable
+- **C-4:** Updated regex to match loop variable `$profilePath` instead of `$PROFILE`
+- **K-2:** Updated regex to match `[System.IO.Path]::Combine(...)` syntax
+
+### Rationale
+
+1. **Implementation is fixed:** The refactor to explicit paths (both PS 5.1 and PS 7+) is the intended behavior
+2. **Test purpose preserved:** Tests still validate that function uses correct variables/patterns, just adapted to new implementation
+3. **Consistency:** Tests C-4, K-1, K-2 are source code inspection tests; having C-1 match this pattern maintains consistency
+
+### Pattern Established
+
+- **Source code inspection tests** — appropriate when validating that a function uses specific variables, patterns, or API calls (e.g., Path::Combine, specific variable names)
+- **Functional tests** — appropriate when behavior can be tested in isolation without depending on hardcoded paths or system state
+
+### Related Tests
+
+- K-2: Checks for `Path::Combine` usage (source inspection)
+- C-4: Checks for blank-line prepend with correct variable name (source inspection)
+- C-1: Now checks for `$profilePaths`/`$profilePath` variables (source inspection)
+
+---
+
+## # Decision: Fix Windows PowerShell Profile Aliases — Issue #138
+
+**Date:** 2026-04-19
+**Agent:** Goofy (Cross-Platform Developer)
+**Issue:** #138
+**PR:** #146
+**Branch:** `squad/138-fix-profile-aliases`
+**Status:** ✅ Merged
+
+### Context
+
+Issue #138 identified three root causes preventing PowerShell aliases from loading correctly after setup:
+
+1. **Single-path profile injection** — `Write-PowerShellProfile` only wrote to `$PROFILE` (current version)
+2. **Weak alias registration** — `Set-Alias` without `-Force` failed silently on ReadOnly conflicts
+3. **No execution policy diagnostic** — Users with `Restricted` policy saw no warning
+
+Note: Sentinel skip fix (PR #145) was addressed separately.
+
+### Implementation Decisions
+
+**Fix 1 — Dual-Path Profile Injection**
+
+Choice: Write to BOTH PS 5.1 and PS 7+ profile paths explicitly using `[System.IO.Path]::Combine()`
+
+Why: `$PROFILE` refers to the current PowerShell version's profile. If setup runs in PS 7+, only `~/Documents/PowerShell/...` is written. User launching PS 5.1 later uses different file `~/Documents/WindowsPowerShell/...` — no aliases.
+
+Alternative rejected: Using `$PROFILE.AllUsersCurrentHost` (requires admin), detecting PS version (brittle), or symlinks (requires admin/dev mode).
+
+**Fix 2 — Robust Alias Registration**
+
+Choice: Add `-Force -Scope Global` to ALL `Set-Alias` calls in profile content
+
+Why: Without `-Force`, Set-Alias fails silently on ReadOnly alias conflicts. `-Force` overrides ReadOnly protection. `-Scope Global` ensures aliases persist across script scopes.
+
+Alternative rejected: Only adding `-Force` to known conflicting aliases (incomplete, future-breaking); relying on pre-emptive Remove-Item guard (insufficient).
+
+**Fix 3 — Execution Policy Diagnostic**
+
+Choice: Check execution policy after profile write, warn if `Restricted` or `Undefined`
+
+Why: If execution policy is `Restricted`, PowerShell won't load profile at all. Users see no error, just "aliases don't work". Warning guides them to the fix.
+
+Alternative rejected: Auto-setting execution policy (violates user control), skipping warning if policy already permissive (check is fast, no harm).
+
+### Outcome
+
+All three fixes implemented in single PR:
+- Dual-path profile write ensures aliases work in both PS 5.1 and PS 7+ terminals
+- `-Force -Scope Global` on all aliases prevents silent failures
+- Execution policy diagnostic guides users when profile can't load
+
+### Related Issues
+
+- #138 (parent): Windows PowerShell aliases not fully working
+- #144 (sentinel skip): Write-PowerShellProfile should update, not skip
+- #141, #142 (psmux aliases): Triggered sentinel skip discovery
+
+---
+
+## # Decision: PSScriptAnalyzer Pre-Push Hook Evaluation
+
+**Date:** 2026-04-19
+**Agent:** Mickey (Lead)
+**Context:** PR #146 merge complete; evaluating PSScriptAnalyzer + PS 5.1 checks in pre-push hook
+**Status:** ✅ Recommendation made, Issue #147 created
+
+### Decision Summary
+
+Partial adoption: Add PSScriptAnalyzer via `pwsh` as **warn-only advisory check** to pre-push hook. Do NOT add PS 5.1 checks locally (CI-only).
+
+This reverses the Sprint 7 decision (PSScriptAnalyzer = CI-only) based on the distinction between advisory soft-check vs. hard-gate context.
+
+### Feasibility Analysis
+
+**PSScriptAnalyzer via `pwsh` — ✅ Feasible**
+
+- Requires `pwsh` installation (available in Codespaces, macOS, Windows Git Bash)
+- Graceful degradation: warn if not available, exit 0 (advisory only)
+- Fast and targeted: only changed `.ps1` files in push range
+- Matches existing shellcheck pattern in pre-push hook
+
+**PS 5.1 compatibility — ❌ Not feasible locally**
+
+- PS 5.1 is Windows-only (`powershell.exe`), unavailable on Linux
+- WSL does not expose `powershell.exe` to POSIX hooks
+- Must remain CI-only on `windows-latest` runners
+- Cannot feasibly simulate PS 5.1 compatibility check in POSIX hook
+
+### Rationale for Decision Reversal
+
+Sprint 7 decision (PSScriptAnalyzer = CI-only) was correct for *hard gate* context (fail push on violation). This proposal is *advisory soft check* (warn but don't block) — different contract.
+
+Advisory check sidesteps platform-dependency concern by gracefully skipping when `pwsh` is absent. This is practical for developer convenience without imposing brittle hard requirements.
+
+### Implementation Constraints
+
+- Hook remains `#!/bin/sh` (POSIX-only)
+- Only `.ps1` files changed in push are checked
+- PSScriptAnalyzer check is warn-only (exit 0, does not block push)
+- PS 5.1 check out of scope for hook (CI-only)
+
+### Related
+
+- Sprint 7 decision: PSScriptAnalyzer in CI only (hard gate)
+- Issue #147: feat(hooks) — add PSScriptAnalyzer warn-only check to pre-push hook (future implementation)
