@@ -376,3 +376,48 @@ Anticipatory test design for Group K (Issue #138 profile fixes) before implement
 **Outcome:** Test design contributed to comprehensive validation of dual-path profile fix. All Group K tests now passing as part of PR #146 merged to main.
 
 **Key Reflection:** Anticipatory testing per charter ("work from specs, not implementations") sometimes requires test adaptation when implementation details differ from predicted patterns. This is expected and healthy — the alternative of writing tests after implementation introduces "testing to the code" bias.
+
+---
+
+## [2026-04-19] Issue #147 — Group L Tests for pre-push PSScriptAnalyzer Block
+
+**Branch:** `squad/147-prepush-psscriptanalyzer` (Goofy's branch)
+**Commit:** 467aeae
+**Status:** ✅ Committed and pushed
+
+### What I Built
+
+Added Group L tests (L-1 through L-5) to `tests/test_windows_setup.ps1` to verify the new PSScriptAnalyzer block in `hooks/pre-push`. All tests are **static validation** — they read and verify hook file structure without executing the hook.
+
+**Test Coverage:**
+- **L-1:** Verifies `command -v pwsh` guard exists (graceful skip path for systems without PowerShell Core)
+- **L-2:** Verifies `Invoke-ScriptAnalyzer` invocation exists (the actual PS lint check)
+- **L-3:** Verifies PSScriptAnalyzer module check or skip message (handles module-not-installed case)
+- **L-4:** Verifies NO `exit 1` on PSScriptAnalyzer lines — check is advisory only (distinguishes from main-branch guard which rightfully has exit 1)
+- **L-5:** Verifies hook shebang is `#!/bin/sh` for POSIX compatibility (not `#!/bin/bash`)
+
+### Technical Approach
+
+All tests use static file analysis:
+- Read `hooks/pre-push` file content with `Get-Content`
+- Use regex matching to verify expected patterns
+- L-4 specifically checks for co-occurrence of `PSScriptAnalyzer` AND `exit 1` on same line to catch accidental hard-fail behavior
+
+### Key Pattern Decisions
+
+1. **Followed Group K pattern:** Used existing `Test-Scenario` helper, `$RepoRoot` path construction, ASCII-only strings
+2. **L-3 defensive OR check:** Accepts EITHER skip message OR module check (implementation could use either pattern)
+3. **L-4 line-by-line scan:** Reads file as array of lines to check each individually — prevents false positive from unrelated `exit 1` (main branch guard)
+4. **L-5 exact shebang match:** Requires EXACTLY `#!/bin/sh` to enforce POSIX sh requirement (Git Bash on Windows compatibility)
+
+### Coordination
+
+Goofy's branch `squad/147-prepush-psscriptanalyzer` already existed with the hook implementation. Checked out branch, added tests after Group K, committed with Conventional Commits format and Co-authored-by trailer, pushed directly to Goofy's branch as instructed.
+
+### Outcome
+
+✅ 5 new tests added (Group L) to `tests/test_windows_setup.ps1`
+✅ Commit 467aeae pushed to `squad/147-prepush-psscriptanalyzer`
+✅ Tests ready for CI validation once branch is merged
+
+**Testing Philosophy:** Static validation tests like these catch structural issues (missing guards, wrong shebang, accidental hard-fail) without requiring a full git environment or execution context. They complement integration tests and catch regressions early.
