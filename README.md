@@ -91,20 +91,37 @@ After running `setup.ps1`, a set of shortcuts is injected into your PowerShell p
 
 Full alias list lives in `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function). All aliases use `-Force -Scope Global` so they are available immediately in the current session after sourcing the profile.
 
-## Pre-push Hook
+## Git Hooks (Auto-configured)
 
-`hooks/pre-push` runs automatically when you push. It:
+Both `setup.sh` and `setup.ps1` automatically configure git to use this repo's hooks directory:
+
+```bash
+git config core.hooksPath hooks
+```
+
+No manual copying needed. After running setup, three hooks are active:
+
+### `pre-commit`
+
+Runs shellcheck on staged `.sh` files. Blocks commit if shellcheck fails. Silently skips if shellcheck not installed.
+
+### `commit-msg`
+
+Enforces **Conventional Commits** format:
+
+```
+type(scope): description
+```
+
+Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. Hard reject on non-conforming messages.
+
+### `pre-push`
 
 1. **Blocks** direct pushes to `main` (hard stop).
 2. **Runs shellcheck** on changed `.sh` files — advisory, never blocks (Linux/macOS).
 3. **Runs PSScriptAnalyzer** on changed `.ps1` files — advisory, never blocks (requires `pwsh` + PSScriptAnalyzer module; silently skipped if absent).
 
-Install the hook once after cloning:
-
-```bash
-cp hooks/pre-push .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
-```
+Use `--no-verify` to bypass hooks in emergencies.
 
 ---
 
