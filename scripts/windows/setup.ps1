@@ -300,7 +300,7 @@ Set-Alias -Name c -Value Clear-Host -Force -Scope Global    # clear the screen
 
 # -- Utility --------------------------------------------------------------------
 
-function Get-MyIp { curl -s ifconfig.me $args }             # show public IP
+function Get-MyIp { curl.exe -s ifconfig.me $args }         # show public IP
 Set-Alias -Name myip -Value Get-MyIp -Force -Scope Global
 
 function Invoke-PingBing { ping bing.com $args }            # quick connectivity check
