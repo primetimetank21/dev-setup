@@ -431,8 +431,8 @@ Test-Scenario "F-4: Dev shortcut aliases present (uvr, uvs, ni, nr, nrd, nrt, py
     }
 }
 
-Test-Scenario "F-5: Utility aliases present (myip, pb, h)" {
-    $utilAliases = @('myip', 'pb', 'h')
+Test-Scenario "F-5: Utility aliases present (myip, pb, h, ep)" {
+    $utilAliases = @('myip', 'pb', 'h', 'ep')
     foreach ($alias in $utilAliases) {
         if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
             throw "Missing utility alias '$alias' in scripts/windows/setup.ps1"
