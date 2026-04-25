@@ -92,6 +92,7 @@ alias vz="vim ~/.zshrc"                       # edit zsh config in vim
 alias sz='[[ -n "$ZSH_VERSION"  ]] && source ~/.zshrc  || echo "[sz] Not in zsh — use sb"'    # reload zsh config (zsh only)
 alias vv="vim ~/.vimrc"                       # edit vim config in vim
 alias va="vim ~/.aliases"                     # edit aliases file in vim
+alias ep='${EDITOR:-vim} ~/.bash_profile'    # open profile in editor
 
 # ── Dev shortcuts ────────────────────────────────────────────────────────────
 

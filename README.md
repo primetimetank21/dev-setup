@@ -114,7 +114,7 @@ After running setup, you get shortcuts for common git, dev, and utility commands
 
 **Dev tools:** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
 
-**Utility:** `myip`, `pb`, `h`
+**Utility:** `myip`, `pb`, `h`, `ep`
 
 **tmux/psmux:** `ta` (attach), `tt` (new session), `tls` (list sessions), `tks` (kill server)
 
