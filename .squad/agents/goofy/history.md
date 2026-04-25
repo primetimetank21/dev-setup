@@ -446,3 +446,23 @@ Ship both together — same root cause, same file, same pattern. Partial fix wou
 
 **Next:**
 Implement both aliases in `scripts/windows/setup.ps1`.
+
+### [2026-04-25] Issues #167 & #168: curl.exe fix + ep alias — BOTH MERGED ✅
+
+**Branch 1:** `squad/167-fix-myip-curl-exe` → **PR #169** merged (develop + main)
+**Branch 2:** `squad/168-ep-alias-edit-profile` → **PR #170** merged (develop + main)
+
+**PR #169 (curl.exe fix):**
+- Fixed `Get-MyIp` function: `curl` → `curl.exe`
+- Bypasses PowerShell alias resolver
+- Issue #167 closed ✅
+
+**PR #170 (ep alias):**
+- Added `Edit-Profile` function + alias on Windows
+- Added `ep='${EDITOR:-vim} ~/.bash_profile'` on Unix
+- Updated tests (F-5) and README
+- Initial submit → Mickey CHANGES_REQUESTED (missing Remove-Item guard)
+- Donald added guard clause → Mickey approved ✅
+- Issue #168 closed ✅
+
+**Key learning:** When fixing is needed post-review, Donald can jump in as secondary developer to unblock merge. Guard all file operations that may fail idempotently.

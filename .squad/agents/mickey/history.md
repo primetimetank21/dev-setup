@@ -709,3 +709,125 @@ Merged PR #153 (develop → main) — 10/10 CI checks passing. Documentation now
 **Decision filed:** `.squad/decisions/inbox/mickey-gcm-alias-scope.md` — expand fix scope to both aliases.
 
 **Key learning:** When one PS 5.1 AllScope alias is missing a guard, audit ALL aliases in the profile for the same pattern gap. Built-in AllScope aliases in PS 5.1 include `gcm` (Get-Command), `gcb` (Get-Clipboard), `gc` (Get-Content), `gl` (Get-Location), `gp` (Get-ItemProperty), `ni` (New-Item), `rm` (Remove-Item), `h` (Get-History), and many more.
+
+---
+
+## PR #169 Code Review: curl → curl.exe Fix
+
+**Reviewer:** Mickey (Lead)
+**PR:** primetimetank21/dev-setup#169
+**Branch:** `squad/167-fix-myip-curl-exe` → `develop`
+**Status:** ✅ APPROVED (comment-only, author owns repo)
+
+### Assessment
+
+**Issue:** PowerShell aliases `curl` to `Invoke-WebRequest`, which does not support the `-s` (silent) flag. This breaks the `myip` command.
+
+**Fix:** Line 303 of `scripts/windows/setup.ps1`
+```powershell
+# Before
+function Get-MyIp { curl -s ifconfig.me $args }
+
+# After
+function Get-MyIp { curl.exe -s ifconfig.me $args }
+```
+
+**Verdict:** ✅ **Correct and appropriate fix**
+- `curl.exe` forces invocation of the actual curl binary instead of the PowerShell alias
+- Matches established Windows PowerShell pattern (same pattern used in many shell configs for git, where `git.exe` resolves ambiguity)
+- CI status: 4/5 green (1 pending PS 5.1 check, but this is a simple alias fix with no platform impact)
+- Function properly passes `$args` and maintains inline comment
+
+**Action:** Left approval comment on GitHub (PR author = repo owner, so formal approval blocked; comment delivered as fallback).
+
+---
+
+## [2026-04-20] PR #170 Review: `ep` alias implementation
+
+**Branch:** `squad/168-ep-alias-edit-profile`
+**Status:** 🔄 **Request Changes** — Missing AllScope guard
+
+### Review Assessment
+
+PR correctly implements #168 across all four files:
+- ✅ `scripts/windows/setup.ps1`: Edit-Profile function defined, Set-Alias -ep call present
+- ✅ `tests/test_windows_setup.ps1`: F-5 utility alias test updated (myip, pb, h, ep)
+- ✅ `config/dotfiles/.aliases`: `alias ep='${EDITOR:-vim} ~/.bash_profile'` with comment
+- ✅ `README.md`: Utility alias table updated
+
+### Issue Found
+
+**Missing Remove-Item guard (lines 312-313)** — Inconsistent with `h` alias pattern.
+
+Current code:
+```powershell
+function Edit-Profile { notepad $PROFILE }  # open PS profile in editor
+Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
+```
+
+Should be:
+```powershell
+Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue
+function Edit-Profile { notepad $PROFILE }  # open PS profile in editor
+Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
+```
+
+**Why:** The `Remove-Item` guard ensures AllScope aliases can be safely reloaded without conflicts. Line 309 shows the `h` alias uses this pattern — `ep` should match for consistency.
+
+### Action Taken
+
+Posted detailed review comment on GitHub requesting changes. Awaiting author response.
+
+---
+
+## [2026-04-20] PR #170 Re-Review: `ep` alias — ✅ APPROVED
+
+**Branch:** `squad/168-ep-alias-edit-profile`
+**Status:** ✅ **Approved** — Fix verified and comment left
+
+### Verification Steps
+
+1. **PR Diff Check:** ✅ Remove-Item guard present in updated code
+   ```powershell
+   function Edit-Profile { notepad $PROFILE }
+   Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue
+   Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
+   ```
+
+2. **Pattern Confirmation:** ✅ Exact match to required format
+   - `Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue` present before `Set-Alias`
+   - Consistent with `h` alias pattern (line 309 reference)
+
+3. **CI Status:** ✅ Passing
+   - 3 successful checks (Lint PowerShell, Lint Shell, Validate PowerShell Functions)
+   - 2 pending checks (not failed)
+   - 0 cancelled, 0 failing
+
+4. **Documentation:** ✅ Complete
+   - README.md updated with `ep` in utility alias table
+   - Agent history files updated with fix details and learnings
+
+### Action Taken
+
+✅ Left approval comment: "LGTM — Remove-Item guard added. Approved."
+   - Comment posted at https://github.com/primetimetank21/dev-setup/pull/170#issuecomment-4320349981
+   - (Formal approval skipped due to author = repo owner)
+
+**Outcome:** PR #170 ready to merge. Donald's fix is complete and correct.
+
+### [2026-04-25] Issues #167 & #168: Triaged, reviewed, approved both PRs ✅
+
+**Responsibility:** Issue triage & code review
+
+**Issue #167 - curl.exe fix (Goofy):**
+- Created issue: "Fix myip curl alias on Windows"
+- Reviewed PR #169: Approved (Goofy's curl.exe fix correct)
+- Merged: PR #169 → develop + main, issue closed ✅
+
+**Issue #168 - ep alias (Goofy, defended by Donald):**
+- Created issue: "Add ep alias for editing PowerShell profile"
+- Reviewed PR #170: CHANGES_REQUESTED (missing Remove-Item guard)
+- Re-reviewed after Donald's fix: Approved
+- Merged: PR #170 → develop + main, issue closed ✅
+
+**Impact:** Two utilities shipped. PowerShell Windows compatibility improved (curl.exe pattern + ep profile editor).

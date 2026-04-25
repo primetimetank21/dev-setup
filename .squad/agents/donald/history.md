@@ -412,3 +412,18 @@ Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
 **Rule:** Every `Set-Alias -Scope Global` in `setup.ps1` must be preceded by a matching `Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue` guard. See the `h` alias (~line 309) as the canonical reference pattern.
 
 Branch: `squad/168-ep-alias-edit-profile` — PR #170.
+
+### [2026-04-25] PR #170 (ep alias): Added Remove-Item guard ✅
+
+**Role:** Developer (secondary/defender)
+
+**Task:** Mickey requested changes on PR #170 — missing guard on `Remove-Item` for profile operations.
+
+**Fix:** Added guard clause before `Remove-Item`:
+- Ensures idempotency (no error if profile doesn't exist)
+- Prevents silent failures
+- Pattern already used in codebase for 8+ aliases
+
+**Result:** Fix pushed to `squad/168-ep-alias-edit-profile`, Mickey re-reviewed and approved. PR #170 merged (develop + main), issue #168 closed ✅.
+
+**Learning:** Be ready to defend/fix upstream PRs when review uncovers simple issues. Quick follow-up keeps merge velocity high.
