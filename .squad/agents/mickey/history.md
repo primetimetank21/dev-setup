@@ -688,3 +688,24 @@ Merged PR #153 (develop → main) — 10/10 CI checks passing. Documentation now
 
 - **Documentation PRs that span multiple files need careful attention to existing patterns.** The formats and voice differ across README (bullet lists, technical details), CONTRIBUTING (procedural step lists), and ARCHITECTURE (tables, ownership structures). Respecting these patterns requires reading the full current state, not just the "add here" spots.
 - **Advisory-only hooks need explicit documentation.** Without clear labeling that PSScriptAnalyzer "warns but never blocks," users may panic on warnings or misunderstand why a push wasn't rejected.
+
+---
+
+## 2026-04-25 — Issue #160 Refinement: gcm/gcb AllScope Alias Bug
+
+**Task:** Refine manually-created Issue #160 ("gcm alias not working").
+
+**What I found:**
+- `gcm` alias at line 215 of `scripts/windows/setup.ps1` missing `Remove-Item` guard — confirmed PS 5.1 AllScope conflict with `Get-Command`.
+- `gcb` alias at line 218 has **same bug** — conflicts with PS 5.1 AllScope `Get-Clipboard`. Unreported but same root cause.
+- 8 other aliases already have the guard (`rm`, `gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`). Pattern is established.
+- Full audit of all 40+ aliases confirmed no other missing guards.
+
+**Changes to issue:**
+- Title: Expanded to cover both `gcm` and `gcb`, added conventional commit prefix
+- Body: Rewrote with root cause analysis, alias audit table, exact fix locations, and testable acceptance criteria
+- Labels: Added `type:bug`, `squad:goofy`, `go:yes` (Goofy owns Windows setup script)
+
+**Decision filed:** `.squad/decisions/inbox/mickey-gcm-alias-scope.md` — expand fix scope to both aliases.
+
+**Key learning:** When one PS 5.1 AllScope alias is missing a guard, audit ALL aliases in the profile for the same pattern gap. Built-in AllScope aliases in PS 5.1 include `gcm` (Get-Command), `gcb` (Get-Clipboard), `gc` (Get-Content), `gl` (Get-Location), `gp` (Get-ItemProperty), `ni` (New-Item), `rm` (Remove-Item), `h` (Get-History), and many more.

@@ -404,3 +404,23 @@ if [ "$PSANALYZER_AVAIL" = "yes" ]; then
 **Result:** L-4 now passes correctly. Behavior is identical — module check still works, PSScriptAnalyzer runs if available, skips with message if not. Zero logic change, purely syntax refactor to satisfy test constraint.
 
 **Key learning:** When tests enforce regex-based line checks, avoid using forbidden patterns even in quoted strings or comments. Output-based checks (`'yes'`/`'no'`) are cleaner than exit-code-based checks when the exit code itself is what's being tested.
+
+---
+
+## [2026-04-25] Issue #160: Expand PS 5.1 alias fix to include gcb (Mickey Lead Decision)
+
+**Issue:** #160  
+**Scope:** gcm + gcb alias fixes  
+**Status:** Awaiting implementation
+
+**Context:**
+Earl reported `gcm` (Get-Command) alias breaks on PS 5.1 with AllScope error. Investigation by Mickey revealed `gcb` (Get-Content) has identical problem. Both are PS 5.1 built-in aliases with AllScope flag that can't be overwritten by `Set-Alias` alone.
+
+**Decision:**
+Expand fix scope to both `gcm` AND `gcb`. Codebase already guards 8 other aliases (`rm`, `gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`) with `Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue` before `Set-Alias`. Full audit confirmed only `gcm` and `gcb` are affected PS 5.1 built-ins. Fix is two lines each, same pattern, no new code pattern required.
+
+**Rationale:**
+Ship both together — same root cause, same file, same pattern. Partial fix would leave `gcb` broken.
+
+**Next:**
+Implement both aliases in `scripts/windows/setup.ps1`.

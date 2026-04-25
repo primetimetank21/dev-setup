@@ -2327,3 +2327,48 @@ PSScriptAnalyzer advisory check added to `hooks/pre-push` per Issue #147.
 **Motivation:** Reduce revision cycles on PS script changes by catching PSScriptAnalyzer violations in local pre-push hook before CI-stage reviews.
 
 **Related Decisions:** Builds on Sprint 7 PSScriptAnalyzer CI-only decision; extends to local advisory-only hook as soft-check complement.
+
+---
+
+## # Decision: Style Directive — Caveman Speak
+
+**Date:** 2026-04-25T18:12:26Z  
+**By:** Earl Tankard, Jr., Ph.D.
+
+### What
+All agents and coordinator responses use caveman speak — short, direct, clear, simple language. No big words.
+
+### Why
+User directive. Saves tokens. Keep responses short and dense. Cut filler words.
+
+### Scope
+All team agents, all responses.
+
+---
+
+## # Decision: Scope gcm alias fix to include gcb (Issue #160)
+
+**Issue:** #160  
+**Agent:** Mickey (Lead)  
+**Date:** 2026-04-25
+
+### Context
+
+Earl reported `gcm` alias breaks on PS 5.1 with AllScope error. Investigation found `gcb` has the same problem — both are PS 5.1 built-in aliases with AllScope flag that can't be overwritten by `Set-Alias` alone.
+
+### Decision
+
+**Expand fix scope from just `gcm` to both `gcm` and `gcb`.**
+
+- Codebase already uses `Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue` before `Set-Alias` for 8 other aliases (`rm`, `gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`).
+- `gcm` and `gcb` are only two missing the guard that conflict with PS 5.1 AllScope built-ins.
+- Full audit of 40+ aliases confirmed no other aliases affected.
+- Fix: two lines, same pattern. No new pattern needed.
+
+### Assigned to
+
+Goofy (owner of `scripts/windows/setup.ps1`).
+
+### Rationale
+
+Ship both fixes together — same root cause, same file, same pattern. Fixing only `gcm` and leaving `gcb` broken would be sloppy.
