@@ -310,6 +310,7 @@ Remove-Item -Force Alias:\h -ErrorAction SilentlyContinue
 Set-Alias -Name h -Value Get-History -Force -Scope Global   # command history
 
 function Edit-Profile { notepad $PROFILE }  # open PS profile in editor
+Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue
 Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
 
 # -- psmux (tmux for Windows) -----------------------------------------------
