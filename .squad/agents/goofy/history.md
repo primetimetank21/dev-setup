@@ -17,6 +17,28 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### [2026-04-20] Issue #168: Add `ep` alias to open PowerShell profile in editor (PR #170)
+**Branch:** `squad/168-ep-alias-edit-profile`
+**Status:** ✅ PR opened → develop
+
+Added `ep` alias across Windows and Linux/macOS:
+- **Windows:** `Edit-Profile` function calls `notepad $PROFILE`; `Set-Alias -Name ep -Value Edit-Profile`
+- **Linux/macOS:** `alias ep='${EDITOR:-vim} ~/.bash_profile'` in `config/dotfiles/.aliases`
+- Test F-5 in `tests/test_windows_setup.ps1` updated to include `ep` in utility alias check
+- README.md utility alias table updated
+
+**Key learning:** When adding a new utility alias, update four places: `scripts/windows/setup.ps1`, `tests/test_windows_setup.ps1` (F-5 test), `config/dotfiles/.aliases`, and `README.md` alias table.
+
+### [2026-04-20] Issue #167: Fix `myip` curl alias on Windows (PR #169)
+**Branch:** `squad/167-fix-myip-curl-exe`
+**Status:** ✅ PR opened → develop
+
+PowerShell aliases `curl` to `Invoke-WebRequest` by default. Any call to `curl -s ifconfig.me` in a PS script silently invokes IWR instead of the real curl binary, breaking the `-s` flag and the expected plain-text response.
+
+**Fix:** Changed `curl` to `curl.exe` in `Get-MyIp` inside `scripts/windows/setup.ps1`. The `.exe` suffix bypasses the PowerShell alias resolver and forces the real Win32 binary.
+
+**Key learning:** Always use `curl.exe` (not `curl`) in PowerShell scripts when you need real curl behaviour. Same pattern applies to `wget.exe` vs the `wget` alias.
+
 ### [2026-04-19] Issue #151: Documentation update for #138 and #147 (PR #152, #153) ✅ MERGED
 **Branch:** `squad/151-update-docs`
 **Status:** ✅ Complete — merged to develop and main

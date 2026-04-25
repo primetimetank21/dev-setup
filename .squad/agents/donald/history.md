@@ -395,3 +395,20 @@ Replaced the entire copilot-cli installation approach. Prior attempts using `CI=
 **Outcome:** PR #146 merged to develop. Issue #138 fully closed. Feature shipped via PR #148 (develop→main).
 
 **Reflection:** Test regression fixes on this session reinforced the pattern: when a refactor changes variable names or implementation structure, source inspection tests must adapt. The fix was straightforward once the root causes (K-2 regex, C-1 variable name, C-4 loop variable) were identified in Mickey's rejection.
+
+---
+
+### 2026-04-20: Fix — Missing Remove-Item AllScope guard for `ep` alias (PR #170)
+
+PR #170 (branch `squad/168-ep-alias-edit-profile`) added the `ep` alias for `Edit-Profile` in `scripts/windows/setup.ps1` but was missing the `Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue` guard before the `Set-Alias` call. Without it, PowerShell can fail to re-set the alias if an AllScope alias named `ep` already exists from a prior run — violating the idempotency requirement.
+
+**Fix applied (line 313):**
+```powershell
+function Edit-Profile { notepad $PROFILE }  # open PS profile in editor
+Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue
+Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
+```
+
+**Rule:** Every `Set-Alias -Scope Global` in `setup.ps1` must be preceded by a matching `Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue` guard. See the `h` alias (~line 309) as the canonical reference pattern.
+
+Branch: `squad/168-ep-alias-edit-profile` — PR #170.
