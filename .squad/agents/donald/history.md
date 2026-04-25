@@ -13,6 +13,19 @@
 - Dotfiles and shell configs are managed as templates
 - Scripts must be idempotent — safe to run multiple times
 
+## Core Context
+
+**Sprints 1–6 Summary (2026-04-07 to 2026-04-18):**
+
+Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
+
+- **Sprints 1–4:** 6 tool install scripts (zsh, uv, nvm, gh CLI, GitHub Copilot CLI, auth), shell profile injection for multiple shells (.bashrc, .zshrc), idempotency across multiple runs
+- **Sprint 5:** gh 2.89.0+ built-in promotion handling (`--` passthrough to binary), CI=true env var for isatty()-gated CLI probes, Copilot CLI download workarounds (PTY script, stdin pipe, CI=true final fix)
+- **Sprint 6:** tmux addition to prerequisites, CRLF guard patterns for DevContainer onCreateCommand
+- **Key Learnings:** Never probe gh built-ins with `--help` alone (use `-- --help`), CI=true > PTY wrapping for CLI probes, shell function sourcing required for nvm validation, uv prefers ~/.local/bin for non-login shells
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->

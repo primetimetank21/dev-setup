@@ -13,6 +13,20 @@
 - Dotfiles and shell configs are managed as templates
 - Scripts must be idempotent — safe to run multiple times
 
+## Core Context
+
+**Sprints 1–6 Summary (2026-04-07 to 2026-04-18):**
+
+Established CI/CD validation framework and cross-platform test coverage:
+
+- **Sprints 1–4:** Linux/Windows CI workflows, shell script linting (shellcheck), PowerShell linting (PSScriptAnalyzer)
+- **Sprint 5:** Windows PowerShell regression test suite (15 tests, 4 groups), idempotency test framework
+- **Sprint 6:** PS 5.1 dual-runtime validation (Parser::ParseFile syntax checks, PSScriptAnalyzer on windows-latest), git hooks testing
+- **Key Achievements:** Linux idempotency tests (#14), Windows regression tests (#102–#104), dual-runtime PS validation (#109), git hooks tests (#121, #147)
+- **Key Learnings:** `shell: powershell` (PS 5.1) vs `shell: pwsh` (PS 7+) distinction, `Join-Path` nested 2-arg syntax for PS 5.1, PSScriptAnalyzer rule naming (PSUseBOMForUnicodeEncodedFile for non-ASCII)
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->

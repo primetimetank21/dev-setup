@@ -13,6 +13,19 @@
 - Dotfiles and shell configs are managed as templates
 - Scripts must be idempotent — safe to run multiple times
 
+## Core Context
+
+**Sprints 1–6 Summary (2026-04-07 to 2026-04-18):**
+
+Implemented Windows PowerShell setup and utility alias framework:
+
+- **Sprints 1–4:** Root setup.ps1 OS detection, scripts/windows/setup.ps1 core setup, winget tool installers (git, vim, gh, nvm), utility aliases (ta, tt, tls, tks, gpl, ggsls), Remove-Item guards for PS 5.1 AllScope conflicts
+- **Sprint 5:** PS 5.1 source-level guards (Test-Path Variable:IsWindows), vim PATH refresh after winget, empty catch block linting fixes (Write-Verbose pattern), UTF-8 em-dash removal (PSUseBOMForUnicodeEncodedFile)
+- **Sprint 6:** curl.exe / wget.exe alias bypass pattern, ep alias for profile editor (Windows: notepad, Unix: $EDITOR), Remove-Item guard on profile operations
+- **Key Learnings:** Always use curl.exe (not curl) in PS scripts, nested Join-Path for PS 5.1 (2-arg syntax), Set-Alias -Force needed for AllScope alias override, Test-Path Variable:* for runtime feature guards
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
