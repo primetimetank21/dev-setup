@@ -59,8 +59,8 @@ After running setup, complete these steps to activate your tools:
 
 1. **Activate Node.js:**
    ```bash
-   nvm install lts
-   nvm use lts
+   nvm install --lts
+   nvm use --lts
    ```
 
 2. **Dotfiles:** Your shell config (`.zshrc`/`.bashrc`) and aliases are automatically installed during setup. Restart your terminal or run `source ~/.zshrc` (or `source ~/.bashrc` for bash) to load them.
