@@ -17,15 +17,18 @@
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
-### [2026-04-19] Issue #151: Documentation update for #138 and #147 (PR TBD)
+### [2026-04-19] Issue #151: Documentation update for #138 and #147 (PR #152, #153) ✅ MERGED
 **Branch:** `squad/151-update-docs`
-**Status:** ✅ PR opened
+**Status:** ✅ Complete — merged to develop and main
 
 Targeted additions to README.md, CONTRIBUTING.md, and ARCHITECTURE.md to document:
 - Windows PowerShell alias table (`ta`, `tt`, `tls`, `tks`, `gpl`, `ggsls`) and the dual-path profile injection pattern from #138
 - Pre-push hook workflow (shellcheck + PSScriptAnalyzer advisory) from #147
 - How to install PSScriptAnalyzer locally
+- hooks/ directory ownership in ARCHITECTURE.md
 
+**Reviewed and approved by:** Mickey (5/5 CI green on PR #152)
+**Released:** PR #153 (develop → main), 10/10 CI green
 **Key learning:** Docs PRs should only add what is missing — never rewrite existing content. Use the existing heading style and table formats of each file. Advisory-only hooks should be clearly labelled as such in docs to prevent confusion about push failures.
 
 ### [2026-04-19] Issue #147: PSScriptAnalyzer advisory check in pre-push hook (PR #149)
@@ -401,3 +404,23 @@ if [ "$PSANALYZER_AVAIL" = "yes" ]; then
 **Result:** L-4 now passes correctly. Behavior is identical — module check still works, PSScriptAnalyzer runs if available, skips with message if not. Zero logic change, purely syntax refactor to satisfy test constraint.
 
 **Key learning:** When tests enforce regex-based line checks, avoid using forbidden patterns even in quoted strings or comments. Output-based checks (`'yes'`/`'no'`) are cleaner than exit-code-based checks when the exit code itself is what's being tested.
+
+---
+
+## [2026-04-25] Issue #160: Expand PS 5.1 alias fix to include gcb (Mickey Lead Decision)
+
+**Issue:** #160  
+**Scope:** gcm + gcb alias fixes  
+**Status:** Awaiting implementation
+
+**Context:**
+Earl reported `gcm` (Get-Command) alias breaks on PS 5.1 with AllScope error. Investigation by Mickey revealed `gcb` (Get-Content) has identical problem. Both are PS 5.1 built-in aliases with AllScope flag that can't be overwritten by `Set-Alias` alone.
+
+**Decision:**
+Expand fix scope to both `gcm` AND `gcb`. Codebase already guards 8 other aliases (`rm`, `gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`) with `Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue` before `Set-Alias`. Full audit confirmed only `gcm` and `gcb` are affected PS 5.1 built-ins. Fix is two lines each, same pattern, no new code pattern required.
+
+**Rationale:**
+Ship both together — same root cause, same file, same pattern. Partial fix would leave `gcb` broken.
+
+**Next:**
+Implement both aliases in `scripts/windows/setup.ps1`.

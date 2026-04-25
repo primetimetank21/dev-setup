@@ -212,9 +212,11 @@ function Add-GitAllFiles { git add --all $args }            # stage all changes
 Set-Alias -Name gaa -Value Add-GitAllFiles -Force -Scope Global
 
 function Invoke-GitCommitMessage { git commit -m $args }    # commit with inline message
+Remove-Item -Force Alias:\gcm -ErrorAction SilentlyContinue
 Set-Alias -Name gcm -Value Invoke-GitCommitMessage -Force -Scope Global
 
 function New-GitBranch { git checkout -b $args }            # create and switch to new branch
+Remove-Item -Force Alias:\gcb -ErrorAction SilentlyContinue
 Set-Alias -Name gcb -Value New-GitBranch -Force -Scope Global
 
 function Invoke-GitCheckout { git checkout $args }          # switch branch or restore file
