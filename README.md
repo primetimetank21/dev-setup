@@ -11,6 +11,10 @@
 | `nvm` + Node.js LTS | Node Version Manager + latest Node LTS |
 | `gh` | GitHub CLI |
 | GitHub Copilot CLI | AI pair programmer in your terminal (`gh copilot`) |
+| `vim` | Modal text editor — installed on all platforms |
+| `tmux` | Terminal multiplexer (Linux/macOS) |
+| `psmux` | Terminal multiplexer (Windows) |
+| `squad-cli` | AI agent orchestration tool (installed via npm) |
 | Shell aliases | Shortcuts for common git and dev commands |
 
 ## Supported Platforms
@@ -47,6 +51,30 @@ powershell -ExecutionPolicy Bypass -File setup.ps1
 
 No action needed. Setup runs automatically on container creation via the `postCreateCommand` hook.
 
+## Post-Setup Steps
+
+After running setup, complete these steps to activate your tools:
+
+### Linux / macOS / WSL
+
+1. **Activate Node.js:**
+   ```bash
+   nvm install lts
+   nvm use lts
+   ```
+
+2. **Dotfiles:** Your shell config (`.zshrc`/`.bashrc`) and aliases are automatically installed during setup. Restart your terminal or run `source ~/.zshrc` (or `source ~/.bashrc` for bash) to load them.
+
+### Windows
+
+1. **Activate Node.js:** Open a new terminal and run:
+   ```powershell
+   nvm install lts
+   nvm use lts
+   ```
+
+2. **Aliases:** PowerShell aliases are automatically added to your profile. Restart your terminal to load them.
+
 ## Repo Structure
 
 ```
@@ -74,22 +102,55 @@ dev-setup/
 
 Root entry points (`setup.sh`, `setup.ps1`) are thin routers — they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
 
-## Windows PowerShell Aliases
+## Shell Aliases
 
-After running `setup.ps1`, a set of shortcuts is injected into your PowerShell profile automatically — on **both** the PS 5.1 path (`Documents\WindowsPowerShell\`) and the PS 7+ path (`Documents\PowerShell\`). The injection is idempotent: re-running setup strips the old block and writes a fresh one.
+After running setup, you get shortcuts for common git, dev, and utility commands. All aliases work on both Linux/macOS and Windows.
 
-**Confirmed working aliases:**
+### Alias Groups
 
-| Alias | Command |
-|-------|---------|
-| `ta` | tmux/psmux attach |
-| `tt` | new tmux/psmux session |
-| `tls` | list tmux/psmux sessions |
-| `tks` | kill tmux/psmux server |
-| `gpl` | `git pull` |
-| `ggsls` | `git stash list` |
+**Git shortcuts:** `ga`, `gaa`, `gc`, `gcm`, `gcb`, `gco`, `gd`, `gds`, `gf`, `gfp`, `ggs`, `ggsls`, `ggsp`, `gl`, `glog`, `gp`, `gpf`, `gpl`, `grb`, `grbi`, `grs`, `grss`, `gs`
 
-Full alias list lives in `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function). All aliases use `-Force -Scope Global` so they are available immediately in the current session after sourcing the profile.
+**GitHub CLI:** `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
+
+**Dev tools:** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
+
+**Utility:** `myip`, `pb`, `h`
+
+**tmux/psmux:** `ta` (attach), `tt` (new session), `tls` (list sessions), `tks` (kill server)
+
+**Navigation** (Linux/macOS only): `..`, `...`, `....`, `~`, `-`
+
+**ls shortcuts** (Linux/macOS only): `ll`, `la`, `l`, `lh`
+
+Full definitions:
+- **Linux/macOS:** `config/dotfiles/.aliases`
+- **Windows:** `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function)
+
+## Shell Functions
+
+Three helper functions are available after setup:
+
+### Linux / macOS / WSL
+
+**`create_tmux`** — Create or attach to the `tank_dev` tmux session. If the session exists, attaches to it. If not, creates it first.
+
+```bash
+create_tmux
+```
+
+**`start_up`** — Shortcut that calls `create_tmux`. Use this in your shell startup for auto-attach.
+
+```bash
+start_up
+```
+
+### Windows
+
+**`New-PsmuxSession`** — Create or attach to the `tank_dev` psmux session (Windows equivalent of `create_tmux`).
+
+```powershell
+New-PsmuxSession
+```
 
 ## Pre-push Hook
 
