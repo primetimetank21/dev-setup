@@ -1686,6 +1686,145 @@ Converted three untracked retro action items from the 2026-04-18 PS 5.x hotfix s
 
 ---
 
+## Gap & Refactor Audit — Full Findings (2026-05-04)
+
+**Date:** 2026-05-04T06:15:00Z  
+**Author:** Mickey (Lead)  
+**Session:** Comprehensive codebase audit across structure, docs, features, quality, tests, CI, and config  
+**Status:** ✅ Complete — 26 distinct issues identified and categorized
+
+### Executive Summary
+
+Full audit completed of dev-setup project. Identified:
+- **3 P0 ship-blocking issues** (macOS vim gap, psmux invalid ID, Windows dotfile parity)
+- **3 P1 quality blockers** (missing macOS CI, stale docs, hooks tests not in CI)
+- **3 P2 tech debt items** (log duplication, monolithic Windows setup, no alias parity test)
+- **5+ P3 nice-to-haves** (uninstall mechanism, version pinning, CHANGELOG, etc.)
+
+### Priority Summary
+
+| Priority | Count | Key Items | Action |
+|----------|-------|-----------|--------|
+| **P0 — Ship-blocking** | 3 | macOS vim, psmux ID, Windows dotfiles | Fix before Sprint 7 start |
+| **P1 — Quality** | 3 | macOS CI, stale docs, hooks in CI | Sprint 7 candidates |
+| **P2 — Tech debt** | 3 | Log duplication, monolithic Windows, parity test | Plan for future |
+| **P3 — Nice to have** | 5+ | Uninstall, version pinning, CHANGELOG, auth parity, profile rewrite | Backlog |
+
+### Critical Gaps (P0 — Must Fix)
+
+#### #1: macOS `install_prerequisites` missing vim
+- **File:** `scripts/linux/setup.sh:62-66`
+- **Issue:** macOS Homebrew installs `curl git tmux` but NOT `vim`. Linux installs vim. README claims vim on "all platforms." macOS users get no vim.
+- **Fix:** Add `vim` to `brew install` line.
+
+#### #2: psmux winget ID likely wrong
+- **File:** `scripts/windows/setup.ps1:105`
+- **Issue:** `winget install --id psmux` — "psmux" is not a known winget package. Install will silently fail or error.
+- **Fix:** Verify winget ID or change install mechanism.
+
+#### #3: Dotfile install.sh not called on Windows
+- **File:** `scripts/windows/setup.ps1`
+- **Issue:** Windows setup writes profile but never installs `.gitconfig`, `.editorconfig`, `.npmrc`, `.vimrc`. Windows users get aliases but no dotfiles.
+- **Fix:** Create PowerShell equivalent of `config/dotfiles/install.sh` or document as intentional.
+
+### Quality Issues (P1)
+
+#### #9: No macOS CI job
+- **File:** `.github/workflows/validate.yml`
+- **Issue:** macOS listed as ✅ supported but zero CI validation. Linux, PS 7.x, and PS 5.1 all have jobs; macOS has none.
+- **Fix:** Add `validate-macos` job on `macos-latest`.
+
+#### #14-15: ARCHITECTURE.md and README stale
+- **Files:** `ARCHITECTURE.md:35`, `README.md:80-101`
+- **Issue:** File structure diagrams missing `auth.sh`, `squad-cli.sh`, `hooks/`, `tests/`, `.devcontainer/`. Last updated 2026-04-07; project evolved significantly since.
+- **Fix:** Update both file trees; add sections for hooks, tests, devcontainer.
+
+#### #21: Git hooks tests not in CI
+- **File:** `.github/workflows/validate.yml`
+- **Issue:** `tests/test_git_hooks.ps1` exists but workflow doesn't run it.
+- **Fix:** Wire `test_git_hooks.ps1` into validate workflow.
+
+### Refactor Opportunities (P2)
+
+#### #5: Duplicated logging helpers
+- **Files:** `setup.sh`, `scripts/linux/setup.sh`, 9+ tool scripts
+- **Issue:** `log_info`, `log_ok`, `log_warn`, `log_error` copy-pasted everywhere. Same for PowerShell `Write-Info`/`Write-Ok`/etc.
+- **Suggestion:** Extract to shared `scripts/linux/lib/log.sh` (sourced by tools). Create `scripts/windows/lib/logging.ps1` equivalent.
+
+#### #7: Windows setup monolithic
+- **File:** `scripts/windows/setup.ps1` (450+ lines)
+- **Issue:** Linux splits tools into individual files under `tools/`. Windows crams everything—Git, uv, nvm, gh, vim, psmux, Copilot, squad-cli, profile, hooks—into one file. Hard to test individual tools in isolation.
+- **Suggestion:** Mirror Linux structure: create `scripts/windows/tools/` with per-tool `.ps1` files.
+- **Impact:** Highest-leverage refactor; improves testability and maintainability significantly.
+
+#### #20: No alias parity test
+- **Issue:** Linux and Windows aliases maintained in parallel. No automated test verifies they define the same shortcut names. Drift has occurred (Windows has `gb` alias, Linux doesn't).
+- **Fix:** Add test that parses both alias definitions and compares sets.
+
+### Feature Gaps (P3 — Nice to Have)
+
+#### #10: No uninstall mechanism
+- **Issue:** Setup installs tools, dotfiles, profile blocks, symlinks. No way to reverse cleanly.
+- **Fix:** Create `uninstall.sh` / `Uninstall-DevSetup`, or document manual steps at minimum.
+
+#### #11: No version pinning strategy
+- **Files:** `nvm.sh`, `uv.sh`, `copilot-cli.sh`
+- **Issue:** All fetch "latest" release. Setup produces different results depending on when it runs. No reproducibility.
+- **Fix:** Add `.tool-versions` file or version config.
+
+#### #12: No auth step on Windows
+- **File:** `scripts/windows/setup.ps1`
+- **Issue:** Linux runs `auth.sh` after `gh.sh` for GitHub authentication. Windows skips this—parity gap.
+- **Fix:** Add Windows equivalent auth step (GitHub login prompt).
+
+#### #17: No CHANGELOG
+- **Issue:** 6 sprints of work, 100+ issues, no user-facing changelog. Users have no visibility into what changed.
+
+#### #22-26: Documentation and config polish
+- tmux auto-attach on every shell open (not opt-in)
+- `.gitconfig` uses shell variable expansion that won't work
+- Hook scripts use `#!/bin/sh` not `#!/usr/bin/env bash` (POSIX vs. bash convention)
+- `examples/` duplicates `config/dotfiles/` and `Write-PowerShellProfile`
+- `.aliases` not linted by shellcheck
+
+### Architectural Recommendations
+
+#### 1. Mirror Linux tool structure on Windows ⭐ **Highest Leverage**
+Split `scripts/windows/setup.ps1` into `scripts/windows/tools/*.ps1` files (one per tool). This is the single highest-leverage refactor:
+- Improves testability (individual tool tests possible)
+- Reduces file size (450+ lines → 50-100 per file)
+- Matches Linux structure (parity)
+- Simplifies maintenance and reviews
+
+#### 2. Add macOS CI
+Platform listed as ✅ but without CI is a lie. Add `validate-macos` job.
+
+#### 3. Shared logging library
+Extract log helpers to reduce copy-paste drift and improve consistency.
+
+#### 4. Dotfile parity on Windows
+Windows needs `.gitconfig`/`.editorconfig` installation, not just profile aliases.
+
+#### 5. Refresh stale documentation
+ARCHITECTURE.md, README.md, and test docs need updates to reflect current structure.
+
+### Findings References
+
+Full detailed analysis available in:
+- Orchestration log: `.squad/orchestration-log/2026-05-04T06-15-00Z-mickey-gap-audit.md`
+- Session log: `.squad/log/2026-05-04T06-15-00Z-gap-audit.md`
+- Decision inbox (original findings): `.squad/decisions/inbox/mickey-gap-audit-2026-05-04.md`
+
+### Next Steps
+
+1. **Immediate:** Prioritize P0 fixes (macOS vim, psmux ID, Windows dotfiles) for next sprint
+2. **Sprint 7 planning:** Include P1 quality issues in sprint backlog
+3. **Architecture review:** Team discusses mirror Windows structure proposal
+4. **Documentation:** Schedule refresh pass for ARCHITECTURE.md and README
+5. **All findings:** Available in squad decision log for future reference and implementation tracking
+
+---
+
 ## [2026-04-19] PR #115 Review — feat(windows): add missing aliases to PowerShell profile
 
 **Date:** 2026-04-19
