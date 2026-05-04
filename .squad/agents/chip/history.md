@@ -33,6 +33,27 @@ Established CI/CD validation framework and cross-platform test coverage:
 
 ---
 
+### 2026-04-18 — PR #195: Group K test updates for modularized Windows setup
+
+**Branch:** `squad/185-split-windows-setup`
+**PR:** [#195](https://github.com/primetimetank21/dev-setup/pull/195)
+**Context:** Mickey approved PR #195 with one action item: update Group K tests to check the new tool file locations after Goofy's refactoring split `scripts/windows/setup.ps1` into per-tool files under `scripts/windows/tools/`.
+
+**What I did:**
+- Updated all 5 Group K tests (K-1 through K-5) in `tests/test_windows_setup.ps1`
+- Changed file path from `scripts\windows\setup.ps1` → `scripts\windows\tools\profile.ps1`
+- Tests K-1, K-2, K-4, K-5: Updated AST parser target for `Write-PowerShellProfile` function
+- Test K-3: Updated heredoc extraction to read from profile.ps1
+- Verified all Group K tests pass with the new file locations
+- Confirmed no regression in `test_remove_custom_item.ps1`
+
+**Key insight:**
+When code is refactored into separate modules, AST-based tests must track the actual file containing the function being tested — not just the top-level orchestrator. Group K tests verify profile management logic, so they must now parse the dedicated `profile.ps1` tool file where `Write-PowerShellProfile` lives, not the slim orchestrator `setup.ps1`.
+
+**Result:** All 5 Group K tests now pass, PR #195 ready for merge.
+
+---
+
 ### 2026-04-07 — Issue #14: Idempotency test suite
 
 **Branch:** `squad/14-idempotency-tests`
