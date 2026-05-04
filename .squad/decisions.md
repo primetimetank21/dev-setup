@@ -2417,3 +2417,127 @@ The `ep` alias for opening the PowerShell profile:
 ### Rationale
 
 Using `notepad` on Windows is the simplest, most universally available editor on any Windows machine. If the user wants VS Code or another editor, they can override the alias in their own profile. The Linux/macOS version respects the `$EDITOR` convention standard in Unix environments.
+
+---
+
+## [2026-04-19] Decision: Shutdown Aliases Plan Review
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**Status:** APPROVED WITH NOTES
+
+### Verdict
+
+**APPROVED WITH NOTES** — The plan is solid and well-structured. Six items must be addressed before implementation begins.
+
+### What's Right
+
+- Shutdown commands are correct for each platform
+- The 2-issue split (shell vs Windows+tests) is clean and prevents merge conflicts
+- Naming convention follows the existing codebase pattern perfectly
+- PS 5.1 compatibility is fine
+
+### Outcome
+
+Plan is approved for implementation with six items addressed.
+
+---
+
+## [2026-04-25] Decision: Shutdown Aliases Placement in Windows PS Profile
+
+**Issue:** #174
+**Author:** Goofy (Cross-Platform Developer)
+**Date:** 2026-04-25
+
+### Context
+
+Three shutdown convenience functions needed to be added to the Windows PowerShell profile.
+
+### Decisions
+
+#### 1. Functions placed inside the heredoc
+**Choice:** All three functions and their Set-Alias calls go inside the heredoc.
+
+#### 2. ValidateRange for tsdn parameter
+**Choice:** Use ValidateRange with lower bound 1 to reject zero/negative values.
+
+#### 3. Graceful cancel_tsdn error handling
+**Choice:** Check LASTEXITCODE after shutdown /a and print friendly message.
+
+### Outcome
+
+Three shutdown aliases added to profile with PS 5.1 compatibility. Group M tests verify correctness.
+
+---
+
+## [2026-05-04] Decision: Shutdown Aliases — sudo and OS Detection in .aliases
+
+**Issue:** #173
+**PR:** #176
+**Agent:** Donald (Shell Dev)
+**Date:** 2026-05-04
+
+### Context
+
+.aliases had no prior use of sudo. Shutdown commands require elevated privileges on both Linux and macOS, and cancel semantics differ between the two OSes.
+
+### Decisions
+
+#### 1. sudo in .aliases
+**Choice:** Allow sudo with a section-level comment explaining why.
+**Why:** Shutdown inherently requires root.
+
+#### 2. OS detection for cancel_tsdn
+**Choice:** uname with case statement — Linux uses shutdown -c, macOS uses killall shutdown.
+**Why:** No POSIX-standard cancel flag exists.
+
+#### 3. Input validation for tsdn
+**Choice:** Bash regex ^[1-9][0-9]*$ — rejects zero, negative, float, and empty input.
+
+### Outcome
+
+Three shutdown functions added. First sudo usage in .aliases is documented inline.
+
+---
+
+## [2026-05-04] Mickey — PR #175 Review Decision
+
+**PR:** #175
+**Issue:** #174 — Shutdown aliases for Windows PowerShell
+**Date:** 2026-05-04
+**Verdict:** APPROVED
+
+### Checklist Results
+
+- [x] Functions follow Invoke-XxxYyy naming and function + Set-Alias pattern
+- [x] All code inside the heredoc
+- [x] ValidateRange properly implemented
+- [x] Error handling for cancel command
+- [x] PS 5.1 compatible
+- [x] Group M tests passing
+- [x] All 61 tests pass — no regressions
+
+### Notes
+
+Clean implementation. All requirements met.
+
+---
+
+## [2026-05-04] Mickey Review — PR #176
+
+**PR:** #176
+**Issue:** #173
+**Verdict:** APPROVED
+**Date:** 2026-05-04
+
+### Checklist
+
+- [x] Functions use funcname() POSIX style
+- [x] tsdn validates input with regex
+- [x] cancel_tsdn uses uname for OS detection
+- [x] Inline comments on every function
+- [x] No regressions
+
+### Notes
+
+Implementation is clean and meets all requirements.
