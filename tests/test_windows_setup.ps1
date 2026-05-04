@@ -201,23 +201,26 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group C: Profile idempotency" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-# Load Write-PowerShellProfile (and its logging helpers) from the production script
-# without running Main, so we can call the function under test in isolation.
+# Load Write-PowerShellProfile (and its logging helpers) from the tool script
+# Profile function is now in scripts/windows/tools/profile.ps1
+$profileToolPath = Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1'
+$profileToolContent = Get-Content $profileToolPath -Raw
+Invoke-Expression $profileToolContent
+
+# Also load setup.ps1 content for pattern checking (without executing Main)
 $windowsSetupPath    = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
 $windowsSetupContent = Get-Content $windowsSetupPath -Raw
-# Strip the bare 'Main' invocation at the bottom — functions are defined but not run.
-$windowsSetupNoMain  = $windowsSetupContent -replace '(?m)^\s*Main\s*$', ''
-Invoke-Expression $windowsSetupNoMain
 
 # --- C-1: Function uses profilePath/profilePaths variables (not $PROFILE) --------
 
 Test-Scenario "Write-PowerShellProfile uses profilePath/profilePaths (post-refactor variable names)" {
     # After #138 refactor: function uses $profilePaths array and $profilePath loop variable
     # instead of the automatic $PROFILE variable. Verify the new variables are present.
-    if ($windowsSetupContent -notmatch '\$profilePaths\s*=') {
+    # Check in profile.ps1 tool file (where the function now lives)
+    if ($profileToolContent -notmatch '\$profilePaths\s*=') {
         throw "Write-PowerShellProfile does not contain '\$profilePaths =' - array definition missing"
     }
-    if ($windowsSetupContent -notmatch 'foreach\s*\(\s*\$profilePath\s+in\s+\$profilePaths\s*\)') {
+    if ($profileToolContent -notmatch 'foreach\s*\(\s*\$profilePath\s+in\s+\$profilePaths\s*\)') {
         throw "Write-PowerShellProfile does not contain 'foreach (\$profilePath in \$profilePaths)' - loop missing"
     }
 }
@@ -271,9 +274,9 @@ if (Test-Path $c3Profile) { Remove-Item $c3Profile -Force }
 
 Test-Scenario "Windows setup.ps1 contains blank-line prepend before profile append" {
     # Verifies the fix is still in the production script (regression guard).
-    # Updated to check for $profilePath (loop variable) instead of $PROFILE (single-path variable)
-    if ($windowsSetupContent -notmatch 'Add-Content\s+-Path\s+\$profilePath\s+-Value\s+""') {
-        throw "scripts/windows/setup.ps1 is missing the blank-line prepend fix (Add-Content -Value ``""``)"
+    # Updated to check in profile.ps1 tool file (where the function now lives)
+    if ($profileToolContent -notmatch 'Add-Content\s+-Path\s+\$profilePath\s+-Value\s+""') {
+        throw "scripts/windows/tools/profile.ps1 is missing the blank-line prepend fix (Add-Content -Value ``""``)"
     }
 }
 
@@ -285,12 +288,17 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group D: Copilot CLI install logic" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
+# Load copilot.ps1 content for checking install logic
+$copilotToolPath = Join-Path $RepoRoot 'scripts\windows\tools\copilot.ps1'
+$copilotToolContent = Get-Content $copilotToolPath -Raw
+
 Test-Scenario "Windows setup.ps1 uses winget for Copilot CLI (not gh extension)" {
-    if ($windowsSetupContent -match 'gh extension install github/gh-copilot') {
-        throw "scripts/windows/setup.ps1 still uses 'gh extension install' for Copilot CLI - should use winget"
+    # Check in copilot.ps1 tool file (where the function now lives)
+    if ($copilotToolContent -match 'gh extension install github/gh-copilot') {
+        throw "scripts/windows/tools/copilot.ps1 still uses 'gh extension install' for Copilot CLI - should use winget"
     }
-    if ($windowsSetupContent -notmatch 'winget install --id GitHub\.Copilot') {
-        throw "scripts/windows/setup.ps1 does not use 'winget install --id GitHub.Copilot'"
+    if ($copilotToolContent -notmatch 'winget install --id GitHub\.Copilot') {
+        throw "scripts/windows/tools/copilot.ps1 does not use 'winget install --id GitHub.Copilot'"
     }
 }
 
@@ -336,11 +344,12 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group E: Install-Vim" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-Test-Scenario "E-1: Install-Vim function exists in scripts/windows/setup.ps1" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern 'function Install-Vim' -Quiet
+Test-Scenario "E-1: Install-Vim function exists in scripts/windows/tools/vim.ps1" {
+    # Check in vim.ps1 tool file
+    $vimToolPath = Join-Path $RepoRoot 'scripts\windows\tools\vim.ps1'
+    $found = Select-String -Path $vimToolPath -Pattern 'function Install-Vim' -Quiet
     if (-not $found) {
-        throw "Install-Vim function not found in scripts/windows/setup.ps1"
+        throw "Install-Vim function not found in scripts/windows/tools/vim.ps1"
     }
 }
 
@@ -353,10 +362,11 @@ Test-Scenario "E-2: Install-Vim is called in Main" {
 }
 
 Test-Scenario "E-3: winget package ID vim.vim is present" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern '--id vim\.vim' -Quiet
+    # Check in vim.ps1 tool file
+    $vimToolPath = Join-Path $RepoRoot 'scripts\windows\tools\vim.ps1'
+    $found = Select-String -Path $vimToolPath -Pattern '--id vim\.vim' -Quiet
     if (-not $found) {
-        throw "winget package ID 'vim.vim' not found in scripts/windows/setup.ps1"
+        throw "winget package ID 'vim.vim' not found in scripts/windows/tools/vim.ps1"
     }
 }
 
@@ -396,20 +406,21 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group F: PowerShell alias parity (Issue #108)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-$windowsSetupProfileContent = $windowsSetupContent
+# Profile content is now in profile.ps1
+$windowsSetupProfileContent = $profileToolContent
 
 Test-Scenario "F-1: All new git aliases present in profile content" {
     $requiredAliases = @('gaa', 'gcm', 'gcb', 'gco', 'gd', 'gds', 'ggsp', 'gp', 'gpf', 'gpl', 'grb', 'grbi', 'grs', 'grss')
     foreach ($alias in $requiredAliases) {
         if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
-            throw "Missing alias '$alias' in scripts/windows/setup.ps1"
+            throw "Missing alias '$alias' in scripts/windows/tools/profile.ps1"
         }
     }
 }
 
 Test-Scenario "F-2: gs fix - profile contains 'git status -sb'" {
     if ($windowsSetupProfileContent -notmatch 'git status -sb') {
-        throw "scripts/windows/setup.ps1 does not contain 'git status -sb' - gs alias fix is missing"
+        throw "scripts/windows/tools/profile.ps1 does not contain 'git status -sb' - gs alias fix is missing"
     }
 }
 
@@ -417,7 +428,7 @@ Test-Scenario "F-3: GitHub CLI aliases present (ghpr, ghprl, ghprv, ghis, ghiv)"
     $ghAliases = @('ghpr', 'ghprl', 'ghprv', 'ghis', 'ghiv')
     foreach ($alias in $ghAliases) {
         if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
-            throw "Missing GitHub CLI alias '$alias' in scripts/windows/setup.ps1"
+            throw "Missing GitHub CLI alias '$alias' in scripts/windows/tools/profile.ps1"
         }
     }
 }
@@ -426,7 +437,7 @@ Test-Scenario "F-4: Dev shortcut aliases present (uvr, uvs, ni, nr, nrd, nrt, py
     $devAliases = @('uvr', 'uvs', 'ni', 'nr', 'nrd', 'nrt', 'py', 'c')
     foreach ($alias in $devAliases) {
         if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
-            throw "Missing dev shortcut alias '$alias' in scripts/windows/setup.ps1"
+            throw "Missing dev shortcut alias '$alias' in scripts/windows/tools/profile.ps1"
         }
     }
 }
@@ -435,14 +446,14 @@ Test-Scenario "F-5: Utility aliases present (myip, pb, h, ep)" {
     $utilAliases = @('myip', 'pb', 'h', 'ep')
     foreach ($alias in $utilAliases) {
         if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
-            throw "Missing utility alias '$alias' in scripts/windows/setup.ps1"
+            throw "Missing utility alias '$alias' in scripts/windows/tools/profile.ps1"
         }
     }
 }
 
 Test-Scenario "F-6: PS 5.x compat - no banned patterns in profile content block" {
     if ($windowsSetupProfileContent -match '\$MyInvocation\.MyCommand\.Path') {
-        throw "scripts/windows/setup.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
+        throw "scripts/windows/tools/profile.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
     }
     $badVars = @('IsLinux', 'IsMacOS', 'IsWindows')
     foreach ($v in $badVars) {
@@ -465,11 +476,13 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group G: Install-SquadCli (Issue #106)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-Test-Scenario "G-1: Install-SquadCli function exists in scripts/windows/setup.ps1" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern 'function Install-SquadCli' -Quiet
-    if (-not $found) {
-        throw "Install-SquadCli function not found in scripts/windows/setup.ps1"
+# Load squad-cli.ps1 content
+$squadToolPath = Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1'
+$squadToolContent = Get-Content $squadToolPath -Raw
+
+Test-Scenario "G-1: Install-SquadCli function exists in scripts/windows/tools/squad-cli.ps1" {
+    if ($squadToolContent -notmatch 'function Install-SquadCli') {
+        throw "Install-SquadCli function not found in scripts/windows/tools/squad-cli.ps1"
     }
 }
 
@@ -482,19 +495,17 @@ Test-Scenario "G-2: Install-SquadCli is called in Main" {
 }
 
 Test-Scenario "G-3: Install-SquadCli contains npm availability check (skip+warn)" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($content -notmatch 'Get-Command npm') {
+    if ($squadToolContent -notmatch 'Get-Command npm') {
         throw "Install-SquadCli does not check for npm availability"
     }
-    if ($content -notmatch 'npm not found -- skipping squad-cli') {
+    if ($squadToolContent -notmatch 'npm not found -- skipping squad-cli') {
         throw "Install-SquadCli does not warn when npm is missing"
     }
 }
 
 Test-Scenario "G-4: No MyInvocation.MyCommand.Path in Install-SquadCli" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($content -match '\$MyInvocation\.MyCommand\.Path') {
-        throw "scripts/windows/setup.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
+    if ($squadToolContent -match '\$MyInvocation\.MyCommand\.Path') {
+        throw "scripts/windows/tools/squad-cli.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
     }
 }
 
@@ -507,35 +518,35 @@ Write-Host " Group H: psmux aliases in PowerShell profile (Issue #140)" -Foregro
 Write-Host "========================================================" -ForegroundColor Cyan
 
 Test-Scenario "H-1: psmux alias functions exist in profile content" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    # Check in profile.ps1 tool file (where the profile content now lives)
     $requiredFunctions = @('Invoke-PsmuxList', 'Invoke-PsmuxKillServer', 'Invoke-PsmuxNewSession', 'Invoke-PsmuxAttach')
     foreach ($fn in $requiredFunctions) {
-        if ($setupContent -notmatch $fn) {
-            throw "Missing psmux alias function '$fn' in scripts/windows/setup.ps1"
+        if ($profileToolContent -notmatch $fn) {
+            throw "Missing psmux alias function '$fn' in scripts/windows/tools/profile.ps1"
         }
     }
 }
 
 Test-Scenario "H-2: psmux Set-Alias entries exist for tls, tks, tt, ta" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    # Check in profile.ps1 tool file
     $requiredAliases = @('tls', 'tks', 'tt', 'ta')
     foreach ($alias in $requiredAliases) {
-        if ($setupContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
-            throw "Missing Set-Alias for '$alias' in scripts/windows/setup.ps1"
+        if ($profileToolContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
+            throw "Missing Set-Alias for '$alias' in scripts/windows/tools/profile.ps1"
         }
     }
 }
 
 Test-Scenario "H-3: New-PsmuxSession function exists in profile content" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'function New-PsmuxSession') {
-        throw "New-PsmuxSession function not found in scripts/windows/setup.ps1"
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch 'function New-PsmuxSession') {
+        throw "New-PsmuxSession function not found in scripts/windows/tools/profile.ps1"
     }
 }
 
 Test-Scenario "H-4: New-PsmuxSession checks for existing session before creating" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'psmux ls') {
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch 'psmux ls') {
         throw "New-PsmuxSession does not contain 'psmux ls' session check"
     }
 }
@@ -548,13 +559,13 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group I: psmux install (Issue #139)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-Test-Scenario "I-1: Install-Psmux function exists in setup.ps1" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+Test-Scenario "I-1: Install-Psmux function exists in psmux.ps1" {
+    $psmuxToolPath = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
     $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$errors)
     $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
     if ($fn.Count -eq 0) {
-        throw "Install-Psmux function not found in scripts/windows/setup.ps1"
+        throw "Install-Psmux function not found in scripts/windows/tools/psmux.ps1"
     }
 }
 
@@ -571,9 +582,9 @@ Test-Scenario "I-2: Install-Psmux is called in Main" {
 }
 
 Test-Scenario "I-3: Install-Psmux is idempotent (checks before installing)" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $psmuxToolPath = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
     $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$errors)
     $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
     if ($fn.Count -eq 0) { throw "Install-Psmux function not found" }
     $fnBody = $fn[0].Body.Extent.Text
@@ -591,9 +602,9 @@ Write-Host " Group J: Write-PowerShellProfile strip+re-inject logic (Issue #138)
 Write-Host "========================================================" -ForegroundColor Cyan
 
 Test-Scenario "J-1: Write-PowerShellProfile body contains the begin marker string" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $profileToolPath = Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1'
     $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($profileToolPath, [ref]$tokens, [ref]$errors)
     $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
     if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
     $fnBody = $fn[0].Body.Extent.Text
@@ -603,9 +614,9 @@ Test-Scenario "J-1: Write-PowerShellProfile body contains the begin marker strin
 }
 
 Test-Scenario "J-2: Write-PowerShellProfile body contains the end marker string" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $profileToolPath = Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1'
     $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($profileToolPath, [ref]$tokens, [ref]$errors)
     $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
     if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
     $fnBody = $fn[0].Body.Extent.Text
@@ -615,9 +626,9 @@ Test-Scenario "J-2: Write-PowerShellProfile body contains the end marker string"
 }
 
 Test-Scenario "J-3: Write-PowerShellProfile body does NOT contain return after sentinel check" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $profileToolPath = Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1'
     $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($profileToolPath, [ref]$tokens, [ref]$errors)
     $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
     if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
     $fnBody = $fn[0].Body.Extent.Text
@@ -629,9 +640,9 @@ Test-Scenario "J-3: Write-PowerShellProfile body does NOT contain return after s
 }
 
 Test-Scenario "J-4: Write-PowerShellProfile body contains Get-Content and Set-Content (strip logic)" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $profileToolPath = Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1'
     $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($profileToolPath, [ref]$tokens, [ref]$errors)
     $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Write-PowerShellProfile' }, $true)
     if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
     $fnBody = $fn[0].Body.Extent.Text
@@ -799,71 +810,71 @@ Write-Host " Group M: Shutdown aliases in PowerShell profile (Issue #174)" -Fore
 Write-Host "========================================================" -ForegroundColor Cyan
 
 Test-Scenario "M-1: Invoke-ShutdownNow function exists in profile" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'function Invoke-ShutdownNow') {
-        throw "Invoke-ShutdownNow function not found in scripts/windows/setup.ps1"
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch 'function Invoke-ShutdownNow') {
+        throw "Invoke-ShutdownNow function not found in scripts/windows/tools/profile.ps1"
     }
 }
 
 Test-Scenario "M-2: Invoke-TimedShutdown function exists in profile" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'function Invoke-TimedShutdown') {
-        throw "Invoke-TimedShutdown function not found in scripts/windows/setup.ps1"
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch 'function Invoke-TimedShutdown') {
+        throw "Invoke-TimedShutdown function not found in scripts/windows/tools/profile.ps1"
     }
 }
 
 Test-Scenario "M-3: Invoke-CancelTimedShutdown function exists in profile" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'function Invoke-CancelTimedShutdown') {
-        throw "Invoke-CancelTimedShutdown function not found in scripts/windows/setup.ps1"
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch 'function Invoke-CancelTimedShutdown') {
+        throw "Invoke-CancelTimedShutdown function not found in scripts/windows/tools/profile.ps1"
     }
 }
 
 Test-Scenario "M-4: sdn alias registered" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'Set-Alias\s+-Name\s+sdn\b') {
-        throw "Set-Alias for 'sdn' not found in scripts/windows/setup.ps1"
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch "Set-Alias\s+-Name\s+sdn\b") {
+        throw "Set-Alias for 'sdn' not found in scripts/windows/tools/profile.ps1"
     }
 }
 
 Test-Scenario "M-5: tsdn alias registered" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'Set-Alias\s+-Name\s+tsdn\b') {
-        throw "Set-Alias for 'tsdn' not found in scripts/windows/setup.ps1"
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch "Set-Alias\s+-Name\s+tsdn\b") {
+        throw "Set-Alias for 'tsdn' not found in scripts/windows/tools/profile.ps1"
     }
 }
 
 Test-Scenario "M-6: cancel_tsdn alias registered" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'Set-Alias\s+-Name\s+cancel_tsdn\b') {
-        throw "Set-Alias for 'cancel_tsdn' not found in scripts/windows/setup.ps1"
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch "Set-Alias\s+-Name\s+cancel_tsdn\b") {
+        throw "Set-Alias for 'cancel_tsdn' not found in scripts/windows/tools/profile.ps1"
     }
 }
 
 Test-Scenario "M-7: sdn body contains 'shutdown /s /t 0'" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'shutdown /s /t 0') {
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch 'shutdown /s /t 0') {
         throw "Invoke-ShutdownNow does not contain 'shutdown /s /t 0'"
     }
 }
 
 Test-Scenario "M-8: cancel_tsdn body contains 'shutdown /a'" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch 'shutdown /a') {
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch 'shutdown /a') {
         throw "Invoke-CancelTimedShutdown does not contain 'shutdown /a'"
     }
 }
 
 Test-Scenario "M-9: Invoke-TimedShutdown has [Parameter] decoration" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch '\[Parameter\(Mandatory\)\]') {
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch '\[Parameter\(Mandatory\)\]') {
         throw "Invoke-TimedShutdown does not have [Parameter(Mandatory)] decoration"
     }
 }
 
 Test-Scenario "M-10: Invoke-TimedShutdown contains '* 60' multiplication" {
-    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($setupContent -notmatch '\*\s*60') {
+    # Check in profile.ps1 tool file
+    if ($profileToolContent -notmatch '\*\s*60') {
         throw "Invoke-TimedShutdown does not contain '* 60' multiplication"
     }
 }
