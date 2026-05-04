@@ -1,0 +1,35 @@
+# scripts/windows/tools/copilot.ps1 - GitHub Copilot CLI installer
+#
+# Owner: Goofy (#2)
+# Installs GitHub Copilot CLI (standalone binary via winget)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+function Write-Info  { param([string]$Msg) Write-Output "[INFO]  $Msg" }
+function Write-Ok    { param([string]$Msg) Write-Output "[OK]    $Msg" }
+function Write-Warn  { param([string]$Msg) Write-Output "[WARN]  $Msg" }
+function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
+
+function Install-CopilotCli {
+    # Accept either the standalone binary (winget) or the legacy gh extension
+    if (Get-Command copilot -ErrorAction SilentlyContinue) {
+        Write-Ok "GitHub Copilot CLI already installed"
+        return
+    }
+    try {
+        $extensions = gh extension list 2>&1
+        if ($extensions -match "gh-copilot") {
+            Write-Ok "GitHub Copilot CLI (gh extension) already installed"
+            return
+        }
+    } catch {
+        Write-Verbose "gh extension check skipped: $_"
+    }
+
+    Write-Info "Installing GitHub Copilot CLI..."
+    # Mirrors the official install script (https://gh.io/copilot-install) on Windows:
+    # on Windows it routes to `winget install GitHub.Copilot` (standalone binary).
+    winget install --id GitHub.Copilot --silent --accept-source-agreements --accept-package-agreements
+    Write-Ok "Copilot CLI installed"
+}
