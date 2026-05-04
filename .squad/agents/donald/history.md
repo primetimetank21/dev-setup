@@ -13,6 +13,19 @@
 - Dotfiles and shell configs are managed as templates
 - Scripts must be idempotent — safe to run multiple times
 
+## Core Context
+
+**Sprints 1–6 Summary (2026-04-07 to 2026-04-18):**
+
+Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
+
+- **Sprints 1–4:** 6 tool install scripts (zsh, uv, nvm, gh CLI, GitHub Copilot CLI, auth), shell profile injection for multiple shells (.bashrc, .zshrc), idempotency across multiple runs
+- **Sprint 5:** gh 2.89.0+ built-in promotion handling (`--` passthrough to binary), CI=true env var for isatty()-gated CLI probes, Copilot CLI download workarounds (PTY script, stdin pipe, CI=true final fix)
+- **Sprint 6:** tmux addition to prerequisites, CRLF guard patterns for DevContainer onCreateCommand
+- **Key Learnings:** Never probe gh built-ins with `--help` alone (use `-- --help`), CI=true > PTY wrapping for CLI probes, shell function sourcing required for nvm validation, uv prefers ~/.local/bin for non-login shells
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
@@ -412,3 +425,50 @@ Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
 **Rule:** Every `Set-Alias -Scope Global` in `setup.ps1` must be preceded by a matching `Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue` guard. See the `h` alias (~line 309) as the canonical reference pattern.
 
 Branch: `squad/168-ep-alias-edit-profile` — PR #170.
+
+### [2026-04-25] PR #170 (ep alias): Added Remove-Item guard ✅
+
+**Role:** Developer (secondary/defender)
+
+**Task:** Mickey requested changes on PR #170 — missing guard on `Remove-Item` for profile operations.
+
+**Fix:** Added guard clause before `Remove-Item`:
+- Ensures idempotency (no error if profile doesn't exist)
+- Prevents silent failures
+- Pattern already used in codebase for 8+ aliases
+
+**Result:** Fix pushed to `squad/168-ep-alias-edit-profile`, Mickey re-reviewed and approved. PR #170 merged (develop + main), issue #168 closed ✅.
+
+**Learning:** Be ready to defend/fix upstream PRs when review uncovers simple issues. Quick follow-up keeps merge velocity high.
+
+---
+
+## 2026-05-04 — Issue #173 / PR #176: Shell Aliases for Shutdown Control
+
+**Branch:** squad/173-sdn-shell-aliases
+PR:** #176 → develop
+Status:** ✅ MERGED
+
+### Implementation
+
+Added three shutdown control aliases to config/dotfiles/.aliases:
+
+- sdn — Immediate shutdown (system-agnostic)
+- tsdn — Timed shutdown (with minutes parameter)
+- cancel_tsdn — Cancel pending timed shutdown (cross-platform via uname case statement)
+
+**Key details:**
+- All aliases work on bash and zsh across Linux, macOS, WSL
+- Cross-platform cancel logic uses uname to detect OS and call appropriate system command
+- Matches Windows PowerShell function naming convention (Invoke-ShutdownNow, Invoke-TimedShutdown, Invoke-CancelTimedShutdown)
+
+### CI & Review Status
+
+- ✅ All 61 tests passing
+- ✅ Approved by Mickey (all checklist items clean)
+- ✅ No linting issues
+- **Paired with:** PR #175 (Goofy's Windows PowerShell functions)
+
+### Outcome
+
+Shutdown control is now available across all platforms: Windows (PowerShell functions) + Unix-like (shell aliases).

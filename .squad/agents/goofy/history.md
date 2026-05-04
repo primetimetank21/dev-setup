@@ -13,6 +13,19 @@
 - Dotfiles and shell configs are managed as templates
 - Scripts must be idempotent — safe to run multiple times
 
+## Core Context
+
+**Sprints 1–6 Summary (2026-04-07 to 2026-04-18):**
+
+Implemented Windows PowerShell setup and utility alias framework:
+
+- **Sprints 1–4:** Root setup.ps1 OS detection, scripts/windows/setup.ps1 core setup, winget tool installers (git, vim, gh, nvm), utility aliases (ta, tt, tls, tks, gpl, ggsls), Remove-Item guards for PS 5.1 AllScope conflicts
+- **Sprint 5:** PS 5.1 source-level guards (Test-Path Variable:IsWindows), vim PATH refresh after winget, empty catch block linting fixes (Write-Verbose pattern), UTF-8 em-dash removal (PSUseBOMForUnicodeEncodedFile)
+- **Sprint 6:** curl.exe / wget.exe alias bypass pattern, ep alias for profile editor (Windows: notepad, Unix: $EDITOR), Remove-Item guard on profile operations
+- **Key Learnings:** Always use curl.exe (not curl) in PS scripts, nested Join-Path for PS 5.1 (2-arg syntax), Set-Alias -Force needed for AllScope alias override, Test-Path Variable:* for runtime feature guards
+
+---
+
 ## Learnings
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
@@ -446,3 +459,64 @@ Ship both together — same root cause, same file, same pattern. Partial fix wou
 
 **Next:**
 Implement both aliases in `scripts/windows/setup.ps1`.
+
+### [2026-04-25] Issues #167 & #168: curl.exe fix + ep alias — BOTH MERGED ✅
+
+**Branch 1:** `squad/167-fix-myip-curl-exe` → **PR #169** merged (develop + main)
+**Branch 2:** `squad/168-ep-alias-edit-profile` → **PR #170** merged (develop + main)
+
+**PR #169 (curl.exe fix):**
+- Fixed `Get-MyIp` function: `curl` → `curl.exe`
+- Bypasses PowerShell alias resolver
+- Issue #167 closed ✅
+
+**PR #170 (ep alias):**
+- Added `Edit-Profile` function + alias on Windows
+- Added `ep='${EDITOR:-vim} ~/.bash_profile'` on Unix
+- Updated tests (F-5) and README
+- Initial submit → Mickey CHANGES_REQUESTED (missing Remove-Item guard)
+- Donald added guard clause → Mickey approved ✅
+- Issue #168 closed ✅
+
+**Key learning:** When fixing is needed post-review, Donald can jump in as secondary developer to unblock merge. Guard all file operations that may fail idempotently.
+
+---
+
+## 2026-05-04 — Issue #174 / PR #175: Windows PowerShell Shutdown Functions
+
+**Branch:** squad/174-sdn-windows-profile
+PR:** #175 → develop
+Status:** ✅ MERGED
+
+### Implementation
+
+Added three PowerShell functions to scripts/windows/setup.ps1 profile heredoc:
+
+- Invoke-ShutdownNow — Immediate system shutdown
+- Invoke-TimedShutdown -Minutes N — Schedule shutdown with time parameter
+- Invoke-CancelTimedShutdown — Cancel pending timed shutdown
+
+**Function details:**
+- All three functions use Windows shutdown.exe system command
+- Proper error handling and parameter validation
+- PS 5.1 compatible (no PS 6+ auto-vars, uses PSSCRIPTROOT pattern)
+
+### Tests (Group M)
+
+Added 6 new tests to tests/test_windows_setup.ps1:
+
+- M-1 to M-3: Function existence checks
+- M-4 to M-6: Parameter validation and call verification
+
+All tests follow static-analysis pattern (regex against source file content).
+
+### CI & Review Status
+
+- ✅ All Group M tests pass (6/6)
+- ✅ Total test suite: 61/61 passing
+- ✅ Approved by Mickey (code + test coverage verified)
+- **Paired with:** PR #176 (Donald's shell aliases)
+
+### Outcome
+
+Windows now has native PowerShell functions for shutdown control, paired with Unix shell aliases for cross-platform consistency.

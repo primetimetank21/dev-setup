@@ -2372,3 +2372,48 @@ Goofy (owner of `scripts/windows/setup.ps1`).
 ### Rationale
 
 Ship both fixes together — same root cause, same file, same pattern. Fixing only `gcm` and leaving `gcb` broken would be sloppy.
+
+---
+
+## # Decision: Use `curl.exe` in PowerShell scripts to avoid `Invoke-WebRequest` alias
+
+**Issue:** #167
+**PR:** #169
+**Agent:** Goofy (Developer)
+**Date:** 2026-04-20
+
+### Context
+
+PowerShell (5.1 and 7+) ships a built-in alias `curl → Invoke-WebRequest`. Any `.ps1` script that calls `curl -s <url>` will silently invoke `Invoke-WebRequest` instead of the real curl binary. `Invoke-WebRequest` does not accept `-s` and returns a `BasicHtmlWebResponseObject`, not plain text — breaking tools like `myip`.
+
+### Decision
+
+### Use `curl.exe` instead of `curl` in all PowerShell scripts that require the real curl binary.
+
+**Why:** The `.exe` suffix bypasses the PowerShell alias resolver entirely and guarantees the Win32 `curl.exe` binary (bundled with Windows 10 1803+ and Git for Windows) is invoked. This is the idiomatic Windows PowerShell fix and is safe across PS 5.1 and PS 7+.
+
+### Affected file
+
+`scripts/windows/setup.ps1`, `Get-MyIp` function (line 303).
+
+### Generalisation
+
+Apply the same pattern to any place in PowerShell scripts that calls `wget` — use `wget.exe` to avoid the `Invoke-WebRequest` alias there too.
+
+---
+
+## # Decision: ep alias uses notepad on Windows, $EDITOR on Linux/macOS
+
+**Date:** 2026-04-20
+**Author:** Goofy
+**Issue:** #168
+
+### Decision
+
+The `ep` alias for opening the PowerShell profile:
+- **Windows:** uses `notepad $PROFILE` (consistent with built-in Windows tooling, always available)
+- **Linux/macOS:** uses `${EDITOR:-vim} ~/.bash_profile` (respects `$EDITOR` env var, falls back to vim)
+
+### Rationale
+
+Using `notepad` on Windows is the simplest, most universally available editor on any Windows machine. If the user wants VS Code or another editor, they can override the alias in their own profile. The Linux/macOS version respects the `$EDITOR` convention standard in Unix environments.
