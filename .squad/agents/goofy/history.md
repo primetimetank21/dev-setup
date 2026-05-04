@@ -479,3 +479,44 @@ Implement both aliases in `scripts/windows/setup.ps1`.
 - Issue #168 closed ✅
 
 **Key learning:** When fixing is needed post-review, Donald can jump in as secondary developer to unblock merge. Guard all file operations that may fail idempotently.
+
+---
+
+## 2026-05-04 — Issue #174 / PR #175: Windows PowerShell Shutdown Functions
+
+**Branch:** squad/174-sdn-windows-profile
+PR:** #175 → develop
+Status:** ✅ MERGED
+
+### Implementation
+
+Added three PowerShell functions to scripts/windows/setup.ps1 profile heredoc:
+
+- Invoke-ShutdownNow — Immediate system shutdown
+- Invoke-TimedShutdown -Minutes N — Schedule shutdown with time parameter
+- Invoke-CancelTimedShutdown — Cancel pending timed shutdown
+
+**Function details:**
+- All three functions use Windows shutdown.exe system command
+- Proper error handling and parameter validation
+- PS 5.1 compatible (no PS 6+ auto-vars, uses PSSCRIPTROOT pattern)
+
+### Tests (Group M)
+
+Added 6 new tests to tests/test_windows_setup.ps1:
+
+- M-1 to M-3: Function existence checks
+- M-4 to M-6: Parameter validation and call verification
+
+All tests follow static-analysis pattern (regex against source file content).
+
+### CI & Review Status
+
+- ✅ All Group M tests pass (6/6)
+- ✅ Total test suite: 61/61 passing
+- ✅ Approved by Mickey (code + test coverage verified)
+- **Paired with:** PR #176 (Donald's shell aliases)
+
+### Outcome
+
+Windows now has native PowerShell functions for shutdown control, paired with Unix shell aliases for cross-platform consistency.

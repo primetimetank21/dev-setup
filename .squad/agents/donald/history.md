@@ -440,3 +440,35 @@ Branch: `squad/168-ep-alias-edit-profile` — PR #170.
 **Result:** Fix pushed to `squad/168-ep-alias-edit-profile`, Mickey re-reviewed and approved. PR #170 merged (develop + main), issue #168 closed ✅.
 
 **Learning:** Be ready to defend/fix upstream PRs when review uncovers simple issues. Quick follow-up keeps merge velocity high.
+
+---
+
+## 2026-05-04 — Issue #173 / PR #176: Shell Aliases for Shutdown Control
+
+**Branch:** squad/173-sdn-shell-aliases
+PR:** #176 → develop
+Status:** ✅ MERGED
+
+### Implementation
+
+Added three shutdown control aliases to config/dotfiles/.aliases:
+
+- sdn — Immediate shutdown (system-agnostic)
+- tsdn — Timed shutdown (with minutes parameter)
+- cancel_tsdn — Cancel pending timed shutdown (cross-platform via uname case statement)
+
+**Key details:**
+- All aliases work on bash and zsh across Linux, macOS, WSL
+- Cross-platform cancel logic uses uname to detect OS and call appropriate system command
+- Matches Windows PowerShell function naming convention (Invoke-ShutdownNow, Invoke-TimedShutdown, Invoke-CancelTimedShutdown)
+
+### CI & Review Status
+
+- ✅ All 61 tests passing
+- ✅ Approved by Mickey (all checklist items clean)
+- ✅ No linting issues
+- **Paired with:** PR #175 (Goofy's Windows PowerShell functions)
+
+### Outcome
+
+Shutdown control is now available across all platforms: Windows (PowerShell functions) + Unix-like (shell aliases).

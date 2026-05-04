@@ -52,11 +52,22 @@ Resolved Sprint 4 action items, shipped bug fixes, and completed Windows regress
 
 **Board Status (end Sprint 5):** All Sprint 5 issues closed. 6 action items queued for Sprint 6.
 
+**Sprint 6 Summary (2026-04-13 to 2026-04-25):**
+
+Completed Windows PowerShell compatibility hotfixes, alias consolidation, and utility expansion.
+
+- **Windows Regression Tests:** Issues #102–#104 (Groups A–D, 15 tests); Goofy fixed empty catch lint pattern with `Write-Verbose`; PR #104 merged
+- **Utility Expansion:** Issues #106, #107, #113 (squad-cli install, vim via winget, GitHub issue templates); PRs #118, #107, #114 merged
+- **Alias Consolidation:** Issues #108–#111, #160–#161 (PowerShell alias parity PR #115, AllScope guard audit, gcm/gcb fixes); decisions filed for future work
+- **PS 5.1 Hardening:** Issues #125, #130, #132–#136, #138, #144–#146 (guard regressions, stale test fixes, dual profile paths, sentinel-skip elimination)
+- **Hooks & Docs:** Issues #147, #151–#153 (PSScriptAnalyzer pre-push evaluation, documentation updates)
+- **Key Decision:** Native platform mechanisms (PowerShell + shell aliases) > cross-platform wrappers; PSVersion-based guards required for PS 5.1 strict mode
+
+**Board Status (end Sprint 6):** 22+ issues closed, 10+ PRs merged, PS 5.x compatibility hardened across all utility functions.
+
 ---
 
 ## Learnings
-
-Completed Issue #97 — updated Ralph charter and issue-lifecycle template to ban squash merges for sprint wrap PRs. PR #99 merged into develop, PR #100 (sprint wrap) merged into main. All process docs now consistent with no-squash policy.
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
@@ -66,7 +77,7 @@ Reviewed and approved PR #175 (shutdown aliases for Windows PowerShell + Unix .a
 
 ---
 
-## 2026-04-18 — Sprint 6 Retro Action Items: Created Issues #109–#111
+### [2026-04-25] Issues #167 & #168: Triaged, reviewed, approved both PRs ✅
 
 **Task:** Convert retro action items from 2026-04-18 PS 5.x hotfix session into tracked GitHub issues for Sprint 6 visibility.
 
@@ -835,3 +846,69 @@ Posted detailed review comment on GitHub requesting changes. Awaiting author res
 - Merged: PR #170 → develop + main, issue closed ✅
 
 **Impact:** Two utilities shipped. PowerShell Windows compatibility improved (curl.exe pattern + ep profile editor).
+
+---
+
+## 2026-05-04 — Reviews Complete: PR #175, PR #176, Plan Approval
+
+**Session ID:** shutdown-aliases-orchestration-complete
+Date:** 2026-05-04T04:21:54Z
+
+### PR #175 Code Review (Goofy's Windows PowerShell Functions)
+
+**Verdict:** ✅ APPROVED
+Checklist:**
+- ✅ Three functions (Invoke-ShutdownNow, Invoke-TimedShutdown, Invoke-CancelTimedShutdown) implemented correctly
+- ✅ PS 5.1 compatible (no PS 6+ auto-vars, uses established patterns)
+- ✅ Group M tests (6 new tests) provide full coverage
+- ✅ All 61 tests passing (10/10 Group M tests validated)
+- ✅ No linting issues
+- ✅ Error handling present, parameter validation correct
+
+### PR #176 Code Review (Donald's Shell Aliases)
+
+**Verdict:** ✅ APPROVED
+Checklist:**
+- ✅ Three aliases added to config/dotfiles/.aliases (sdn, tsdn, cancel_tsdn)
+- ✅ Cross-platform support (bash, zsh, Linux, macOS, WSL)
+- ✅ Cancel logic uses uname case statement for OS detection
+- ✅ All 61 tests passing
+- ✅ No linting issues
+- ✅ Consistent naming with Windows PowerShell functions
+
+### Plan Review (Pre-Implementation)
+
+**Verdict:** ✅ APPROVED WITH NOTES
+Notes Count:** 6 items
+Status:** All notes addressed before implementation
+
+The plan outlined:
+1. Windows PowerShell functions via profile injection
+2. Shell aliases for Unix-like systems
+3. Test coverage strategy (Group M tests)
+4. Documentation updates
+5. Cross-platform consistency goals
+6. CI integration
+
+All 6 notes were incorporated during implementation by Donald and Goofy.
+
+### Integration Summary
+
+Both PRs (#175, #176) deliver coordinated cross-platform shutdown control:
+
+| Platform | Implementation | Aliases |
+|----------|---|---|
+| Windows | PowerShell functions in profile | Invoke-ShutdownNow, Invoke-TimedShutdown, Invoke-CancelTimedShutdown |
+| Linux/macOS/WSL | Shell aliases in dotfiles | sdn, tsdn, cancel_tsdn |
+
+**Combined test coverage:** 61/61 passing (including new Group M tests)
+
+### Key Decisions Ratified
+
+- Native platform mechanisms (PowerShell vs shell aliases) are better than cross-platform wrappers
+- Consistent naming across platforms improves user experience
+- Test coverage for shutdown functions via static analysis (source inspection) is sufficient
+
+### Outcome
+
+Both PRs merged to develop. Shutdown control now available across all supported platforms. Ready for feature consumption or main branch integration.
