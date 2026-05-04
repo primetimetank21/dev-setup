@@ -60,6 +60,10 @@ Completed Issue #97 — updated Ralph charter and issue-lifecycle template to ba
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
+### 2026-05-04 — PR #175 Review: Shutdown Aliases (Issue #174)
+
+Reviewed and approved PR #175 (shutdown aliases for Windows PowerShell + Unix .aliases). All 61 tests pass, zero regressions. Key patterns confirmed: `$LASTEXITCODE` is the correct way to check external command failure in PS (not try/catch), and `2>&1` captures stderr into a variable cleanly. Group M tests (M-1 through M-10) follow the established static-analysis pattern (regex against file content). The `.aliases` companion for Unix adds OS-aware cancel logic via `uname` case statement — good cross-platform parity.
+
 ---
 
 ## 2026-04-18 — Sprint 6 Retro Action Items: Created Issues #109–#111
