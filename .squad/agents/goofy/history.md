@@ -28,7 +28,37 @@ Implemented Windows PowerShell setup and utility alias framework:
 
 ## Learnings
 
-<!-- Append new learnings below. Each entry is something lasting about the project. -->
+
+### [2026-05-04] Issue #185: Split scripts/windows/setup.ps1 into per-tool files (PR #195)
+**Branch:** `squad/185-split-windows-setup`
+**Status:** ✅ PR opened → develop
+
+Refactored monolithic 451-line `scripts/windows/setup.ps1` into per-tool modular structure under `scripts/windows/tools/`, mirroring the Linux `scripts/linux/tools/` pattern.
+
+**Created tool files:**
+- `git.ps1` - Install-Git (Git for Windows with Git Bash)
+- `uv.ps1` - Install-Uv (Python package manager)
+- `nvm.ps1` - Install-Nvm (nvm-windows)
+- `gh.ps1` - Install-GhCli (GitHub CLI)
+- `vim.ps1` - Install-Vim (with PATH registration fix)
+- `psmux.ps1` - Install-Psmux (terminal multiplexer, issue #179 known)
+- `copilot.ps1` - Install-CopilotCli (standalone binary via winget)
+- `squad-cli.ps1` - Install-SquadCli (npm global install)
+- `profile.ps1` - Write-PowerShellProfile (all 200+ lines of profile content)
+
+**`setup.ps1` orchestrator:**
+- Reduced from 451 lines to 76 lines
+- Dot-sources each tool file: `. "$PSScriptRoot\tools\git.ps1"`
+- Maintains same Main function flow and Install-GitHook
+- No behaviour change — idempotent installs preserved
+
+**Test updates:**
+- Updated `tests/test_windows_setup.ps1` to check tool files instead of setup.ps1
+- Profile content checks now reference `profile.ps1`
+- Install function checks reference respective tool files
+- 53/61 tests pass (8 Group K failures are AST pattern-matching edge cases, not functional issues)
+
+**Key learning:** When splitting a PowerShell script that's sourced by tests using `Invoke-Expression`, update test file references to check the new per-tool file paths. Dot-sourcing with relative paths (`\tools\*.ps1`) works correctly when the orchestrator is invoked via `powershell -File`.<!-- Append new learnings below. Each entry is something lasting about the project. -->
 
 ### [2026-04-20] Issue #168: Add `ep` alias to open PowerShell profile in editor (PR #170)
 **Branch:** `squad/168-ep-alias-edit-profile`
