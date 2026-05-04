@@ -120,3 +120,31 @@ create_tmux() {
 start_up() {
   create_tmux
 }
+
+# ── Shutdown (requires sudo on Linux/macOS) ──────────────────────────────────
+
+# Shut down immediately
+sdn() {
+  sudo shutdown -h now
+}
+
+# Timed shutdown — usage: tsdn <minutes>
+tsdn() {
+  if [[ ! "$1" =~ ^[1-9][0-9]*$ ]]; then
+    echo "tsdn: minutes must be a positive integer"
+    return 1
+  fi
+  sudo shutdown -h +"$1"
+}
+
+# Cancel a pending timed shutdown (OS-aware)
+cancel_tsdn() {
+  case "$(uname)" in
+    Linux*)  cmd="sudo shutdown -c" ;;
+    Darwin*) cmd="sudo killall shutdown" ;;
+    *)       echo "cancel_tsdn: unsupported OS"; return 1 ;;
+  esac
+  if ! eval "$cmd" 2>/dev/null; then
+    echo "No pending shutdown to cancel."
+  fi
+}
