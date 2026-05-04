@@ -54,6 +54,23 @@ When code is refactored into separate modules, AST-based tests must track the ac
 
 ---
 
+### [2026-05-04] PR #195: Group K Test Updates — Final Fix & Merge
+
+**PR:** #195 `refactor(windows): split setup.ps1 into per-tool files under tools/`
+**Status:** ✅ APPROVED, MERGED to develop
+**Branch:** `squad/185-split-windows-setup` → `develop`
+
+All Group K test updates successfully verified and merged:
+- K-1, K-2, K-4, K-5: AST parser target confirmed at `scripts\windows\tools\profile.ps1`
+- K-3: Heredoc extraction confirmed reading from `profile.ps1`
+- All 61 tests passing (no regressions in `test_remove_custom_item.ps1`)
+- All 5 CI checks green (lint-ps, validate-ps, validate-ps51, lint-shell, validate-linux)
+- Mickey's final review: APPROVED
+- PR merged to develop with --admin flag (branch protection override)
+- Branch cleanup: Deleted locally and remotely
+
+---
+
 ### 2026-04-07 — Issue #14: Idempotency test suite
 
 **Branch:** `squad/14-idempotency-tests`

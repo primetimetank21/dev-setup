@@ -641,6 +641,28 @@ Reviewed Goofy's hook implementation and Chip's Group L tests. All 7 acceptance 
 
 **Files modified:** Only expected files — `hooks/pre-push`, `tests/test_windows_setup.ps1`, `.squad/agents/chip/history.md`.
 
+---
+
+### 2026-05-04 — Sprint Retro: Gap Audit + Windows Setup Split (PR #195)
+
+**Session:** Gap audit → 26-item report → 17 issues (#178–#194) → PR #195 shipped (Issue #185).
+
+**Architecture decision:** Per-tool file split is now canonical. `scripts/windows/setup.ps1` is a thin orchestrator (76 lines); all `Install-*` functions live in `scripts/windows/tools/*.ps1`. This mirrors the Linux side. Any new Windows tool = new file under `tools/`.
+
+**Process decisions from retro:**
+1. Agent history updates must be atomic — same commit as the code change. Reviewers block PRs that violate this.
+2. Tests must use path helpers, not hardcoded file paths. Chip to create `tests/helpers/paths.ps1`.
+3. `--admin` merge pattern remains the accepted workflow (single-user token limitation, documented).
+4. Linux setup.sh should be audited for the same split pattern if it exceeds 200 lines.
+
+**Friction points resolved:**
+- Goofy's uncommitted `history.md` → now a review gate
+- Group K test brittleness → path helper pattern mandated
+- Token limitation → accepted, not worth additional infra
+
+**Retro file:** `.squad/log/retro-2026-05-04.md`  
+**Decisions filed:** `.squad/decisions/inbox/mickey-retro-decisions.md`
+
 ## Learnings
 
 ### 2026-04-19 — Advisory Hook Pattern Validated

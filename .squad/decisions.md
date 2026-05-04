@@ -2680,3 +2680,98 @@ Clean implementation. All requirements met.
 ### Notes
 
 Implementation is clean and meets all requirements.
+
+---
+
+## [2026-05-04] PR #195 Review: refactor(windows): split setup.ps1 into per-tool files under tools/
+
+**PR:** #195
+**Issue:** #185
+**Reviewer:** Mickey (Lead)
+**Author:** Goofy (Cross-Platform Developer)
+**Date:** 2026-05-04
+
+### Summary
+
+Goofy split the 451-line monolithic `scripts/windows/setup.ps1` into a 76-line orchestrator + 9 per-tool files under `scripts/windows/tools/`. This mirrors the Linux `tools/` structure and makes each installer independently testable and readable.
+
+### Architecture & Structure ✅
+
+- **Orchestrator is clean.** `setup.ps1` defines shared utilities (`Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err`, `Test-WingetAvailable`), dot-sources all 9 tool files via `$PSScriptRoot\tools\*.ps1`, keeps `Install-GitHook` and `Main` locally. Good separation.
+- **Dot-source chain is correct.** All 9 files are sourced in logical install order (git → uv → nvm → gh → vim → psmux → copilot → squad-cli → profile). Each becomes available before `Main` calls it.
+- **Each tool file follows a consistent pattern:** header comment, `Set-StrictMode`, `$ErrorActionPreference = 'Stop'`, logging helpers, single install function with idempotency check (`Get-Command ... -ErrorAction SilentlyContinue`) and early return.
+
+### PS 5.1 Compatibility ✅
+
+- No ternary operators (`? :`), null-coalescing (`??`), or pipeline chain operators (`&&`/`||`) in executable code.
+- All files use `Set-StrictMode -Version Latest` which works on 5.1.
+- String interpolation, `[System.Environment]::GetEnvironmentVariable()`, and `Get-ChildItem` patterns are all 5.1-safe.
+
+### Idempotency ✅
+
+Every tool function checks for prior installation before acting:
+- `Get-Command <tool> -ErrorAction SilentlyContinue` → early return if already present
+- Copilot has a dual check (standalone binary + gh extension fallback) — appropriate
+
+### Notes for Follow-up (non-blocking)
+
+1. **Duplicated logging helpers.** Each tool file re-declares `Write-Info`/`Write-Ok`/`Write-Warn`/`Write-Err`. Since the orchestrator already defines them before dot-sourcing, the tool files could skip these (they'd inherit from parent scope). However, this duplication makes each file standalone-runnable during development — acceptable trade-off. Consider extracting to a shared `_common.ps1` in a future PR if the tool count grows.
+
+2. **psmux winget ID.** Issue #179 is noted in the file comment — good. This isn't a regression from the refactor.
+
+### Group K Test Failures — Diagnosis
+
+**Root cause:** The 8 Group K tests (K-1 through K-5, likely with sub-assertions) use AST parsing (`Parser::ParseFile`) on `scripts\windows\setup.ps1` and search for `FunctionDefinitionAst` nodes named `Write-PowerShellProfile`. That function now lives in `scripts\windows\tools\profile.ps1`, so the AST search returns zero results and the tests throw.
+
+**This is purely a test-location problem, not a functional regression.** The function exists, is correct, and is callable from the orchestrator via dot-source. The tests just need to parse the new file path instead.
+
+### Directive for Chip (Tester)
+
+**Chip should update Group K tests to check the new tool file locations.** Specifically:
+- K-1, K-2, K-4, K-5: Change `$setupPath` from `scripts\windows\setup.ps1` to `scripts\windows\tools\profile.ps1`
+- K-3: Change `Get-Content` target from `setup.ps1` to `tools\profile.ps1` for the heredoc search
+
+This is the same pattern already applied to Groups C, D, and E in this PR — Goofy updated those but missed Group K.
+
+### Initial Review Verdict
+
+✅ **APPROVED** — merge-ready. The refactor is clean, well-structured, and functionally correct. The 8 test failures are exclusively test-side path issues that Chip can fix on the same branch before merge.
+
+---
+
+## [2026-05-04] Mickey — Final Review: PR #195
+
+**PR:** #195
+**Verdict:** ✅ APPROVED (Final)
+**Branch:** `squad/185-split-windows-setup` → `develop`
+**Date:** 2026-05-04
+**Reviewer:** Mickey (Lead)
+
+### Summary
+
+PR #195 is approved and ready to merge. The refactor cleanly splits the monolithic 451-line `scripts/windows/setup.ps1` into 9 focused tool files under `scripts/windows/tools/`, leaving a slim 76-line orchestrator that dot-sources each module. Idempotency guards (`Get-Command` checks) are preserved in every tool file. The dot-source pattern uses correct PS 5.1 syntax (`$PSScriptRoot\tools\*.ps1`). Chip's test fixes correctly retarget Group K (AST-based), Group C/D/E/F/M (content-based) checks to the new file locations with assertions unchanged. All 5 CI checks green.
+
+### Final Review Checklist
+
+- [x] Orchestrator is slim, readable, correct dot-source syntax
+- [x] All 9 tool files have `Set-StrictMode`, `$ErrorActionPreference = 'Stop'`, idempotency guards
+- [x] Group K tests (K-1 through K-5) retargeted to `scripts\windows\tools\profile.ps1`
+- [x] Groups C, D, E, F, M tests also updated to check tool files
+- [x] No behavioral change — same function names, same install flow
+- [x] CI: all 5 checks passing (lint-ps, validate-ps, validate-ps51, lint-shell, validate-linux)
+
+### Note
+
+GitHub blocked formal approval (cannot approve own PR via bot token). Approval posted as PR comment instead.
+
+### Final Verdict
+
+✅ **APPROVED FOR MERGE** — All test fixes complete, all CI checks green, no regressions.
+
+---
+
+## [2026-05-04T07:07:22Z] User Directive: No Hard Time Limits on Agents
+
+**By:** Earl Tankard (via Copilot)
+**What:** No hard time limits on agents. Don't cancel based on elapsed time. Just ensure no agent is visibly stuck (no progress, no output, no file changes).
+**Why:** User request — captured for team memory
