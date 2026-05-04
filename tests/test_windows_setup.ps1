@@ -791,6 +791,84 @@ Test-Scenario "L-5: Hook file shebang is #!/bin/sh (not bash, must stay POSIX)" 
 }
 
 # ---------------------------------------------------------------------------
+# Group M: Shutdown aliases in PowerShell profile (Issue #174)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group M: Shutdown aliases in PowerShell profile (Issue #174)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "M-1: Invoke-ShutdownNow function exists in profile" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'function Invoke-ShutdownNow') {
+        throw "Invoke-ShutdownNow function not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "M-2: Invoke-TimedShutdown function exists in profile" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'function Invoke-TimedShutdown') {
+        throw "Invoke-TimedShutdown function not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "M-3: Invoke-CancelTimedShutdown function exists in profile" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'function Invoke-CancelTimedShutdown') {
+        throw "Invoke-CancelTimedShutdown function not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "M-4: sdn alias registered" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'Set-Alias\s+-Name\s+sdn\b') {
+        throw "Set-Alias for 'sdn' not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "M-5: tsdn alias registered" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'Set-Alias\s+-Name\s+tsdn\b') {
+        throw "Set-Alias for 'tsdn' not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "M-6: cancel_tsdn alias registered" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'Set-Alias\s+-Name\s+cancel_tsdn\b') {
+        throw "Set-Alias for 'cancel_tsdn' not found in scripts/windows/setup.ps1"
+    }
+}
+
+Test-Scenario "M-7: sdn body contains 'shutdown /s /t 0'" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'shutdown /s /t 0') {
+        throw "Invoke-ShutdownNow does not contain 'shutdown /s /t 0'"
+    }
+}
+
+Test-Scenario "M-8: cancel_tsdn body contains 'shutdown /a'" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch 'shutdown /a') {
+        throw "Invoke-CancelTimedShutdown does not contain 'shutdown /a'"
+    }
+}
+
+Test-Scenario "M-9: Invoke-TimedShutdown has [Parameter] decoration" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch '\[Parameter\(Mandatory\)\]') {
+        throw "Invoke-TimedShutdown does not have [Parameter(Mandatory)] decoration"
+    }
+}
+
+Test-Scenario "M-10: Invoke-TimedShutdown contains '* 60' multiplication" {
+    $setupContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($setupContent -notmatch '\*\s*60') {
+        throw "Invoke-TimedShutdown does not contain '* 60' multiplication"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 

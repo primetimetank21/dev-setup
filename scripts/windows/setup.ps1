@@ -337,6 +337,34 @@ function New-PsmuxSession {
     psmux attach -t $session
 }
 
+# -- Shutdown -------------------------------------------------------------------
+
+function Invoke-ShutdownNow {
+    # Shut down the machine immediately
+    shutdown /s /t 0
+}
+Set-Alias -Name sdn -Value Invoke-ShutdownNow -Force -Scope Global
+
+function Invoke-TimedShutdown {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateRange(1, [int]::MaxValue)]
+        [int]$Minutes
+    )
+    # Schedule shutdown in N minutes (converts minutes to seconds for Windows)
+    shutdown /s /t ($Minutes * 60)
+}
+Set-Alias -Name tsdn -Value Invoke-TimedShutdown -Force -Scope Global
+
+function Invoke-CancelTimedShutdown {
+    # Cancel a pending timed shutdown
+    $result = shutdown /a 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "No pending shutdown to cancel."
+    }
+}
+Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Global
+
 # END dev-setup profile
 '@
 
