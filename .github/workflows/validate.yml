@@ -187,6 +187,18 @@ jobs:
           }
           Write-Host "PSScriptAnalyzer passed (PS 5.1)"
 
+      - name: Test PS 5.1 profile write
+        shell: powershell
+        run: |
+          . "$env:GITHUB_WORKSPACE\scripts\windows\tools\profile.ps1"
+          Write-PowerShellProfile
+          $ps51Profile = Join-Path $HOME "Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+          if (-not (Test-Path $ps51Profile)) {
+            Write-Error "PS 5.1 profile not written: $ps51Profile"
+            exit 1
+          }
+          Write-Host "PS 5.1 profile exists: $ps51Profile"
+
       - name: Run PS 5.1 compatibility tests
         shell: powershell
         run: |

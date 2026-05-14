@@ -880,6 +880,134 @@ Test-Scenario "M-10: Invoke-TimedShutdown contains '* 60' multiplication" {
 }
 
 # ---------------------------------------------------------------------------
+# Group N: PS 5.1 Profile Write (Issue #197)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group N: PS 5.1 Profile Write (Issue #197)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "N-1: Write-PowerShellProfile writes to the PS 5.1 profile path" {
+    $ps51Profile = [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1')
+    Write-PowerShellProfile
+    if (-not (Test-Path $ps51Profile)) {
+        throw "PS 5.1 profile not written: $ps51Profile"
+    }
+}
+
+Test-Scenario "N-2: Write-PowerShellProfile writes to the PS 7+ profile path" {
+    $ps7Profile = [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
+    Write-PowerShellProfile
+    if (-not (Test-Path $ps7Profile)) {
+        throw "PS 7+ profile not written: $ps7Profile"
+    }
+}
+
+Test-Scenario "N-3: Profile content heredoc includes the squad BEGIN and END markers" {
+    if ($profileToolContent -notmatch '# BEGIN dev-setup profile') {
+        throw "profile.ps1 does not contain '# BEGIN dev-setup profile' marker"
+    }
+    if ($profileToolContent -notmatch '# END dev-setup profile') {
+        throw "profile.ps1 does not contain '# END dev-setup profile' marker"
+    }
+}
+
+Test-Scenario "N-4: All known PS 5.1 conflicting aliases have Remove-Item -Force Alias:\ guard in profile.ps1" {
+    # These aliases carry AllScope in PS 5.1 and cannot be overridden without first removing them
+    $conflictingAliases = @('rm', 'gc', 'gl', 'gcm', 'gcb', 'gp', 'grb', 'grs', 'ni', 'h', 'ep')
+    foreach ($alias in $conflictingAliases) {
+        if ($profileToolContent -notmatch "Remove-Item\s+-Force\s+Alias:\\$alias\b") {
+            throw "profile.ps1 is missing 'Remove-Item -Force Alias:\$alias' guard (PS 5.1 AllScope conflict)"
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group O: PS 5.1 Alias Override (Issue #197)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group O: PS 5.1 Alias Override (Issue #197)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "O-1: After Remove-Item Alias:\gc, Set-Alias gc succeeds without error" {
+    Remove-Item -Force 'Alias:\gc' -ErrorAction SilentlyContinue
+    Set-Alias -Name gc -Value Write-Host -Force -Scope Global -ErrorAction Stop
+}
+
+Test-Scenario "O-2: After Remove-Item Alias:\gcm, Set-Alias gcm succeeds without error" {
+    Remove-Item -Force 'Alias:\gcm' -ErrorAction SilentlyContinue
+    Set-Alias -Name gcm -Value Write-Host -Force -Scope Global -ErrorAction Stop
+}
+
+Test-Scenario "O-3: After Remove-Item Alias:\gl, Set-Alias gl succeeds without error" {
+    Remove-Item -Force 'Alias:\gl' -ErrorAction SilentlyContinue
+    Set-Alias -Name gl -Value Write-Host -Force -Scope Global -ErrorAction Stop
+}
+
+Test-Scenario "O-4: After Remove-Item Alias:\gp, Set-Alias gp succeeds without error" {
+    Remove-Item -Force 'Alias:\gp' -ErrorAction SilentlyContinue
+    Set-Alias -Name gp -Value Write-Host -Force -Scope Global -ErrorAction Stop
+}
+
+Test-Scenario "O-5: After Remove-Item Alias:\ni, Set-Alias ni succeeds without error" {
+    Remove-Item -Force 'Alias:\ni' -ErrorAction SilentlyContinue
+    Set-Alias -Name ni -Value Write-Host -Force -Scope Global -ErrorAction Stop
+}
+
+Test-Scenario "O-6: After Remove-Item Alias:\rm, Set-Alias rm succeeds without error" {
+    Remove-Item -Force 'Alias:\rm' -ErrorAction SilentlyContinue
+    Set-Alias -Name rm -Value Write-Host -Force -Scope Global -ErrorAction Stop
+}
+
+Test-Scenario "O-7: After Remove-Item Alias:\h, Set-Alias h succeeds without error" {
+    Remove-Item -Force 'Alias:\h' -ErrorAction SilentlyContinue
+    Set-Alias -Name h -Value Write-Host -Force -Scope Global -ErrorAction Stop
+}
+
+# ---------------------------------------------------------------------------
+# Group P: psmux Install (Issue #197)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group P: psmux Install (Issue #197)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$psmuxToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
+$psmuxToolContent = Get-Content $psmuxToolPath -Raw
+Invoke-Expression $psmuxToolContent
+
+Test-Scenario "P-1: psmux.ps1 can be dot-sourced without error and Install-Psmux is defined" {
+    # Syntax check via AST parser
+    $tokens = $null; $parseErrors = $null
+    $null = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$parseErrors)
+    if ($parseErrors.Count -gt 0) {
+        throw "psmux.ps1 has syntax errors: $($parseErrors[0].Message)"
+    }
+    # Verify function is callable after loading (loaded above via Invoke-Expression)
+    if (-not (Get-Command Install-Psmux -ErrorAction SilentlyContinue)) {
+        throw "Install-Psmux is not defined after loading psmux.ps1"
+    }
+}
+
+if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
+    Write-Skip "P-2: Install-Psmux emits [WARN] when psmux not installed" `
+        "psmux binary is present on this machine - not-installed code path cannot be exercised"
+} else {
+    Test-Scenario "P-2: Install-Psmux emits [WARN] when psmux is not installed (not a fatal error)" {
+        $output = Install-Psmux 2>&1 | Out-String
+        if ($output -notmatch '\[WARN\]') {
+            throw "Install-Psmux did not emit [WARN] when psmux is absent (output: $output)"
+        }
+    }
+}
+
+Test-Scenario "P-3: Install-Psmux is idempotent (second call does not throw)" {
+    Install-Psmux | Out-Null
+    Install-Psmux | Out-Null
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
