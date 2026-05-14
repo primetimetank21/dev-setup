@@ -250,27 +250,64 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
 # END dev-setup profile
 '@
 
-    # Write to each profile path
-    foreach ($profilePath in $profilePaths) {
-        # Ensure profile directory exists
-        $profileDir = Split-Path $profilePath
-        if (-not (Test-Path $profileDir)) {
-            New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
-        }
+    # Diagnostics: log both profile paths being targeted (PS 5.1 vs PS 7+)
+    Write-Info "PS 5.1 profile path: $($profilePaths[0])"
+    Write-Info "PS 7+  profile path: $($profilePaths[1])"
 
-        # Append to profile (create if absent).
-        # Always prepend a blank line so we don't concatenate onto any existing last line.
-        if (Test-Path $profilePath) {
-            Add-Content -Path $profilePath -Value ""
-        }
-        Add-Content -Path $profilePath -Value $profileContent
-        Write-Ok "PowerShell profile shortcuts installed to $profilePath"
-    }
-
-    # Check execution policy and warn if restricted
+    # Diagnostics: log execution policy before writing — helps diagnose load failures on PS 5.1
     $execPolicy = Get-ExecutionPolicy -Scope CurrentUser
+    Write-Info "Execution policy (CurrentUser): $execPolicy"
     if ($execPolicy -eq 'Restricted' -or $execPolicy -eq 'Undefined') {
         Write-Warn "Execution policy is '$execPolicy' -- profile aliases may not load in new terminals."
         Write-Warn "To fix: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned"
+    }
+
+    # Write to each profile path
+    foreach ($profilePath in $profilePaths) {
+        $profileDir = Split-Path $profilePath
+
+        # Diagnostics: log target directory before creation attempt
+        Write-Info "Target profile directory: $profileDir"
+
+        # Ensure profile directory exists
+        try {
+            if (-not (Test-Path $profileDir)) {
+                New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+            }
+        } catch {
+            Write-Err "Failed to create profile directory '$profileDir': $_"
+            continue
+        }
+
+        # Diagnostics: confirm directory exists after creation
+        if (Test-Path $profileDir) {
+            Write-Info "Profile directory confirmed: $profileDir"
+        } else {
+            Write-Err "Profile directory does not exist after creation attempt: $profileDir"
+            continue
+        }
+
+        # Diagnostics: log the profile file path being written
+        Write-Info "Writing profile content to: $profilePath"
+
+        # Append to profile (create if absent).
+        # Always prepend a blank line so we don't concatenate onto any existing last line.
+        try {
+            if (Test-Path $profilePath) {
+                Add-Content -Path $profilePath -Value ""
+            }
+            Add-Content -Path $profilePath -Value $profileContent
+        } catch {
+            Write-Err "Failed to write profile to '$profilePath': $_"
+            continue
+        }
+
+        # Post-write validation: confirm file exists and log size in bytes
+        if (Test-Path $profilePath) {
+            $fileSize = (Get-Item $profilePath).Length
+            Write-Ok "Profile written: $profilePath ($fileSize bytes)"
+        } else {
+            Write-Err "Profile write failed — file not found after write: $profilePath"
+        }
     }
 }
