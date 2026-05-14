@@ -363,6 +363,28 @@ Also updated the test header comment to describe the actual pattern.
 
 ### Outcome
 
+---
+
+### 2026-05-14 — PS 5.1 AllScope Alias Finding (#197)
+
+**Context:** Earl reported real-world failure on PS 5.1 where custom aliases defined in the PowerShell profile were not being applied despite setup.ps1 running successfully.
+
+**Root cause:** PS 5.1 built-in aliases marked with `AllScope` scope (gcm, gc, gl, gp, ni, rm, h, etc.) cannot be overridden with `Set-Alias -Force` alone. The Set-Alias call silently succeeds but the built-in alias remains active.
+
+**Solution:** Explicitly remove AllScope aliases before attempting to override:
+```powershell
+Remove-Item -Force Alias:\gcm -ErrorAction SilentlyContinue
+Set-Alias -Name gcm -Value <custom-function> -Force
+```
+
+**Affected files:**
+- `scripts/windows/tools/profile.ps1` — Custom alias definitions
+- `scripts/windows/tools/psmux.ps1` — psmux install failure (related: issue #179)
+
+**Issue:** #197 (filed by Ralph, in triage)
+
+**Impact on testing:** CI/CD dual-runtime validation must account for AllScope behavior when testing alias setup on PS 5.1. This is a PS 5.1-specific issue; PS 7+ does not exhibit it.
+
 ✅ PR #136 merged to develop
 ✅ Issue #135 closed
 ✅ Test now correctly validates PSVersion-based guards

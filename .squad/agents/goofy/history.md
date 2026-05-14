@@ -403,6 +403,27 @@ This session delivered the strip+re-inject pattern for Write-PowerShellProfile, 
 - PR body referenced #144 correctly (Mickey noted nit: says #138 instead, but issue linkage correct)
 - Related to issues #138 (parent: Windows PowerShell aliases), #141/#142 (psmux aliases)
 
+---
+
+### 2026-05-14 — PS 5.1 AllScope Alias Finding (#197)
+
+**Context:** Earl reported real-world failure on PS 5.1 where setup.ps1 ran but custom aliases did NOT work.
+
+**Root cause discovered:** PS 5.1 built-in aliases (gcm, gc, gl, gp, ni, rm, h, etc.) are scoped as `AllScope`. Using `Set-Alias -Force` alone cannot override them. Must explicitly remove first:
+
+```powershell
+Remove-Item -Force Alias:\gcm -ErrorAction SilentlyContinue
+Set-Alias -Name gcm -Value <custom-function> -Force
+```
+
+**Affected files:**
+- `scripts/windows/tools/profile.ps1` — All custom alias definitions
+- `scripts/windows/tools/psmux.ps1` — Related psmux install issue #179
+
+**Issue:** #197 (filed by Ralph, triaging in progress by Mickey)
+
+**Scribe captured:** Session log (2026-05-14-ps51-finding.md), decision inbox item (scribe-ps51-compat.md)
+
 **Decision artifacts merged to decisions.md:**
 - goofy-sentinel-fix.md (implementation decision + alternatives)
 - mickey-sentinel-fix-scope.md (scope boundaries, risk analysis)
