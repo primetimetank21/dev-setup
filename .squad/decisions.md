@@ -2775,3 +2775,132 @@ GitHub blocked formal approval (cannot approve own PR via bot token). Approval p
 **By:** Earl Tankard (via Copilot)
 **What:** No hard time limits on agents. Don't cancel based on elapsed time. Just ensure no agent is visibly stuck (no progress, no output, no file changes).
 **Why:** User request — captured for team memory
+
+---
+
+## [2026-05-04] Post-Split Architecture & Process Fixes
+
+**Date:** 2026-05-04  
+**Author:** Mickey (Lead)  
+**Source:** Sprint Retrospective 2026-05-04  
+**Status:** ✅ Adopted
+
+### Decision 1: Per-Tool File Split is Canonical Architecture
+
+**What:** All future Windows tool installs MUST be individual files under `scripts/windows/tools/`. The orchestrator dot-sources and calls them.
+
+**Rationale:** Single-responsibility per file, easier testing, matches Linux-side pattern, reduces concurrent merge conflicts.
+
+### Decision 2: Tests Must Use Path Helpers, Not Hardcoded Paths
+
+**What:** All test files referencing source file paths must use a shared path resolution helper. Hardcoded paths in assertions are rejected in review.
+
+**Rationale:** File reorganization should not break unrelated tests. Reduces maintenance burden.
+
+### Decision 3: Agent History Updates Must Be Atomic
+
+**What:** Agent history updates MUST be part of the same commit as the code change they document. Separate commits are not allowed.
+
+**Rationale:** Prevents orphaned staged files, ensures git history is self-documenting.
+
+### Decision 4: --admin Merge Pattern Remains Acceptable
+
+**What:** `gh pr merge --admin` with comment-based approval is the standard merge pattern for this repo.
+
+**Rationale:** Solo developer + agent squad = single GitHub identity. This pattern is documented in CONTRIBUTING.md and audit trail is preserved.
+
+---
+
+## [2026-05-14] Decision: Issue #197 Implementation Plan (PS 5.1 Compatibility Fix)
+
+**Date:** 2026-05-14  
+**Issue:** #197 — PS 5.1 compatibility — psmux install fails + aliases broken  
+**Triage Owner:** Mickey (Lead)  
+**Implementation Owner:** Goofy  
+**Status:** ✅ Plan complete, implementation in progress
+
+### Root Cause Summary
+
+1. **psmux Installation Fails:** `winget install --id psmux` uses invalid package ID (related to issue #179)
+2. **Aliases Not Applied:** PowerShell 5.1 built-in AllScope aliases (gcm, gcb, gc, gl, gp, ni, rm, h, grb, grs, ep) cannot be overridden with `Set-Alias` alone — require explicit pre-removal with `Remove-Item -Force Alias:\<name>` first
+3. **Profile Write Suspected:** May be silent errors in `Write-PowerShellProfile` function during directory creation or content write
+
+### Implementation Strategy
+
+| Component | Priority | Action | Owner |
+|-----------|----------|--------|-------|
+| psmux fix | P0 | Skip-with-warning pattern + research alternative package managers | Goofy |
+| Alias fix | P0 | Add verbose logging to `Write-PowerShellProfile`, verify pre-removal guards | Goofy |
+| Test coverage | P1 | Groups N (PS 5.1 profile), O (alias override), P (psmux install) | Chip |
+| CI enhancement | P1 | Add PS 5.1 profile validation to existing `validate-ps51` job | Chip |
+
+### Affected Files
+
+- `scripts/windows/tools/profile.ps1` — Alias guards, profile write diagnostics
+- `scripts/windows/tools/psmux.ps1` — Skip logic with warning
+- `tests/test_windows_setup.ps1` — New test groups N, O, P
+
+### PR Strategy
+
+**Single PR:** `squad/197-ps51-compat-fix` → `develop`
+- All fixes tightly coupled (psmux unblocks script, alias + diagnostics solve user issue, tests validate both)
+- Branch ready for implementation
+
+### Success Criteria
+
+1. `./setup.ps1` completes without fatal error on PS 5.1
+2. psmux install either succeeds OR skips with clear warning
+3. PS 5.1 profile file written to correct path
+4. Profile contains all expected aliases
+5. All conflicting aliases have `Remove-Item -Force` guards
+6. New tests pass on PS 5.1 CI
+7. Idempotency maintained
+
+**Full detailed plan:** `.squad/decisions/inbox/mickey-ps51-fix-plan.md` (archived after merge)
+
+---
+
+## [2026-05-14] Finding: PowerShell 5.1 AllScope Alias Limitation
+
+**Date:** 2026-05-14  
+**Captured By:** Scribe (via Earl Tankard report)  
+**Issue:** #197
+
+### What
+
+On PowerShell 5.1 (built-in Windows PowerShell), `./setup.ps1` fails in two ways:
+1. psmux installation error (winget package ID broken)
+2. Custom aliases not applied
+
+### Root Cause: AllScope Alias Scope
+
+PowerShell 5.1 has built-in aliases marked with the `AllScope` scope modifier:
+- `gcm`, `gcb`, `gc`, `gl`, `gp`, `ni`, `rm`, `h`, and others
+
+These cannot be overridden with `Set-Alias -Force` alone. The solution:
+
+```powershell
+Remove-Item -Force Alias:\gcm -ErrorAction SilentlyContinue
+Set-Alias -Name gcm -Value <custom-function> -Force
+```
+
+Without the pre-removal, `Set-Alias` appears to succeed but the built-in remains bound.
+
+### Why
+
+PS 5.1 (and earlier) uses a different alias scoping mechanism than PS 6+. The AllScope modifier prevents override unless the built-in is explicitly removed first.
+
+### Affected Files
+
+- `scripts/windows/tools/profile.ps1` — Already has removal pattern for known conflicts
+- `scripts/windows/tools/psmux.ps1` — Installation failure (issue #179)
+
+### Fix Pattern
+
+All custom aliases conflicting with built-ins must follow:
+```powershell
+Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue
+Set-Alias -Name <name> -Value <custom-function> -Scope Global -Force
+```
+
+**Status:** Implementation tracked in issue #197, test coverage in progress (groups N, O, P)
