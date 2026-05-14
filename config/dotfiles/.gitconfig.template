@@ -19,8 +19,9 @@
 	# Safe for both Linux/macOS and Windows (WSL) development.
 	autocrlf = input
 
-	# Honour $EDITOR if the user has set one; fall back to vim.
-	editor = ${EDITOR:-vim}
+	# Default editor for commit messages, interactive rebase, etc.
+	# Override with: git config --global core.editor <your-editor>
+	editor = vim
 
 	# Faster status in large repos.
 	untrackedCache = true
