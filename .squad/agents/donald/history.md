@@ -472,3 +472,12 @@ Added three shutdown control aliases to config/dotfiles/.aliases:
 ### Outcome
 
 Shutdown control is now available across all platforms: Windows (PowerShell functions) + Unix-like (shell aliases).
+
+## Learnings
+
+### 2026-04-19: Issue #178 — macOS/Linux install_prerequisites divergence
+
+The `install_prerequisites()` function in `scripts/linux/setup.sh` maintains separate package lists
+for macOS (brew) and Linux (apt). These lists can silently drift apart — vim was present in the
+Linux apt path but missing from the macOS brew path. When adding new prerequisites, always verify
+both platform branches get the package to maintain the cross-platform parity documented in README.

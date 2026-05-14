@@ -63,7 +63,7 @@ install_prerequisites() {
       log_warn "Homebrew not found — install it from https://brew.sh and re-run setup"
       return 0
     fi
-    brew install curl git tmux
+    brew install curl git vim tmux
   else
     sudo apt-get update -qq
     sudo apt-get install -y curl git build-essential vim tmux
