@@ -70,8 +70,7 @@ function Main {
     Write-Ok "Setup complete!"
     Write-Info "Next steps:"
     Write-Info "  1. Restart your terminal to apply PATH changes"
-    Write-Info "  2. Run: nvm install lts && nvm use lts"
-    Write-Info "  3. Run: gh auth login"
+    Write-Info "  2. Run: gh auth login"
 }
 
 Main
