@@ -3070,3 +3070,31 @@ Invoke-Expression $psmuxToolContent
 ### Open Questions
 
 None — all decisions made with full confidence.
+
+---
+
+## [2026-05-14] Decision: PR #198 Review — PS 5.1 Compat Fix
+
+**PR:** #198
+**Issue:** #197
+**Reviewer:** Mickey (Lead)
+**Date:** 2026-05-14
+**Verdict:** ✅ APPROVED
+
+### What Was Reviewed
+
+- `scripts/windows/tools/psmux.ps1` — skip-with-warning for broken winget ID (#179)
+- `scripts/windows/tools/profile.ps1` — verbose diagnostics for PS 5.1 debugging
+- Em dash (U+2014) removal from both files — fixes CP1252 parsing crash on PS 5.1
+
+### Assessment
+
+1. **Correctness:** psmux skip is the right call — no valid winget ID exists. Profile diagnostics cover all failure points (dir creation, file write, post-write validation, execution policy).
+2. **Quality:** Code is clean, try/catch blocks are well-scoped with `continue` for graceful degradation. Idempotency preserved.
+3. **No regressions:** All changes are Windows-only PowerShell. No impact on Linux/macOS paths.
+4. **Em dash fix:** Both files verified clean of non-ASCII characters via automated scan.
+5. **CI:** 5/5 checks green.
+
+### Approval Method
+
+GitHub API self-approval blocked (single-user repo). Approval posted as PR comment per `--admin` merge pattern documented in CONTRIBUTING.md and decisions.md.
