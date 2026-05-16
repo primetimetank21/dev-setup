@@ -197,3 +197,10 @@ Fixed three regressions introduced by PR #130:
 - **Key findings:** Windows PATH refresh requires re-reading Machine+User registry (session-only entries lost). nvm-windows writes active Node dir to user PATH on `nvm use`. Linux uses `\. "$NVM_DIR/nvm.sh"` (POSIX dot, not `source`) to load nvm into current shell. Idempotency: skip if node --version matches pinned version.
 - **Tests:** Groups S (S-1 to S-4) and T (T-1 to T-3) in test_windows_setup.ps1; test_nvm_bootstrap.sh for Linux side.
 - **Related to #190:** Reads pinned nodejs version via `Get-ToolVersion -Name 'nodejs'` (PS) and `read-tool-version.sh nodejs` (bash) -- both from `.tool-versions` file added in #190.
+
+### Issue #186 -- Shared logging helpers (2026-05-16)
+- PR: TBD -- `refactor(scripts): extract shared logging helpers to lib/`
+- Branch: `squad/186-shared-logging` from `develop`
+- What: Extracted log_info/log_ok/log_warn/log_error into scripts/linux/lib/log.sh and Write-Info/Write-Ok/Write-Warn/Write-Err into scripts/windows/lib/logging.ps1. Updated 8 shell callers + 11 PS callers to source from lib. Removed duplicate definitions.
+- Key findings: Shell tool scripts had drift -- some only defined 2-3 of 4 log functions (gh.sh had only log_info/log_ok, squad-cli.sh missing log_warn). PS uninstall.ps1 uses Write-Host format (not Write-Output) so was left alone. Tests using Invoke-Expression need logging lib pre-loaded and dot-source line stripped since $PSScriptRoot resolves to test dir.
+- Tests: tests/test_shared_logging.sh + Group V (V-1 to V-3) in test_windows_setup.ps1
