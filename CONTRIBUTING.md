@@ -49,6 +49,8 @@ git checkout -b squad/{issue-number}-{slug}
 
 > This rule exists because "branch ancestry bleed" occurred 3 times in Sprint 6. Every time it's violated, PR review quality degrades.
 
+**All squad branches MUST be cut from `develop`, not `main`.** The pre-commit hook validates this: if you commit to a `squad/*` branch that is not an ancestor of `develop`, the hook warns that you may have accidentally forked from `main` or another squad branch. To fix: `git rebase develop` before pushing.
+
 ---
 
 ## PR Checklist
@@ -137,36 +139,29 @@ Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manu
 
 ---
 
-## Pre-push Hook
+## Git Hooks
 
-The hook lives at `hooks/pre-push`. Install it once after cloning:
+Git hooks are **configured automatically** by `setup.sh` / `setup.ps1` via `git config core.hooksPath hooks`. You do not need to copy or symlink anything manually.
 
-```bash
-cp hooks/pre-push .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
-```
+After running setup, the following hooks are active:
 
-### What it does
+| Hook | Behavior |
+|------|----------|
+| `pre-commit` | Checks staged `.sh` files with shellcheck. Blocks commit on errors; silently skips if shellcheck not installed. |
+| `commit-msg` | Enforces Conventional Commits format. Hard reject on non-conforming messages. |
+| `pre-push` | Blocks direct pushes to `main`. Runs shellcheck/PSScriptAnalyzer on changed files (advisory—never blocks). |
 
-| Check | Platform | Behavior |
-|-------|----------|----------|
-| Block push to `main` | All | **Hard block** — exits 1, push is rejected |
-| `shellcheck` on changed `.sh` files | Linux / macOS | Advisory — warnings printed, push continues |
-| `PSScriptAnalyzer` on changed `.ps1` files | Any with `pwsh` | Advisory — warnings printed, push continues |
+See README > Git Hooks (Auto-configured) for details on each hook's checks and how to bypass with `--no-verify`.
 
-### Advisory-only rule
+### Installing PSScriptAnalyzer locally (optional)
 
-The lint checks (shellcheck and PSScriptAnalyzer) are **advisory only** — they print warnings but always exit 0. They will never block a push. Fixes are expected before opening a PR, not before every push.
-
-### Installing PSScriptAnalyzer locally
-
-To get PS lint feedback locally, install the module once in PowerShell:
+To get PS lint feedback during `pre-push`, install the module once in PowerShell:
 
 ```powershell
 Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
 ```
 
-The hook auto-detects `pwsh` and the module. If either is absent the PS check is silently skipped — no action needed on Linux/macOS-only machines.
+The hook auto-detects `pwsh` and the module. If either is absent, the check is silently skipped.
 
 ---
 
