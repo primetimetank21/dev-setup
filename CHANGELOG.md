@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shutdown aliases: `sdn`, `tsdn`, `cancel_tsdn` for Windows and Linux (PRs #175-#177)
 - Modular tool installer split -- 451-line `setup.ps1` monolith refactored into 76-line orchestrator + 9 per-tool files under `scripts/windows/tools/` (PR #195)
 - PS 5.1 test groups N, O, P and ASCII-clean test runner (PR #200)
+- `prepare-commit-msg` hook that rewrites git auto-generated merge/revert messages into Conventional Commits form (#212)
+- Support for `merge` type in commit-msg hook type allowlist (#212)
 
 ### Changed
 - `scripts/linux/tools/nvm.sh` reads nvm version from `.tool-versions` instead of fetching latest
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/windows/tools/nvm.ps1` reads nvm version from `.tool-versions`
 - Made tmux auto-attach opt-in via `TMUX_AUTOSTART=1` env var (was always-on)
 - Refreshed ARCHITECTURE.md and README.md file trees to match current repo layout
+- commit-msg no longer needs special-case bypass for merge/revert -- prepare-commit-msg now normalizes them (#212)
 
 ### Fixed
 - PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)

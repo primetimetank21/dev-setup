@@ -47,6 +47,8 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
+- Hook bypass pattern: use `case "$STRIPPED" in "Merge "*|"Revert "*) exit 0 ;; esac` to skip validation for git auto-generated messages. Must go BEFORE the regex check so these messages never hit the conventional-commits filter. Position matters -- if the case block is after the regex, the hook rejects before reaching it.
+
 - CP1252 encoding trap: Em dash `—` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
 - Invoke-Expression for function loading: Load functions at Group scope before Test-Scenario calls; `& ([scriptblock]::Create(...))` creates child scope where functions vanish after test
 - PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks — test suite requirements > runtime logic correctness
@@ -58,6 +60,29 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 ---
 
 ## Recent Work
+
+## [2026-05-19T00:00:00Z] Issue #212: commit-msg hook rejects merge/revert commits
+
+**Branch:** `squad/212-commit-msg-merge-bypass`
+**PR:** #213
+**Status:** PR opened
+
+Added early-exit case block in `hooks/commit-msg` that accepts git default merge and revert messages without running the conventional-commits regex. Added 3 Group B tests in `tests/test_git_hooks.ps1`. All 8 tests pass (5 existing + 3 new).
+
+## [2026-05-19T01:00:00Z] Issue #212: spec-compliant rewrite (prepare-commit-msg)
+
+**Branch:** `squad/212-commit-msg-merge-bypass`
+**PR:** #213 (updated in place)
+**Status:** PR updated
+
+Replaced the broad `Merge`/`Revert` case bypass with a spec-compliant approach:
+- New `hooks/prepare-commit-msg` hook rewrites git auto-generated merge/revert messages into Conventional Commits form before commit-msg runs
+- Added `merge` to the commit-msg type allowlist (alongside existing `revert`)
+- Removed the case bypass from commit-msg -- no longer needed
+- Replaced 3 Group B bypass tests with 7 new tests covering all prepare-commit-msg rewrite patterns plus merge type acceptance
+- Per Conventional Commits v1.0.0 spec compliance
+
+---
 
 ## [2026-05-18T00:00:00Z] Issue #183: Wire test_git_hooks.ps1 into validate.yml
 

@@ -1,0 +1,67 @@
+#!/bin/sh
+# Rewrite git's auto-generated merge/revert commit messages into
+# Conventional Commits form so the commit-msg hook can validate them.
+#
+# This hook runs BEFORE commit-msg. It rewrites the first line of the
+# commit message file when it matches known auto-generated patterns:
+#   Merge branch 'X'                        -> merge(X): merge branch
+#   Merge branch 'X' into Y                 -> merge(X): merge into Y
+#   Merge branch 'X' of URL                 -> merge(X): merge from remote
+#   Merge remote-tracking branch 'origin/X' -> merge(remote): origin/X
+#   Merge pull request #N from USER/BRANCH  -> merge(pr): #N from USER/BRANCH
+#   Revert "SUBJECT"                        -> revert: SUBJECT
+#
+# Non-matching messages are left unchanged. Exit 0 always -- validation
+# is commit-msg's job.
+
+COMMIT_MSG_FILE="$1"
+
+first_line=$(head -n1 "$COMMIT_MSG_FILE")
+
+case "$first_line" in
+    "Merge pull request #"*)
+        # Merge pull request #N from USER/BRANCH
+        rest=$(echo "$first_line" | sed "s/^Merge pull request //")
+        first_line="merge(pr): $rest"
+        ;;
+    "Merge remote-tracking branch '"*"'"*)
+        # Merge remote-tracking branch 'origin/X' [into Y]
+        ref=$(echo "$first_line" | sed "s/^Merge remote-tracking branch '//;s/'.*//")
+        first_line="merge(remote): $ref"
+        ;;
+    "Merge branch '"*"' into "*)
+        # Merge branch 'X' into Y
+        branch=$(echo "$first_line" | sed "s/^Merge branch '//;s/' into .*//")
+        target=$(echo "$first_line" | sed "s/^.*' into //")
+        first_line="merge($branch): merge into $target"
+        ;;
+    "Merge branch '"*"' of "*)
+        # Merge branch 'X' of GIT_URL
+        branch=$(echo "$first_line" | sed "s/^Merge branch '//;s/' of .*//")
+        first_line="merge($branch): merge from remote"
+        ;;
+    "Merge branch '"*"'"*)
+        # Merge branch 'X' (simple)
+        branch=$(echo "$first_line" | sed "s/^Merge branch '//;s/'.*//")
+        first_line="merge($branch): merge branch"
+        ;;
+    'Revert "'*'"'*)
+        # Revert "SUBJECT"
+        subject=$(echo "$first_line" | sed 's/^Revert "//;s/"$//')
+        first_line="revert: $subject"
+        ;;
+    *)
+        # Not an auto-generated message -- leave unchanged
+        exit 0
+        ;;
+esac
+
+# Rewrite first line, preserve the rest of the file
+tmp=$(mktemp)
+{
+    echo "$first_line"
+    tail -n +2 "$COMMIT_MSG_FILE"
+} > "$tmp"
+mv "$tmp" "$COMMIT_MSG_FILE"
+
+exit 0
