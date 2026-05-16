@@ -191,7 +191,7 @@ Fixed three regressions introduced by PR #130:
 - **Key pattern:** `.tool-versions` format is one `tool version` line per row, `#`-prefixed comments allowed. POSIX parser uses `awk` to find the matching row; PowerShell parser uses `Get-Content | Where-Object`.
 
 ### Issue #201 - nvm LTS auto-install + squad-cli bootstrap (2026-05-16)
-- PR: TBD -- `feat(setup): auto-install Node LTS via nvm`
+- PR: #218 -- `feat(setup): auto-install Node LTS via nvm`
 - Branch: `squad/201-nvm-bootstrap` from `develop`
 - **What:** After nvm installs, auto-run `nvm install <version>` and `nvm use <version>` using pinned nodejs version from `.tool-versions`. Refresh PATH so node/npm are usable in the same session. Changed squad-cli npm-missing from silent WARN to hard ERROR with actionable hints.
 - **Key findings:** Windows PATH refresh requires re-reading Machine+User registry (session-only entries lost). nvm-windows writes active Node dir to user PATH on `nvm use`. Linux uses `\. "$NVM_DIR/nvm.sh"` (POSIX dot, not `source`) to load nvm into current shell. Idempotency: skip if node --version matches pinned version.
