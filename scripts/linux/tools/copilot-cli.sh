@@ -25,6 +25,10 @@ fi
 
 log_info "Installing GitHub Copilot CLI..."
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COPILOT_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" copilot-cli)"
+log_info "Pinned copilot-cli version: ${COPILOT_VERSION}"
+
 # Official install script. Non-root: installs to ~/.local/bin/copilot (in PATH).
 # Root: installs to /usr/local/bin/copilot.
 if curl -fsSL https://gh.io/copilot-install | bash; then

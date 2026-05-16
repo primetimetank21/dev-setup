@@ -85,6 +85,9 @@ dev-setup/
 ├── CHANGELOG.md              — Release history (Keep a Changelog format)
 ├── CONTRIBUTING.md           — Contribution guide
 ├── scripts/
+│   ├── lib/
+│   │   ├── read-tool-version.sh  — POSIX sh: reads pinned version from .tool-versions
+│   │   └── Read-ToolVersion.ps1  — PowerShell: Get-ToolVersion function
 │   ├── linux/
 │   │   ├── setup.sh          — Core Linux/macOS installer (orchestrates tool scripts)
 │   │   └── tools/            — Individual tool install scripts
@@ -207,6 +210,19 @@ Use `--no-verify` to bypass hooks in emergencies.
 ---
 
 ## Customization
+
+### Version Pinning
+
+Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format). Setup scripts read this file directly -- no asdf or mise dependency needed.
+
+```
+nodejs 20.11.0
+nvm 0.39.7
+uv 0.4.18
+copilot-cli 0.0.339
+```
+
+To bump a tool version, edit the version number in `.tool-versions` and re-run setup. Each line is `toolname version`, one per line. Blank lines and lines starting with `#` are ignored.
 
 **Dotfiles:** Edit or add templates in `config/dotfiles/`. Each file is copied into your home directory on first run. Existing files are not overwritten unless you pass `--force`.
 

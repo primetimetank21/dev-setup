@@ -16,7 +16,9 @@ if command -v uv &>/dev/null; then
 fi
 
 log_info "Installing uv..."
-curl -LsSf https://astral.sh/uv/install.sh | sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+UV_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" uv)"
+curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
 
 # uv installs to ~/.local/bin — ensure it's on PATH in current session
 export PATH="$HOME/.local/bin:$PATH"

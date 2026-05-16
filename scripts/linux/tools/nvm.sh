@@ -19,9 +19,8 @@ if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
 fi
 
 log_info "Installing nvm..."
-NVM_VERSION="$(curl -sSf https://api.github.com/repos/nvm-sh/nvm/releases/latest \
-  | grep '"tag_name"' \
-  | sed 's/.*"v\([^"]*\)".*/\1/')"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NVM_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" nvm)"
 curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh" | bash
 
 # Source nvm in current shell session
