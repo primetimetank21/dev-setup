@@ -1,0 +1,73 @@
+name: Squad History Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  squad-history-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get PR labels and changed files
+        id: pr-info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Extract squad:* labels from PR
+          LABELS=$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' | grep '^squad:' || true)
+          
+          # Check if any squad:* labels exist
+          if [ -z "$LABELS" ]; then
+            echo "no_squad_labels=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "no_squad_labels=false" >> $GITHUB_OUTPUT
+          echo "labels<<EOF" >> $GITHUB_OUTPUT
+          echo "$LABELS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Get list of changed files (name only)
+          CHANGED_FILES=$(gh pr diff "$PR_NUMBER" --name-only)
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Validate squad history files
+        if: steps.pr-info.outputs.no_squad_labels == 'false'
+        env:
+          LABELS: ${{ steps.pr-info.outputs.labels }}
+          CHANGED_FILES: ${{ steps.pr-info.outputs.changed_files }}
+        run: |
+          FAILURE=0
+          
+          while IFS= read -r LABEL; do
+            # Extract agent name from squad:NAME label
+            AGENT_NAME="${LABEL#squad:}"
+            HISTORY_FILE=".squad/agents/${AGENT_NAME}/history.md"
+            
+            # Check if the history file is in the changed files
+            if ! echo "$CHANGED_FILES" | grep -q "^${HISTORY_FILE}$"; then
+              echo "::error::squad:${AGENT_NAME} PR but .squad/agents/${AGENT_NAME}/history.md not modified. Append a Learnings entry and push."
+              FAILURE=1
+            fi
+          done <<< "$LABELS"
+          
+          if [ $FAILURE -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Skip check for non-squad PRs
+        if: steps.pr-info.outputs.no_squad_labels == 'true'
+        run: |
+          echo "No squad:* labels found. History check skipped for this PR."

@@ -257,3 +257,24 @@ Added `tests/test_alias_parity.sh` -- a bash test that extracts alias names from
 - Related: Supersedes #226 (macOS parity, narrower); overlaps #238 (uninstall tests)
 - Terminology: psmux is Windows tmux alias (NOT wezterm — coordinator error corrected)
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
+
+---
+
+## [2026-05-16T08:00:00Z] Retro Item: CI Enforcement Gate for Squad History.md
+
+**Retro:** 2026-05-16 hygiene retro, item `retro-ci-gate` (enforcer: Chip)  
+**Issue:** #239 (P0, squad:chip)  
+**Context:** Recurring issue - agents complete work but forget to append Learnings to their history.md. Goofy skipped update on PR #215; history backfilled manually post-merge. Earl wants this enforced at CI level so PR cannot merge without history append.
+
+**Solution:** New workflow `.github/workflows/squad-history-check.yml` enforces rule: Any PR carrying at least one `squad:*` label (e.g., `squad:goofy`, `squad:chip`, etc.) MUST modify the matching agent's `.squad/agents/{name}/history.md` file.
+
+**Implementation Details:**
+- **Trigger:** PR open/sync/reopen/label/unlabel events targeting develop or main branches
+- **Label Mapping:** `squad:{name}` label maps to `.squad/agents/{name}/history.md` file path check
+- **Validation Logic:** For each `squad:*` label on the PR, verify history file appears in changed files (via `gh pr diff --name-only`)
+- **Failure Mode:** If history file not modified, emit `::error::` with clear message: "squad:{name} PR but .squad/agents/{name}/history.md not modified. Append a Learnings entry and push."
+- **Multi-label Handling:** If PR has multiple squad labels (rare), ALL matching history files must be touched
+- **Non-squad PRs:** PRs without any `squad:*` label skip the check entirely (pass through)
+- **Hard Gate:** Per Earl directive, no override path exists. Gate is strict and cannot be bypassed.
+
+**Key Integration:** The squad-history-check workflow itself enforces squad operational hygiene. It uses `squad:chip` label on its own PR, so it validates the new gate works before merge ("dogfood test").
