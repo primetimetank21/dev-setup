@@ -109,7 +109,7 @@ path: $NodeDir
 
 function Set-NvmEnvironment {
     # Set NVM_HOME / NVM_SYMLINK at User scope (persistent) and in current session.
-    # Prepend $NvmHome and $NodeDir to $env:Path.
+    # Also persist $NvmHome and $NodeDir in the User PATH so fresh shells see nvm.
     param(
         [Parameter(Mandatory)][string]$NvmHome,
         [Parameter(Mandatory)][string]$NodeDir
@@ -120,4 +120,20 @@ function Set-NvmEnvironment {
     $env:NVM_SYMLINK = $NodeDir
     if ($env:Path -notlike "*$NvmHome*") { $env:Path = "$NvmHome;$env:Path" }
     if ($env:Path -notlike "*$NodeDir*") { $env:Path = "$NodeDir;$env:Path" }
+
+    # Persist into User PATH so fresh shells see nvm and node without re-running setup.
+    $userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+    if (-not $userPath) { $userPath = '' }
+    $entries = $userPath -split ';' | Where-Object { $_ -ne '' }
+    $added = $false
+    foreach ($dir in @($NvmHome, $NodeDir)) {
+        if ($entries -notcontains $dir) {
+            $entries = @($dir) + $entries
+            $added = $true
+        }
+    }
+    if ($added) {
+        $newUserPath = ($entries | Select-Object -Unique) -join ';'
+        [System.Environment]::SetEnvironmentVariable('Path', $newUserPath, 'User')
+    }
 }
