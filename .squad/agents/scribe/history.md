@@ -81,3 +81,10 @@ Appended team updates to:
 - Canonical log dir is `.squad/log/` (singular). The stray `.squad/logs/` (plural) was deprecated 2026-05-16; do not write to `logs/`.
 - Append-only convention for `casting/history.json`: mid-assignment additions use new entries with `type: "addendum"` and `parent_assignment_id`. Never mutate prior snapshots.
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
+
+
+### 2026-05-16 -- Session drain: Sprint Q wrap
+- Drained 3 inbox decisions: mickey-squad-0.9.4-upgrade (PR #262), mickey-hire-doc-fact-checker (PR #263), doc-pr-263-fact-check (Doc's first verification)
+- Appended Doc's first-run reflections to .squad/agents/doc/history.md
+- Appended Mickey's PR #262 audit reflection to .squad/agents/mickey/history.md (if missing)
+- Created session log: .squad/log/2026-05-16-sprint-q-wrap-0.8.0-0.9.4-doc-hire.md

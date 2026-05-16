@@ -855,3 +855,14 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
   - [Chip] Track E2E nightly flake rate -- flip `continue-on-error: false` after 2-3 green nightlies (#253)
   - [Mickey] CHANGELOG conflict strategy doc
 - **Outcome:** Sprint Q closed. 0.8.0 shipped. Sprint R agenda has HYGIENE bumped, two-strikes rule, validator scope decision.
+
+## Squad 0.9.4 Upgrade Audit -- 2026-05-16 (PR #262)
+
+- **Scope:** Audited the `squad upgrade` 0.9.1 -> 0.9.4 diff before shipping. Identified what to SHIP, DELETE, and DO NOT SHIP.
+- **Outcome (PR #262 -- `chore(squad): upgrade governance to 0.9.4`):**
+  - Shipped: `.github/agents/squad.agent.md` payload, 7 modified templates, label-enforcement + slugify workflows, error-recovery skill.
+  - Deleted before commit: 18 rogue files at `.squad/` root (template duplicates / older copies).
+  - Did NOT ship: 6 squad-CLI-internal workflows (squad-ci/docs/insider-release/preview/promote/release) and the overwritten `.copilot/skills/git-workflow/SKILL.md` (reverted to our 2-branch version).
+  - Hook gap fix: added `.squad/templates/*.template` to pre-commit allow-list to prevent rogue-file false positives on legitimate template files.
+- **Decision record:** see `.squad/decisions.md` -> "Squad CLI 0.9.4 Upgrade -- Ship Plan" (executed via PR #262 at 2026-05-16T17:32).
+- **New skill captured:** `.squad/skills/squad-upgrade-hygiene/SKILL.md` so future upgrades follow the same audit pattern instead of rediscovering it.
