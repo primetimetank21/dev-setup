@@ -61,6 +61,22 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Recent Work
 
+## [2026-05-16T18:30:00-04:00] Issue #253: e2e-install failure-summary step
+
+**Branch:** `squad/253-e2e-summary`
+**PR:** #265
+**Status:** PR opened
+
+Added a final `summary` job to `.github/workflows/e2e-install.yml` that surfaces silent platform failures. The summary job:
+- Runs on ubuntu-latest with `needs: [e2e-linux, e2e-macos, e2e-windows]` and `if: always()`
+- Inspects each platform job's `result` field
+- Fails with `exit 1` if ANY platform failed
+- Preserves per-platform `continue-on-error: true` for full-matrix telemetry
+
+**Key insight:** Per-platform jobs retain `continue-on-error: true` so nightly crons get complete diagnostics before the summary job reports overall success/failure. This prevents the fail-fast that would lose second/third platform diagnostics.
+
+Updated CHANGELOG.md with [Unreleased] > ### Fixed section.
+
 ## [2026-05-22T00:00:00Z] Issue #181: macOS CI validation job
 
 **Branch:** `squad/181-macos-ci`
