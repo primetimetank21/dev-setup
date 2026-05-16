@@ -191,6 +191,81 @@ Test-Scenario "commit-msg hook accepts multiple valid formats" {
     }
 }
 
+Test-Scenario "commit-msg hook accepts merge pull request message" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_merge_pr_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "Merge pull request #99 from foo/bar" -Encoding ASCII
+
+        $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            $result = & sh $hookPath $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg hook rejected merge PR message: $result"
+            }
+        } else {
+            $msg = Get-Content $tempMsgFile -Raw
+            $stripped = ($msg -split "`n" | Where-Object { $_ -notmatch "^#" -and $_ -notmatch "^$" } | Select-Object -First 1).Trim()
+            if ($stripped -notmatch '^Merge ' -and $stripped -notmatch '^Revert ') {
+                throw "Merge PR message should have been accepted"
+            }
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "commit-msg hook accepts merge remote-tracking branch message" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_merge_rt_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "Merge remote-tracking branch 'origin/develop' into squad/X" -Encoding ASCII
+
+        $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            $result = & sh $hookPath $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg hook rejected merge remote-tracking message: $result"
+            }
+        } else {
+            $msg = Get-Content $tempMsgFile -Raw
+            $stripped = ($msg -split "`n" | Where-Object { $_ -notmatch "^#" -and $_ -notmatch "^$" } | Select-Object -First 1).Trim()
+            if ($stripped -notmatch '^Merge ' -and $stripped -notmatch '^Revert ') {
+                throw "Merge remote-tracking message should have been accepted"
+            }
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "commit-msg hook accepts revert message" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_revert_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value 'Revert "feat(foo): bar"' -Encoding ASCII
+
+        $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            $result = & sh $hookPath $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg hook rejected revert message: $result"
+            }
+        } else {
+            $msg = Get-Content $tempMsgFile -Raw
+            $stripped = ($msg -split "`n" | Where-Object { $_ -notmatch "^#" -and $_ -notmatch "^$" } | Select-Object -First 1).Trim()
+            if ($stripped -notmatch '^Merge ' -and $stripped -notmatch '^Revert ') {
+                throw "Revert message should have been accepted"
+            }
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------

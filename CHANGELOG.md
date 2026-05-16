@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refreshed ARCHITECTURE.md and README.md file trees to match current repo layout
 
 ### Fixed
+- commit-msg hook now accepts default git merge and revert messages without validation (#212)
 - PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)
 
 ## [0.7.0] - 2026-04-25 -- Sprint 7: Hooks, psmux, and profile hardening
