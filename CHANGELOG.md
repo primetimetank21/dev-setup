@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automatic Node LTS install via nvm during setup; reads pinned version from `.tool-versions` (closes #201)
+- `tests/test_nvm_bootstrap.sh` -- bash tests for nvm/squad-cli bootstrap behavior
+- Group S tests in `test_windows_setup.ps1` for nvm.ps1 Node auto-install logic
+- Group T tests in `test_windows_setup.ps1` for squad-cli.ps1 loud error behavior
 - `.tool-versions` file for pinning tool versions (nodejs, nvm, uv, copilot-cli)
 - `scripts/lib/read-tool-version.sh` -- POSIX sh helper to read pinned versions
 - `scripts/lib/Read-ToolVersion.ps1` -- PowerShell `Get-ToolVersion` function
@@ -25,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for `merge` type in commit-msg hook type allowlist (#212)
 
 ### Changed
+- `squad-cli` install failure is now a loud error with actionable hints (was silent warning)
+- `scripts/linux/tools/nvm.sh` installs pinned Node version from `.tool-versions` (was `--lts`)
 - `scripts/linux/tools/nvm.sh` reads nvm version from `.tool-versions` instead of fetching latest
 - `scripts/linux/tools/uv.sh` reads uv version from `.tool-versions` instead of fetching latest
 - `scripts/linux/tools/copilot-cli.sh` reads copilot-cli version from `.tool-versions`

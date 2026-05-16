@@ -189,3 +189,11 @@ Fixed three regressions introduced by PR #130:
 - **Tests:** Group R (R-1 through R-4) all pass; bash tests in `test_tool_versions.sh`. ASCII safety verified on all .ps1 files (per ps51-runtime-file-encoding skill).
 - **Docs:** README "Version Pinning" section, CHANGELOG under [Unreleased].
 - **Key pattern:** `.tool-versions` format is one `tool version` line per row, `#`-prefixed comments allowed. POSIX parser uses `awk` to find the matching row; PowerShell parser uses `Get-Content | Where-Object`.
+
+### Issue #201 - nvm LTS auto-install + squad-cli bootstrap (2026-05-16)
+- PR: TBD -- `feat(setup): auto-install Node LTS via nvm`
+- Branch: `squad/201-nvm-bootstrap` from `develop`
+- **What:** After nvm installs, auto-run `nvm install <version>` and `nvm use <version>` using pinned nodejs version from `.tool-versions`. Refresh PATH so node/npm are usable in the same session. Changed squad-cli npm-missing from silent WARN to hard ERROR with actionable hints.
+- **Key findings:** Windows PATH refresh requires re-reading Machine+User registry (session-only entries lost). nvm-windows writes active Node dir to user PATH on `nvm use`. Linux uses `\. "$NVM_DIR/nvm.sh"` (POSIX dot, not `source`) to load nvm into current shell. Idempotency: skip if node --version matches pinned version.
+- **Tests:** Groups S (S-1 to S-4) and T (T-1 to T-3) in test_windows_setup.ps1; test_nvm_bootstrap.sh for Linux side.
+- **Related to #190:** Reads pinned nodejs version via `Get-ToolVersion -Name 'nodejs'` (PS) and `read-tool-version.sh nodejs` (bash) -- both from `.tool-versions` file added in #190.
