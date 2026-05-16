@@ -211,3 +211,12 @@ Added `tests/test_alias_parity.sh` -- a bash test that extracts alias names from
 - Wired into validate.yml as "Run alias parity test" step after existing alias unit tests
 
 **Key file:** `tests/test_alias_parity.sh`
+
+---
+
+## [2026-05-23] Post-sprint tests/CI audit (Sprint 8 wrap)
+
+**Branch:** READ-ONLY audit, no changes  
+**Scope:** tests/**, .github/workflows/**, CI matrix completeness, coverage gaps  
+**Findings:** 6 issues reported (F-1 through F-6) -- missing pre-commit and pre-push hook tests (medium severity gap), uninstall untested (low gap), macOS job incomplete vs Linux parity (medium gap), redundant chmod (improvement), PSScriptAnalyzer hook tests missing (low improvement). Details in `.squad/agents/chip/audit-findings.md`. Top priority: pre-push hook tests (safety gate). Second priority: pre-commit hook tests. Third priority: uninstall scripts.  
+**Findings document:** `.squad/agents/chip/audit-findings.md` (created 2026-05-23)

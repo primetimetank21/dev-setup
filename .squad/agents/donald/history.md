@@ -387,6 +387,11 @@ Added three shutdown control aliases to config/dotfiles/.aliases:
 
 Shutdown control is now available across all platforms: Windows (PowerShell functions) + Unix-like (shell aliases).
 
+### Post-sprint Linux shell audit (2026-05-16)
+- Lens: linux/macos shell scripts
+- 10 findings reported to coordinator (1 medium, 9 low severity)
+- Priority issues: missing -e flag in test error handling, logging duplication in setup.sh, squad-cli version not in .tool-versions
+
 ## Learnings
 
 ### 2026-04-19: Issue #178 — macOS/Linux install_prerequisites divergence

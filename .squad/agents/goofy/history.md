@@ -204,3 +204,9 @@ Fixed three regressions introduced by PR #130:
 - What: Extracted log_info/log_ok/log_warn/log_error into scripts/linux/lib/log.sh and Write-Info/Write-Ok/Write-Warn/Write-Err into scripts/windows/lib/logging.ps1. Updated 8 shell callers + 11 PS callers to source from lib. Removed duplicate definitions.
 - Key findings: Shell tool scripts had drift -- some only defined 2-3 of 4 log functions (gh.sh had only log_info/log_ok, squad-cli.sh missing log_warn). PS uninstall.ps1 uses Write-Host format (not Write-Output) so was left alone. Tests using Invoke-Expression need logging lib pre-loaded and dot-source line stripped since $PSScriptRoot resolves to test dir.
 - Tests: tests/test_shared_logging.sh + Group V (V-1 to V-3) in test_windows_setup.ps1
+
+### Post-sprint Windows/PS audit (2026-05-16)
+- Lens: windows / powershell / ps 5.1 compat
+- 10 findings reported: 1 high-severity bug (nvm.ps1 path resolution), 1 medium (tool error handling), 8 low/improvements
+- 2 pass validations: AllScope alias guards complete, ASCII-only check clean
+- Coordinator can prioritize F-1 (path bug in PR #218), F-4 (error handling), F-2 (encoding consistency) for next sprint

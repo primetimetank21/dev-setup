@@ -737,3 +737,7 @@ Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
 - Merge commit: 10828ae
 - Note: develop is now ready for sprint wrap PR to main.
 - Minor: CHANGELOG insertion splits an Added item under a new Changed header -- non-blocking, tidy in wrap if needed.
+
+### Post-sprint architecture audit (2026-05-16)
+- Lens: architecture / cross-cutting
+- 10 findings reported to coordinator. See orchestration log for details.

@@ -211,3 +211,7 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - Used POSIX `[ "${VAR:-}" = "1" ]` for bash/zsh compatibility
 - Branch: squad/192-tmux-opt-in -> develop
 
+### Post-sprint configs/hooks audit (2026-05-16)
+- Lens: configs / dotfiles / hooks
+- 9 findings reported to coordinator; top 3: .ps1 CRLF in .gitattributes, [[ ]] POSIX compatibility in .aliases, PSScriptAnalyzer advisory mode in pre-push.
+
