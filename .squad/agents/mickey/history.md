@@ -765,3 +765,16 @@ Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
   - P2: #229 (ARCHITECTURE.md refresh), #230 (auth.ps1 move), #231 (gitattributes .ps1), #232 (squad-cli versioning), #233 (pre-push comment), #234 (encoding ASCII)
   - P3: #235 (install-guard defer), #236 (.aliases POSIX), #237 (test harness docs), #238 (uninstall coverage)
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
+
+### Filed P1 pre-commit hygiene hook (2026-05-16)
+
+- **Issue #240**: `hooks: pre-commit hygiene checks (ASCII PS, rogue paths, branch ancestry)`
+- Filed as P1 complement to Jiminy's post-spawn audits — deterministic client-side belt-and-suspenders
+- 4 checks:
+  1. ASCII-only on staged `*.ps1` (CP1252 byte 0x94 fix)
+  2. Rogue path allowlist under `.squad/` per Source of Truth Hierarchy
+  3. Defensive inbox check (gitignore bypass detection)
+  4. Branch ancestry for `squad/*` (must descend from `develop`, not other squad branches)
+- Labels: `priority:p1`, `squad:pluto`, `area:hooks`, `enhancement`
+- Pluto (Config Engineer) owns implementation
+- No go:yes — Earl marks sprint-ready manually
