@@ -87,6 +87,7 @@ if [ -n "$SQUAD_STAGED" ]; then
       .squad/retros/*.md) VALID=1 ;;
       .squad/skills/*/SKILL.md) VALID=1 ;;
       .squad/templates/*.md) VALID=1 ;;
+      .squad/templates/*.template) VALID=1 ;;
       .squad/casting/*.json) VALID=1 ;;
       .squad/identity/*.md) VALID=1 ;;
       .squad/plugins/*.json) VALID=1 ;;
@@ -116,7 +117,7 @@ if [ -n "$SQUAD_STAGED" ]; then
     echo "    .squad/log/*.md"
     echo "    .squad/retros/*.md"
     echo "    .squad/skills/{name}/SKILL.md"
-    echo "    .squad/templates/*.md | .squad/casting/*.json"
+    echo "    .squad/templates/*.md | .squad/templates/*.template | .squad/casting/*.json"
     echo "    .squad/identity/*.md | .squad/plugins/*.json"
     echo "    .squad/team.md | routing.md | ceremonies.md | config.json"
     echo ""

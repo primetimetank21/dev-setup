@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Squad governance upgraded from 0.9.1 to 0.9.4 (dispatch mechanism, `CURRENT_DATETIME` requirement, `name` param in spawn prompts, default models bumped to `claude-sonnet-4.6` / `gpt-5.3-codex`, tier-based agent timeout policy)
+- `.github/workflows/squad-heartbeat.yml` removes noisy cron trigger; Ralph now fires on issue events only
+- `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
+
+### Added
+- `.github/workflows/squad-label-enforce.yml` -- enforces mutual exclusivity for `go:`, `release:`, `type:`, `priority:` label groups
+- `.copilot/skills/error-recovery/SKILL.md` -- new generic error-recovery skill
+- `.squad/skills/squad-upgrade-hygiene/SKILL.md` -- reusable checklist for auditing future `squad upgrade` runs
+- `.squad/templates/{fact-checker-charter.md, loop.md, squad.agent.md.template}` -- new templates from 0.9.4
+- `hooks/pre-commit` now allows `.squad/templates/*.template` files (squad upgrade ships `squad.agent.md.template`)
+
 ## [0.8.0] - 2026-05-16
 
 ### Added
