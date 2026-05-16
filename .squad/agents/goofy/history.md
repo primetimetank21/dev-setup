@@ -263,3 +263,4 @@ Fixed three regressions introduced by PR #130:
 ### PR #257 v3 fix (2026-05-18)
 - v3 fix -- Add-NvmWindowsPaths defensive injection (winget->registry timing race); fixed 2 stale PS 5.1 tests (R-1 nodejs version, T-3 PATH refresh location).
 - v4 fix -- Refresh-SessionPath now MERGES registry into existing $env:Path instead of replacing. Old behavior wiped GH Actions tool-cache Node injection. Skill doc updated. Test T-3c added.
+- v5 fix -- Root cause: winget returns before the inner nvm-setup.exe installer finishes writing files/registry. Replaced Add-NvmWindowsPaths with Wait-ForNvmInstall (polling helper, 90s timeout, 5 candidate paths). Kept v4 Refresh-SessionPath merge fix intact. Updated test T-3b, skill doc (Gotcha 2), CHANGELOG.

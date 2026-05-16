@@ -45,13 +45,18 @@ function Install-Nvm {
             Write-Warn "nvm-windows install failed (winget exit $LASTEXITCODE) -- cannot install Node"
             return
         }
-        Refresh-SessionPath
-        Add-NvmWindowsPaths
-        if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
-            Write-Warn "nvm not found on PATH after install -- open a new terminal and re-run setup"
+        Write-Info "Waiting for nvm-windows installer to finish..."
+        $nvmHome = Wait-ForNvmInstall -TimeoutSeconds 90
+        if (-not $nvmHome) {
+            Write-Warn "nvm-windows installer did not finish within 90s -- open a new terminal and re-run setup"
             return
         }
-        Write-Ok "nvm-windows installed"
+        Refresh-SessionPath
+        if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
+            Write-Warn "nvm not found on PATH after install (NVM_HOME=$nvmHome)"
+            return
+        }
+        Write-Ok "nvm-windows installed at $nvmHome"
     } else {
         Write-Ok "nvm already installed: $(nvm version)"
     }

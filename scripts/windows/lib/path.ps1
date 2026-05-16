@@ -18,13 +18,38 @@ function Refresh-SessionPath {
                  Select-Object -Unique) -join ';'
 }
 
-function Add-NvmWindowsPaths {
-    # Defensive: nvm-windows installer registry PATH update may not be readable
-    # immediately after winget install completes. Inject known install paths.
-    $nvmDir  = Join-Path $env:USERPROFILE 'AppData\Roaming\nvm'
-    $nodeDir = 'C:\Program Files\nodejs'
-    if (Test-Path (Join-Path $nvmDir 'nvm.exe')) {
-        if ($env:Path -notlike "*$nvmDir*")  { $env:Path = "$nvmDir;$env:Path" }
-        if ($env:Path -notlike "*$nodeDir*") { $env:Path = "$nodeDir;$env:Path" }
+function Wait-ForNvmInstall {
+    # Poll for nvm.exe after winget install of nvm-windows.
+    # winget returns before the inner installer finishes writing files,
+    # so we must wait. Returns the discovered NVM_HOME directory, or $null.
+    param([int]$TimeoutSeconds = 90)
+
+    $candidates = @(
+        (Join-Path $env:USERPROFILE 'AppData\Roaming\nvm'),
+        (Join-Path $env:APPDATA 'nvm'),
+        'C:\Program Files\nvm',
+        'C:\ProgramData\nvm',
+        'C:\nvm4w\nvm'
+    ) | Where-Object { $_ } | Select-Object -Unique
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        foreach ($dir in $candidates) {
+            $exe = Join-Path $dir 'nvm.exe'
+            if (Test-Path $exe) {
+                $symlink = if (Test-Path 'C:\Program Files\nodejs') {
+                    'C:\Program Files\nodejs'
+                } else {
+                    Join-Path (Split-Path $dir -Parent) 'nodejs'
+                }
+                if (-not $env:NVM_HOME) { $env:NVM_HOME = $dir }
+                if (-not $env:NVM_SYMLINK) { $env:NVM_SYMLINK = $symlink }
+                if ($env:Path -notlike "*$dir*") { $env:Path = "$dir;$env:Path" }
+                if ($env:Path -notlike "*$symlink*") { $env:Path = "$symlink;$env:Path" }
+                return $dir
+            }
+        }
+        Start-Sleep -Seconds 2
     }
+    return $null
 }

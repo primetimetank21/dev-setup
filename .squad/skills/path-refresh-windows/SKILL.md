@@ -48,10 +48,18 @@ function Refresh-SessionPath {
    this function (before #251) lost them. The current implementation merges
    registry entries into the existing `$env:Path` with deduplication.
 
-2. **Machine before User.** Windows resolves PATH left-to-right. Putting
+2. **winget returns before the installer finishes.** For installers like
+   `CoreyButler.NVMforWindows` that wrap a setup.exe, `winget install --silent`
+   can return BEFORE the inner installer has written files or updated the
+   registry. Calling `Refresh-SessionPath` immediately after may find nothing.
+
+   **Fix:** Poll for the installed binary in known locations with a timeout.
+   See `Wait-ForNvmInstall` in `scripts/windows/lib/path.ps1`.
+
+3. **Machine before User.** Windows resolves PATH left-to-right. Putting
    Machine first matches the default shell behavior.
 
-3. **No equivalent on Linux.** On Linux, `nvm` modifies `$PATH` in the
+4. **No equivalent on Linux.** On Linux, `nvm` modifies `$PATH` in the
    current shell via `source nvm.sh` -- no registry involved.
 
 ---
@@ -59,7 +67,8 @@ function Refresh-SessionPath {
 ## Citations
 
 - `scripts/windows/lib/path.ps1` -- `Refresh-SessionPath` function (PR #201, #251)
-- `scripts/windows/tools/nvm.ps1` -- calls Refresh-SessionPath (PR #201)
+- `scripts/windows/lib/path.ps1` -- `Wait-ForNvmInstall` polling helper (PR #257, #251)
+- `scripts/windows/tools/nvm.ps1` -- calls Refresh-SessionPath + Wait-ForNvmInstall (PR #201, #257)
 - `scripts/windows/tools/vim.ps1` -- earlier inline PATH refresh (same pattern)
 
 ---
@@ -67,3 +76,4 @@ function Refresh-SessionPath {
 ## Changelog
 
 - 2026-05-16: changed from replace to merge. Issue #251 (GH Actions tool-cache Node was being wiped).
+- 2026-05-18: added Wait-ForNvmInstall polling helper. winget returns before nvm-setup.exe finishes; polling 5 candidate paths with 90s timeout. Issue #251, PR #257.

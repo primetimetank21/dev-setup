@@ -1240,14 +1240,23 @@ Test-Scenario "T-3 lib/path.ps1 contains PATH refresh via registry read" {
     }
 }
 
-Test-Scenario "T-3b lib/path.ps1 contains Add-NvmWindowsPaths defensive injection" {
+Test-Scenario "T-3b lib/path.ps1 contains Wait-ForNvmInstall polling helper" {
     $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
     $pathContent = Get-Content $pathLib -Raw
-    $hasFunc = $pathContent -match 'function Add-NvmWindowsPaths'
-    $hasNvmDir = $pathContent -match 'AppData\\Roaming\\nvm'
-    $hasNodeDir = $pathContent -match 'C:\\Program Files\\nodejs'
-    if (-not $hasFunc -or -not $hasNvmDir -or -not $hasNodeDir) {
-        throw "lib/path.ps1 missing Add-NvmWindowsPaths or expected nvm/node paths"
+    $hasFunc = $pathContent -match 'function Wait-ForNvmInstall'
+    $hasTimeout = $pathContent -match '\$TimeoutSeconds'
+    $hasSleep = $pathContent -match 'Start-Sleep'
+    $hasGetDate = $pathContent -match 'Get-Date'
+    $hasRoaming = $pathContent -match 'AppData\\Roaming\\nvm'
+    $hasNvm4w = $pathContent -match 'C:\\nvm4w\\nvm'
+    if (-not $hasFunc -or -not $hasTimeout) {
+        throw "lib/path.ps1 missing Wait-ForNvmInstall or TimeoutSeconds parameter"
+    }
+    if (-not $hasSleep -or -not $hasGetDate) {
+        throw "Wait-ForNvmInstall missing poll loop (Start-Sleep + Get-Date)"
+    }
+    if (-not $hasRoaming -or -not $hasNvm4w) {
+        throw "Wait-ForNvmInstall missing expected candidate paths"
     }
 }
 
