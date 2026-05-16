@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
 
 ### Added
+- Doc (Fact Checker) joins the squad -- new agent addressing the verifier/validator gap from Sprint Q retro. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings (Verified/Unverified/Contradicted/Needs Investigation). Charter: `.squad/agents/doc/charter.md`.
 - `.github/workflows/squad-label-enforce.yml` -- enforces mutual exclusivity for `go:`, `release:`, `type:`, `priority:` label groups
 - `.copilot/skills/error-recovery/SKILL.md` -- new generic error-recovery skill
 - `.squad/skills/squad-upgrade-hygiene/SKILL.md` -- reusable checklist for auditing future `squad upgrade` runs
