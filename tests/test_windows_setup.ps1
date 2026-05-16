@@ -42,11 +42,11 @@ function Test-Scenario {
     Write-Host "`n=== TEST: $Name ===" -ForegroundColor Cyan
     try {
         & $Test
-        Write-Host "✅ PASS: $Name" -ForegroundColor Green
+        Write-Host "[PASS] $Name" -ForegroundColor Green
         $script:TestsPassed++
     }
     catch {
-        Write-Host "❌ FAIL: $Name" -ForegroundColor Red
+        Write-Host "[FAIL] $Name" -ForegroundColor Red
         Write-Host "  Error: $_" -ForegroundColor Red
         $script:TestsFailed++
     }
@@ -55,7 +55,7 @@ function Test-Scenario {
 function Write-Skip {
     param([string]$Name, [string]$Reason)
     Write-Host "`n=== TEST: $Name ===" -ForegroundColor Cyan
-    Write-Host "⏭️  SKIP: $Name" -ForegroundColor Yellow
+    Write-Host "[SKIP] $Name" -ForegroundColor Yellow
     Write-Host "  Reason: $Reason" -ForegroundColor Yellow
     $script:TestsSkipped++
 }
@@ -148,7 +148,7 @@ Test-Scenario "PS5.x compat: accessing undefined variable under Set-StrictMode t
 
 Test-Scenario "PS5.x compat: Test-Path Variable: guard prevents throw on undefined var" {
     # The fixed pattern: (Test-Path Variable:VarName) -and $VarName
-    # Safe on every PS version — returns false without throwing.
+    # Safe on every PS version - returns false without throwing.
     & {
         Set-StrictMode -Version Latest
         $safe = (Test-Path Variable:__DevSetupUndefinedTestVar__) -and $__DevSetupUndefinedTestVar__
@@ -160,8 +160,8 @@ Test-Scenario "PS5.x compat: Test-Path Variable: guard prevents throw on undefin
 
 Test-Scenario "PS5.x compat: IsLinux guard returns false on Windows" {
     # Verifies the specific fix from c06ceb2.
-    # PS 5.x: $IsLinux is undefined → (Test-Path ...) returns $false → short-circuit → $false
-    # PS 7+ on Windows: $IsLinux is $false → (Test-Path ...) is $true, but $IsLinux is $false → $false
+    # PS 5.x: $IsLinux is undefined -> (Test-Path ...) returns $false -> short-circuit -> $false
+    # PS 7+ on Windows: $IsLinux is $false -> (Test-Path ...) is $true, but $IsLinux is $false -> $false
     & {
         Set-StrictMode -Version Latest
         $isLinux = (Test-Path Variable:IsLinux) -and $IsLinux
@@ -303,14 +303,14 @@ Test-Scenario "Windows setup.ps1 uses winget for Copilot CLI (not gh extension)"
 }
 
 Test-Scenario "Copilot CLI: already-installed short-circuit logic is correct" {
-    # Unit-tests the guard pattern inline — no winget required.
-    # Simulates: Get-Command copilot returns non-null → winget must NOT be called.
+    # Unit-tests the guard pattern inline - no winget required.
+    # Simulates: Get-Command copilot returns non-null -> winget must NOT be called.
     $wouldInstall = $false
 
     $mockCopilotCmd = [pscustomobject]@{ Name = 'copilot'; Source = 'mock' }
 
     if ($null -ne $mockCopilotCmd) {
-        # Production path: Write-Ok + return — install skipped
+        # Production path: Write-Ok + return - install skipped
     }
     else {
         $wouldInstall = $true
@@ -321,7 +321,7 @@ Test-Scenario "Copilot CLI: already-installed short-circuit logic is correct" {
     }
 }
 
-# Live detection test — conditional on whether the binary is present in this environment.
+# Live detection test - conditional on whether the binary is present in this environment.
 $copilotBin = Get-Command copilot -ErrorAction SilentlyContinue
 if ($null -ne $copilotBin) {
     Test-Scenario "Copilot CLI: Install-CopilotCli reports already-installed (live)" {
@@ -633,7 +633,7 @@ Test-Scenario "J-3: Write-PowerShellProfile body does NOT contain return after s
     if ($fn.Count -eq 0) { throw "Write-PowerShellProfile function not found" }
     $fnBody = $fn[0].Body.Extent.Text
     # The old skip logic had "return" right after the sentinel check
-    # The new strip logic should NOT have "return" — it strips and falls through
+    # The new strip logic should NOT have "return" - it strips and falls through
     if ($fnBody -match 'Select-String.*BEGIN dev-setup profile.*\)\s*\{\s*[^}]*?\breturn\b') {
         throw "Write-PowerShellProfile still has 'return' after sentinel check - should strip+re-inject instead"
     }
@@ -1023,6 +1023,6 @@ if ($TestsFailed -gt 0) {
     exit 1
 }
 else {
-    Write-Host "✅ All tests passed!" -ForegroundColor Green
+    Write-Host "All tests passed!" -ForegroundColor Green
     exit 0
 }
