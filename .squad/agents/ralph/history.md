@@ -212,3 +212,26 @@ Initial setup complete.
 - **gh auth:** ✓ logged in as primetimetank21
 - **CHANGELOG:** [Unreleased] section exists (queue for next release)
 - **Verdict:** READY FOR NEXT SESSION
+
+## Sprint Q + 0.8.0 Release Cleanup -- 2026-05-16
+
+- **Context:** After Sprint Q P0 fixes (#249, #251, #252) merged via #257/#256/#258, cut 0.8.0 release (PR #259 + #260) and shipped GH release. Final EOS sweep.
+- **Cleanup actions:**
+  - Deleted local `release/0.8.0` branch (after PR #259 merged)
+  - Auto-deleted remote `release/0.8.0` (via `--delete-branch` on merge)
+  - Pruned stale local tracking ref `origin/release/0.8.0`
+  - Verified `.squad/log/` and `.squad/orchestration-log/` files are intentionally gitignored (not strays)
+  - Confirmed `.squad/decisions/inbox/` empty (Scribe drained)
+  - Confirmed no rogue `.bak` / `.tmp` files anywhere
+- **Final repo state:**
+  - main: `7d9be7b` (PR #260 merge)
+  - develop: `df3a1cd` (synced with main + retro work pending)
+  - Tag: `0.8.0` pushed
+  - GH release: published at https://github.com/primetimetank21/dev-setup/releases/tag/0.8.0
+  - Local branches: develop, main (and current retro branch)
+  - Remote branches: develop, main
+  - Worktrees: 1 (primary)
+  - Open PRs: 0 (excluding upcoming retro PR)
+  - Open `go:yes` issues: 0
+- **Standing directive lock-in:** EOS sweep confirmed in charter. Every session ends with the 12-point sweep + branch reaping.
+- **Verdict:** CLEAN. Sprint Q + 0.8.0 wrap complete.

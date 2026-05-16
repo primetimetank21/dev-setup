@@ -84,6 +84,7 @@ if [ -n "$SQUAD_STAGED" ]; then
       .squad/decisions/inbox/*.md) VALID=1 ;;
       .squad/orchestration-log/*.md) VALID=1 ;;
       .squad/log/*.md) VALID=1 ;;
+      .squad/retros/*.md) VALID=1 ;;
       .squad/skills/*/SKILL.md) VALID=1 ;;
       .squad/templates/*.md) VALID=1 ;;
       .squad/casting/*.json) VALID=1 ;;
@@ -113,6 +114,7 @@ if [ -n "$SQUAD_STAGED" ]; then
     echo "    .squad/decisions/inbox/*.md (gitignored -- should not be staged)"
     echo "    .squad/orchestration-log/*.md"
     echo "    .squad/log/*.md"
+    echo "    .squad/retros/*.md"
     echo "    .squad/skills/{name}/SKILL.md"
     echo "    .squad/templates/*.md | .squad/casting/*.json"
     echo "    .squad/identity/*.md | .squad/plugins/*.json"

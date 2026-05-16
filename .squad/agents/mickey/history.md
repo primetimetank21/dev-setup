@@ -831,3 +831,22 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
 - 0.8.0 tag will be created AFTER PR merges to develop and develop merges to main (cannot tag unreleased code on a feature branch)
 
 - **2026-05-16 -- Re-reviewed PR #245 after Goofy revision.** Verdict: APPROVE. All 6 assertion adds confirmed (squad --version on Linux/macOS, squad/psmux/tmux on Windows, in both fresh-shell and post-idempotency phases). Hard-fail enforced, no || true softening. ASCII clean. Goofy history.md updated. Merged via --admin after CI settled.
+
+## Sprint Q Retro Authored -- 2026-05-16
+
+- **Scope:** Post-0.8.0 release retro covering Sprint Q P0 batch (#249, #251, #252) and the 9-round Goofy saga on #251.
+- **Output:** `.squad/retros/2026-05-16-sprint-q-retro.md`
+- **Key findings:**
+  - 8 of 9 rounds on #251 were reactive (patching symptoms surfaced by previous failure), not predictive (upfront failure-mode analysis)
+  - Branch ancestry bleed = 3rd occurrence -- needs prominent placement in CONTRIBUTING.md
+  - Stale branches keep accumulating despite `--delete-branch` on merge -- Ralph EOS sweep is now standing
+  - No verifier/validator role -- Earl had to double/triple-check claims of "done." Open question for Sprint R kickoff
+  - HYGIENE backlog underprioritized -- bumped to P0/P1 for next sprint
+- **Action items filed:**
+  - [Coordinator] "Two strikes" rule -- failure-mode analysis required before round 3 of any fix
+  - [Mickey] Make "branch from develop, never from another squad branch" prominent in CONTRIBUTING.md
+  - [Earl + Coordinator] Decide verifier/validator scope (extend Jiminy / new teammate / process change) before Sprint R
+  - [Mickey] Bump HYGIENE backlog (#224, #227, #228, branch hygiene automation)
+  - [Chip] Track E2E nightly flake rate -- flip `continue-on-error: false` after 2-3 green nightlies (#253)
+  - [Mickey] CHANGELOG conflict strategy doc
+- **Outcome:** Sprint Q closed. 0.8.0 shipped. Sprint R agenda has HYGIENE bumped, two-strikes rule, validator scope decision.
