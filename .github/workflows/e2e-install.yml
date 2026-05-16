@@ -76,8 +76,19 @@ jobs:
             tmux -V
 
             echo "--- Squad CLI ---"
-            if ! squad --version; then
-              echo "FAIL: squad CLI not found or not executable. Is @primetimetank21/squad-cli installed via npm?"
+            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
+              echo "FAIL: squad CLI not found or not executable. Is @bradygaster/squad-cli installed via npm?"
+              exit 1
+            }
+            echo "squad --version: $SQUAD_VER_OUT"
+            # Regression: assert no ''session persistence may fail'' warning (#255).
+            # This warning was traced to @github/copilot-sdk (transitive dep) on
+            # environments where node:sqlite session storage cannot be initialized.
+            # It is absent in squad-cli 0.9.4+ when invoked with --version.
+            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
+              echo "FAIL: squad --version emitted ''session persistence may fail'' (#255)"
+              echo "  This indicates a degraded squad-cli install -- check HOME writability"
+              echo "  and node:sqlite availability (requires Node >= 22.5.0)."
               exit 1
             fi
 
@@ -115,8 +126,12 @@ jobs:
 
             echo "--- Post-idempotency assertions ---"
             tmux -V
-            if ! squad --version; then
-              echo "FAIL: squad CLI not found after idempotency rerun. Is @primetimetank21/squad-cli installed via npm?"
+            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
+              echo "FAIL: squad CLI not found after idempotency rerun. Is @bradygaster/squad-cli installed via npm?"
+              exit 1
+            }
+            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
+              echo "FAIL: squad --version emitted ''session persistence may fail'' after idempotency rerun (#255)"
               exit 1
             fi
             node --version
@@ -219,8 +234,15 @@ jobs:
             tmux -V
 
             echo "--- Squad CLI ---"
-            if ! squad --version; then
-              echo "FAIL: squad CLI not found or not executable. Is @primetimetank21/squad-cli installed via npm?"
+            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
+              echo "FAIL: squad CLI not found or not executable. Is @bradygaster/squad-cli installed via npm?"
+              exit 1
+            }
+            echo "squad --version: $SQUAD_VER_OUT"
+            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
+              echo "FAIL: squad --version emitted ''session persistence may fail'' (#255)"
+              echo "  This indicates a degraded squad-cli install -- check HOME writability"
+              echo "  and node:sqlite availability (requires Node >= 22.5.0)."
               exit 1
             fi
 
@@ -258,8 +280,12 @@ jobs:
 
             echo "--- Post-idempotency assertions ---"
             tmux -V
-            if ! squad --version; then
-              echo "FAIL: squad CLI not found after idempotency rerun. Is @primetimetank21/squad-cli installed via npm?"
+            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
+              echo "FAIL: squad CLI not found after idempotency rerun. Is @bradygaster/squad-cli installed via npm?"
+              exit 1
+            }
+            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
+              echo "FAIL: squad --version emitted ''session persistence may fail'' after idempotency rerun (#255)"
               exit 1
             fi
             node --version

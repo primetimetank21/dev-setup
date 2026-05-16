@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `scripts/linux/uninstall.sh` and `scripts/windows/uninstall.ps1` now run `git config --global --unset-all core.hooksPath` during uninstall so git falls back to per-repo `.git/hooks` defaults instead of pointing at the (now-deleted) dev-setup hooks dir (closes #271).
 - `.github/workflows/e2e-install.yml` -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
+- `scripts/linux/tools/squad-cli.sh` -- investigated 'session persistence may fail' warning (#255). Root cause: @github/copilot-sdk (transitive dep) attempts node:sqlite session storage on startup; on environments without write access to HOME, it emits this warning. Verified absent in squad-cli 0.9.4 --version path. Added regression guard: e2e-install.yml now captures squad --version output and fails if the warning appears. Static installer tests (test_nvm_bootstrap.sh T10-T11) verify correct package name and stderr capture.
 - `scripts/windows/tools/*.ps1` -- winget install calls now assert `$LASTEXITCODE` and surface failures to `setup.ps1` (closes #226). 7 install sites previously swallowed non-zero exits silently.
 
 ### Added

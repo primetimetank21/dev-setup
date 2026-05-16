@@ -92,6 +92,27 @@ else
   fail "copilot-cli.sh still uses bare binary-exists guard (no version comparison)"
 fi
 
+# T10: squad-cli.sh installs from the correct npm package (#255)
+# Root cause investigation: 'session persistence may fail' warning was reported
+# in e2e runs. Confirmed it originates in @github/copilot-sdk (a transitive dep
+# of @bradygaster/squad-cli). Verified absent in 0.9.4. This test ensures the
+# correct package name is installed so the fix is not silently reverted.
+if grep -q '@bradygaster/squad-cli' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh installs @bradygaster/squad-cli (correct package)"
+else
+  fail "squad-cli.sh does not install @bradygaster/squad-cli"
+fi
+
+# T11: squad-cli.sh already-installed check captures stderr with 2>&1 (#255)
+# When squad --version is run, any 'session persistence may fail' warning
+# emitted to stderr must appear in the installer log so it is visible in CI.
+# The already-installed branch uses: squad --version 2>&1
+if grep -q 'squad --version 2>&1' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh already-installed check captures stderr (2>&1)"
+else
+  fail "squad-cli.sh already-installed check does not capture stderr -- warnings will be invisible in CI"
+fi
+
 # --- Summary ---
 
 echo ""
