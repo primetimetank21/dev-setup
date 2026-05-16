@@ -23,32 +23,72 @@ Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk aw
 dev-setup/
 ├── setup.sh                        # Entry point — Unix (Linux / macOS / WSL)
 ├── setup.ps1                       # Entry point — Windows (PowerShell)
+├── ARCHITECTURE.md                 # This file
+├── CHANGELOG.md                    # Keep-a-Changelog format
+├── CONTRIBUTING.md                 # Contribution guide
+├── README.md                       # Project overview and quick start
 │
 ├── scripts/
 │   ├── linux/
-│   │   ├── setup.sh                # Core Linux/macOS/WSL installer (Donald)
-│   │   └── tools/                  # Individual tool scripts, sourced by core
-│   │       ├── zsh.sh              # Install zsh + set as default shell (Donald #4)
-│   │       ├── uv.sh               # Install uv Python package manager (Donald #5)
-│   │       ├── nvm.sh              # Install nvm + Node LTS (Donald #6)
-│   │       ├── gh.sh               # Install GitHub CLI (Donald #7)
-│   │       └── copilot-cli.sh      # Install GitHub Copilot CLI (Donald #7)
+│   │   ├── setup.sh               # Core Linux/macOS/WSL installer (Donald)
+│   │   └── tools/                  # Individual tool scripts, run by core
+│   │       ├── auth.sh            # GitHub CLI authentication (interactive)
+│   │       ├── copilot-cli.sh     # Install GitHub Copilot CLI
+│   │       ├── gh.sh             # Install GitHub CLI
+│   │       ├── nvm.sh            # Install nvm + Node LTS
+│   │       ├── squad-cli.sh      # Install squad-cli (npm)
+│   │       ├── uv.sh             # Install uv Python package manager
+│   │       └── zsh.sh            # Install zsh + set as default shell
 │   └── windows/
-│       └── setup.ps1               # Core Windows installer (Goofy #2)
+│       ├── setup.ps1              # Orchestrator — dot-sources tool scripts below
+│       └── tools/                  # Per-tool install scripts (PR #195 split)
+│           ├── copilot.ps1        # GitHub Copilot CLI
+│           ├── gh.ps1            # GitHub CLI
+│           ├── git.ps1           # Git configuration
+│           ├── nvm.ps1           # nvm + Node LTS
+│           ├── profile.ps1       # PowerShell profile injection
+│           ├── psmux.ps1         # psmux terminal multiplexer
+│           ├── squad-cli.ps1     # squad-cli (npm)
+│           ├── uv.ps1            # uv Python package manager
+│           └── vim.ps1           # Vim editor
 │
 ├── config/
 │   └── dotfiles/                   # Dotfile templates (Pluto #8, #10, #11)
-│       └── README.md               # Documents each dotfile and install behaviour
-│
-├── .github/
-│   └── workflows/                  # CI (Chip)
+│       ├── .aliases               # Shell aliases (git, dev, utility)
+│       ├── .editorconfig          # Editor formatting rules
+│       ├── .gitconfig.template    # Git config template
+│       ├── .npmrc.template        # npm config template
+│       ├── .vimrc                 # Vim configuration
+│       ├── .zshrc.template        # Zsh config template
+│       ├── install.sh             # Dotfile installer script
+│       └── README.md              # Documents each dotfile and install behaviour
 │
 ├── hooks/
-│   └── pre-push                # Pre-push hook: blocks pushes to main; advisory shellcheck (.sh) and PSScriptAnalyzer (.ps1)
+│   ├── commit-msg                 # Enforce Conventional Commits format
+│   ├── pre-commit                 # Shellcheck on staged .sh files
+│   └── pre-push                   # Block pushes to main; advisory linting
 │
-├── .squad/                         # Internal squad coordination (not shipped)
+├── tests/                          # Validation tests
+│   ├── README.md                  # Test documentation
+│   ├── test_aliases.sh            # Alias loading tests (bash)
+│   ├── test_git_hooks.ps1         # Git hook tests (PowerShell)
+│   ├── test_idempotency.sh        # Idempotency tests (bash)
+│   ├── test_remove_custom_item.ps1 # Custom item removal tests (PowerShell)
+│   └── test_windows_setup.ps1     # Windows setup tests (PowerShell)
 │
-└── ARCHITECTURE.md                 # This file
+├── .devcontainer/
+│   ├── devcontainer.json          # Dev Container / Codespace config
+│   └── README.md                  # Dev container documentation
+│
+├── .github/
+│   └── workflows/                  # CI and squad automation (Chip)
+│       ├── squad-heartbeat.yml
+│       ├── squad-issue-assign.yml
+│       ├── squad-triage.yml
+│       ├── sync-squad-labels.yml
+│       └── validate.yml           # Main CI validation
+│
+└── .squad/                         # Internal squad coordination (not shipped)
 ```
 
 ---
@@ -77,6 +117,8 @@ The **only file a Windows user needs to know about**. It:
 
 1. Detects the platform via PowerShell's `$IsWindows` / `$IsLinux` / `$IsMacOS`
 2. Delegates to `scripts\windows\setup.ps1`
+
+`scripts\windows\setup.ps1` is a ~75-line orchestrator that dot-sources individual tool scripts from `scripts\windows\tools\` (split from a monolith in PR #195).
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File setup.ps1
@@ -177,10 +219,10 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 The tool scripts in `scripts/linux/tools/` must run in this order (enforced by `scripts/linux/setup.sh`):
 
 ```
-zsh → uv → nvm → gh → copilot-cli
+zsh → uv → nvm → gh → auth → copilot-cli → squad-cli
 ```
 
-`copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `gh` auth step is handled separately (issue #9) as it requires interactive input.
+`copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `auth` script handles interactive GitHub CLI authentication (issue #9). `squad-cli` depends on `nvm` (Node/npm).
 
 ---
 
@@ -207,12 +249,19 @@ This means running `bash setup.sh` on a fully-configured machine is a no-op.
 | `setup.sh` (root) | Mickey | #3 |
 | `setup.ps1` (root) | Mickey | #3 |
 | `scripts/linux/setup.sh` | Donald | #1 |
+| `scripts/linux/tools/auth.sh` | Donald | #9 |
 | `scripts/linux/tools/zsh.sh` | Donald | #4 |
 | `scripts/linux/tools/uv.sh` | Donald | #5 |
 | `scripts/linux/tools/nvm.sh` | Donald | #6 |
 | `scripts/linux/tools/gh.sh` | Donald | #7 |
 | `scripts/linux/tools/copilot-cli.sh` | Donald | #7 |
+| `scripts/linux/tools/squad-cli.sh` | Donald | — |
 | `scripts/windows/setup.ps1` | Goofy | #2 |
+| `scripts/windows/tools/` | Goofy | #195 |
+| `hooks/pre-commit` | Goofy | #138 |
+| `hooks/commit-msg` | Goofy | #138 |
 | `hooks/pre-push` | Goofy | #138, #147 |
+| `tests/` | Chip | — |
 | `config/dotfiles/` | Pluto | #8, #10, #11 |
+| `.devcontainer/` | Chip | — |
 | `.github/workflows/` | Chip | #12, #13 |

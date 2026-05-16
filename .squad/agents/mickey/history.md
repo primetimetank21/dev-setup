@@ -668,3 +668,11 @@ Reviewed Goofy's PS 5.1 compatibility fix addressing two root causes from issue 
 **Outcome:** `origin/develop` now has 3 new merge commits (`bf8f72a`, `53186c8`, `bd1739b`) in order. All squad branches deleted. Three issues closed (#179, #188, #194).
 
 **Key Learning:** GitHub's "Closes #N" auto-linker is fragile when PR body markdown is malformed (escaped backticks/backslashes from agent serialization can break the parse). After every merge, explicitly check the referenced issue state and close manually if still OPEN. Cheaper than chasing dangling issues later in sprint wrap-up.
+
+
+### 2026-05-04 — Issue #182: Refresh ARCHITECTURE.md + README.md file trees
+- Updated file-tree diagrams in both docs to reflect current repo state
+- Added missing entries: auth.sh, squad-cli.sh, hooks/pre-commit, hooks/commit-msg, tests/, .devcontainer/, config/dotfiles/install.sh, CHANGELOG.md, windows/tools/ split
+- Updated Team Ownership Map and Dependency Order section
+- Confirmed examples/ directory is not referenced (removed in PR #202)
+- Added CHANGELOG entry under [Unreleased] -> Changed

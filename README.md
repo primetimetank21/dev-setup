@@ -81,22 +81,43 @@ After running setup, complete these steps to activate your tools:
 dev-setup/
 ├── setup.sh                  — Entry point for Linux / macOS / WSL
 ├── setup.ps1                 — Entry point for Windows (PowerShell)
+├── ARCHITECTURE.md           — Technical architecture and team ownership map
+├── CHANGELOG.md              — Release history (Keep a Changelog format)
+├── CONTRIBUTING.md           — Contribution guide
 ├── scripts/
 │   ├── linux/
 │   │   ├── setup.sh          — Core Linux/macOS installer (orchestrates tool scripts)
 │   │   └── tools/            — Individual tool install scripts
-│   │       ├── zsh.sh
-│   │       ├── uv.sh
-│   │       ├── nvm.sh
+│   │       ├── auth.sh       — GitHub CLI authentication (interactive)
+│   │       ├── copilot-cli.sh
 │   │       ├── gh.sh
-│   │       └── copilot-cli.sh
+│   │       ├── nvm.sh
+│   │       ├── squad-cli.sh  — squad-cli (npm)
+│   │       ├── uv.sh
+│   │       └── zsh.sh
 │   └── windows/
-│       └── setup.ps1         — Core Windows installer (PowerShell)
+│       ├── setup.ps1         — Orchestrator (dot-sources tools/ scripts)
+│       └── tools/            — Per-tool install scripts
+│           ├── copilot.ps1, gh.ps1, git.ps1, nvm.ps1
+│           ├── profile.ps1, psmux.ps1, squad-cli.ps1
+│           ├── uv.ps1, vim.ps1
+│           └── (9 files total)
 ├── config/
-│   └── dotfiles/             — Dotfile templates (.gitconfig, .editorconfig, .npmrc)
-├── .github/
-│   └── workflows/            — CI validation workflows (GitHub Actions)
-└── ARCHITECTURE.md           — Technical architecture and team ownership map
+│   └── dotfiles/             — Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
+│       └── install.sh        — Dotfile installer
+├── hooks/
+│   ├── commit-msg            — Enforce Conventional Commits
+│   ├── pre-commit            — Shellcheck on staged .sh files
+│   └── pre-push             — Block pushes to main; advisory linting
+├── tests/                    — Validation tests (bash + PowerShell)
+│   ├── test_aliases.sh
+│   ├── test_git_hooks.ps1
+│   ├── test_idempotency.sh
+│   ├── test_remove_custom_item.ps1
+│   └── test_windows_setup.ps1
+├── .devcontainer/            — Dev Container / Codespace configuration
+├── .github/workflows/        — CI validation and squad automation
+└── .squad/                   — Internal squad coordination (not shipped)
 ```
 
 Root entry points (`setup.sh`, `setup.ps1`) are thin routers — they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
