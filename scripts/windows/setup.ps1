@@ -33,6 +33,7 @@ function Test-WingetAvailable {
 . "$PSScriptRoot\tools\squad-cli.ps1"
 . "$PSScriptRoot\tools\dotfiles.ps1"
 . "$PSScriptRoot\tools\profile.ps1"
+. "$PSScriptRoot\auth.ps1"
 
 function Install-GitHook {
     Write-Info "Configuring git hooks..."
@@ -58,6 +59,7 @@ function Main {
     Install-Uv
     Install-Nvm
     Install-GhCli
+    Invoke-GhAuth
     Install-Vim
     Install-Psmux
     Install-CopilotCli
@@ -71,7 +73,6 @@ function Main {
     Write-Info "Next steps:"
     Write-Info "  1. Restart your terminal to apply PATH changes"
     Write-Info "  2. Run: nvm install lts && nvm use lts"
-    Write-Info "  3. Run: gh auth login"
 }
 
 Main

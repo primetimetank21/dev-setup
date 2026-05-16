@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Windows GitHub auth step via `scripts/windows/auth.ps1` (closes #191)
 - `.tool-versions` file for pinning tool versions (nodejs, nvm, uv, copilot-cli)
 - `scripts/lib/read-tool-version.sh` -- POSIX sh helper to read pinned versions
 - `scripts/lib/Read-ToolVersion.ps1` -- PowerShell `Get-ToolVersion` function
