@@ -45,7 +45,7 @@ Every verified item gets one of:
 
 ## When I'm Triggered
 
-- **Auto-trigger (via routing):** Tasks tagged with `review`, `verify`, `fact-check`, `audit`, or `double-check`
+- **Auto-trigger (via routing):** Tasks tagged with `review`, `verify`, `fact-check`, `audit`
 - **Manual:** User says "fact-check this", "verify these claims", "double-check", "Doc, check this"
 - **Post-research:** After any agent produces research output or external references
 
