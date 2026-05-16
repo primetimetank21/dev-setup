@@ -89,6 +89,11 @@ Test-Scenario "Hook files exist and are non-empty" {
 # ---------------------------------------------------------------------------
 # Group B: commit-msg hook validation
 # ---------------------------------------------------------------------------
+# NOTE: Temp commit-msg files MUST be written with -Encoding ASCII (not UTF8).
+# PS 5.1's Set-Content -Encoding UTF8 writes UTF-8 WITH BOM, which the POSIX
+# sh-based commit-msg hook reads as the first bytes of the line, breaking the
+# conventional-commits regex. ASCII is safe on both PS 5.1 and PS 7 and the
+# test content is pure ASCII anyway.
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
 Write-Host " Group B: commit-msg hook validation" -ForegroundColor Cyan
@@ -97,7 +102,7 @@ Write-Host "========================================================" -Foregroun
 Test-Scenario "commit-msg hook rejects non-conventional message" {
     $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_$(Get-Random).txt"
     try {
-        Set-Content $tempMsgFile -Value "This is not conventional" -Encoding UTF8
+        Set-Content $tempMsgFile -Value "This is not conventional" -Encoding ASCII
         
         $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
         
@@ -125,7 +130,7 @@ Test-Scenario "commit-msg hook rejects non-conventional message" {
 Test-Scenario "commit-msg hook accepts valid conventional message" {
     $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_valid_$(Get-Random).txt"
     try {
-        Set-Content $tempMsgFile -Value "feat(hooks): add commit message validation" -Encoding UTF8
+        Set-Content $tempMsgFile -Value "feat(hooks): add commit message validation" -Encoding ASCII
         
         $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
         
@@ -163,7 +168,7 @@ Test-Scenario "commit-msg hook accepts multiple valid formats" {
     foreach ($msg in $validMessages) {
         $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_multi_$(Get-Random).txt"
         try {
-            Set-Content $tempMsgFile -Value $msg -Encoding UTF8
+            Set-Content $tempMsgFile -Value $msg -Encoding ASCII
             
             $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
             
