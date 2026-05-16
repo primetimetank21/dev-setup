@@ -30,7 +30,7 @@ restore_backup() {
   # Prefer newest timestamped backup; fall back to legacy .bak
   local newest
   # shellcheck disable=SC2012
-  newest=$(ls -t "${target}.bak."* 2>/dev/null | head -n 1)
+  newest=$(ls -t "${target}.bak."* 2>/dev/null | head -n 1) || newest=''
   if [[ -n "$newest" ]]; then
     mv "$newest" "$target"
     ok "Restored $target from $(basename "$newest")"
