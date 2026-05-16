@@ -19,8 +19,12 @@ export NVM_DIR="$HOME/.nvm"
 
 # ── Startup ──────────────────────────────────────────────────────────────────
 
-# Launch or attach to a tmux session on shell startup (no-op if start_up not defined)
-type start_up &>/dev/null && start_up
+# Auto-attach tmux on shell startup when TMUX_AUTOSTART=1 is exported.
+# Default OFF -- export TMUX_AUTOSTART=1 in your env (or ~/.zshrc) to keep
+# the legacy auto-attach behavior.
+if [ "${TMUX_AUTOSTART:-}" = "1" ]; then
+  type start_up &>/dev/null && start_up
+fi
 
 # ── Prompt (optional — customize or use oh-my-zsh/starship) ─────────────────
 

@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modular tool installer split -- 451-line `setup.ps1` monolith refactored into 76-line orchestrator + 9 per-tool files under `scripts/windows/tools/` (PR #195)
 - PS 5.1 test groups N, O, P and ASCII-clean test runner (PR #200)
 
+### Changed
+- Made tmux auto-attach opt-in via `TMUX_AUTOSTART=1` env var (was always-on)
+
 ### Fixed
 - PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)
 
