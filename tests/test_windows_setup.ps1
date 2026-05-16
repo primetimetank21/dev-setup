@@ -1180,8 +1180,14 @@ Test-Scenario "S-3 Invoke-GhAuth does not prompt when already authenticated" {
         Write-Host "[SKIP] gh not on PATH" -ForegroundColor Yellow
         return
     }
-    $null = gh auth status 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $isAuthed = $false
+    try {
+        $authOut = & gh auth status 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0) { $isAuthed = $true }
+    } catch {
+        # gh auth status failed - not authenticated
+    }
+    if (-not $isAuthed) {
         $script:TestsPassed--
         $script:TestsSkipped++
         Write-Host "[SKIP] not authenticated" -ForegroundColor Yellow

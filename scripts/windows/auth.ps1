@@ -25,13 +25,19 @@ function Invoke-GhAuth {
     }
 
     # Already authenticated?
-    $null = gh auth status 2>&1
-    if ($LASTEXITCODE -eq 0) {
+    $isAuthed = $false
+    try {
+        $null = & gh auth status 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0) { $isAuthed = $true }
+    } catch {
+        # gh auth status failed - not authenticated
+    }
+    if ($isAuthed) {
         $ghUser = 'authenticated'
         try {
-            $apiOut = gh api user --jq '.login' 2>&1
+            $apiOut = & gh api user --jq '.login' 2>&1 | Out-String
             if ($LASTEXITCODE -eq 0 -and $apiOut) {
-                $ghUser = $apiOut
+                $ghUser = $apiOut.Trim()
             }
         } catch {
             # ignore - fall back to generic message
@@ -64,13 +70,19 @@ function Invoke-GhAuth {
     Write-Host ''
 
     # Verify result
-    $null = gh auth status 2>&1
-    if ($LASTEXITCODE -eq 0) {
+    $loginOk = $false
+    try {
+        $null = & gh auth status 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0) { $loginOk = $true }
+    } catch {
+        # auth status failed
+    }
+    if ($loginOk) {
         $ghUser = 'authenticated'
         try {
-            $apiOut = gh api user --jq '.login' 2>&1
+            $apiOut = & gh api user --jq '.login' 2>&1 | Out-String
             if ($LASTEXITCODE -eq 0 -and $apiOut) {
-                $ghUser = $apiOut
+                $ghUser = $apiOut.Trim()
             }
         } catch {
             # ignore
