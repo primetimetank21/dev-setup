@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Windows now installs dotfiles (gitconfig, editorconfig, npmrc, vimrc) with .bak backup (PR #180)
 - CI now runs `tests/test_git_hooks.ps1` to catch git hook regressions
 - Alias parity test between Linux .aliases and Windows PowerShell profile (PR #187)
 - Shutdown aliases: `sdn`, `tsdn`, `cancel_tsdn` for Windows and Linux (PRs #175-#177)
