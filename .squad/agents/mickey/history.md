@@ -829,3 +829,5 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
 - Sprint 2 had no explicit "release:" commit -- used the sprint work-log doc commit as anchor
 - Sprint 7's last feature PR (#170) was followed by a develop->main merge (#172) on the same day -- used the merge as it represents the actual release point
 - 0.8.0 tag will be created AFTER PR merges to develop and develop merges to main (cannot tag unreleased code on a feature branch)
+
+- **2026-05-16 -- Re-reviewed PR #245 after Goofy revision.** Verdict: APPROVE. All 6 assertion adds confirmed (squad --version on Linux/macOS, squad/psmux/tmux on Windows, in both fresh-shell and post-idempotency phases). Hard-fail enforced, no || true softening. ASCII clean. Goofy history.md updated. Merged via --admin after CI settled.
