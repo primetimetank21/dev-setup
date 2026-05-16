@@ -216,3 +216,18 @@ Fixed three regressions introduced by PR #130:
 - **Method:** Systematic file inspection + citations to exact locations; compared against ps51-runtime-file-encoding skill
 - **Report:** .squad/agents/goofy/VERIFICATION_REPORT.md (13KB, detailed analysis per finding)
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
+
+### Retro Action: PR Template with Hygiene Checklist (2026-05-17)
+- **Retro:** 2026-05-16 hygiene retro, action item `retro-pr-template`
+- **Context:** Recurring sprint hygiene gaps — agents forget to update history.md, drain decisions inbox, capture skills, verify ASCII-only compliance in PS files. Root cause: No visible checklist at PR authoring time. Goofy owned this action item as closure on #215 miss (forgot to update history.md when Chip merged PR #215 tool-versions feature).
+- **Solution:** Created `.github/pull_request_template.md` with 8-item hygiene checklist:
+  1. Updated `.squad/agents/{name}/history.md` with Learnings entry
+  2. Decisions inbox drained (or N/A)
+  3. Skill captured for new pattern (or N/A)
+  4. ASCII-only enforcement for PS/YAML files (em dashes, curly quotes, smart apostrophes break PS 5.1 CP1252)
+  5. Conventional Commits format on all commits
+  6. Co-authored-by Copilot trailer on all commits
+  7. Branch forked from develop (prevents `squad/*` ancestry bleed)
+  8. No rogue files outside canonical `.squad/` paths
+- **Design:** HTML-comment-wrapped guidance in template prevents render clutter in PR body but remains visible in editor. Combined with Jiminy's CI gate (separate PR), provides both human-readable confirmation AND automated enforcement.
+- **Key Pattern:** Hygiene checklist goes BEFORE first PR body is authored (visible during composition), creates friction against skipping items. This is why appending to history.md in this very commit proves the pattern works — if Goofy had skipped it, the template itself would fail its own checklist.
