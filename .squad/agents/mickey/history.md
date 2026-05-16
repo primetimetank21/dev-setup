@@ -59,6 +59,32 @@ Lead architect; established foundational team process, architecture, and Windows
 
 ## Recent Work
 
+## [2026-05-16T01:30:00Z] PR #198 Review: PS 5.1 Em-Dash Fix & Psmux Skip-With-Warning (Issue #198)
+
+**PR:** #198 (`squad/184-gitconfig-editor-fix` → `develop`)  
+**Status:** In progress — Merge gate review
+
+Reviewing Goofy's two-part fix for PS 5.1 compatibility issues:
+
+**Part 1: Em-Dash ASCII-Only Enforcement**
+- `scripts/windows/tools/profile.ps1` — 2 em dashes → ` - `
+- `scripts/windows/tools/psmux.ps1` — 2 em dashes → ` - `
+- Root cause: PS 5.1 reads files as CP1252; UTF-8 byte sequence `E2 80 94` for em dash (U+2014) produces byte `0x94` which CP1252 interprets as RIGHT DOUBLE QUOTATION MARK — PS 5.1 parser treats as string terminator
+- Fix pattern: Byte-level scan, replace ALL non-ASCII with ASCII equivalents in both comments and literals
+
+**Part 2: psmux Skip-With-Warning Pattern**
+- Winget ID `psmux` invalid (broken since #179)
+- Decision: Replace hard fail with `[WARN]` skip pattern + manual install link
+- Preserves idempotency guard: `Get-Command psmux -ErrorAction SilentlyContinue`
+
+**Part 3: Profile Diagnostics**
+- Added verbose diagnostics (dir path, file exists, size, exec policy) to `Write-PowerShellProfile`
+- Will reveal actual failure point when Earl re-runs setup on PS 5.1 machine
+
+**Outcome:** CI checks green after em-dash fixes. Formal decisions captured in decisions.md (goofy-em-dash-fix, goofy-ps51-impl). Chip fixing test file non-ASCII separately on squad/197-ps51-compat-fix branch.
+
+---
+
 ## [2026-05-04] PR #195 Review: Windows Setup Split Refactor (Issue #185)
 
 **PR:** #195 (`refactor(windows): split setup.ps1 into per-tool files under tools/`)  
@@ -575,3 +601,26 @@ Both PRs merged to develop. Shutdown control now available across all supported 
 Always investigate EXISTING implementation before assuming known patterns are missing. The AllScope guard pattern was already present — the bug was elsewhere (profile write, not alias override).
 
 **Key Learning:** Sentinel-based idempotency that skips entirely breaks incremental feature additions. "Strip managed block + re-inject fresh" is the correct pattern for evolving config blocks. When reviewing regex for profile management, always verify leading/trailing newline anchors handle both LF and CRLF.
+
+---
+
+## [2026-05-14] PR #198 Review: PS 5.1 Compat — psmux skip-with-warning + profile diagnostics (Issue #197)
+
+**PR:** #198 (`squad/184-gitconfig-editor-fix` → `develop`)
+**Status:** ✅ APPROVED (comment-based, `--admin` merge pattern)
+
+Reviewed Goofy's PS 5.1 compatibility fix addressing two root causes from issue #197:
+
+**Changes Reviewed:**
+1. **psmux.ps1:** Dead `winget install --id psmux` replaced with skip-and-warn pattern — correct fix for #179 broken winget ID
+2. **profile.ps1:** Added verbose diagnostics to `Write-PowerShellProfile` — path logging, execution policy pre-check (moved before loop), try/catch on directory creation + file write, post-write file size validation
+3. **Em dash cleanup:** Both .ps1 files verified clean — zero non-ASCII characters remaining (fixes PS 5.1 CP1252 parsing crash)
+4. **Ancillary:** gitconfig template fixed to literal `vim` (#184), macOS brew install adds `vim` (#178)
+
+**Assessment:**
+- All changes additive and well-structured; idempotency preserved (strip+re-inject pattern unchanged)
+- No Linux/macOS regression risk — PowerShell changes are Windows-only
+- 5/5 CI checks green
+- GitHub API self-approval blocked (expected) — approval posted as comment per `--admin` merge pattern
+
+**Key Learning:** When PS 5.1 fails silently, the right response is diagnostic logging at every critical step (dir creation, file write, post-write validation) plus pre-flight checks (execution policy). This turns invisible failures into actionable error messages.

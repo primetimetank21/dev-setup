@@ -57,10 +57,33 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 - When refactoring variable names, grep tests for old names — static-analysis tests break silently
 - Set-Alias -Force insufficient for AllScope aliases — must Remove-Item first
 - Registry SetEnvironmentVariable for PATH persists across terminal sessions: `[System.Environment]::SetEnvironmentVariable('PATH', ..., 'User')`
+- Em dash fix pattern (PR #198): When PS 5.1 CI fails with TerminatorExpectedAtEndOfString, scan ALL .ps1 files on the branch for non-ASCII (bytes > 0x7F). Replace em dashes and other non-ASCII with ASCII equivalents in both comments and string literals. Use a byte-level scan (not just grep) to catch multi-byte UTF-8 sequences.
 
 ---
 
 ## Recent Work
+
+## [2026-05-16T01:30:00Z] Issue #197 & #198: Em-Dash Fix & ASCII-Only Enforcement
+
+**Branch:** `squad/184-gitconfig-editor-fix` (PR #198)  
+**Status:** ✅ COMPLETE — CI green
+
+Fixed CP1252 encoding violations causing PS 5.1 parse errors on PR #198:
+
+**Files Modified:**
+- `scripts/windows/tools/profile.ps1` — 2 em dashes → ` - `
+- `scripts/windows/tools/psmux.ps1` — 2 em dashes → ` - `
+
+**Total:** 4 em dashes replaced with ASCII equivalents
+
+**Outcome:** CI checks went green after fix. Formalized ASCII-only rule in decisions.md via Goofy decision (goofy-em-dash-fix.md, goofy-ps51-impl.md).
+
+**Key Decisions Captured:**
+1. All `.ps1` files MUST be ASCII-only (U+0000–U+007F)
+2. Psmux unavailable via winget #179 → skip-with-warning pattern implemented
+3. Profile.ps1 diagnostics added (dir path, file exists, exec policy checks) to surface real failure cause on Earl's PS 5.1 machine
+
+---
 
 ## [2026-05-14] Issue #197: AllScope Alias Override Verification (Groups N, O, P tests)
 

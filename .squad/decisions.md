@@ -2904,3 +2904,169 @@ Set-Alias -Name <name> -Value <custom-function> -Scope Global -Force
 ```
 
 **Status:** Implementation tracked in issue #197, test coverage in progress (groups N, O, P)
+## [2026-05-14] Decision: PS 5.1 Compatibility Implementation — Issue #197
+
+**Author:** Goofy (Cross-Platform Dev)
+**Date:** 2026-05-14
+**Issue:** #197
+**PR:** #198 (squad/197-ps51-compat-fix → develop)
+
+### Decisions Made
+
+#### 1. psmux: Skip-With-Warning (Option D from Mickey's plan)
+
+**Decision:** Replace broken `winget install --id psmux` with a `[WARN]` skip pattern.
+
+**Rationale:**
+- `psmux` is not a valid winget package ID — this has been broken since #179 and affects every Windows setup, not just PS 5.1.
+- Failing hard on an unknown winget ID aborts the entire setup script, blocking users from getting any other tools installed.
+- Option D (skip-with-warning) unblocks setup immediately. Options A/B/C (find correct package ID, Scoop, direct install) are follow-up work.
+- Idempotency is preserved: `Get-Command psmux -ErrorAction SilentlyContinue` guard remains at the top of `Install-Psmux`.
+
+**Pattern used:**
+```powershell
+Write-Warn "psmux is not yet available via winget (see #179, #197)."
+Write-Warn "Install manually from: https://github.com/nicowillis/psmux"
+Write-Warn "Skipping psmux install — continuing setup."
+```
+
+#### 2. profile.ps1: Verbose Diagnostics Over Code Changes
+
+**Decision:** Add diagnostics to `Write-PowerShellProfile` rather than changing the write logic itself.
+
+**Rationale:**
+- The AllScope `Remove-Item -Force Alias:\<name>` guards were already in place for all 11 PS 5.1 conflicting aliases (PR #195). No alias logic needed to change.
+- The root cause of "aliases not working" on Earl's PS 5.1 machine is unknown — could be profile not written, profile directory creation failing silently, or execution policy blocking load.
+- Diagnostics at each step (dir path, dir exists, file path, file exists + size, exec policy) will reveal the actual failure point when Earl re-runs setup.
+- `try/catch` + `continue` per path is the correct pattern under `$ErrorActionPreference = 'Stop'` — prevents one path failure from aborting the entire function.
+
+#### 3. Single PR (not split)
+
+**Decision:** Ship both psmux fix and profile diagnostics in one PR.
+
+**Rationale:** Both fixes are needed to unblock PS 5.1 users. Splitting would require two review cycles for tightly coupled work. Chip's test groups N, O, P will follow in a separate PR.
+
+### What Was NOT Changed
+
+- AllScope `Remove-Item` guards: already complete from PR #195, no changes needed.
+- No changes to test files in this PR — Chip owns Groups N, O, P.
+- No changes to CI workflow — the `validate-ps51` job already runs; Chip will add the profile write step per Mickey's plan.
+
+### References
+
+- Issue #179: psmux winget ID broken (original report)
+- Issue #197: PS 5.1 compat (this issue)
+- PR #195: Profile writer implementation (AllScope guards added here)
+- PR #198: This fix
+- Mickey's plan: `.squad/decisions/inbox/mickey-ps51-fix-plan.md`
+
+---
+
+## [2026-05-14] Decision: PS 5.1 ASCII-Only Rule for .ps1 Files
+
+**Date:** 2026-05-14
+**Author:** Goofy (#2)
+**Status:** Finalized
+**Context:** PR #198, branch `squad/184-gitconfig-editor-fix`
+
+### Problem
+
+PowerShell 5.1 on Windows uses the system's default code page (typically CP1252) when reading script files. The UTF-8 encoding of em dash (U+2014) is `E2 80 94`. Byte `0x94` maps to RIGHT DOUBLE QUOTATION MARK in CP1252, which PS 5.1 interprets as a string terminator. This causes `ParserError: TerminatorExpectedAtEndOfString` at parse time - the script won't even load.
+
+### Decision
+
+**All `.ps1` files in this repository MUST contain only ASCII characters (U+0000 - U+007F).**
+
+This applies to:
+- String literals
+- Comments
+- Variable names and identifiers
+- Any other source content
+
+#### Specific replacements:
+- Em dash (`—`) → ` - ` (space-hyphen-space)
+- Smart quotes → straight quotes
+- Any other non-ASCII → closest ASCII equivalent or removal
+
+### Rationale
+
+- PS 5.1 is still the default PowerShell on Windows 10 and Windows Server 2019
+- We explicitly support PS 5.1 (see CI job "Validate PowerShell 5.1 Compatibility")
+- BOM markers are fragile and not all editors/tools preserve them
+- ASCII-only is the simplest, most portable rule with zero edge cases
+
+### Enforcement
+
+- CI already validates PS 5.1 compatibility via syntax parsing
+- Developers should run byte-level scans when modifying .ps1 files
+- Code review should flag any non-ASCII characters in .ps1 files
+
+---
+
+## [2026-05-14] Decision: ASCII-only rule for PS test files
+
+**Proposed by:** Chip (Tester)
+**Date:** 2026-05-14
+**Status:** Finalized
+
+### Decision
+
+All `.ps1` test files must use only ASCII characters (bytes 0x00-0x7F) to be safe under PS 5.1 CP1252 encoding.
+
+### Context
+
+PowerShell 5.1 on Windows reads `.ps1` files using the system's default encoding (typically CP1252). UTF-8 multi-byte sequences for characters like em dashes (U+2014), arrows (U+2192), and emojis produce bytes that CP1252 interprets as control characters or punctuation (e.g., byte 0x94 = right double quote), causing `ParseException` crashes.
+
+The validate-ps51 CI job runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so any non-ASCII content in the test file will cause CI failures.
+
+### Rules
+
+- No emojis in string literals (use `[PASS]`, `[FAIL]`, `[SKIP]` tags instead)
+- No em dashes in comments (use ` - ` instead)
+- No arrows in comments (use `->` instead)
+- No smart quotes, accented characters, or any byte > 0x7F
+- Validate with: `Get-Content file.ps1 -Encoding UTF8 | Where-Object { $_ -cmatch '[^\x00-\x7F]' }`
+
+---
+
+## [2026-05-14] Decision: PS 5.1 Test Patterns for Issue #197
+
+**Author:** Chip (Tester)
+**Date:** 2026-05-14
+**Issue:** #197 — PS 5.1 compatibility: psmux install fails + aliases broken
+**Branch:** `squad/197-ps51-compat-fix`
+
+### Decisions Made
+
+#### 1. CP1252 string-literal encoding rule
+**Decision:** Never use Unicode dashes or other non-ASCII characters in test string literals.
+
+**Why:** PS 5.1 reads UTF-8 files without BOM using the system default encoding (Windows-1252). The em dash `—` (U+2014) encodes as UTF-8 bytes `E2 80 94`. Byte `0x94` is the RIGHT DOUBLE QUOTATION MARK in CP1252, which the PS 5.1 parser treats as a string terminator. This causes a cascade of parse errors, making every subsequent test fail silently.
+
+**Rule:** Use plain ASCII hyphen `-` wherever a dash is needed in test string literals, `Write-Skip` messages, and test names.
+
+#### 2. Invoke-Expression for cross-group tool loading
+**Decision:** Load psmux.ps1 (and any other tool script) via `Invoke-Expression` at Group scope, not inside `Test-Scenario` scriptblocks.
+
+**Why:** `Test-Scenario` uses `& $Test` to invoke the scriptblock, which runs in a child scope. Functions dot-sourced or defined inside `& $scriptblock` are only available within that child scope and are gone after the test block completes. `Invoke-Expression` at the outer scope makes functions available for all subsequent tests.
+
+**Pattern:**
+```powershell
+$psmuxToolContent = Get-Content $psmuxToolPath -Raw
+Invoke-Expression $psmuxToolContent
+# Now Install-Psmux is in scope for all subsequent tests
+```
+
+#### 3. Conditional skip pattern for binary-dependent tests
+**Decision:** Tests that require a binary to be absent (like P-2 for psmux) use an if/else outside Test-Scenario: `Write-Skip` if binary is present, `Test-Scenario` if absent.
+
+**Why:** This is the cleanest way to handle machine-dependent paths. In CI (no psmux), P-2 runs and validates the `[WARN]` output. On a dev machine with psmux installed, it skips gracefully without false failures.
+
+#### 4. CI profile write step is separate from unit test suite
+**Decision:** Added a dedicated `Test PS 5.1 profile write` step to `validate-ps51` BEFORE the test runner step.
+
+**Why:** The unit tests (Groups N-1, N-2) also verify profile write, but having a CI-level step provides a clearer failure message at the job level. If `Write-PowerShellProfile` fails silently, the CI step catches it with `Write-Error` and `exit 1`, which surfaces in the GitHub Actions summary without having to dig into test output.
+
+### Open Questions
+
+None — all decisions made with full confidence.

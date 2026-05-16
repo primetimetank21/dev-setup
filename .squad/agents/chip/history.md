@@ -48,11 +48,35 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 - CP1252 encoding trap: Em dash `—` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
 - Invoke-Expression for function loading: Load functions at Group scope before Test-Scenario calls; `& ([scriptblock]::Create(...))` creates child scope where functions vanish after test
 - PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks — test suite requirements > runtime logic correctness
-- Test suite can check one pattern (e.g., PSVersion guards) but code implements different valid pattern — tests must be updated in sync
+- Test suite can check one pattern (e.g., PSVersion guards) but code implements different valid pattern -- tests must be updated in sync
+- PS 5.1 CI step runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so the test file itself must be ASCII-clean (no emojis, em dashes, arrows, or any non-ASCII chars)
 
 ---
 
 ## Recent Work
+
+## [2026-05-16T01:30:00Z] Issue #197: Non-ASCII Test File Fix (CP1252 Encoding Cleanup)
+
+**Branch:** `squad/197-ps51-compat-fix`  
+**Status:** ✅ COMPLETE — file fully ASCII-clean, committed & pushed
+
+Removed 14 non-ASCII characters from `tests/test_windows_setup.ps1` to resolve CP1252 encoding trap on PS 5.1:
+
+**Characters Replaced:**
+- 8 emoji test markers (`✓`, `✗`, `⚠`, etc.) → `[PASS]`, `[FAIL]`, `[SKIP]` text tags
+- 4 em dashes (U+2014) in comments → ` - ` (space-hyphen-space)
+- 2 arrows (U+2192) in comments → `->` (ASCII hyphen-greater-than)
+
+**Why:** PS 5.1 reads files as CP1252 by default. UTF-8 byte sequences for non-ASCII chars produce bytes that CP1252 misinterprets as string terminators or control chars, causing `ParserError: TerminatorExpectedAtEndOfString`.
+
+**Outcome:** Test file now passes PS 5.1 validation. All 61 tests validated under both PS 5.1 and PS 7+.
+
+**Key Decisions Captured:**
+1. ASCII-only rule for test files (chip-test-ascii-rule.md)
+2. CP1252 string-literal encoding rule with Invoke-Expression pattern for cross-group tool loading (chip-ps51-tests.md)
+3. Conditional skip pattern for binary-dependent tests (P-2 psmux test)
+
+---
 
 ## [2026-05-14] Issue #197: PS 5.1 Test Groups N, O, P for AllScope Aliases & Psmux
 
