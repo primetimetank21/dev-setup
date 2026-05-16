@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Made tmux auto-attach opt-in via `TMUX_AUTOSTART=1` env var (was always-on)
+- Refreshed ARCHITECTURE.md and README.md file trees to match current repo layout
 
 ### Fixed
 - PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)
