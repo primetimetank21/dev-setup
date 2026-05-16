@@ -764,3 +764,4 @@ Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
   - P1: #223 (logging consolidation), #224 (hook test coverage), #225 (validate-macos), #226 (winget exit codes), #227 (dotfile backups), #228 (README/CONTRIBUTING docs)
   - P2: #229 (ARCHITECTURE.md refresh), #230 (auth.ps1 move), #231 (gitattributes .ps1), #232 (squad-cli versioning), #233 (pre-push comment), #234 (encoding ASCII)
   - P3: #235 (install-guard defer), #236 (.aliases POSIX), #237 (test harness docs), #238 (uninstall coverage)
+- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.

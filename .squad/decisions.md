@@ -3391,3 +3391,23 @@ One tool per line. Blank lines and # comments allowed.
 - To bump a tool version, edit one file and re-run setup
 - All platforms (Linux, macOS, Windows) read the same file
 - No new runtime dependencies introduced
+
+## 2026-05-16 entries
+
+### 2026-05-16T07:50:00Z: Jiminy hired — Squad Hygiene Auditor
+**By:** Earl Tankard (via Copilot coordinator)
+**What:** Added new squad member Jiminy (Disney Classic universe) in the role of "Squad Hygiene Auditor" - a reviewer-gate role for squad OPERATIONS (not code). Charter pins model to claude-opus-4.6 (premium). Auto-runs before coordinator returns control to user, after multi-agent batches (3+ spawns), and at session-end. Manual trigger: "Jiminy, check" / "Jiminy, audit".
+**Scope of audit:** (1) Squad state hygiene (untracked .squad/ files, rogue paths, undrained decisions inbox, uncommitted history.md edits); (2) Git hygiene (working tree clean, stale squad/* branches, branch ancestry from develop, local/origin sync); (3) Process hygiene (PR labels, issue priorities, no squash merges, Conventional Commits format); (4) Memory hygiene (history append, decisions inbox usage, Scribe fired after each batch).
+**Auto-fix scope:** Stage+commit history edits (via Scribe), move/delete rogue files, drain decisions inbox. Will NOT: delete branches, force-push, change labels, rewrite commit messages.
+**Why:** Recurring squad hygiene failures (rogue verification reports 2026-05-16, uncommitted histories on multiple sessions, branch ancestry bleed in Sprint 7, squash merges in Sprints 2-3) forced Earl to be the verifier. Tiring. Jiminy exists so the team self-audits before bothering him.
+**Files added:** .squad/agents/jiminy/charter.md, .squad/agents/jiminy/history.md
+**Files updated:** .squad/casting/registry.json (added hygiene-auditor entry), .squad/casting/history.json (addendum), .squad/team.md (roster row), .squad/routing.md (routing entry + auto-run rule #8)
+
+### 2026-05-16T07:30:00Z: Verifier batch spawn hygiene
+**By:** Earl Tankard (via Copilot coordinator → Donald cleanup)
+**What:** Verifier agents (any agent doing read-only verification of audit findings) MUST write their evidence to ONE of these three locations only:
+1. .squad/agents/{name}/history.md — append learnings under "## Learnings"
+2. .squad/decisions/inbox/{name}-{slug}.md — for team-relevant decisions
+3. .squad/orchestration-log/{ISO8601-UTC}-{batch-name}.md — for batch evidence with citations (preferred for citation-heavy verification reports)
+Verifiers MUST NOT create files at .squad/agents/{name}/VERIFICATION_REPORT.md, .squad/verification-report.md, or any other random path. Spawn prompts for verifier-style batches MUST specify the target location explicitly. Coordinator MUST spawn Scribe IMMEDIATELY after any verifier batch — never delay to a downstream filing step.
+**Why:** Incident 2026-05-16. 3 rogue verification reports landed on develop uncommitted because (a) verifiers picked random paths and (b) coordinator delayed Scribe.

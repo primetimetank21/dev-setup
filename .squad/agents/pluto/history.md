@@ -222,3 +222,4 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - **V-11 (.gitattributes CRLF for .ps1):** CONFIRMED. .ps1 files normalize to LF per global rule. Works fine on all PS versions. Missing explicit rule for clarity. Should add `*.ps1 text eol=lf` for intent transparency.
 - **Phasing:** P1 = V-17 (docs), V-15 (backup strategy). P2 = V-9 (already acceptable), V-11 (nice-to-have clarity).
 
+- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.

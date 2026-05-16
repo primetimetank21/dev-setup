@@ -256,3 +256,4 @@ Added `tests/test_alias_parity.sh` -- a bash test that extracts alias names from
 - Priority framing: P0 "safety net for what really works on fresh machines"
 - Related: Supersedes #226 (macOS parity, narrower); overlaps #238 (uninstall tests)
 - Terminology: psmux is Windows tmux alias (NOT wezterm — coordinator error corrected)
+- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.

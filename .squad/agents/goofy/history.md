@@ -215,3 +215,4 @@ Fixed three regressions introduced by PR #130:
 - **Status:** COMPLETED — 5/5 findings verified; V-1 confirmed P0 bug, V-7 & V-11 & V-15 confirmed P2 refactoring gaps, V-13 confirmed P1 error handling gap
 - **Method:** Systematic file inspection + citations to exact locations; compared against ps51-runtime-file-encoding skill
 - **Report:** .squad/agents/goofy/VERIFICATION_REPORT.md (13KB, detailed analysis per finding)
+- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.

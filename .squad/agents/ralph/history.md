@@ -195,3 +195,4 @@ Initial setup complete.
   - Open PRs: 0
   - Open go:yes issues: 0
 - **Sprint outcome:** 22 PRs merged, 17 `go:yes` closed, develop fast-forwarded to main, all stale branches reaped. Sprint backlog clear.
+- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
