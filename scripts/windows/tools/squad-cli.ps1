@@ -18,8 +18,11 @@ function Install-SquadCli {
         return
     }
     if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-        Write-Warn "npm not found -- skipping squad-cli install"
-        return
+        Write-Err "npm not found after nvm install. Possible causes:"
+        Write-Err "  1. PATH refresh failed -- close this terminal and open a new one, then re-run setup"
+        Write-Err "  2. nvm install failed silently -- check 'nvm list' and try 'nvm install <version>' manually"
+        Write-Err "  3. Node is installed elsewhere but not on PATH"
+        exit 1
     }
     Write-Info "Installing squad-cli..."
     npm install -g "@bradygaster/squad-cli"
