@@ -7,10 +7,8 @@
 
 set -euo pipefail
 
-log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
-log_warn()  { printf '\033[0;33m[WARN]\033[0m  %s\n' "$*"; }
-log_error() { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; }
+# shellcheck disable=SC1091
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
