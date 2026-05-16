@@ -642,3 +642,29 @@ Reviewed Goofy's PS 5.1 compatibility fix addressing two root causes from issue 
 - New skill: `.squad/skills/ps51-ascii-safety/SKILL.md`
 
 **Key Learning:** Reusable skill documents (SKILL.md) are high-leverage artifacts — they encode root-cause analysis, detection scripts, and fix patterns so future agents don't rediscover the same encoding trap. The PS 5.1 ASCII safety skill is a model for how to document cross-cutting constraints.
+
+---
+
+## 2026-05-16 — Batch 1 Review: PRs #202, #203, #204
+
+**Verdict:** ✅ All three approved and merged to `develop` in order.
+
+**PR #202 — `chore: remove unused examples/ directory` (Donald, closes #194)**
+- Verified branch ancestry bleed was fully resolved: 6 changed files (4 examples/* deletions + ARCHITECTURE.md + README.md doc updates). No `psmux.ps1` content.
+- Single commit on top of develop. 5/5 CI green. Merged with `--admin` bypass (self-authored, cannot self-approve).
+- Issue #194 did not auto-close on merge (escaped backticks in body broke the linker); closed manually with merge reference.
+
+**PR #203 — `docs: add CHANGELOG.md` (Pluto, closes #188)**
+- 2 commits, both on-scope: CHANGELOG.md (new, 123 lines, Keep a Changelog format) + pluto history log entry.
+- ASCII safety: 0 non-ASCII bytes in CHANGELOG.md. No `.ps1` files touched.
+- 5/5 CI green. Merged. Issue #188 closed manually (same linker quirk).
+
+**PR #204 — `fix(windows): use correct psmux winget id` (Goofy, closes #179)**
+- 3 commits: psmux.ps1 fix → test_windows_setup.ps1 P-2/P-3 stub refactor → goofy history log.
+- ASCII safety: 0 non-ASCII bytes in BOTH `scripts/windows/tools/psmux.ps1` and `tests/test_windows_setup.ps1`.
+- Test stub pattern is clean: P-2 stubs `winget` as a global function, asserts it was called with `marlocarlo.psmux`, cleans up in `finally`. P-3 stubs winget as no-op for idempotency. Skip path preserved when psmux is already present on the host.
+- 5/5 CI green. Merged. Issue #179 closed manually.
+
+**Outcome:** `origin/develop` now has 3 new merge commits (`bf8f72a`, `53186c8`, `bd1739b`) in order. All squad branches deleted. Three issues closed (#179, #188, #194).
+
+**Key Learning:** GitHub's "Closes #N" auto-linker is fragile when PR body markdown is malformed (escaped backticks/backslashes from agent serialization can break the parse). After every merge, explicitly check the referenced issue state and close manually if still OPEN. Cheaper than chasing dangling issues later in sprint wrap-up.
