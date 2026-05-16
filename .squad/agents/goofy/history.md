@@ -189,6 +189,7 @@ Fixed three regressions introduced by PR #130:
 - **Fix:** Extracted `Refresh-SessionPath` from `nvm.ps1` into shared `scripts/windows/lib/path.ps1`. Sourced it in the orchestrator and all 6 winget-based tool scripts. Added `Refresh-SessionPath` call after every `winget install` that is followed by usage of the just-installed binary. Replaced vim.ps1's inline PATH rebuild with the shared function.
 - **Pattern:** Any time a tool modifies the system/user PATH (winget, manual registry write), call `Refresh-SessionPath` before the next `Get-Command` or binary invocation in the same session.
 - **Key learning:** Windows PowerShell snapshots `$env:Path` at process start. Registry changes from installers are invisible until you explicitly re-read `[System.Environment]::GetEnvironmentVariable('Path', 'Machine')` and `'User'` and assign back to `$env:Path`. This is a shared-lib concern, not per-tool -- extract once, source everywhere.
+- **v2 fix:** squad-cli.ps1 also needed `Refresh-SessionPath` (defensive) -- it runs after nvm.ps1 in the orchestrator and the npm/node junction may not be on PATH for its invocation scope. tests/test_windows_setup.ps1 Group P strip regex needed to handle the new path.ps1 dot-source added to psmux.ps1 (IEX makes `$PSScriptRoot` empty, so relative dot-sources fail).
 
 ### Issue #190 - Pin tool versions via .tool-versions (2026-05-16)
 - PR: #215 -- `feat(setup): pin tool versions via .tool-versions file`

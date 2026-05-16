@@ -978,9 +978,10 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group P: psmux Install (Issue #197)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
+. (Join-Path $RepoRoot 'scripts\windows\lib\path.ps1')
 $psmuxToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
 $psmuxToolContent = Get-Content $psmuxToolPath -Raw
-$psmuxToolExec = $psmuxToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*logging\.ps1"?', '# logging lib loaded by test harness'
+$psmuxToolExec = $psmuxToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
 Invoke-Expression $psmuxToolExec
 
 Test-Scenario "P-1: psmux.ps1 can be dot-sourced without error and Install-Psmux is defined" {
