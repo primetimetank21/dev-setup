@@ -803,3 +803,29 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
 - All 3 PRs used Conventional Commits + Co-authored-by Copilot trailer correctly.
 - Goofy and Chip used the PR template; Pluto used a custom checklist (close but not exact match).
 - Test coverage is good across the batch -- both pass and fail paths covered.
+## Learnings -- Issue #222: Retroactive Tag Discipline (2026-05-16)
+
+### Design Decisions
+
+1. **Tag format:** Annotated tags (`git tag -a`) -- carry messages, author, date; work with `git describe`
+2. **Tag signing:** Skipped (no GPG infra configured)
+3. **Tag naming:** `0.X.0` (no `v` prefix) -- matches CHANGELOG convention
+4. **SHA mapping strategy:** Prefer explicit "release:" or "promote:" commits where they exist; fall back to sprint-wrap docs commits or develop-to-main merge PRs
+
+### SHA-to-Version Mapping Table
+
+| Version | SHA       | Commit Message                                                        | Rationale                              |
+|---------|-----------|-----------------------------------------------------------------------|----------------------------------------|
+| 0.1.0   | 03d20aa   | release: sprint 1 -- initial dev-setup complete                       | Explicit release commit                |
+| 0.2.0   | 7183b14   | docs(ralph): update history with Sprint 2 work log                    | Last sprint-2 commit; no explicit release commit exists |
+| 0.3.0   | 7668c22   | release: sprint 3 complete -- owner shortcuts, vimrc, examples, bug fixes | Explicit release commit            |
+| 0.4.0   | b4343ef   | release: sprint 4 complete -- branch protection, merge gate, pip->uv  | Explicit release commit                |
+| 0.5.0   | e66e2a5   | chore: promote Sprint 5 to main                                       | Explicit promotion commit              |
+| 0.6.0   | 3f0fb3a   | fix: hotfix Sprint 6 post-merge CI + vim PATH (Sprint 6 wrap #2)      | Last Sprint 6 commit (hotfix included) |
+| 0.7.0   | 64938aa   | Merge pull request #172 from primetimetank21/develop                  | develop->main release merge on 2026-04-25 (matches CHANGELOG date) |
+
+### Gotchas
+
+- Sprint 2 had no explicit "release:" commit -- used the sprint work-log doc commit as anchor
+- Sprint 7's last feature PR (#170) was followed by a develop->main merge (#172) on the same day -- used the merge as it represents the actual release point
+- 0.8.0 tag will be created AFTER PR merges to develop and develop merges to main (cannot tag unreleased code on a feature branch)
