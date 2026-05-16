@@ -49,6 +49,8 @@ nvm install "$PINNED_NODE" || {
   exit 1
 }
 nvm use "$PINNED_NODE"
+nvm alias default "$PINNED_NODE"
+log_ok "default Node set to v$(nvm alias default | awk '{print $3}')"
 
 # -- Verify ----------------------------------------------------------------
 if command -v node &>/dev/null; then

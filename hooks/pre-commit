@@ -1,6 +1,172 @@
 #!/bin/sh
-# Run shellcheck on staged .sh files (skip gracefully if absent)
+# pre-commit hook: hygiene checks + shellcheck
+# Checks (ordered fastest-first):
+#   1. Branch ancestry (squad/* must descend from develop)
+#   2. ASCII-only on staged *.ps1 files
+#   3. Rogue path check under .squad/
+#   4. Staged inbox file check (.squad/decisions/inbox/ should be gitignored)
+#   5. Refuse commits directly on develop/main/master
+#   6. Shellcheck on staged .sh files
 set -e
+
+# ---------------------------------------------------------------------------
+# Check 1: Branch ancestry (fast -- single git command)
+# ---------------------------------------------------------------------------
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+case "$CURRENT_BRANCH" in
+  squad/*|goofy/*|mickey/*|chip/*|pluto/*|donald/*|jiminy/*)
+    if git rev-parse --verify develop >/dev/null 2>&1; then
+      if ! git merge-base --is-ancestor develop HEAD 2>/dev/null; then
+        echo ""
+        echo "ERROR: Branch ancestry bleed detected."
+        echo ""
+        echo "  Branch '$CURRENT_BRANCH' is not descended from 'develop'."
+        echo "  squad/* branches must be forked from develop, not from other squad branches."
+        echo ""
+        echo "  Fix: rebase onto develop or recreate the branch from develop."
+        echo "    git rebase develop"
+        echo "    # or: git checkout develop && git checkout -b <new-branch>"
+        echo ""
+        exit 1
+      fi
+    fi
+    ;;
+esac
+
+# ---------------------------------------------------------------------------
+# Check 2: ASCII-only on staged *.ps1 files
+# ---------------------------------------------------------------------------
+PS1_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ps1$' || true)
+if [ -n "$PS1_STAGED" ]; then
+  ASCII_FAIL=0
+  for file in $PS1_STAGED; do
+    # Use staged content (not working tree) via git show
+    # grep -P with hex range works in git-bash (ships GNU grep with PCRE)
+    # Do NOT set LC_ALL=C with -P (breaks on git-bash). Default UTF-8 locale is fine.
+    NON_ASCII=$(git show ":$file" | grep -nP '[^\x00-\x7f]' 2>/dev/null || true)
+    if [ -n "$NON_ASCII" ]; then
+      if [ "$ASCII_FAIL" -eq 0 ]; then
+        echo ""
+        echo "ERROR: Non-ASCII bytes detected in staged PowerShell file(s)."
+        echo "  PS 5.1 on Windows uses CP1252 -- non-ASCII bytes (em dashes, smart quotes)"
+        echo "  break string literals at byte 0x94. Use ASCII equivalents."
+        echo ""
+      fi
+      echo "  $file:"
+      echo "$NON_ASCII" | sed 's/^/    /'
+      echo ""
+      ASCII_FAIL=1
+    fi
+  done
+  if [ "$ASCII_FAIL" -ne 0 ]; then
+    echo "  Fix: replace non-ASCII characters with ASCII equivalents."
+    echo "    em dash (U+2014) -> --"
+    echo "    smart quotes -> straight quotes"
+    echo ""
+    exit 1
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Check 3: Rogue path check under .squad/
+# ---------------------------------------------------------------------------
+SQUAD_STAGED=$(git diff --cached --name-only --diff-filter=A | grep '^\.squad/' || true)
+if [ -n "$SQUAD_STAGED" ]; then
+  ROGUE_FAIL=0
+  for file in $SQUAD_STAGED; do
+    VALID=0
+    case "$file" in
+      .squad/agents/*/charter.md) VALID=1 ;;
+      .squad/agents/*/history.md) VALID=1 ;;
+      .squad/agents/*/history-archive.md) VALID=1 ;;
+      .squad/decisions.md) VALID=1 ;;
+      .squad/decisions-archive.md) VALID=1 ;;
+      .squad/decisions/inbox/*.md) VALID=1 ;;
+      .squad/orchestration-log/*.md) VALID=1 ;;
+      .squad/log/*.md) VALID=1 ;;
+      .squad/skills/*/SKILL.md) VALID=1 ;;
+      .squad/templates/*.md) VALID=1 ;;
+      .squad/casting/*.json) VALID=1 ;;
+      .squad/identity/*.md) VALID=1 ;;
+      .squad/plugins/*.json) VALID=1 ;;
+      .squad/team.md) VALID=1 ;;
+      .squad/routing.md) VALID=1 ;;
+      .squad/ceremonies.md) VALID=1 ;;
+      .squad/config.json) VALID=1 ;;
+    esac
+    if [ "$VALID" -eq 0 ]; then
+      if [ "$ROGUE_FAIL" -eq 0 ]; then
+        echo ""
+        echo "ERROR: Staged file under .squad/ does not match any legal path."
+        echo "  See the Source of Truth Hierarchy for allowed locations."
+        echo ""
+      fi
+      echo "  Rogue path: $file"
+      ROGUE_FAIL=1
+    fi
+  done
+  if [ "$ROGUE_FAIL" -ne 0 ]; then
+    echo ""
+    echo "  Allowed locations:"
+    echo "    .squad/agents/{name}/charter.md | history.md | history-archive.md"
+    echo "    .squad/decisions.md | .squad/decisions-archive.md"
+    echo "    .squad/decisions/inbox/*.md (gitignored -- should not be staged)"
+    echo "    .squad/orchestration-log/*.md"
+    echo "    .squad/log/*.md"
+    echo "    .squad/skills/{name}/SKILL.md"
+    echo "    .squad/templates/*.md | .squad/casting/*.json"
+    echo "    .squad/identity/*.md | .squad/plugins/*.json"
+    echo "    .squad/team.md | routing.md | ceremonies.md | config.json"
+    echo ""
+    echo "  Suggestions:"
+    echo "    Batch evidence -> .squad/orchestration-log/"
+    echo "    Decisions -> .squad/decisions/inbox/"
+    echo "    Learnings -> .squad/agents/{name}/history.md"
+    echo ""
+    exit 1
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Check 4: Staged inbox file check (should be gitignored)
+# ---------------------------------------------------------------------------
+INBOX_STAGED=$(git diff --cached --name-only | grep '^\.squad/decisions/inbox/' || true)
+if [ -n "$INBOX_STAGED" ]; then
+  echo ""
+  echo "ERROR: Files staged under .squad/decisions/inbox/ -- this directory is gitignored."
+  echo ""
+  echo "  Staged inbox files:"
+  for file in $INBOX_STAGED; do
+    echo "    $file"
+  done
+  echo ""
+  echo "  This should never happen. Possible causes:"
+  echo "    - .gitignore was bypassed (git add -f)"
+  echo "    - .gitignore entry for .squad/decisions/inbox/ is missing or malformed"
+  echo ""
+  echo "  Fix: git reset HEAD .squad/decisions/inbox/"
+  echo ""
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Check 5: Refuse commits directly on develop / main / master
+# ---------------------------------------------------------------------------
+current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+case "$current_branch" in
+  develop|main|master)
+    echo ""
+    echo "ERROR: refusing to commit directly on '$current_branch'."
+    echo "       Create a feature branch first:"
+    echo "         git checkout -b squad/<issue>-<slug>"
+    echo ""
+    exit 1
+    ;;
+esac
+
+# ---------------------------------------------------------------------------
+# Check 6: Shellcheck on staged .sh files (existing behavior)
+# ---------------------------------------------------------------------------
 if ! command -v shellcheck >/dev/null 2>&1; then
   exit 0
 fi

@@ -17,6 +17,7 @@
 | Goofy | Cross-Platform Dev | `.squad/agents/goofy/charter.md` | ✅ Active |
 | Pluto | Config Engineer | `.squad/agents/pluto/charter.md` | ✅ Active |
 | Chip | Tester | `.squad/agents/chip/charter.md` | ✅ Active |
+| Jiminy | Squad Hygiene Auditor | `.squad/agents/jiminy/charter.md` | ✅ Active |
 | Scribe | Session Logger | `.squad/agents/scribe/charter.md` | ✅ Active |
 | Ralph | Work Monitor | `.squad/agents/ralph/charter.md` | ✅ Active |
 

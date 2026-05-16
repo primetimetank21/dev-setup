@@ -14,6 +14,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\lib\logging.ps1"
+. "$PSScriptRoot\lib\path.ps1"
 
 function Test-WingetAvailable {
     return $null -ne (Get-Command winget -ErrorAction SilentlyContinue)

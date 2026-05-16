@@ -13,6 +13,7 @@ How to decide who handles what for the dev-setup project.
 | Tests, CI, edge cases, idempotency | Chip | Validate scripts work, CI workflows, "does it break on re-run?" |
 | Code review | Mickey | All PRs reviewed by Mickey before merge |
 | Testing & validation | Chip | Write tests, find edge cases, verify fixes |
+| Squad hygiene, process audit | Jiminy | Untracked files, uncommitted histories, rogue paths, branch ancestry, label hygiene |
 | Session logging | Scribe | Automatic — never needs routing |
 | Work queue monitoring | Ralph | Issue triage, backlog, PR status |
 
@@ -37,6 +38,7 @@ How to decide who handles what for the dev-setup project.
 | `squad:goofy` | PowerShell/Windows/cross-platform work | Goofy |
 | `squad:pluto` | Dotfiles, configs, environment setup | Pluto |
 | `squad:chip` | Testing, CI, validation work | Chip |
+| `squad:jiminy` | Squad hygiene audit, process QA | Jiminy |
 
 ## Rules
 
@@ -47,3 +49,4 @@ How to decide who handles what for the dev-setup project.
 5. **"Team, ..." → fan-out.** Mickey + Donald + Goofy + Pluto in parallel as `mode: "background"`.
 6. **Test alongside build.** When Donald or Goofy write a script, spawn Chip to write test cases simultaneously.
 7. **Mickey reviews before merge.** All work goes through Mickey for final review.
+8. **Jiminy auto-runs** before coordinator returns control to user, after multi-agent batches (3+ spawns), and at session-end. Manual trigger: "Jiminy, check" / "Jiminy, audit". Reports clean state in one line, dirty state with fix-offer.

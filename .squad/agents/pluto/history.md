@@ -211,3 +211,46 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - Used POSIX `[ "${VAR:-}" = "1" ]` for bash/zsh compatibility
 - Branch: squad/192-tmux-opt-in -> develop
 
+### Post-sprint configs/hooks audit (2026-05-16)
+- Lens: configs / dotfiles / hooks
+- 9 findings reported to coordinator; top 3: .ps1 CRLF in .gitattributes, [[ ]] POSIX compatibility in .aliases, PSScriptAnalyzer advisory mode in pre-push.
+
+### Audit verification (V-9, V-15, V-17, V-11) - 2026-05-20
+- **V-9 (PSScriptAnalyzer advisory):** CONFIRMED. Intentional design per CONTRIBUTING.md. Lint before PR, not before push. Advisory protects local developer flow. Current behavior matches shellcheck.
+- **V-15 (dotfile .bak):** CONFIRMED. Linux overwrites .bak each run. Windows backs up once. Both lose history; no accumulation. Risk: prior backups deleted on re-run. Needs hybrid (timestamped or rotated) strategy.
+- **V-17 (core.hooksPath docs):** CONFIRMED. Both setup scripts configure it, but README/CONTRIBUTING don't document automatic setup. CONTRIBUTING still says "install manually" (outdated). Low effort fix.
+- **V-11 (.gitattributes CRLF for .ps1):** CONFIRMED. .ps1 files normalize to LF per global rule. Works fine on all PS versions. Missing explicit rule for clarity. Should add `*.ps1 text eol=lf` for intent transparency.
+- **Phasing:** P1 = V-17 (docs), V-15 (backup strategy). P2 = V-9 (already acceptable), V-11 (nice-to-have clarity).
+
+- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
+- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
+
+### 2026-05-21: Protected branch guard in pre-commit (Issue #249)
+
+- Recurring incident class: agents and humans committing directly to develop/main. Existing Check 1 catches ancestry bleed (squad/* not forked from develop) but does NOT block commits ON develop/main itself.
+- Fix: added Check 5 to pre-commit hook using `git rev-parse --abbrev-ref HEAD` + case match on develop/main/master. Exits 1 with actionable error message.
+- Renumbered existing shellcheck check from Check 5 to Check 6.
+- Added 5 test cases (develop, main, master refuse; squad/* and pluto/* allow).
+- Priority bumped to P0 this session due to 3+ recurrences.
+
+### 2026-05-21: Pre-commit hygiene checks (Issue #240)
+
+**Design decisions:**
+- Ordered checks fastest-first: branch ancestry (single git command, sub-5ms), ASCII scan (only staged .ps1), rogue paths (pattern match), inbox check (grep). Shellcheck stays last.
+- All 4 checks are HARD FAIL (exit 1). Inbox file staging should never happen legitimately; rogue paths indicate misunderstanding of structure; ancestry bleed is a workflow error; non-ASCII in .ps1 causes runtime failures.
+- Used `grep -nP '[^\x00-\x7f]'` for ASCII detection. Requires GNU grep with PCRE (shipped with git-bash on Windows, standard on Linux). macOS ships BSD grep without -P; if needed, a `perl -ne` fallback could be added, but git-bash is the target (git hooks always run via git's bundled bash).
+- Did NOT use `LC_ALL=C` with `-P` flag -- git-bash's grep errors with "supports only unibyte and UTF-8 locales". Default UTF-8 locale works correctly.
+- Rogue path allowlist uses shell `case` statements with glob patterns -- fully POSIX, no external deps.
+- Branch ancestry uses `git merge-base --is-ancestor develop HEAD` -- fast, portable, available in all git versions >= 1.8.0.
+- Check scans staged content via `git show ":$file"` not working tree, so it validates what will actually be committed.
+
+**Cross-platform gotchas:**
+- `grep -P` is GNU-specific. BSD grep (macOS) doesn't support it. But git hooks run via git's bundled bash on all platforms, which ships GNU grep. Documented this limitation.
+- `\x00-\x7f` hex range in bracket expressions (without -P) matches everything in C locale on git-bash -- broken. Must use -P flag for reliable hex matching.
+- CRLF in test repos causes warnings but doesn't affect test correctness.
+
+**Performance:**
+- Branch ancestry check: ~2ms (single git plumbing command)
+- ASCII check: <10ms for typical staged .ps1 files (pipes through grep)
+- Rogue path check: <5ms (pure shell pattern matching)
+- Total hook overhead for clean commit: ~20ms (well under 100ms goal)

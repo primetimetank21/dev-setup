@@ -35,6 +35,13 @@
       "legacy_named": false,
       "status": "active"
     },
+    "hygiene-auditor": {
+      "persistent_name": "Jiminy",
+      "universe": "Disney Classic",
+      "created_at": "2026-05-16T07:50:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
     "scribe": {
       "persistent_name": "Scribe",
       "universe": "exempt",

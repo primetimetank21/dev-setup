@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
+. "$PSScriptRoot\..\lib\path.ps1"
 
 # Vim - modal text editor; used by vb/vz aliases and general terminal editing.
 function Install-Vim {
@@ -26,8 +27,7 @@ function Install-Vim {
         if ($userPath -notlike "*$vimDir*") {
             [System.Environment]::SetEnvironmentVariable('PATH', "$userPath;$vimDir", 'User')
         }
-        $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' +
-                    [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+        Refresh-SessionPath
         Write-Ok "vim installed"
     } else {
         Write-Ok "vim installed"

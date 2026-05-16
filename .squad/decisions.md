@@ -3203,3 +3203,249 @@ All 5 checks green:
 
 - Could not use `--approve` via GitHub CLI (same-user restriction). Left comment-review with approval verdict instead.
 - No code concerns. No follow-up actions required.
+---
+
+## # Decision: Coordinator Spawn Prompt Hygiene Is MANDATORY
+
+**Date:** 2026-05-16T01:29:00Z
+**By:** Earl Tankard (via Copilot)
+**Context:** PR #215 (Goofy, #190 tool versions) shipped without a history.md entry. Root cause: coordinator wrote a custom inline prompt for Goofy without the hygiene tail.
+
+## The Problem
+
+Same-batch agent Chip on PR #213, #214 DID update his history because his prompt explicitly demanded it. Inconsistency pattern: custom inline prompts skip hygiene boilerplate.
+
+## Five Mandatory Items
+
+Every spawn prompt the coordinator writes MUST include:
+
+1. **History append:** APPEND to .squad/agents/{name}/history.md a new entry describing this work (what + key findings).
+2. **Decisions inbox:** If you made a team-relevant decision, write to .squad/decisions/inbox/{name}-{brief-slug}.md
+3. **Skill extraction:** If you found a reusable pattern, write/update .squad/skills/{skill-name}/SKILL.md
+4. **PS 5.1 ASCII rule** (when any PowerShell test file is touched): No em-dashes, smart quotes, or non-ASCII chars in .ps1 string literals. Use -Encoding ASCII for Set-Content/Out-File.
+5. **Conventional Commits + Co-authored-by trailer** on every commit.
+
+## Enforcement
+
+Before sending any 	ask tool spawn, coordinator MUST scan its prompt for these five items and add any missing ones. If a custom prompt is used (not the standard template in .github/agents/squad.agent.md), the hygiene block must still be pasted verbatim at the bottom.
+
+## Failure Pattern to Break
+
+"Custom prompts skip hygiene." Solution: hygiene is non-negotiable boilerplate -- paste it every time, even for one-off tasks.
+
+---
+
+## # Decision: Retro Agenda -- Hygiene & Reliability
+
+**Date:** 2026-05-16T01:32:00Z
+**By:** Earl Tankard (via Copilot)
+
+## What Earl Said
+
+"why is this squad so bad at managing these things? :/ definitely gonna need this changed and addressed in retro"
+
+## Recurring Pattern (This Sprint & Sprints 2-4)
+
+| Miss | Sprint | Root cause |
+|------|--------|------------|
+| Goofy skipped history.md on PR #215 | this session | Coordinator wrote custom inline prompt, dropped hygiene tail |
+| SKILL.md uncommitted in #208 | this session | Coordinator forgot to stage new file before agent's last commit |
+| Em-dash CP1252 trap (PS 5.1) | repeated | Agents draft with smart chars, no pre-push lint gate |
+| Branch ancestry bleed (3+ times) | sprints 2-4 | Agents forked from each other's branches, not develop |
+| Broad Merge/Revert bypass on #213 | this session | Agent took easy path; coordinator didn't spec the spec |
+| commit-msg hook bypass needed retroactive enhancement | this session | Issue was filed reactively, not proactively |
+
+## Meta-Pattern
+
+1. Coordinator writes custom prompts ad-hoc instead of using the canonical template.
+2. No pre-spawn checklist enforces hygiene tail (history append, decisions inbox, skill extract, ASCII, conventional commits, Co-authored-by trailer).
+3. No post-work verification gate -- coordinator doesn't check if history.md was modified before declaring done.
+4. Agents are not given a hard checklist they MUST tick before committing.
+
+## Proposed Retro Outcomes (To Discuss With Team)
+
+1. **Coordinator-side:** Build a pre-spawn-checklist skill. Every 	ask call must paste the hygiene block verbatim -- no inline prompts skip it.
+2. **Agent-side:** Every agent ends work with a self-check command: git diff --stat showing history.md was modified, then auto-fail if not.
+3. **CI-side:** Add a workflow that fails any PR from squad/* branch where the corresponding gents/*/history.md was NOT modified. Hard gate.
+4. **Spec-side:** Issue filing template should require linking to the spec (e.g., #213 should have pointed at Conventional Commits v1.0.0 upfront, not after Earl asked).
+5. **Worktree-side:** New session-start step: list active worktrees + branches, prompt for cleanup if stale (>1 sprint old).
+6. **PR template:** Add a checkbox: [ ] history.md updated -- agent must check before opening PR.
+
+## Owner & Priority
+
+- Lead (Mickey) to run retro
+- Chip to build the CI gate (#5)
+- Goofy to add PR template (#6)
+- **Priority: HIGH.** Same pattern keeps biting. If we don't break it, Earl loses trust in the squad.
+
+---
+
+## # Decision: Ralph Owns End-of-Session Cleanup
+
+**Date:** 2026-05-16T02:00:00Z
+**By:** Earl Tankard (via Copilot)
+
+## What
+
+At the END of every session (right before user signs off, or coordinator detects "wind down" intent), Ralph MUST do one final cleanup pass:
+
+1. **Worktrees** -- git worktree list then git worktree remove --force any worktree whose branch has been merged (or whose PR has been closed/merged). Always keep the main checkout.
+2. **Local squad branches** -- git branch | grep squad/ then git branch -D any branch whose remote has been deleted (i.e., merged + --delete-branch) or whose PR has been merged/closed.
+3. **Remote orphan branches** -- git ls-remote --heads origin 'squad/*' cross-reference with local branches. Delete any remote squad branch that no longer has an open PR via git push origin --delete <branch>.
+4. **Prune** -- git fetch origin --prune and git worktree prune to clean up stale refs.
+5. **Final report** -- list of removed worktrees, deleted local branches, deleted remote branches, and final state (main checkout only, 2 local branches: develop + main, no orphan remote squad branches).
+
+## Why
+
+Worktrees and squad branches accumulate across sessions. Earl flagged: "we should have ralph clean up the branches at the end of each session for simplicity. do one final pass before ending things". Manual coordinator cleanup is brittle -- Ralph is the work monitor, owns the queue, and should naturally close the loop.
+
+## Trigger Signals for Ralph End-of-Session Cleanup
+
+- User says "stop", "end", "wrap up", "done for today", "sign off", "that's all"
+- User asks to merge develop -> main (sprint wrap is a session end signal)
+- Coordinator detects context window pressure approaching limit
+- Session has been idle for >10 minutes after last task completion
+
+## Enforcement
+
+Coordinator includes this cleanup in every Ralph "idle" or session-end flow. Ralph reports the cleanup result as the final response of the session.
+
+## Related Directives
+
+- Branch ancestry: always fork from develop (not from another squad branch)
+- Worktrees mandatory for parallel agents (cleanup just keeps this manageable)
+- ALL merges use regular merge commits (NEVER squash)
+
+---
+
+## # Decision: Branch & Worktree Cleanup Hygiene (Per-Batch & Per-Session)
+
+**Date:** 2026-05-16T04:20:24Z
+**By:** Earl Tankard (via Copilot Coordinator)
+
+## What
+
+After every batch's PRs land (Mickey reviews + merges), the coordinator MUST immediately clean stale branches and worktrees before moving to the next batch. Concretely, after each merge round run:
+
+1. git fetch origin --prune (drop deleted remote refs)
+2. git branch -D <merged-local-branch> for every local copy whose upstream is gone
+3. git worktree remove ../<repo>-issue-N for each per-issue worktree whose PR has merged
+
+Additionally, at session end, audit local + remote and delete any leftover squad/* branches and worktrees so the next session starts clean. Never let stale squad/* branches accumulate.
+
+## Why
+
+User request -- captured for team memory. Stale branches and worktrees increase the risk of branch ancestry bleed (5 occurrences this repo), confuse git worktree list, and waste disk. Cleaning per-batch and per-session keeps the queue tight.
+
+## Scope
+
+Coordinator orchestration rule. Applies to every batch merge and every session wrap, in this repo and any other Squad-managed repo Earl runs.
+
+---
+
+## # Decision: Windows Auth Uses --web Flag and Is Non-Fatal
+
+**Date:** 2026-05-16
+**Author:** Donald (Shell Dev)
+**Issue:** #191
+
+## Context
+
+Windows setup needed a gh auth step matching Linux parity. Two design choices were made:
+
+## Decisions
+
+1. **Auth failure is non-fatal.** Invoke-GhAuth catches all errors and emits warnings. It never throws or exits non-zero. This matches the Linux auth.sh philosophy -- auth is optional quality-of-life, not a hard requirement for setup to succeed.
+
+2. **Windows uses --web flag.** The gh auth login call uses --hostname github.com --git-protocol https --web to open the browser-based device flow. This avoids prompting the user for protocol/hostname interactively, reducing friction.
+
+3. **Non-interactive detection.** Uses $env:CI, $env:CODESPACES, and [Environment]::UserInteractive to detect CI/headless runs. In those environments, auth is skipped with a warning.
+
+---
+
+## # Decision: .tool-versions as Single Source of Truth for Pinned Versions
+
+**Date:** 2026-05-18
+**Author:** Goofy
+**Issue:** #190
+**PR:** #215
+
+## Context
+
+Scripts were fetching "latest" from GitHub API or installer URLs at runtime. This made builds non-reproducible and could break if upstream releases had issues.
+
+## Decision
+
+Use .tool-versions at repo root (asdf/mise format) as the single source of truth for tool version pins. Setup scripts parse it with lightweight helpers -- no asdf or mise runtime needed.
+
+## Format
+
+`
+toolname version
+`
+
+One tool per line. Blank lines and # comments allowed.
+
+## Implications
+
+- To bump a tool version, edit one file and re-run setup
+- All platforms (Linux, macOS, Windows) read the same file
+- No new runtime dependencies introduced
+
+## 2026-05-16 entries
+
+### 2026-05-16T07:50:00Z: Jiminy hired — Squad Hygiene Auditor
+**By:** Earl Tankard (via Copilot coordinator)
+**What:** Added new squad member Jiminy (Disney Classic universe) in the role of "Squad Hygiene Auditor" - a reviewer-gate role for squad OPERATIONS (not code). Charter pins model to claude-opus-4.6 (premium). Auto-runs before coordinator returns control to user, after multi-agent batches (3+ spawns), and at session-end. Manual trigger: "Jiminy, check" / "Jiminy, audit".
+**Scope of audit:** (1) Squad state hygiene (untracked .squad/ files, rogue paths, undrained decisions inbox, uncommitted history.md edits); (2) Git hygiene (working tree clean, stale squad/* branches, branch ancestry from develop, local/origin sync); (3) Process hygiene (PR labels, issue priorities, no squash merges, Conventional Commits format); (4) Memory hygiene (history append, decisions inbox usage, Scribe fired after each batch).
+**Auto-fix scope:** Stage+commit history edits (via Scribe), move/delete rogue files, drain decisions inbox. Will NOT: delete branches, force-push, change labels, rewrite commit messages.
+**Why:** Recurring squad hygiene failures (rogue verification reports 2026-05-16, uncommitted histories on multiple sessions, branch ancestry bleed in Sprint 7, squash merges in Sprints 2-3) forced Earl to be the verifier. Tiring. Jiminy exists so the team self-audits before bothering him.
+**Files added:** .squad/agents/jiminy/charter.md, .squad/agents/jiminy/history.md
+**Files updated:** .squad/casting/registry.json (added hygiene-auditor entry), .squad/casting/history.json (addendum), .squad/team.md (roster row), .squad/routing.md (routing entry + auto-run rule #8)
+
+### 2026-05-16T07:30:00Z: Verifier batch spawn hygiene
+**By:** Earl Tankard (via Copilot coordinator → Donald cleanup)
+**What:** Verifier agents (any agent doing read-only verification of audit findings) MUST write their evidence to ONE of these three locations only:
+1. .squad/agents/{name}/history.md — append learnings under "## Learnings"
+2. .squad/decisions/inbox/{name}-{slug}.md — for team-relevant decisions
+3. .squad/orchestration-log/{ISO8601-UTC}-{batch-name}.md — for batch evidence with citations (preferred for citation-heavy verification reports)
+Verifiers MUST NOT create files at .squad/agents/{name}/VERIFICATION_REPORT.md, .squad/verification-report.md, or any other random path. Spawn prompts for verifier-style batches MUST specify the target location explicitly. Coordinator MUST spawn Scribe IMMEDIATELY after any verifier batch — never delay to a downstream filing step.
+**Why:** Incident 2026-05-16. 3 rogue verification reports landed on develop uncommitted because (a) verifiers picked random paths and (b) coordinator delayed Scribe.
+
+---
+
+## # Decision Record: Hygiene Reliability Retro Complete
+
+**Date:** 2026-05-16
+**Source:** 2026-05-16 Hygiene Reliability Retro (facilitator: Coordinator)
+**Status:** ALL 4 action items shipped to develop. Both gates LIVE.
+
+### Action items shipped
+
+1. Pre-spawn-checklist skill (.squad/skills/pre-spawn-checklist/SKILL.md) -- commit 0431dc8
+2. Squad history-check CI gate (.github/workflows/squad-history-check.yml) -- PR #241 / merge c02d679
+3. PR template with hygiene checklist (.github/pull_request_template.md) -- PR #242 / merge 0fc8dcf
+4. Retro facilitation (this record)
+
+### Standing rules now in force
+
+- Every spawn prompt must include the hygiene tail (per pre-spawn-checklist skill)
+- squad:* PRs must update matching agent history.md or CI fails (hard gate, no override)
+- All squad PRs use the new template with hygiene checklist
+- Branches always forked from develop (never from another squad/* branch)
+- Verifier evidence goes to .squad/orchestration-log/*.md ONLY
+- Ralph owns end-of-session branch + worktree cleanup
+- Jiminy auto-audits before Coordinator returns to user, post-batch (3+ spawns), session-end
+
+### Belt-and-suspenders coverage
+
+- Pre-commit: TBD (issue #240 P1 for Pluto to implement)
+- CI gate: LIVE (Chip's squad-history-check)
+- PR template: LIVE (visible checklist)
+- Pre-spawn checklist: LIVE (Coordinator self-audit)
+- Post-spawn audit: LIVE (Jiminy reviewer gate)
+- End-of-session: LIVE (Ralph cleanup)
+
+This is the most comprehensive squad hygiene system any sprint has produced.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

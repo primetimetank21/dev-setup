@@ -216,8 +216,9 @@ Use `--no-verify` to bypass hooks in emergencies.
 Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format). Setup scripts read this file directly -- no asdf or mise dependency needed.
 
 ```
-nodejs 20.11.0
+nodejs 22.11.0
 nvm 0.39.7
+nvm-windows 1.2.2
 uv 0.4.18
 copilot-cli 0.0.339
 ```

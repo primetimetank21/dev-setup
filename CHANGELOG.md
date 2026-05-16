@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-05-16
+
 ### Added
+- Pre-commit hygiene checks: ASCII-only enforcement on staged `.ps1` files, rogue `.squad/` path validation, staged inbox file detection, and branch ancestry verification for squad branches (closes #240)
+- `tests/test_precommit_hygiene.sh` -- bash tests for all 4 pre-commit hygiene checks (13 pass/fail cases)
+- E2E install smoke test workflow `.github/workflows/e2e-install.yml` with 3-OS matrix (Linux, macOS, Windows) -- exercises full setup, tool assertions, idempotency, and uninstall on fresh runners (closes #239)
+  - Triggers: per-PR, nightly cron (04:00 UTC), manual workflow_dispatch
+  - Non-blocking initially (`continue-on-error: true` on all jobs); will flip to blocking after 2-3 green nightlies
+  - Stabilization plan: monitor nightly runs for 1 week; address third-party flakes (winget rate limits, brew network); then remove continue-on-error
 - macOS CI validation via new `validate-macos` job in `validate.yml` (closes #181)
 - Windows GitHub auth step via `scripts/windows/auth.ps1` (closes #191)
 - Automatic Node LTS install via nvm during setup; reads pinned version from `.tool-versions` (closes #201)
@@ -32,8 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Shared logging helpers extracted to `scripts/linux/lib/log.sh` and `scripts/windows/lib/logging.ps1` (closes #186)
 - Support for `merge` type in commit-msg hook type allowlist (#212)
-
-### Changed
 - `squad-cli` install failure is now a loud error with actionable hints (was silent warning)
 - `scripts/linux/tools/nvm.sh` installs pinned Node version from `.tool-versions` (was `--lts`)
 - `scripts/linux/tools/nvm.sh` reads nvm version from `.tool-versions` instead of fetching latest
@@ -45,6 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - commit-msg no longer needs special-case bypass for merge/revert -- prepare-commit-msg now normalizes them (#212)
 
 ### Fixed
+- Windows: session PATH now refreshed after every `winget install` so just-installed binaries (nvm, git, gh, vim, copilot, psmux) resolve immediately without restarting the terminal; preserves session-only PATH entries (e.g., GitHub Actions tool-cache, profile-injected paths) (closes #251)
+- Windows nvm install switched from winget+nvm-setup.exe to portable nvm-noinstall.zip download (deterministic, no installer race); replaces Wait-ForNvmInstall polling with Install-NvmPortable + Set-NvmEnvironment (#251)
+- Pinned Node.js version bumped from 20.11.0 to 22.11.0 in `.tool-versions` to satisfy `squad-cli` engine requirement (`>=22.5.0`); added `nvm alias default` so fresh shells inherit the pinned version; affects Linux, macOS, and Windows setup paths (fixes #252, related #255)
+- E2E install workflow: added Node major version assertion (>=22) to Linux and macOS fresh-shell steps to prevent future regressions (#252)
+- CI: Added nvm + Node.js validation step to validate-macos job, aligning with validate-linux (closes #225)
+- Pre-commit hook now refuses commits directly on `develop`, `main`, or `master` with a clear error message directing the user to create a feature branch (closes #249)
+- `scripts/windows/tools/nvm.ps1` resolved wrong lib path (one level up instead of two); `Read-ToolVersion.ps1` not found at runtime (closes #221)
+- Added runtime assertion in `nvm.ps1` to catch missing lib directory early
 - PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)
 
 ## [0.7.0] - 2026-04-25 -- Sprint 7: Hooks, psmux, and profile hardening

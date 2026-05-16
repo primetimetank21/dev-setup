@@ -182,6 +182,15 @@ Fixed three regressions introduced by PR #130:
 - Placed Install-Dotfiles after Install-SquadCli and before Write-PowerShellProfile in setup chain
 - Tests in Group Q of test_windows_setup.ps1 using temp USERPROFILE override
 
+### Issue #251 -- Session PATH not refreshed after winget installs (2026-05-17)
+- **PR:** fix(windows): refresh session PATH after winget installs (#251)
+- **Branch:** `goofy/251-windows-nvm-path` from `develop`
+- **Bug:** `winget install nvm` succeeded but the running PowerShell session kept its original PATH snapshot. `nvm install` then failed because `nvm.exe` was not on PATH. Same pattern affected git, gh, vim, copilot, psmux.
+- **Fix:** Extracted `Refresh-SessionPath` from `nvm.ps1` into shared `scripts/windows/lib/path.ps1`. Sourced it in the orchestrator and all 6 winget-based tool scripts. Added `Refresh-SessionPath` call after every `winget install` that is followed by usage of the just-installed binary. Replaced vim.ps1's inline PATH rebuild with the shared function.
+- **Pattern:** Any time a tool modifies the system/user PATH (winget, manual registry write), call `Refresh-SessionPath` before the next `Get-Command` or binary invocation in the same session.
+- **Key learning:** Windows PowerShell snapshots `$env:Path` at process start. Registry changes from installers are invisible until you explicitly re-read `[System.Environment]::GetEnvironmentVariable('Path', 'Machine')` and `'User'` and assign back to `$env:Path`. This is a shared-lib concern, not per-tool -- extract once, source everywhere.
+- **v2 fix:** squad-cli.ps1 also needed `Refresh-SessionPath` (defensive) -- it runs after nvm.ps1 in the orchestrator and the npm/node junction may not be on PATH for its invocation scope. tests/test_windows_setup.ps1 Group P strip regex needed to handle the new path.ps1 dot-source added to psmux.ps1 (IEX makes `$PSScriptRoot` empty, so relative dot-sources fail).
+
 ### Issue #190 - Pin tool versions via .tool-versions (2026-05-16)
 - PR: #215 -- `feat(setup): pin tool versions via .tool-versions file`
 - Branch: `squad/190-tool-versions` from `develop`
@@ -204,3 +213,56 @@ Fixed three regressions introduced by PR #130:
 - What: Extracted log_info/log_ok/log_warn/log_error into scripts/linux/lib/log.sh and Write-Info/Write-Ok/Write-Warn/Write-Err into scripts/windows/lib/logging.ps1. Updated 8 shell callers + 11 PS callers to source from lib. Removed duplicate definitions.
 - Key findings: Shell tool scripts had drift -- some only defined 2-3 of 4 log functions (gh.sh had only log_info/log_ok, squad-cli.sh missing log_warn). PS uninstall.ps1 uses Write-Host format (not Write-Output) so was left alone. Tests using Invoke-Expression need logging lib pre-loaded and dot-source line stripped since $PSScriptRoot resolves to test dir.
 - Tests: tests/test_shared_logging.sh + Group V (V-1 to V-3) in test_windows_setup.ps1
+
+### Post-sprint Windows/PS audit (2026-05-16)
+- Lens: windows / powershell / ps 5.1 compat
+- 10 findings reported: 1 high-severity bug (nvm.ps1 path resolution), 1 medium (tool error handling), 8 low/improvements
+- 2 pass validations: AllScope alias guards complete, ASCII-only check clean
+- Coordinator can prioritize F-1 (path bug in PR #218), F-4 (error handling), F-2 (encoding consistency) for next sprint
+
+## [2026-05-17] Verification of Audit Findings (Read-Only Deep Dive)
+- **Status:** COMPLETED — 5/5 findings verified; V-1 confirmed P0 bug, V-7 & V-11 & V-15 confirmed P2 refactoring gaps, V-13 confirmed P1 error handling gap
+- **Method:** Systematic file inspection + citations to exact locations; compared against ps51-runtime-file-encoding skill
+- **Report:** .squad/agents/goofy/VERIFICATION_REPORT.md (13KB, detailed analysis per finding)
+- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
+
+### Retro Action: PR Template with Hygiene Checklist (2026-05-17)
+- **Retro:** 2026-05-16 hygiene retro, action item `retro-pr-template`
+- **Context:** Recurring sprint hygiene gaps — agents forget to update history.md, drain decisions inbox, capture skills, verify ASCII-only compliance in PS files. Root cause: No visible checklist at PR authoring time. Goofy owned this action item as closure on #215 miss (forgot to update history.md when Chip merged PR #215 tool-versions feature).
+- **Solution:** Created `.github/pull_request_template.md` with 8-item hygiene checklist:
+  1. Updated `.squad/agents/{name}/history.md` with Learnings entry
+  2. Decisions inbox drained (or N/A)
+  3. Skill captured for new pattern (or N/A)
+  4. ASCII-only enforcement for PS/YAML files (em dashes, curly quotes, smart apostrophes break PS 5.1 CP1252)
+  5. Conventional Commits format on all commits
+  6. Co-authored-by Copilot trailer on all commits
+  7. Branch forked from develop (prevents `squad/*` ancestry bleed)
+  8. No rogue files outside canonical `.squad/` paths
+- **Design:** HTML-comment-wrapped guidance in template prevents render clutter in PR body but remains visible in editor. Combined with Jiminy's CI gate (separate PR), provides both human-readable confirmation AND automated enforcement.
+- **Key Pattern:** Hygiene checklist goes BEFORE first PR body is authored (visible during composition), creates friction against skipping items. This is why appending to history.md in this very commit proves the pattern works — if Goofy had skipped it, the template itself would fail its own checklist.
+- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
+
+## Learnings -- Issue #221 (nvm.ps1 lib path off-by-one)
+- **Date:** 2026-05-16
+- **Bug:** `nvm.ps1` used one `Split-Path -Parent` from `` (landing in `scripts\windows\lib\`) but `Read-ToolVersion.ps1` lives in `scripts\lib\` (two levels up from `scripts\windows\tools\`).
+- **Fix:** Changed to two-level `Split-Path` and added a `Test-Path` assertion so the failure is immediate and descriptive instead of a cryptic dot-source error.
+- **Spot-check:** Verified `uv.ps1` and `copilot.ps1` do NOT reference `Read-ToolVersion.ps1` -- no contagion.
+- **Pattern:** When tool scripts under `scripts\windows\tools\` need shared libs, the path is always `Split-Path (Split-Path $PSScriptRoot -Parent) -Parent | Join-Path -ChildPath 'lib'`. Add a guard assertion every time.
+- **Test:** Added Group W (W-1 through W-3) in `test_windows_setup.ps1` verifying path resolution, runtime assertion presence, and two-level Split-Path usage.
+### PR #245 Revision - Missing e2e assertions for squad/psmux/tmux (2026-05-17)
+- **Context:** Chip authored PR #245 (branch `chip/239-e2e-install`). Mickey's review flagged missing assertions per Issue #239 acceptance criteria. Per squad governance, a DIFFERENT agent must revise a rejected PR -- Goofy assigned.
+- **What was missing:** squad CLI assertion on Linux/macOS; squad, psmux, and tmux assertions on Windows. Also no post-idempotency re-assertions for these tools.
+- **What was added:**
+  - Linux fresh-shell: `squad --version` with explicit failure message
+  - macOS fresh-shell: `squad --version` with explicit failure message
+  - Windows fresh-shell: `Assert-Command 'squad' '--version'`, `Assert-Command 'psmux' '--version'`, `Assert-Command 'tmux' '--version'`
+  - Post-idempotency assertion steps for all three platforms (verifies tools survive a second setup run)
+- **Decision on `|| true` vs hard fail:** Hard fail chosen. squad-cli is a required tool per acceptance criteria. Silent `|| true` would mask real install failures. The error message explicitly names the npm package so CI logs point directly at root cause.
+- **Why any agent could do this:** The changes are YAML workflow edits (no PS 5.1 compat concerns, no complex cross-platform logic). Selected per "different agent revises" rule, not technical necessity.
+
+### PR #257 v3 fix (2026-05-18)
+- v3 fix -- Add-NvmWindowsPaths defensive injection (winget->registry timing race); fixed 2 stale PS 5.1 tests (R-1 nodejs version, T-3 PATH refresh location).
+- v4 fix -- Refresh-SessionPath now MERGES registry into existing $env:Path instead of replacing. Old behavior wiped GH Actions tool-cache Node injection. Skill doc updated. Test T-3c added.
+- v5 fix -- Root cause: winget returns before the inner nvm-setup.exe installer finishes writing files/registry. Replaced Add-NvmWindowsPaths with Wait-ForNvmInstall (polling helper, 90s timeout, 5 candidate paths). Kept v4 Refresh-SessionPath merge fix intact. Updated test T-3b, skill doc (Gotcha 2), CHANGELOG.
+- v6 fix -- v5 90s timeout was 10s too short (installer took ~100s in CI run 25970591039). v5 candidate paths also missed actual install location (registry update proved installer succeeded but none of 5 paths matched). v6 uses Refresh-SessionPath + Get-Command nvm as primary detection (path-agnostic), expanded candidate list (7 dirs including C:\nvm, C:\nvm-windows) as fallback, 180s default timeout, and diagnostic dump on timeout failure.
+- v8 fix -- Earl chose portable download approach. winget install was racy (3 different timings in CI: 24s, 100s, >180s). Replaced Wait-ForNvmInstall with Install-NvmPortable + Set-NvmEnvironment. Downloads nvm-noinstall.zip from GitHub releases, extracts to %USERPROFILE%\nvm (standard nvm-windows portable location). Sets NVM_HOME/NVM_SYMLINK at User scope so subsequent shells work too. Deterministic, no installer race.

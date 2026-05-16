@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
+. "$PSScriptRoot\..\lib\path.ps1"
 
 # psmux - tmux equivalent for Windows PowerShell terminal multiplexer.
 function Install-Psmux {
@@ -16,5 +17,6 @@ function Install-Psmux {
     }
     Write-Info "Installing psmux..."
     winget install --id marlocarlo.psmux --accept-source-agreements --accept-package-agreements --silent
+    Refresh-SessionPath
     Write-Ok "psmux installed."
 }
