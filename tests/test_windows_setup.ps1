@@ -1722,6 +1722,54 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
 }
 
 # ---------------------------------------------------------------------------
+# Group Z: Set-Content encoding hygiene (Issue #234)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group Z: Set-Content encoding hygiene (#234)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "Z-1: profile.ps1 - every Set-Content call has -Encoding" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Set-Content\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Set-Content without -Encoding found in profile.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+Test-Scenario "Z-2: profile.ps1 - every Add-Content call has -Encoding" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Add-Content\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Add-Content without -Encoding found in profile.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+Test-Scenario "Z-3: uninstall.ps1 - every Set-Content call has -Encoding" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\uninstall.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Set-Content\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Set-Content without -Encoding found in uninstall.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+Test-Scenario "Z-4: uninstall.ps1 - every Out-File call has -Encoding (future-proof)" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\uninstall.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Out-File\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Out-File without -Encoding found in uninstall.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 

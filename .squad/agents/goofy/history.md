@@ -343,3 +343,4 @@ Fixed three regressions introduced by PR #130:
 - Group letter coordination: This PR also created Group X, but collision with #267 Group X
   was resolved by merging #268 first and having #267 rebase to Group Y.
   Lesson: Coordinator should pre-assign group letters in spawn prompts.
+2026-05-16 -- #234 ASCII encoding hygiene

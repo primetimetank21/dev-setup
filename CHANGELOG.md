@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `scripts/windows/tools/profile.ps1` and `scripts/windows/uninstall.ps1`: added `-Encoding ASCII` to all `Set-Content` and `Add-Content` calls. Prevents encoding mismatch between PS 5.1 (UTF-16LE BOM default) and PS 7 (UTF-8 BOM default) (closes #234).
 - Documentation: README + CONTRIBUTING now document the automatic `core.hooksPath` setup performed by `setup.sh` and `setup.ps1`. Replaced stale "install hooks manually" instruction. Added branch-from-develop validation note per Sprint Q retro (closes #228).
 - Squad governance upgraded from 0.9.1 to 0.9.4 (dispatch mechanism, `CURRENT_DATETIME` requirement, `name` param in spawn prompts, default models bumped to `claude-sonnet-4.6` / `gpt-5.3-codex`, tier-based agent timeout policy)
 - `.github/workflows/squad-heartbeat.yml` removes noisy cron trigger; Ralph now fires on issue events only

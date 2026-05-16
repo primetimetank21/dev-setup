@@ -2,6 +2,26 @@
 
 ## Decision Records
 
+## # Decision: Always use -Encoding ASCII for Set-Content/Add-Content/Out-File in Windows scripts
+
+**Issue:** #234
+**PR:** TBD
+**Agent:** Goofy (Cross-Platform)
+**Date:** 2026-05-16
+
+## Context
+
+PowerShell 5.1 defaults Set-Content/Add-Content to UTF-16LE BOM; PS 7 defaults to UTF-8 BOM.
+Both encodings break cross-tool compatibility (git, external editors, shell parsers).
+Profile and config files written by dev-setup must be readable by all tooling without BOM corruption.
+
+## Decision
+
+All Set-Content, Add-Content, and Out-File calls in Windows PowerShell scripts in this repo
+MUST include `-Encoding ASCII` unless the content is explicitly non-ASCII (in which case
+`-Encoding utf8NoBOM` is acceptable on PS7-only paths).
+ASCII is the safe default for all profile blocks and config snippets written by this repo.
+
 ## # Decision: CI PS 5.1 Validation Path
 
 **Issue:** #109
