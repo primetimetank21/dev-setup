@@ -5,9 +5,17 @@
 #          or: . "$PSScriptRoot\lib\path.ps1"      (from scripts/windows/)
 
 function Refresh-SessionPath {
+    # Merge Machine + User registry PATH into the current $env:Path,
+    # preserving session-only entries (e.g., GitHub Actions tool-cache
+    # injections, profile-set entries, manual session additions).
     $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
     $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-    $env:Path    = "$machinePath;$userPath"
+
+    $existing = $env:Path
+    $combined = @($existing, $machinePath, $userPath) -join ';'
+    $env:Path = ($combined -split ';' |
+                 Where-Object { $_ -ne '' } |
+                 Select-Object -Unique) -join ';'
 }
 
 function Add-NvmWindowsPaths {

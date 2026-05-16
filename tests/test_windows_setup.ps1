@@ -1251,6 +1251,18 @@ Test-Scenario "T-3b lib/path.ps1 contains Add-NvmWindowsPaths defensive injectio
     }
 }
 
+Test-Scenario "T-3c Refresh-SessionPath merges registry into existing PATH (does not replace)" {
+    $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
+    $pathLibContent = Get-Content $pathLib -Raw
+    # Replace-style would be: $env:Path = "$machinePath;$userPath"
+    # Merge-style captures existing $env:Path and folds it into the result
+    $capturesExisting = $pathLibContent -match '\$existing\s*=\s*\$env:Path'
+    $mergesIntoResult = $pathLibContent -match '(?s)\$env:Path\s*=\s*\(\$combined'
+    if (-not $capturesExisting -or -not $mergesIntoResult) {
+        throw "Refresh-SessionPath does not merge with existing PATH -- it would drop session-only entries (e.g., GitHub Actions tool-cache)"
+    }
+}
+
 Test-Scenario "T-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
     $hasInstall = $nvmContent -match 'nvm install \$pinnedNode'
     $hasUse     = $nvmContent -match 'nvm use \$pinnedNode'
