@@ -39,21 +39,22 @@ function Install-Nvm {
     # -- Install nvm-windows if missing ------------------------------------
     if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
         $nvmVersion = Get-ToolVersion -Name 'nvm'
-        Write-Info "Installing nvm-windows (pinned: $nvmVersion)..."
-        winget install --id CoreyButler.NVMforWindows --silent --accept-source-agreements --accept-package-agreements
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warn "nvm-windows install failed (winget exit $LASTEXITCODE) -- cannot install Node"
-            return
+        $nvmHome    = Join-Path $env:USERPROFILE 'nvm'
+        $nodeDir    = Join-Path $env:USERPROFILE 'nodejs'
+
+        # If portable nvm is already extracted, just put it on PATH.
+        if (Test-Path (Join-Path $nvmHome 'nvm.exe')) {
+            Write-Info "nvm-windows already extracted at $nvmHome"
+        } else {
+            Write-Info "Installing nvm-windows (portable, pinned: $nvmVersion)..."
+            Install-NvmPortable -Version $nvmVersion -NvmHome $nvmHome -NodeDir $nodeDir
         }
-        Write-Info "Waiting for nvm-windows installer to finish..."
-        $nvmHome = Wait-ForNvmInstall -TimeoutSeconds 180
-        if (-not $nvmHome) {
-            Write-Warn "nvm-windows installer did not finish within 180s -- open a new terminal and re-run setup"
-            return
-        }
-        Refresh-SessionPath
+
+        # Configure runtime env: NVM_HOME, NVM_SYMLINK, PATH (session + User scope).
+        Set-NvmEnvironment -NvmHome $nvmHome -NodeDir $nodeDir
+
         if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
-            Write-Warn "nvm not found on PATH after install (NVM_HOME=$nvmHome)"
+            Write-Warn "nvm not on PATH after portable install (NVM_HOME=$nvmHome)"
             return
         }
         Write-Ok "nvm-windows installed at $nvmHome"
@@ -80,4 +81,43 @@ function Install-Nvm {
     } else {
         Write-Warn "npm not found on PATH after nvm install -- try opening a new terminal"
     }
+}
+
+function Install-NvmPortable {
+    # Download nvm-noinstall.zip from GitHub releases and extract to $NvmHome.
+    # Writes settings.txt so nvm knows where to symlink node.
+    param(
+        [Parameter(Mandatory)][string]$Version,
+        [Parameter(Mandatory)][string]$NvmHome,
+        [Parameter(Mandatory)][string]$NodeDir
+    )
+    $zipUrl = "https://github.com/coreybutler/nvm-windows/releases/download/$Version/nvm-noinstall.zip"
+    $zipPath = Join-Path $env:TEMP "nvm-noinstall-$Version.zip"
+
+    New-Item -ItemType Directory -Path $NvmHome -Force | Out-Null
+    Write-Info "Downloading $zipUrl"
+    Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
+    Expand-Archive -Path $zipPath -DestinationPath $NvmHome -Force
+    Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
+
+    $settingsPath = Join-Path $NvmHome 'settings.txt'
+    @"
+root: $NvmHome
+path: $NodeDir
+"@ | Out-File -FilePath $settingsPath -Encoding ascii -NoNewline
+}
+
+function Set-NvmEnvironment {
+    # Set NVM_HOME / NVM_SYMLINK at User scope (persistent) and in current session.
+    # Prepend $NvmHome and $NodeDir to $env:Path.
+    param(
+        [Parameter(Mandatory)][string]$NvmHome,
+        [Parameter(Mandatory)][string]$NodeDir
+    )
+    [System.Environment]::SetEnvironmentVariable('NVM_HOME',    $NvmHome, 'User')
+    [System.Environment]::SetEnvironmentVariable('NVM_SYMLINK', $NodeDir, 'User')
+    $env:NVM_HOME    = $NvmHome
+    $env:NVM_SYMLINK = $NodeDir
+    if ($env:Path -notlike "*$NvmHome*") { $env:Path = "$NvmHome;$env:Path" }
+    if ($env:Path -notlike "*$NodeDir*") { $env:Path = "$NodeDir;$env:Path" }
 }

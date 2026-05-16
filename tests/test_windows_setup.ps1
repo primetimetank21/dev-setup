@@ -1240,32 +1240,22 @@ Test-Scenario "T-3 lib/path.ps1 contains PATH refresh via registry read" {
     }
 }
 
-Test-Scenario "T-3b lib/path.ps1 contains Wait-ForNvmInstall polling helper" {
-    $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
-    $pathContent = Get-Content $pathLib -Raw
-    $hasFunc = $pathContent -match 'function Wait-ForNvmInstall'
-    $hasTimeout = $pathContent -match '\$TimeoutSeconds\s*=\s*180'
-    $hasSleep = $pathContent -match 'Start-Sleep'
-    $hasGetDate = $pathContent -match 'Get-Date'
-    $hasRoaming = $pathContent -match 'AppData\\Roaming\\nvm'
-    $hasNvm4w = $pathContent -match 'C:\\nvm4w\\nvm'
-    $hasCnvm = $pathContent -match "'C:\\nvm'"
-    $hasRefresh = $pathContent -match 'Refresh-SessionPath'
-    $hasGetCmd = $pathContent -match 'Get-Command nvm'
-    if (-not $hasFunc -or -not $hasTimeout) {
-        throw "lib/path.ps1 missing Wait-ForNvmInstall or default timeout not 180"
+Test-Scenario "T-3b nvm.ps1 contains Install-NvmPortable (downloads nvm-noinstall.zip)" {
+    $hasFunc = $nvmContent -match 'function Install-NvmPortable'
+    $hasZipUrl = $nvmContent -match 'nvm-noinstall\.zip'
+    $hasInvokeWeb = $nvmContent -match 'Invoke-WebRequest'
+    $hasExpand = $nvmContent -match 'Expand-Archive'
+    if (-not $hasFunc) {
+        throw "nvm.ps1 missing Install-NvmPortable function"
     }
-    if (-not $hasSleep -or -not $hasGetDate) {
-        throw "Wait-ForNvmInstall missing poll loop (Start-Sleep + Get-Date)"
+    if (-not $hasZipUrl) {
+        throw "Install-NvmPortable does not reference nvm-noinstall.zip"
     }
-    if (-not $hasRoaming -or -not $hasNvm4w -or -not $hasCnvm) {
-        throw "Wait-ForNvmInstall missing expected candidate paths (Roaming, nvm4w, C:\nvm)"
+    if (-not $hasInvokeWeb) {
+        throw "Install-NvmPortable does not call Invoke-WebRequest"
     }
-    if (-not $hasRefresh) {
-        throw "Wait-ForNvmInstall does not call Refresh-SessionPath inside the loop"
-    }
-    if (-not $hasGetCmd) {
-        throw "Wait-ForNvmInstall does not call Get-Command nvm inside the loop"
+    if (-not $hasExpand) {
+        throw "Install-NvmPortable does not call Expand-Archive"
     }
 }
 
@@ -1278,6 +1268,26 @@ Test-Scenario "T-3c Refresh-SessionPath merges registry into existing PATH (does
     $mergesIntoResult = $pathLibContent -match '(?s)\$env:Path\s*=\s*\(\$combined'
     if (-not $capturesExisting -or -not $mergesIntoResult) {
         throw "Refresh-SessionPath does not merge with existing PATH -- it would drop session-only entries (e.g., GitHub Actions tool-cache)"
+    }
+}
+
+Test-Scenario "T-3d nvm.ps1 contains Set-NvmEnvironment (sets NVM_HOME/NVM_SYMLINK + PATH)" {
+    $hasFunc = $nvmContent -match 'function Set-NvmEnvironment'
+    $hasNvmHome = $nvmContent -match "SetEnvironmentVariable\('NVM_HOME'"
+    $hasNvmSymlink = $nvmContent -match "SetEnvironmentVariable\('NVM_SYMLINK'"
+    $hasUserScope = $nvmContent -match "'User'\)"
+    $hasPathPrepend = $nvmContent -match '\$env:Path\s*=\s*"\$NvmHome;\$env:Path"'
+    if (-not $hasFunc) {
+        throw "nvm.ps1 missing Set-NvmEnvironment function"
+    }
+    if (-not $hasNvmHome -or -not $hasNvmSymlink) {
+        throw "Set-NvmEnvironment does not set NVM_HOME and NVM_SYMLINK"
+    }
+    if (-not $hasUserScope) {
+        throw "Set-NvmEnvironment does not use User scope for env vars"
+    }
+    if (-not $hasPathPrepend) {
+        throw "Set-NvmEnvironment does not prepend to PATH"
     }
 }
 

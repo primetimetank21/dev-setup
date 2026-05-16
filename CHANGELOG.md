@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Windows: session PATH now refreshed after every `winget install` so just-installed binaries (nvm, git, gh, vim, copilot, psmux) resolve immediately without restarting the terminal; preserves session-only PATH entries (e.g., GitHub Actions tool-cache, profile-injected paths) (closes #251)
-- Windows nvm install now polls for the installer to finish (180s timeout) using PATH-aware polling (Refresh-SessionPath + Get-Command) with candidate-path fallback before checking PATH (winget async return) (#251)
+- Windows nvm install switched from winget+nvm-setup.exe to portable nvm-noinstall.zip download (deterministic, no installer race); replaces Wait-ForNvmInstall polling with Install-NvmPortable + Set-NvmEnvironment (#251)
 - Pinned Node.js version bumped from 20.11.0 to 22.11.0 in `.tool-versions` to satisfy `squad-cli` engine requirement (`>=22.5.0`); added `nvm alias default` so fresh shells inherit the pinned version; affects Linux, macOS, and Windows setup paths (fixes #252, related #255)
 - E2E install workflow: added Node major version assertion (>=22) to Linux and macOS fresh-shell steps to prevent future regressions (#252)
 - CI: Added nvm + Node.js validation step to validate-macos job, aligning with validate-linux (closes #225)

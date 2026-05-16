@@ -33,6 +33,22 @@ function Refresh-SessionPath {
 
 ---
 
+## Portable nvm-windows (preferred)
+
+For nvm-windows, use the portable `nvm-noinstall.zip` approach rather than
+`winget install CoreyButler.NVMforWindows`. The winget installer wraps
+nvm-setup.exe which detaches and runs asynchronously -- CI observed install
+times of 24s, 100s, and >180s depending on runner load. winget returns
+"success" before the installer finishes, causing PATH/registry races.
+
+The portable approach downloads the zip from GitHub releases, extracts to
+`%USERPROFILE%\nvm`, writes `settings.txt`, and sets NVM_HOME/NVM_SYMLINK
+at User scope. Deterministic and instantaneous.
+
+See `scripts/windows/tools/nvm.ps1`: `Install-NvmPortable` + `Set-NvmEnvironment`.
+
+---
+
 ## When to use
 
 - After `winget install` of any tool that adds itself to PATH
@@ -51,15 +67,8 @@ function Refresh-SessionPath {
 2. **winget returns before the installer finishes.** For installers like
    `CoreyButler.NVMforWindows` that wrap a setup.exe, `winget install --silent`
    can return BEFORE the inner installer has written files or updated the
-   registry. Calling `Refresh-SessionPath` immediately after may find nothing.
-   The installer can take 100+ seconds in CI (observed ~100s on GH Actions
-   windows-latest), so the default timeout is 180s.
-
-   **Fix:** `Wait-ForNvmInstall` in `scripts/windows/lib/path.ps1` polls with
-   a two-pronged strategy: (1) `Refresh-SessionPath` + `Get-Command nvm` as
-   the primary signal (catches the registry update regardless of install path),
-   and (2) direct path probing of 7 candidate directories as a fallback (catches
-   cases where the registry update is delayed).
+   registry. This is why nvm-windows uses the portable zip approach instead
+   (no installer, no race).
 
 3. **Machine before User.** Windows resolves PATH left-to-right. Putting
    Machine first matches the default shell behavior.
@@ -72,8 +81,7 @@ function Refresh-SessionPath {
 ## Citations
 
 - `scripts/windows/lib/path.ps1` -- `Refresh-SessionPath` function (PR #201, #251)
-- `scripts/windows/lib/path.ps1` -- `Wait-ForNvmInstall` polling helper (PR #257, #251)
-- `scripts/windows/tools/nvm.ps1` -- calls Refresh-SessionPath + Wait-ForNvmInstall (PR #201, #257)
+- `scripts/windows/tools/nvm.ps1` -- `Install-NvmPortable` + `Set-NvmEnvironment` (PR #257, #251)
 - `scripts/windows/tools/vim.ps1` -- earlier inline PATH refresh (same pattern)
 
 ---
@@ -83,3 +91,4 @@ function Refresh-SessionPath {
 - 2026-05-16: changed from replace to merge. Issue #251 (GH Actions tool-cache Node was being wiped).
 - 2026-05-18: added Wait-ForNvmInstall polling helper. winget returns before nvm-setup.exe finishes; polling 5 candidate paths with 90s timeout. Issue #251, PR #257.
 - 2026-05-18: v6 -- bumped timeout to 180s (installer took ~100s in CI); poll loop now uses Refresh-SessionPath + Get-Command as primary signal, expanded candidate paths (7 dirs) as fallback; diagnostic dump on timeout. Issue #251, PR #257.
+- 2026-05-18: v8 -- replaced winget+Wait-ForNvmInstall with portable nvm-noinstall.zip download (Install-NvmPortable + Set-NvmEnvironment). Deterministic, no installer race. Issue #251, PR #257.
