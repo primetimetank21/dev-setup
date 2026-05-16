@@ -62,7 +62,7 @@ remain in `$HOME/.gitconfig` — just edit the file manually.
 | Setting | Value | Reason |
 |---------|-------|--------|
 | `core.autocrlf` | `input` | Normalise line endings to LF on commit; safe cross-platform |
-| `core.editor` | `${EDITOR:-vim}` | Honour user preference; fall back to vim |
+| `core.editor` | `vim` | Sensible default; override with `git config --global core.editor <editor>` |
 | `pull.rebase` | `false` | Merge on pull is a safe, explicit default |
 | `init.defaultBranch` | `main` | Modern default; avoids `master` |
 | `push.autoSetupRemote` | `true` | Skip manual `-u origin <branch>` on first push (Git ≥ 2.37) |

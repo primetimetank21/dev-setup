@@ -26,6 +26,13 @@
 - Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md § "Parallel Agent Work"`.
 - PR: https://github.com/primetimetank21/dev-setup/pull/58
 
+### Gitconfig templates do not support shell expansion (Issue #184)
+
+- Git reads `.gitconfig` values as literal strings — `${EDITOR:-vim}` is NOT expanded by the shell, it becomes the literal editor command, which fails.
+- For any tool-config template that is NOT processed by a shell at apply time, always use literal values.
+- Pattern: use a sensible literal default + a comment showing how to override (e.g., `# Override with: git config --global core.editor <your-editor>`).
+- The dotfiles `install.sh` does `sed` substitution for `YOUR_NAME`/`YOUR_EMAIL` placeholders, but does NOT expand arbitrary shell variables in the gitconfig template.
+
 ## Work Log
 
 ### 2026-04-07 — Issue #10: Dev Container and Codespace post-create setup

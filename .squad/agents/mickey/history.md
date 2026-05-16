@@ -934,3 +934,44 @@ Both PRs (#175, #176) deliver coordinated cross-platform shutdown control:
 ### Outcome
 
 Both PRs merged to develop. Shutdown control now available across all supported platforms. Ready for feature consumption or main branch integration.
+---
+
+### 2026-05-14 — Triage: Issue #197 (PS 5.1 Compatibility)
+
+**Task:** Triage issue #197 (psmux install + alias failures on PS 5.1) and create implementation plan.
+
+**Root Cause Analysis:**
+
+1. **psmux install fails:** `scripts/windows/tools/psmux.ps1:22` uses `winget install --id psmux`, but `psmux` is not a valid winget package ID (related to #179). This silently fails or errors on every Windows setup run.
+
+2. **Aliases not applied:** Earl reports PowerShell profile/aliases were not applied on PS 5.1. Investigation reveals:
+   - PR #195 already implemented `Remove-Item -Force Alias:\<name>` pattern for all 11 PS 5.1 AllScope conflicts (gc, gcm, gcb, gl, gp, ni, rm, h, grb, grs, ep)
+   - Pattern is correct — so the problem is likely NOT AllScope override failure
+   - **Suspected cause:** Profile file not being written at all, OR execution policy blocking profile load
+
+3. **Profile write robustness:** `Write-PowerShellProfile` function in `profile.ps1` writes to BOTH PS 5.1 and PS 7+ profile paths. If directory creation fails or execution policy is Restricted, profiles won't load. Function has `$ErrorActionPreference = 'Stop'` but may fail silently if Earl's environment has non-standard `$PROFILE` path or permission issues.
+
+**Key Findings:**
+
+- AllScope alias override pattern is ALREADY implemented correctly in profile.ps1 (lines 46, 65, 75, 97, 101, 117, 127, 134, 166, 191, 195)
+- The issue title mentions "aliases broken" but the real problem is likely "profile not written" or "profile not loaded"
+- `validate-ps51` CI job (`.github/workflows/validate.yml:133-194`) validates syntax and PSScriptAnalyzer but does NOT test profile write or alias functionality at runtime
+
+**Recommended Fix Approach:**
+
+1. **psmux:** Quick fix = skip-with-warning pattern (don't block setup on missing winget ID). Follow-up = research correct install mechanism.
+2. **Profile diagnostics:** Add verbose logging to trace directory creation, file write, and post-write validation.
+3. **Test coverage:** Add PS 5.1 runtime tests for profile write and alias registration (new Groups N, O, P in test_windows_setup.ps1).
+
+**Assignment:**
+- **Goofy** (Cross-Platform Dev) — owns psmux.ps1 and profile.ps1 implementation
+- **Chip** (Tester) — owns test coverage expansion
+- Changed label from `squad:chip` to `squad:goofy` since implementation work is the primary blocker
+
+**Artifacts Created:**
+- Triage comment posted to #197 with full root cause analysis and fix recommendations
+- Implementation plan written to `.squad/decisions/inbox/mickey-ps51-fix-plan.md`
+
+**Decision Pattern Reinforced:**
+Always investigate EXISTING implementation before assuming known patterns are missing. The AllScope guard pattern was already present — the bug was elsewhere (profile write, not alias override).
+
