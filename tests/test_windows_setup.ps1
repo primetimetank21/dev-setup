@@ -991,20 +991,38 @@ Test-Scenario "P-1: psmux.ps1 can be dot-sourced without error and Install-Psmux
 }
 
 if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
-    Write-Skip "P-2: Install-Psmux emits [WARN] when psmux not installed" `
+    Write-Skip "P-2: Install-Psmux invokes winget install when psmux missing" `
         "psmux binary is present on this machine - not-installed code path cannot be exercised"
 } else {
-    Test-Scenario "P-2: Install-Psmux emits [WARN] when psmux is not installed (not a fatal error)" {
-        $output = Install-Psmux 2>&1 | Out-String
-        if ($output -notmatch '\[WARN\]') {
-            throw "Install-Psmux did not emit [WARN] when psmux is absent (output: $output)"
+    Test-Scenario "P-2: Install-Psmux invokes 'winget install --id marlocarlo.psmux' when psmux is not installed" {
+        $script:WingetCalled = $false
+        $script:WingetArgs = $null
+        function global:winget {
+            $script:WingetCalled = $true
+            $script:WingetArgs = $args
+        }
+        try {
+            $output = Install-Psmux 2>&1 | Out-String
+            if (-not $script:WingetCalled) {
+                throw "Install-Psmux did not invoke winget when psmux is absent. Output: $output"
+            }
+            if (($script:WingetArgs -join ' ') -notmatch 'marlocarlo\.psmux') {
+                throw "Install-Psmux invoked winget with wrong package ID. Args: $($script:WingetArgs -join ' ')"
+            }
+        } finally {
+            Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
         }
     }
 }
 
 Test-Scenario "P-3: Install-Psmux is idempotent (second call does not throw)" {
-    Install-Psmux | Out-Null
-    Install-Psmux | Out-Null
+    function global:winget { }
+    try {
+        Install-Psmux | Out-Null
+        Install-Psmux | Out-Null
+    } finally {
+        Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
+    }
 }
 
 # ---------------------------------------------------------------------------

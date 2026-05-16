@@ -164,3 +164,10 @@ Fixed three regressions introduced by PR #130:
 **Correct Pattern:** `$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows` — RHS never evaluated on PS 5.x.
 
 **Key Learning:** PSVersion-based short-circuit checks are ONLY safe pattern for PS 5.1 strict mode.
+
+#### Issue #179 -- Fix psmux winget package ID
+- **PR:** #204 -- `fix(windows): use correct psmux winget id (closes #179)`
+- **Branch:** `squad/179-psmux-winget-id` from `develop`
+- **What:** Replaced skip-with-warning hack with real winget install using correct ID `marlocarlo.psmux`. Removed stale NOTE comment and dead nicowillis/psmux URL.
+- **Key finding:** Correct winget ID is `marlocarlo.psmux` (confirmed 2026-05-15). Real upstream repo: `psmux/psmux`.
+- **Tests:** All psmux groups (H, I, P) pass. ASCII safety verified.

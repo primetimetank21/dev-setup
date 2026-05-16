@@ -2,7 +2,6 @@
 #
 # Owner: Goofy (#2)
 # Installs psmux - terminal multiplexer for Windows PowerShell
-# NOTE: Known issue #179 - winget ID may not be correct, preserved as-is for now
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -18,10 +17,7 @@ function Install-Psmux {
         Write-Ok "psmux already installed: $(psmux --version 2>&1)"
         return
     }
-    # psmux is not yet available as a valid winget package ID (see issue #179, #197).
-    # Attempting `winget install --id psmux` fails on all setups - skip with warning
-    # rather than aborting the entire setup. User must install manually.
-    Write-Warn "psmux is not yet available via winget (see #179, #197)."
-    Write-Warn "Install manually from: https://github.com/nicowillis/psmux"
-    Write-Warn "Skipping psmux install - continuing setup."
+    Write-Info "Installing psmux..."
+    winget install --id marlocarlo.psmux --accept-source-agreements --accept-package-agreements --silent
+    Write-Ok "psmux installed."
 }
