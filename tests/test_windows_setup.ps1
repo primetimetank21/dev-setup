@@ -1547,6 +1547,181 @@ if ($null -eq (Get-Command psmux -ErrorAction SilentlyContinue)) {
 }
 
 # ---------------------------------------------------------------------------
+# Group Y: pre-commit + pre-push behavioral tests (Issue #224)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group Y: pre-commit + pre-push behavioral tests (#224)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$preCommitHook = Join-Path $RepoRoot "hooks\pre-commit"
+$prePushHook   = Join-Path $RepoRoot "hooks\pre-push"
+
+if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
+    Write-Skip "Y-1 pre-commit rejects .ps1 with em-dash"          "sh not available"
+    Write-Skip "Y-2 pre-commit allows ASCII-only .ps1"              "sh not available"
+    Write-Skip "Y-3 pre-commit rejects rogue .squad/ path"          "sh not available"
+    Write-Skip "Y-4 pre-push hard-rejects direct push to main"      "sh not available"
+    Write-Skip "Y-5 pre-push allows push to develop"                "sh not available"
+    Write-Skip "Y-6 pre-push exits 0 on feature branch (advisory)"  "sh not available"
+} else {
+    $yTmpBase = Join-Path $PSScriptRoot "tmp_grpy_$(Get-Random)"
+    New-Item -ItemType Directory -Path $yTmpBase -Force | Out-Null
+
+    # Helper: create a minimal git repo with a develop branch
+    function New-YTestRepo([string]$Path) {
+        New-Item -ItemType Directory -Path $Path -Force | Out-Null
+        Push-Location $Path
+        & git init -q 2>&1 | Out-Null
+        & git config core.autocrlf false 2>&1 | Out-Null
+        & git config user.email "test@test.com" 2>&1 | Out-Null
+        & git config user.name "Test" 2>&1 | Out-Null
+        "init" | Set-Content README.md -Encoding ASCII
+        & git add README.md 2>&1 | Out-Null
+        & git commit -q -m "chore: init" 2>&1 | Out-Null
+        & git checkout -q -b develop 2>&1 | Out-Null
+        "develop" | Add-Content README.md -Encoding ASCII
+        & git add README.md 2>&1 | Out-Null
+        & git commit -q -m "chore: develop base" 2>&1 | Out-Null
+        Pop-Location
+    }
+
+    try {
+
+        # ------------------------------------------------------------------
+        # Y-1: pre-commit rejects .ps1 with a non-ASCII byte (em-dash)
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-1 pre-commit rejects .ps1 with em-dash (non-ASCII)" {
+            $repoDir = Join-Path $yTmpBase "y1"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b pluto/ascii-fail 2>&1 | Out-Null
+                # Write a .ps1 containing a UTF-8 em-dash (bytes: 0xE2 0x80 0x94)
+                $before = [System.Text.Encoding]::ASCII.GetBytes('Write-Host "hello ')
+                $emDash = [byte[]](0xE2, 0x80, 0x94)
+                $after  = [System.Text.Encoding]::ASCII.GetBytes(' world"' + [char]10)
+                [System.IO.File]::WriteAllBytes(
+                    (Join-Path $repoDir "test.ps1"),
+                    ($before + $emDash + $after)
+                )
+                & git add "test.ps1" 2>&1 | Out-Null
+                & sh $preCommitHook 2>&1 | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    throw "pre-commit should have rejected .ps1 with em-dash but exited 0"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-2: pre-commit allows a .ps1 that is pure ASCII
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-2 pre-commit allows ASCII-only .ps1" {
+            $repoDir = Join-Path $yTmpBase "y2"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b pluto/ascii-pass 2>&1 | Out-Null
+                'Write-Host "hello -- world"' | Set-Content "test.ps1" -Encoding ASCII
+                & git add "test.ps1" 2>&1 | Out-Null
+                $out = & sh $preCommitHook 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw "pre-commit rejected ASCII-only .ps1 (exit $LASTEXITCODE): $out"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-3: pre-commit rejects a newly staged .squad/ path not on allow-list
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-3 pre-commit rejects rogue .squad/ path" {
+            $repoDir = Join-Path $yTmpBase "y3"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b pluto/rogue-squad 2>&1 | Out-Null
+                New-Item -ItemType Directory -Path ".squad\random" -Force | Out-Null
+                "rogue" | Set-Content ".squad\random\notes.md" -Encoding ASCII
+                & git add ".squad\random\notes.md" 2>&1 | Out-Null
+                & sh $preCommitHook 2>&1 | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    throw "pre-commit should have rejected rogue .squad/ path but exited 0"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-4: pre-push hard-rejects a push whose remote ref is refs/heads/main
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-4 pre-push hard-rejects direct push to main" {
+            $repoDir = Join-Path $yTmpBase "y4"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                # Pipe push-info line as stdin: LOCAL_REF SHA REMOTE_REF SHA
+                $hookUnix   = $prePushHook.Replace('\', '/')
+                $stdinFile  = Join-Path $yTmpBase "push_stdin_y4.txt"
+                Set-Content $stdinFile "refs/heads/develop abc1234 refs/heads/main def5678" -Encoding ASCII
+                $stdinUnix  = $stdinFile.Replace('\', '/')
+                & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1 | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    throw "pre-push should have rejected push to main but exited 0"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-5: pre-push allows a push whose remote ref is NOT main
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-5 pre-push allows push to develop branch" {
+            $repoDir = Join-Path $yTmpBase "y5"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                $hookUnix   = $prePushHook.Replace('\', '/')
+                $stdinFile  = Join-Path $yTmpBase "push_stdin_y5.txt"
+                Set-Content $stdinFile "refs/heads/squad/224-test abc1234 refs/heads/develop def5678" -Encoding ASCII
+                $stdinUnix  = $stdinFile.Replace('\', '/')
+                $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw "pre-push should have allowed push to develop (exit $LASTEXITCODE): $out"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-6: pre-push exits 0 on feature push regardless of PSScriptAnalyzer
+        # The advisory block always uses `|| true`, so warnings must not fail CI.
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-6 pre-push exits 0 on feature branch (PSScriptAnalyzer advisory)" {
+            $repoDir = Join-Path $yTmpBase "y6"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b squad/224-advisory-test 2>&1 | Out-Null
+                # Commit a .ps1 so the hook has content to (optionally) analyze
+                'Write-Host "advisory test"' | Set-Content "advisory.ps1" -Encoding ASCII
+                & git add "advisory.ps1" 2>&1 | Out-Null
+                & git commit -q -m "test: advisory ps1" 2>&1 | Out-Null
+                $hookUnix   = $prePushHook.Replace('\', '/')
+                $stdinFile  = Join-Path $yTmpBase "push_stdin_y6.txt"
+                Set-Content $stdinFile "refs/heads/squad/224-advisory-test abc1234 refs/heads/squad/224-advisory-test def5678" -Encoding ASCII
+                $stdinUnix  = $stdinFile.Replace('\', '/')
+                $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw "pre-push advisory path must exit 0 even with PSScriptAnalyzer warnings (exit $LASTEXITCODE): $out"
+                }
+            } finally { Pop-Location }
+        }
+
+    } finally {
+        if (Test-Path $yTmpBase) {
+            Remove-Item $yTmpBase -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 

@@ -363,3 +363,23 @@ Created `.github/workflows/e2e-install.yml` -- full end-to-end install smoke tes
 - Lesson: When a centralized version file like `.tool-versions` exists, version drift bugs are single-line fixes -- but only if e2e assertions actually check the installed version against downstream requirements. Always add version-gate assertions for tools with engine constraints.
 - v2 fix -- added `nvm alias default "$PINNED_NODE"` after `nvm use`. v1 missed it. CI exposed the gap via fresh-shell assertion: `nvm install` + `nvm use` only sets the version for the current shell, but a fresh `bash -lc` shell sources `~/.nvm/nvm.sh` with no default alias and falls back to the system Node (e.g., v20 on Ubuntu runners). This is the same root cause as the warning Linux was silently producing (#255). One-line fix closes both issues.
 - v3 fix -- test_tool_versions.sh was stale (expected nodejs 20.11.0). Bumped to match new pinned version.
+
+### Issue #224: Behavioral coverage for pre-commit + pre-push hooks
+
+- Gap identified: test_git_hooks.ps1 had only existence checks for pre-commit and pre-push; no behavioral scenarios.
+- Added Group X (6 scenarios) to tests/test_windows_setup.ps1:
+  - X-1: pre-commit rejects .ps1 containing an em-dash (UTF-8 0xE2 0x80 0x94) -- Check 2 coverage
+  - X-2: pre-commit allows ASCII-only .ps1 -- Check 2 negative case
+  - X-3: pre-commit rejects rogue .squad/random/notes.md path -- Check 3 coverage
+  - X-4: pre-push hard-rejects push whose REMOTE_REF is refs/heads/main
+  - X-5: pre-push allows push to refs/heads/develop
+  - X-6: pre-push exits 0 on feature branch push even with a .ps1 present (advisory block)
+- Extended tests/test_precommit_hygiene.sh with a pre-push section (5 scenarios):
+  - Tpp1: direct push to main hard-fails
+  - Tpp2: push to develop exits 0
+  - Tpp3: push to feature branch exits 0
+  - Tpp4: push targeting main from any local ref is rejected
+  - Tpp5: advisory PSScriptAnalyzer block does not fail CI (exits 0)
+- Decision: extended test_precommit_hygiene.sh instead of creating test_git_hooks.sh. Both pre-commit and pre-push are hook tests; keeping them in one bash file avoids fragmentation. Documented in .squad/decisions/inbox/.
+- Gotcha: sh not on PATH in local PowerShell session -- Group X skips correctly. In CI (GitHub Actions Windows runner), Git for Windows puts sh on PATH so tests execute. Pre-existing 3 failures in test_windows_setup.ps1 are unrelated to this work.
+- Byte-writing approach for em-dash test: used [System.IO.File]::WriteAllBytes with explicit UTF-8 bytes (0xE2 0x80 0x94) to avoid PS version compatibility issues with unicode escape sequences (\u{2014} is PS 6+ only).

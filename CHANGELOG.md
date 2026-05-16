@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/windows/tools/*.ps1` -- winget install calls now assert `$LASTEXITCODE` and surface failures to `setup.ps1` (closes #226). 7 install sites previously swallowed non-zero exits silently.
 
 ### Added
+- `tests/test_windows_setup.ps1` Group X -- behavioral tests for pre-commit (ASCII check, rogue .squad/ path) and pre-push (main guard, feature-branch allow, advisory exit-code) hooks (closes #224)
+- `tests/test_precommit_hygiene.sh` extended with pre-push section -- 5 bash scenarios covering direct-to-main rejection and advisory exit-code (closes #224)
 - Doc (Fact Checker) joins the squad -- new agent addressing the verifier/validator gap from Sprint Q retro. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings (Verified/Unverified/Contradicted/Needs Investigation). Charter: `.squad/agents/doc/charter.md`.
 - `.github/workflows/squad-label-enforce.yml` -- enforces mutual exclusivity for `go:`, `release:`, `type:`, `priority:` label groups
 - `.copilot/skills/error-recovery/SKILL.md` -- new generic error-recovery skill
