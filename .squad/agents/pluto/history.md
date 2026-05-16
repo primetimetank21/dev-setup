@@ -205,3 +205,9 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - Grouped ~60 PRs into meaningful bullets by theme rather than listing each individually
 - Branch: squad/188-add-changelog -> develop
 
+### 2025-07-14: Tmux auto-attach opt-in (Issue #192)
+- Wrapped `start_up` invocation in `.zshrc.template` behind `TMUX_AUTOSTART=1` guard
+- Breaking change: auto-attach now OFF by default; users must export the var
+- Used POSIX `[ "${VAR:-}" = "1" ]` for bash/zsh compatibility
+- Branch: squad/192-tmux-opt-in -> develop
+
