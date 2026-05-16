@@ -20,6 +20,19 @@ Sequence before any merge:
 
 Violation history: Sprint 2 (PRs #17-#27), Sprint 3 (PRs #33-#36). Branch protection on `develop` now enforces this at the GitHub level (Sprint 4).
 
+## Develop Commit Ban
+
+The `hooks/pre-commit` Check 5 refuses ALL direct commits to `develop`, `main`, and `master`.
+This applies to Ralph too. End-of-sprint history.md entries must use one of:
+1. **Short-lived branch + PR pattern** (recommended for Ralph's standalone logs). See PR #270
+   (Doc Sprint R history) for the canonical example: create `squad/<agent>-<sprint>-history`,
+   commit + push, open PR, merge.
+2. **Scribe drain fold-in** (when Ralph runs as part of an EOS sweep). Leave `history.md`
+   modified (not staged) and Scribe will fold it into her drain PR. See PR #272 (Sprint R
+   retro drain) for the canonical example.
+
+Do NOT attempt to bypass the hook with `--no-verify`.
+
 ## Agent Stall Detection
 
 Ralph monitors running agents for signs of stalling. A stall is when an agent exceeds its wall-clock budget without producing useful output.
