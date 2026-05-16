@@ -741,3 +741,25 @@ Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
 ### Post-sprint architecture audit (2026-05-16)
 - Lens: architecture / cross-cutting
 - 10 findings reported to coordinator. See orchestration log for details.
+
+### Verification deep-dive (2026-05-16)
+- READ-ONLY verification of my own audit findings (V-5, V-6, V-8, cross-cutting)
+- V-5 CONFIRMED and WORSE: 42-line [Unreleased] section ready for 0.8.0, but ZERO git tags exist (all 7 past releases undocumented)
+- V-6 PARTIALLY CONFIRMED: ARCHITECTURE.md has forward drift (prepare-commit-msg hook, logging lib details, CI job breakdown missing) but was recently refreshed
+- V-8 PARTIALLY CONFIRMED: Install-guard patterns consistent within platforms but variation in check types (version match, file test) suggests helper is premature
+- Cross-cutting: Git tag hygiene is biggest gap (P0) -- breaks semantic versioning claims and release automation
+- Report saved to .squad/verification-report.md
+
+### Post-sprint audit issue filing (2026-05-16)
+
+- Filed 18 GitHub issues from verified audit slate (#221 through #238)
+- Priorities: P0 (2), P1 (6), P2 (6), P3 (4)
+- Squad routing: squad:goofy (4 issues), squad:donald (3), squad:pluto (3), squad:chip (3), squad:mickey (5)
+- All issues labeled with priority:pN + squad:M + type:X (bug/feature/chore/docs/spike)
+- NO go:yes labels added -- Earl marks sprint-ready issues
+- Audit batch: 5-lens read-only audit + 5-agent verification fan-out (2026-05-16)
+- Issue list:
+  - P0: #221 (nvm.ps1 lib path fix), #222 (git tag discipline)
+  - P1: #223 (logging consolidation), #224 (hook test coverage), #225 (validate-macos), #226 (winget exit codes), #227 (dotfile backups), #228 (README/CONTRIBUTING docs)
+  - P2: #229 (ARCHITECTURE.md refresh), #230 (auth.ps1 move), #231 (gitattributes .ps1), #232 (squad-cli versioning), #233 (pre-push comment), #234 (encoding ASCII)
+  - P3: #235 (install-guard defer), #236 (.aliases POSIX), #237 (test harness docs), #238 (uninstall coverage)
