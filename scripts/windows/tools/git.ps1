@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
+. "$PSScriptRoot\..\lib\path.ps1"
 
 # Windows has no native zsh. Git for Windows ships Git Bash (MinGW bash),
 # which is the practical unix-shell equivalent on Windows.
@@ -17,6 +18,7 @@ function Install-Git {
     }
     Write-Info "Installing Git for Windows (includes Git Bash)..."
     winget install --id Git.Git --silent --accept-source-agreements --accept-package-agreements
+    Refresh-SessionPath
     Write-Ok "Git for Windows installed"
     Write-Info "Git Bash available at: C:\Program Files\Git\bin\bash.exe"
 }

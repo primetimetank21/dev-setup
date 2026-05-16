@@ -7,6 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
+. "$PSScriptRoot\..\lib\path.ps1"
 
 function Install-GhCli {
     if (Get-Command gh -ErrorAction SilentlyContinue) {
@@ -15,5 +16,6 @@ function Install-GhCli {
     }
     Write-Info "Installing GitHub CLI..."
     winget install --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements
+    Refresh-SessionPath
     Write-Ok "gh CLI installed"
 }

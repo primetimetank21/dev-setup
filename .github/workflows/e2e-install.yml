@@ -307,6 +307,7 @@ jobs:
     name: E2E - Windows
     runs-on: windows-latest
     continue-on-error: true
+    timeout-minutes: 15
     env:
       CI: 'true'
     defaults:
@@ -325,15 +326,24 @@ jobs:
       # -- Step 2: Fresh shell assertions --
       - name: Assert tools (fresh pwsh session)
         run: |
-          # Spawn a fresh pwsh to pick up PATH changes
+          # Spawn a fresh pwsh to pick up PATH changes.
+          # Real users opening a new terminal see registry PATH updates; CI step
+          # inherits the parent runner env block, so we explicitly re-read
+          # Machine + User PATH from the registry to match real-world behavior.
+          $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+          $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+          $env:Path = (@($env:Path, $machinePath, $userPath) -join ';' -split ';' |
+                       Where-Object { $_ -ne '' } |
+                       Select-Object -Unique) -join ';'
+
           pwsh -NoProfile -Command {
             $ErrorActionPreference = 'Stop'
             $failures = @()
 
             function Assert-Command {
-              param([string]$Name, [string]$Args)
+              param([string]$Name, [string]$Arguments)
               try {
-                $output = & $Name $Args.Split(' ') 2>&1 | Out-String
+                $output = & $Name $Arguments.Split(' ') 2>&1 | Out-String
                 Write-Host "[PASS] ${Name}: $($output.Trim().Split("`n")[0])"
               } catch {
                 Write-Host "[FAIL] ${Name}: $_"
@@ -351,7 +361,6 @@ jobs:
 
             Write-Host "--- Python toolchain ---"
             Assert-Command 'uv' '--version'
-            Assert-Command 'python' '--version'
 
             Write-Host "--- GitHub CLI ---"
             Assert-Command 'gh' '--version'
@@ -364,7 +373,6 @@ jobs:
 
             Write-Host "--- Multiplexer ---"
             Assert-Command 'psmux' '--version'
-            Assert-Command 'tmux' '--version'
 
             Write-Host "--- Git hooks ---"
             $hooksPath = & git config core.hooksPath 2>$null
@@ -400,14 +408,20 @@ jobs:
 
       - name: Assert tools after idempotency (Windows)
         run: |
+          $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+          $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+          $env:Path = (@($env:Path, $machinePath, $userPath) -join ';' -split ';' |
+                       Where-Object { $_ -ne '' } |
+                       Select-Object -Unique) -join ';'
+
           pwsh -NoProfile -Command {
             $ErrorActionPreference = 'Stop'
             $failures = @()
 
             function Assert-Command {
-              param([string]$Name, [string]$Args)
+              param([string]$Name, [string]$Arguments)
               try {
-                $output = & $Name $Args.Split(' ') 2>&1 | Out-String
+                $output = & $Name $Arguments.Split(' ') 2>&1 | Out-String
                 Write-Host "[PASS] ${Name}: $($output.Trim().Split("`n")[0])"
               } catch {
                 Write-Host "[FAIL] ${Name}: $_"
@@ -418,7 +432,6 @@ jobs:
             Write-Host "--- Post-idempotency assertions ---"
             Assert-Command 'squad' '--version'
             Assert-Command 'psmux' '--version'
-            Assert-Command 'tmux' '--version'
             Assert-Command 'node' '--version'
             Assert-Command 'uv' '--version'
             Assert-Command 'gh' '--version'

@@ -978,9 +978,10 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group P: psmux Install (Issue #197)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
+. (Join-Path $RepoRoot 'scripts\windows\lib\path.ps1')
 $psmuxToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
 $psmuxToolContent = Get-Content $psmuxToolPath -Raw
-$psmuxToolExec = $psmuxToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*logging\.ps1"?', '# logging lib loaded by test harness'
+$psmuxToolExec = $psmuxToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
 Invoke-Expression $psmuxToolExec
 
 Test-Scenario "P-1: psmux.ps1 can be dot-sourced without error and Install-Psmux is defined" {
@@ -1109,8 +1110,8 @@ $toolVersionScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'lib' 
 
 Test-Scenario "R-1 Get-ToolVersion returns nodejs version" {
     $ver = Get-ToolVersion -Name 'nodejs'
-    if ($ver -ne '20.11.0') {
-        throw "Expected '20.11.0', got '$ver'"
+    if ($ver -ne '22.11.0') {
+        throw "Expected '22.11.0', got '$ver'"
     }
 }
 
@@ -1118,6 +1119,13 @@ Test-Scenario "R-2 Get-ToolVersion returns nvm version" {
     $ver = Get-ToolVersion -Name 'nvm'
     if ($ver -ne '0.39.7') {
         throw "Expected '0.39.7', got '$ver'"
+    }
+}
+
+Test-Scenario "R-2b Get-ToolVersion returns nvm-windows version" {
+    $ver = Get-ToolVersion -Name 'nvm-windows'
+    if ($ver -ne '1.2.2') {
+        throw "Expected '1.2.2', got '$ver'"
     }
 }
 
@@ -1229,11 +1237,64 @@ Test-Scenario "T-2 nvm.ps1 skips install if node matches pinned version (idempot
     }
 }
 
-Test-Scenario "T-3 nvm.ps1 refreshes PATH via registry read" {
-    $hasRefresh = $nvmContent -match "GetEnvironmentVariable\('Path',\s*'Machine'\)" -and
-                  $nvmContent -match "GetEnvironmentVariable\('Path',\s*'User'\)"
+Test-Scenario "T-3 lib/path.ps1 contains PATH refresh via registry read" {
+    $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
+    $pathContent = Get-Content $pathLib -Raw
+    $hasRefresh = $pathContent -match "GetEnvironmentVariable\('Path',\s*'Machine'\)" -and
+                  $pathContent -match "GetEnvironmentVariable\('Path',\s*'User'\)"
     if (-not $hasRefresh) {
-        throw "nvm.ps1 does not refresh PATH from Machine+User registry"
+        throw "lib/path.ps1 does not refresh PATH from Machine+User registry"
+    }
+}
+
+Test-Scenario "T-3b nvm.ps1 contains Install-NvmPortable (downloads nvm-noinstall.zip)" {
+    $hasFunc = $nvmContent -match 'function Install-NvmPortable'
+    $hasZipUrl = $nvmContent -match 'nvm-noinstall\.zip'
+    $hasInvokeWeb = $nvmContent -match 'Invoke-WebRequest'
+    $hasExpand = $nvmContent -match 'Expand-Archive'
+    if (-not $hasFunc) {
+        throw "nvm.ps1 missing Install-NvmPortable function"
+    }
+    if (-not $hasZipUrl) {
+        throw "Install-NvmPortable does not reference nvm-noinstall.zip"
+    }
+    if (-not $hasInvokeWeb) {
+        throw "Install-NvmPortable does not call Invoke-WebRequest"
+    }
+    if (-not $hasExpand) {
+        throw "Install-NvmPortable does not call Expand-Archive"
+    }
+}
+
+Test-Scenario "T-3c Refresh-SessionPath merges registry into existing PATH (does not replace)" {
+    $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
+    $pathLibContent = Get-Content $pathLib -Raw
+    # Replace-style would be: $env:Path = "$machinePath;$userPath"
+    # Merge-style captures existing $env:Path and folds it into the result
+    $capturesExisting = $pathLibContent -match '\$existing\s*=\s*\$env:Path'
+    $mergesIntoResult = $pathLibContent -match '(?s)\$env:Path\s*=\s*\(\$combined'
+    if (-not $capturesExisting -or -not $mergesIntoResult) {
+        throw "Refresh-SessionPath does not merge with existing PATH -- it would drop session-only entries (e.g., GitHub Actions tool-cache)"
+    }
+}
+
+Test-Scenario "T-3d nvm.ps1 contains Set-NvmEnvironment (sets NVM_HOME/NVM_SYMLINK + PATH)" {
+    $hasFunc = $nvmContent -match 'function Set-NvmEnvironment'
+    $hasNvmHome = $nvmContent -match "SetEnvironmentVariable\('NVM_HOME'"
+    $hasNvmSymlink = $nvmContent -match "SetEnvironmentVariable\('NVM_SYMLINK'"
+    $hasUserScope = $nvmContent -match "'User'\)"
+    $hasPathPrepend = $nvmContent -match '\$env:Path\s*=\s*"\$NvmHome;\$env:Path"'
+    if (-not $hasFunc) {
+        throw "nvm.ps1 missing Set-NvmEnvironment function"
+    }
+    if (-not $hasNvmHome -or -not $hasNvmSymlink) {
+        throw "Set-NvmEnvironment does not set NVM_HOME and NVM_SYMLINK"
+    }
+    if (-not $hasUserScope) {
+        throw "Set-NvmEnvironment does not use User scope for env vars"
+    }
+    if (-not $hasPathPrepend) {
+        throw "Set-NvmEnvironment does not prepend to PATH"
     }
 }
 

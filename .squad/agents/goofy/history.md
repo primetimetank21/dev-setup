@@ -182,6 +182,15 @@ Fixed three regressions introduced by PR #130:
 - Placed Install-Dotfiles after Install-SquadCli and before Write-PowerShellProfile in setup chain
 - Tests in Group Q of test_windows_setup.ps1 using temp USERPROFILE override
 
+### Issue #251 -- Session PATH not refreshed after winget installs (2026-05-17)
+- **PR:** fix(windows): refresh session PATH after winget installs (#251)
+- **Branch:** `goofy/251-windows-nvm-path` from `develop`
+- **Bug:** `winget install nvm` succeeded but the running PowerShell session kept its original PATH snapshot. `nvm install` then failed because `nvm.exe` was not on PATH. Same pattern affected git, gh, vim, copilot, psmux.
+- **Fix:** Extracted `Refresh-SessionPath` from `nvm.ps1` into shared `scripts/windows/lib/path.ps1`. Sourced it in the orchestrator and all 6 winget-based tool scripts. Added `Refresh-SessionPath` call after every `winget install` that is followed by usage of the just-installed binary. Replaced vim.ps1's inline PATH rebuild with the shared function.
+- **Pattern:** Any time a tool modifies the system/user PATH (winget, manual registry write), call `Refresh-SessionPath` before the next `Get-Command` or binary invocation in the same session.
+- **Key learning:** Windows PowerShell snapshots `$env:Path` at process start. Registry changes from installers are invisible until you explicitly re-read `[System.Environment]::GetEnvironmentVariable('Path', 'Machine')` and `'User'` and assign back to `$env:Path`. This is a shared-lib concern, not per-tool -- extract once, source everywhere.
+- **v2 fix:** squad-cli.ps1 also needed `Refresh-SessionPath` (defensive) -- it runs after nvm.ps1 in the orchestrator and the npm/node junction may not be on PATH for its invocation scope. tests/test_windows_setup.ps1 Group P strip regex needed to handle the new path.ps1 dot-source added to psmux.ps1 (IEX makes `$PSScriptRoot` empty, so relative dot-sources fail).
+
 ### Issue #190 - Pin tool versions via .tool-versions (2026-05-16)
 - PR: #215 -- `feat(setup): pin tool versions via .tool-versions file`
 - Branch: `squad/190-tool-versions` from `develop`
@@ -250,3 +259,10 @@ Fixed three regressions introduced by PR #130:
   - Post-idempotency assertion steps for all three platforms (verifies tools survive a second setup run)
 - **Decision on `|| true` vs hard fail:** Hard fail chosen. squad-cli is a required tool per acceptance criteria. Silent `|| true` would mask real install failures. The error message explicitly names the npm package so CI logs point directly at root cause.
 - **Why any agent could do this:** The changes are YAML workflow edits (no PS 5.1 compat concerns, no complex cross-platform logic). Selected per "different agent revises" rule, not technical necessity.
+
+### PR #257 v3 fix (2026-05-18)
+- v3 fix -- Add-NvmWindowsPaths defensive injection (winget->registry timing race); fixed 2 stale PS 5.1 tests (R-1 nodejs version, T-3 PATH refresh location).
+- v4 fix -- Refresh-SessionPath now MERGES registry into existing $env:Path instead of replacing. Old behavior wiped GH Actions tool-cache Node injection. Skill doc updated. Test T-3c added.
+- v5 fix -- Root cause: winget returns before the inner nvm-setup.exe installer finishes writing files/registry. Replaced Add-NvmWindowsPaths with Wait-ForNvmInstall (polling helper, 90s timeout, 5 candidate paths). Kept v4 Refresh-SessionPath merge fix intact. Updated test T-3b, skill doc (Gotcha 2), CHANGELOG.
+- v6 fix -- v5 90s timeout was 10s too short (installer took ~100s in CI run 25970591039). v5 candidate paths also missed actual install location (registry update proved installer succeeded but none of 5 paths matched). v6 uses Refresh-SessionPath + Get-Command nvm as primary detection (path-agnostic), expanded candidate list (7 dirs including C:\nvm, C:\nvm-windows) as fallback, 180s default timeout, and diagnostic dump on timeout failure.
+- v8 fix -- Earl chose portable download approach. winget install was racy (3 different timings in CI: 24s, 100s, >180s). Replaced Wait-ForNvmInstall with Install-NvmPortable + Set-NvmEnvironment. Downloads nvm-noinstall.zip from GitHub releases, extracts to %USERPROFILE%\nvm (standard nvm-windows portable location). Sets NVM_HOME/NVM_SYMLINK at User scope so subsequent shells work too. Deterministic, no installer race.
