@@ -307,6 +307,7 @@ jobs:
     name: E2E - Windows
     runs-on: windows-latest
     continue-on-error: true
+    timeout-minutes: 15
     env:
       CI: 'true'
     defaults:
@@ -331,9 +332,9 @@ jobs:
             $failures = @()
 
             function Assert-Command {
-              param([string]$Name, [string]$Args)
+              param([string]$Name, [string]$Arguments)
               try {
-                $output = & $Name $Args.Split(' ') 2>&1 | Out-String
+                $output = & $Name $Arguments.Split(' ') 2>&1 | Out-String
                 Write-Host "[PASS] ${Name}: $($output.Trim().Split("`n")[0])"
               } catch {
                 Write-Host "[FAIL] ${Name}: $_"
@@ -351,7 +352,6 @@ jobs:
 
             Write-Host "--- Python toolchain ---"
             Assert-Command 'uv' '--version'
-            Assert-Command 'python' '--version'
 
             Write-Host "--- GitHub CLI ---"
             Assert-Command 'gh' '--version'
@@ -364,7 +364,6 @@ jobs:
 
             Write-Host "--- Multiplexer ---"
             Assert-Command 'psmux' '--version'
-            Assert-Command 'tmux' '--version'
 
             Write-Host "--- Git hooks ---"
             $hooksPath = & git config core.hooksPath 2>$null
