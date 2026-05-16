@@ -171,3 +171,13 @@ Fixed three regressions introduced by PR #130:
 - **What:** Replaced skip-with-warning hack with real winget install using correct ID `marlocarlo.psmux`. Removed stale NOTE comment and dead nicowillis/psmux URL.
 - **Key finding:** Correct winget ID is `marlocarlo.psmux` (confirmed 2026-05-15). Real upstream repo: `psmux/psmux`.
 - **Tests:** All psmux groups (H, I, P) pass. ASCII safety verified.
+
+## Learnings
+
+### Issue #180 - Windows dotfiles installer (2026-05-16)
+- Created `scripts/windows/tools/dotfiles.ps1` with `Install-Dotfiles` function
+- Pattern: copy with .bak backup (no symlinks on Windows -- avoids admin/developer mode requirement)
+- File mappings: .editorconfig, .gitconfig.template->.gitconfig, .npmrc.template->.npmrc, .vimrc->_vimrc
+- Windows uses `_vimrc` convention (underscore prefix) unlike Linux `.vimrc`
+- Placed Install-Dotfiles after Install-SquadCli and before Write-PowerShellProfile in setup chain
+- Tests in Group Q of test_windows_setup.ps1 using temp USERPROFILE override

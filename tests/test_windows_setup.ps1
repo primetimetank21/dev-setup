@@ -1026,6 +1026,70 @@ Test-Scenario "P-3: Install-Psmux is idempotent (second call does not throw)" {
 }
 
 # ---------------------------------------------------------------------------
+# Group Q: Dotfiles installer (Issue #180)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group Q: Dotfiles installer" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "Q-1: dotfiles.ps1 parses without errors and defines Install-Dotfiles" {
+    $script = Join-Path $RepoRoot 'scripts\windows\tools\dotfiles.ps1'
+    # Parse check - throws if syntax errors
+    $null = [System.Management.Automation.Language.Parser]::ParseFile(
+        $script, [ref]$null, [ref]$null
+    )
+    # Dot-source and verify function exists
+    . $script
+    $cmd = Get-Command Install-Dotfiles -ErrorAction SilentlyContinue
+    if (-not $cmd) {
+        throw "Install-Dotfiles function not defined after dot-sourcing dotfiles.ps1"
+    }
+}
+
+Test-Scenario "Q-2: Install-Dotfiles is idempotent (calling twice does not throw)" {
+    $script = Join-Path $RepoRoot 'scripts\windows\tools\dotfiles.ps1'
+    $tempHome = Join-Path $env:TEMP "dotfiles_test_$(Get-Random)"
+    New-Item -ItemType Directory -Path $tempHome -Force | Out-Null
+    $origProfile = $env:USERPROFILE
+    try {
+        $env:USERPROFILE = $tempHome
+        . $script
+        Install-Dotfiles | Out-Null
+        Install-Dotfiles | Out-Null
+    } finally {
+        $env:USERPROFILE = $origProfile
+        Remove-Item -Recurse -Force $tempHome -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Scenario "Q-3: Install-Dotfiles creates .bak when target differs" {
+    $script = Join-Path $RepoRoot 'scripts\windows\tools\dotfiles.ps1'
+    $tempHome = Join-Path $env:TEMP "dotfiles_bak_test_$(Get-Random)"
+    New-Item -ItemType Directory -Path $tempHome -Force | Out-Null
+    $origProfile = $env:USERPROFILE
+    try {
+        $env:USERPROFILE = $tempHome
+        # Create a .editorconfig with different content
+        $targetFile = Join-Path $tempHome '.editorconfig'
+        Set-Content -Path $targetFile -Value 'old content that differs' -Encoding UTF8
+        . $script
+        Install-Dotfiles | Out-Null
+        $bakFile = "$targetFile.bak"
+        if (-not (Test-Path $bakFile)) {
+            throw ".bak file was not created when target content differed"
+        }
+        $bakContent = Get-Content $bakFile -Raw
+        if ($bakContent -notmatch 'old content that differs') {
+            throw ".bak file does not contain original content"
+        }
+    } finally {
+        $env:USERPROFILE = $origProfile
+        Remove-Item -Recurse -Force $tempHome -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
