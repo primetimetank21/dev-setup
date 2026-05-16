@@ -38,7 +38,7 @@ function Install-Nvm {
 
     # -- Install nvm-windows if missing ------------------------------------
     if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
-        $nvmVersion = Get-ToolVersion -Name 'nvm'
+        $nvmVersion = Get-ToolVersion -Name 'nvm-windows'
         $nvmHome    = Join-Path $env:USERPROFILE 'nvm'
         $nodeDir    = Join-Path $env:USERPROFILE 'nodejs'
 

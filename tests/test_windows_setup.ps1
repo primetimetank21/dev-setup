@@ -1122,6 +1122,13 @@ Test-Scenario "R-2 Get-ToolVersion returns nvm version" {
     }
 }
 
+Test-Scenario "R-2b Get-ToolVersion returns nvm-windows version" {
+    $ver = Get-ToolVersion -Name 'nvm-windows'
+    if ($ver -ne '1.2.2') {
+        throw "Expected '1.2.2', got '$ver'"
+    }
+}
+
 Test-Scenario "R-3 Get-ToolVersion returns uv version" {
     $ver = Get-ToolVersion -Name 'uv'
     if ($ver -ne '0.4.18') {
