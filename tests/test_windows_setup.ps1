@@ -1175,11 +1175,17 @@ Test-Scenario "S-3 Invoke-GhAuth does not prompt when already authenticated" {
     # Only run if gh is available and already authenticated
     $hasGh = $null -ne (Get-Command gh -ErrorAction SilentlyContinue)
     if (-not $hasGh) {
-        throw 'SKIP: gh not on PATH'
+        $script:TestsPassed--
+        $script:TestsSkipped++
+        Write-Host "[SKIP] gh not on PATH" -ForegroundColor Yellow
+        return
     }
     $null = gh auth status 2>&1
     if ($LASTEXITCODE -ne 0) {
-        throw 'SKIP: not authenticated -- cannot test skip-when-authed path'
+        $script:TestsPassed--
+        $script:TestsSkipped++
+        Write-Host "[SKIP] not authenticated" -ForegroundColor Yellow
+        return
     }
     # Should return immediately with "already authenticated" message
     $output = Invoke-GhAuth 2>&1 | Out-String
