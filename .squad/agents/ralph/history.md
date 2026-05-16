@@ -235,3 +235,35 @@ Initial setup complete.
   - Open `go:yes` issues: 0
 - **Standing directive lock-in:** EOS sweep confirmed in charter. Every session ends with the 12-point sweep + branch reaping.
 - **Verdict:** CLEAN. Sprint Q + 0.8.0 wrap complete.
+
+## Sprint R EOS Cleanup -- 2026-05-16
+
+- **Context:** Sprint R wrapped with 5 PRs merged (#265, #266, #267, #268, #269)
+  and follow-up issue #271 filed. Final cleanup pass executed.
+- **Cleanup actions:**
+  - Fetched and pruned remote refs (stale refs from previous work removed)
+  - Verified worktree list: 1 primary worktree (C:\Users\Earl Tankard\Coding\dev-setup)
+  - Ran worktree prune (no stale worktrees found)
+  - Local squad branches identified: squad/doc-sprint-r-history (PR #270 OPEN)
+  - Remote squad branches checked and status verified:
+    * squad/224-hook-test-coverage -> PR #267 MERGED, deleted
+    * squad/226-winget-exit-check -> PR #268 MERGED, deleted
+    * squad/227-bak-rotation -> PR #269 MERGED, deleted
+    * squad/228-hookspath-docs -> PR #266 MERGED, deleted
+    * squad/253-e2e-summary -> PR #265 MERGED, deleted
+    * squad/doc-sprint-r-history -> PR #270 OPEN (retained locally)
+  - Verified: no open PRs on any merged branches
+  - Deleted all 5 remote squad/* branches via single push command
+  - Ran final fetch --prune to drop stale tracking refs
+- **Final repo state:**
+  - develop: d71176e (current HEAD, working tree clean)
+  - Local branches: develop, main, squad/doc-sprint-r-history (open PR #270)
+  - Remote branches: develop, main, origin/squad/doc-sprint-r-history
+  - Worktrees: 1 (primary)
+  - Open PRs: 1 (PR #270 on squad/doc-sprint-r-history)
+  - Status: git status -sb shows clean
+- **Branches retained (not deleted):**
+  - squad/doc-sprint-r-history: open PR #270 prevents local/remote deletion
+  - main, develop, release/* (per charter: never touch release branches)
+- **Verdict:** CLEAN. 5 stale sprint branches removed. Working tree verified
+  clean. Ready for next session.
