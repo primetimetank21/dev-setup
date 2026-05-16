@@ -1,13 +1,38 @@
 # scripts/windows/tools/dotfiles.ps1 - Dotfile installer for Windows
 #
-# Owner: Goofy (#2)
-# Copies dotfiles to %USERPROFILE% with .bak backup if existing file differs.
+# Owner: Pluto (Config Engineer)
+# Copies dotfiles to %USERPROFILE% with timestamped .bak backup on change.
 # No symlinks -- plain copy for maximum compatibility (no admin/developer mode).
+#
+# Backup strategy: <file>.bak.YYYYMMDD-HHmmss
+# Keeps the $KeepLast most recent backups (default 5; override with
+# $env:DOTFILE_BACKUP_KEEP). Older backups are deleted automatically.
+# Uninstall restores the newest backup (= state before last install run).
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
+
+# Backs up $Target with a timestamp suffix and trims old backups.
+# $KeepLast is overridden by $env:DOTFILE_BACKUP_KEEP when set.
+function Backup-File {
+    param(
+        [string]$Target,
+        [int]$KeepLast = 5
+    )
+    if (-not (Test-Path $Target)) { return }
+    if ($env:DOTFILE_BACKUP_KEEP -match '^\d+$') { $KeepLast = [int]$env:DOTFILE_BACKUP_KEEP }
+    $ts = Get-Date -Format "yyyyMMdd-HHmmss"
+    $bakPath = "$Target.bak.$ts"
+    Copy-Item -Path $Target -Destination $bakPath -Force
+    Write-Info "Backed up $Target -> $bakPath"
+    # Remove oldest timestamped backups beyond the keep limit
+    Get-ChildItem "$Target.bak.*" -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -Skip $KeepLast |
+        Remove-Item -Force
+}
 
 function Install-Dotfiles {
     Write-Info "Installing dotfiles..."
@@ -43,12 +68,7 @@ function Install-Dotfiles {
                 continue
             }
 
-            # Back up only if no .bak exists yet
-            $bakPath = "$destPath.bak"
-            if (-not (Test-Path $bakPath)) {
-                Write-Warn "$destPath exists -- backing up to $bakPath"
-                Copy-Item -Path $destPath -Destination $bakPath -Force
-            }
+            Backup-File -Target $destPath
         }
 
         Copy-Item -Path $srcPath -Destination $destPath -Force

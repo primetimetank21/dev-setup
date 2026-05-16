@@ -16,12 +16,21 @@ function Write-Skip { param([string]$Msg) Write-Host "[SKIP] $Msg" -ForegroundCo
 function Write-Info { param([string]$Msg) Write-Host "[INFO] $Msg" -ForegroundColor Cyan }
 
 # -- Restore dotfile .bak files ------------------------------------------------
+# Restores the newest timestamped backup (.bak.YYYYMMDD-HHmmss).
+# The newest backup is the state just before the most recent install run.
+# To recover the original-original, look for the oldest .bak.* file manually.
 function Restore-DotfileBackup {
     param([string]$Target)
-    $backup = "$Target.bak"
-    if (Test-Path $backup) {
-        Move-Item -Path $backup -Destination $Target -Force
-        Write-Ok "Restored $Target from $backup"
+    # Prefer newest timestamped backup; fall back to legacy .bak
+    $tsBaks = Get-ChildItem "$Target.bak.*" -ErrorAction SilentlyContinue |
+                  Sort-Object LastWriteTime -Descending
+    if ($tsBaks) {
+        $newest = $tsBaks[0]
+        Move-Item -Path $newest.FullName -Destination $Target -Force
+        Write-Ok "Restored $Target from $($newest.Name)"
+    } elseif (Test-Path "$Target.bak") {
+        Move-Item -Path "$Target.bak" -Destination $Target -Force
+        Write-Ok "Restored $Target from $Target.bak (legacy)"
     } else {
         Write-Skip "No backup found for $Target"
     }
@@ -42,7 +51,7 @@ $dotfiles = @(
 
 $foundAny = $false
 foreach ($dotfile in $dotfiles) {
-    if (Test-Path "$dotfile.bak") {
+    if ((Test-Path "$dotfile.bak") -or (Get-ChildItem "$dotfile.bak.*" -ErrorAction SilentlyContinue)) {
         $foundAny = $true
         break
     }

@@ -1070,7 +1070,7 @@ Test-Scenario "Q-2: Install-Dotfiles is idempotent (calling twice does not throw
     }
 }
 
-Test-Scenario "Q-3: Install-Dotfiles creates .bak when target differs" {
+Test-Scenario "Q-3: Install-Dotfiles creates timestamped .bak when target differs" {
     $script = Join-Path $RepoRoot 'scripts\windows\tools\dotfiles.ps1'
     $tempHome = Join-Path $env:TEMP "dotfiles_bak_test_$(Get-Random)"
     New-Item -ItemType Directory -Path $tempHome -Force | Out-Null
@@ -1082,13 +1082,45 @@ Test-Scenario "Q-3: Install-Dotfiles creates .bak when target differs" {
         Set-Content -Path $targetFile -Value 'old content that differs' -Encoding UTF8
         . $script
         Install-Dotfiles | Out-Null
-        $bakFile = "$targetFile.bak"
-        if (-not (Test-Path $bakFile)) {
-            throw ".bak file was not created when target content differed"
+        # Expect a .bak.YYYYMMDD-HHmmss file (not a plain .bak)
+        $bakFiles = Get-ChildItem "$targetFile.bak.*" -ErrorAction SilentlyContinue
+        if (-not $bakFiles) {
+            throw "No timestamped .bak.* file was created when target content differed"
         }
-        $bakContent = Get-Content $bakFile -Raw
+        $bakContent = Get-Content $bakFiles[0].FullName -Raw
         if ($bakContent -notmatch 'old content that differs') {
             throw ".bak file does not contain original content"
+        }
+    } finally {
+        $env:USERPROFILE = $origProfile
+        Remove-Item -Recurse -Force $tempHome -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Scenario "Q-4: Three successive installs produce three distinct timestamped backups" {
+    $script = Join-Path $RepoRoot 'scripts\windows\tools\dotfiles.ps1'
+    $tempHome = Join-Path $env:TEMP "dotfiles_3run_test_$(Get-Random)"
+    New-Item -ItemType Directory -Path $tempHome -Force | Out-Null
+    $origProfile = $env:USERPROFILE
+    try {
+        $env:USERPROFILE = $tempHome
+        . $script
+        $targetFile = Join-Path $tempHome '.editorconfig'
+        # Pre-seed the target so all 3 runs see a diff and produce a backup
+        Set-Content -Path $targetFile -Value 'version-0-original' -Encoding UTF8
+        # Run 1: seeds backup of version-0
+        Install-Dotfiles | Out-Null
+        Set-Content -Path $targetFile -Value 'version-1-edit' -Encoding UTF8
+        Start-Sleep -Milliseconds 1100   # ensure distinct 1-second timestamp
+        # Run 2: seeds backup of version-1
+        Install-Dotfiles | Out-Null
+        Set-Content -Path $targetFile -Value 'version-2-edit' -Encoding UTF8
+        Start-Sleep -Milliseconds 1100
+        # Run 3: seeds backup of version-2
+        Install-Dotfiles | Out-Null
+        $bakFiles = Get-ChildItem "$targetFile.bak.*" -ErrorAction SilentlyContinue
+        if ($bakFiles.Count -lt 3) {
+            throw "Expected at least 3 timestamped backups after 3 install runs; found $($bakFiles.Count)"
         }
     } finally {
         $env:USERPROFILE = $origProfile

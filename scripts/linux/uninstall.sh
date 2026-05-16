@@ -22,19 +22,27 @@ info() { printf "${CYAN}[INFO] %s${RESET}\n" "$*"; }
 skip() { printf "${YELLOW}[SKIP] %s${RESET}\n" "$*"; }
 
 # ── Restore dotfile .bak files ───────────────────────────────────────────────
+# Restores the newest timestamped backup (.bak.YYYYMMDD-HHMMSS).
+# That is the state just before the most recent install run.
+# To recover the original-original, use the oldest .bak.* file manually.
 restore_backup() {
   local target="$1"
-  local backup="${target}.bak"
-
-  if [[ -f "$backup" ]]; then
-    mv "$backup" "$target"
-    ok "Restored $target from $backup"
+  # Prefer newest timestamped backup; fall back to legacy .bak
+  local newest
+  # shellcheck disable=SC2012
+  newest=$(ls -t "${target}.bak."* 2>/dev/null | head -n 1)
+  if [[ -n "$newest" ]]; then
+    mv "$newest" "$target"
+    ok "Restored $target from $(basename "$newest")"
+  elif [[ -f "${target}.bak" ]]; then
+    mv "${target}.bak" "$target"
+    ok "Restored $target from ${target}.bak (legacy)"
   else
     skip "No backup found for $target"
   fi
 }
 
-printf "\n${CYAN}dev-setup uninstaller${RESET}\n\n"
+printf '\n%sdev-setup uninstaller%s\n\n' "$CYAN" "$RESET"
 
 # Dotfiles that install.sh may have backed up
 DOTFILES=(
@@ -77,4 +85,4 @@ remove_managed_block "$HOME/.zshrc"
 remove_managed_block "$HOME/.bashrc"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
-printf "\n${GREEN}[OK] Uninstalled. Tools (uv, nvm, gh, etc.) remain. Remove them manually if you wish.${RESET}\n\n"
+printf '\n%s[OK] Uninstalled. Tools (uv, nvm, gh, etc.) remain. Remove them manually if you wish.%s\n\n' "$GREEN" "$RESET"

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Squad governance upgraded from 0.9.1 to 0.9.4 (dispatch mechanism, `CURRENT_DATETIME` requirement, `name` param in spawn prompts, default models bumped to `claude-sonnet-4.6` / `gpt-5.3-codex`, tier-based agent timeout policy)
 - `.github/workflows/squad-heartbeat.yml` removes noisy cron trigger; Ralph now fires on issue events only
 - `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
+- Dotfile backup strategy: `.bak` files are now timestamped (`.bak.YYYYMMDD-HHMMSS`) on both Linux (`config/dotfiles/install.sh`) and Windows (`scripts/windows/tools/dotfiles.ps1`). Keeps last 5 backups by default (override with `DOTFILE_BACKUP_KEEP` env var); previous versions of dotfiles are no longer lost on re-run (closes #227).
 
 ### Fixed
 - `.github/workflows/e2e-install.yml` -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
