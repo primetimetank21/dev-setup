@@ -326,3 +326,14 @@ Created `.github/workflows/e2e-install.yml` -- full end-to-end install smoke tes
 ### Key Insight: PATH Refresh on Windows
 
 - Windows tool assertions use `pwsh -NoProfile` to test that tools are on the system PATH (not just available via profile functions). This is the correct test -- if a tool only works because the profile adds it to PATH, it will fail for scripts/automation that run without profile. The nvm.ps1 bug (#221) was exactly this class of failure.
+
+
+## Learnings
+
+### Issue #225: Aligning validate-macos with validate-linux (nvm + Node.js)
+
+- Added nvm + Node.js validation step to validate-macos mirroring the existing validate-linux step (lines 43-57).
+- macOS-specific differences: None required. NVM_DIR is HOME/.nvm on both platforms, and the macOS runner default shell is bash (3.2) which supports the same sourcing pattern. No brew install calls needed since nvm is installed by setup.sh.
+- Kept echo messages without emoji (ASCII-only) to match existing macOS job style, unlike validate-linux which uses emoji markers.
+- Verification approach: YAML structure validated by maintaining consistent indentation; shell commands are POSIX-compatible and work in bash 3.2+.
+- Placement: step inserted between 'Validate uv installed' and 'Validate gh CLI installed' to match the logical order in validate-linux.

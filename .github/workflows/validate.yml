@@ -124,6 +124,22 @@ jobs:
           fi
           echo "uv: $(uv --version)"
 
+      - name: Validate nvm and Node.js installed
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          if ! command -v nvm &>/dev/null; then
+            echo "FAIL: nvm not available"
+            exit 1
+          fi
+          if ! command -v node &>/dev/null; then
+            echo "FAIL: node not found on PATH"
+            exit 1
+          fi
+          echo "nvm: $(nvm --version)"
+          echo "node: $(node --version)"
+          echo "npm: $(npm --version)"
+
       - name: Validate gh CLI installed
         run: |
           if ! command -v gh &>/dev/null; then
