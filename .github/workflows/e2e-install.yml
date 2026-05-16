@@ -326,7 +326,16 @@ jobs:
       # -- Step 2: Fresh shell assertions --
       - name: Assert tools (fresh pwsh session)
         run: |
-          # Spawn a fresh pwsh to pick up PATH changes
+          # Spawn a fresh pwsh to pick up PATH changes.
+          # Real users opening a new terminal see registry PATH updates; CI step
+          # inherits the parent runner env block, so we explicitly re-read
+          # Machine + User PATH from the registry to match real-world behavior.
+          $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+          $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+          $env:Path = (@($env:Path, $machinePath, $userPath) -join ';' -split ';' |
+                       Where-Object { $_ -ne '' } |
+                       Select-Object -Unique) -join ';'
+
           pwsh -NoProfile -Command {
             $ErrorActionPreference = 'Stop'
             $failures = @()
