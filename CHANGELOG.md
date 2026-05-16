@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `.tool-versions` file for pinning tool versions (nodejs, nvm, uv, copilot-cli)
+- `scripts/lib/read-tool-version.sh` -- POSIX sh helper to read pinned versions
+- `scripts/lib/Read-ToolVersion.ps1` -- PowerShell `Get-ToolVersion` function
+- `tests/test_tool_versions.sh` -- bash tests for version reader
+- Group R tests in `test_windows_setup.ps1` for `Get-ToolVersion`
 - Uninstall scripts (`scripts/linux/uninstall.sh`, `scripts/windows/uninstall.ps1`) that revert profile blocks and restore dotfile .bak files. Tools remain installed.
 - Windows now installs dotfiles (gitconfig, editorconfig, npmrc, vimrc) with .bak backup (PR #180)
 - CI now runs `tests/test_git_hooks.ps1` to catch git hook regressions
@@ -17,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PS 5.1 test groups N, O, P and ASCII-clean test runner (PR #200)
 
 ### Changed
+- `scripts/linux/tools/nvm.sh` reads nvm version from `.tool-versions` instead of fetching latest
+- `scripts/linux/tools/uv.sh` reads uv version from `.tool-versions` instead of fetching latest
+- `scripts/linux/tools/copilot-cli.sh` reads copilot-cli version from `.tool-versions`
+- `scripts/windows/tools/nvm.ps1` reads nvm version from `.tool-versions`
 - Made tmux auto-attach opt-in via `TMUX_AUTOSTART=1` env var (was always-on)
 - Refreshed ARCHITECTURE.md and README.md file trees to match current repo layout
 

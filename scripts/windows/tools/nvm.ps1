@@ -16,7 +16,11 @@ function Install-Nvm {
         Write-Ok "nvm already installed: $(nvm version)"
         return
     }
-    Write-Info "Installing nvm-windows..."
+    # Load pinned version from .tool-versions
+    $libDir = Join-Path (Split-Path $PSScriptRoot -Parent) 'lib'
+    . (Join-Path $libDir 'Read-ToolVersion.ps1')
+    $nvmVersion = Get-ToolVersion -Name 'nvm'
+    Write-Info "Installing nvm-windows (pinned: $nvmVersion)..."
     winget install --id CoreyButler.NVMforWindows --silent --accept-source-agreements --accept-package-agreements
     # Reload PATH so nvm is usable in the current session without restarting
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")

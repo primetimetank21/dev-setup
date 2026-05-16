@@ -1090,6 +1090,51 @@ Test-Scenario "Q-3: Install-Dotfiles creates .bak when target differs" {
 }
 
 # ---------------------------------------------------------------------------
+# Group R: Get-ToolVersion parser (Issue #190)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group R: Get-ToolVersion parser (Issue #190)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$toolVersionScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'Read-ToolVersion.ps1'
+
+. $toolVersionScript
+
+Test-Scenario "R-1 Get-ToolVersion returns nodejs version" {
+    $ver = Get-ToolVersion -Name 'nodejs'
+    if ($ver -ne '20.11.0') {
+        throw "Expected '20.11.0', got '$ver'"
+    }
+}
+
+Test-Scenario "R-2 Get-ToolVersion returns nvm version" {
+    $ver = Get-ToolVersion -Name 'nvm'
+    if ($ver -ne '0.39.7') {
+        throw "Expected '0.39.7', got '$ver'"
+    }
+}
+
+Test-Scenario "R-3 Get-ToolVersion returns uv version" {
+    $ver = Get-ToolVersion -Name 'uv'
+    if ($ver -ne '0.4.18') {
+        throw "Expected '0.4.18', got '$ver'"
+    }
+}
+
+Test-Scenario "R-4 Get-ToolVersion throws on unknown tool" {
+    $threw = $false
+    try {
+        Get-ToolVersion -Name 'nonexistent-tool-xyz'
+    } catch {
+        $threw = $true
+    }
+    if (-not $threw) {
+        throw "Expected exception for unknown tool, but none was thrown"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
