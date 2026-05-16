@@ -7,9 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- `scripts/windows/tools/nvm.ps1` resolved wrong lib path (one level up instead of two); `Read-ToolVersion.ps1` not found at runtime (closes #221)
-- Added runtime assertion in `nvm.ps1` to catch missing lib directory early
+## [0.8.0] - 2026-05-16
 
 ### Added
 - Pre-commit hygiene checks: ASCII-only enforcement on staged `.ps1` files, rogue `.squad/` path validation, staged inbox file detection, and branch ancestry verification for squad branches (closes #240)
@@ -38,8 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Shared logging helpers extracted to `scripts/linux/lib/log.sh` and `scripts/windows/lib/logging.ps1` (closes #186)
 - Support for `merge` type in commit-msg hook type allowlist (#212)
-
-### Changed
 - `squad-cli` install failure is now a loud error with actionable hints (was silent warning)
 - `scripts/linux/tools/nvm.sh` installs pinned Node version from `.tool-versions` (was `--lts`)
 - `scripts/linux/tools/nvm.sh` reads nvm version from `.tool-versions` instead of fetching latest
@@ -51,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - commit-msg no longer needs special-case bypass for merge/revert -- prepare-commit-msg now normalizes them (#212)
 
 ### Fixed
+- `scripts/windows/tools/nvm.ps1` resolved wrong lib path (one level up instead of two); `Read-ToolVersion.ps1` not found at runtime (closes #221)
+- Added runtime assertion in `nvm.ps1` to catch missing lib directory early
 - PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)
 
 ## [0.7.0] - 2026-04-25 -- Sprint 7: Hooks, psmux, and profile hardening
