@@ -144,3 +144,20 @@ Updated all 5 Group K tests (K-1 through K-5) to track new file locations after 
 **Confidence:** high
 
 Formalized the PS 5.1 CP1252 encoding trap as a reusable skill. Covers detection, fix patterns, common offender table, and when-to-apply rules. Cite this skill in any future `.ps1` file review or creation task.
+
+---
+
+## [2026-05-17] Issue #187: Alias Parity Test
+
+**Branch:** `squad/187-alias-parity`
+**Status:** PR opened
+
+Added `tests/test_alias_parity.sh` -- a bash test that extracts alias names from both Linux (`config/dotfiles/.aliases`) and Windows (`scripts/windows/tools/profile.ps1`), compares the two sets, and fails on undocumented drift.
+
+**Design Choices:**
+- Bash test (not PS) -- simpler cross-file text parsing; runs in `validate-linux` CI job
+- `ALLOWED_ALIAS_DRIFT` array documents intentional platform-only aliases (navigation, ls variants, Docker, editor shortcuts on Linux; rm/touch/gb/New-PsmuxSession on Windows)
+- Windows extraction filters out internal helper functions (Write-Info, etc.) and backing functions (Invoke-Git*) -- only Set-Alias -Name targets and user-facing functions count
+- Wired into validate.yml as "Run alias parity test" step after existing alias unit tests
+
+**Key file:** `tests/test_alias_parity.sh`

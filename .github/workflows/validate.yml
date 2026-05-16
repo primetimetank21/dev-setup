@@ -75,6 +75,11 @@ jobs:
           chmod +x tests/test_aliases.sh
           bash tests/test_aliases.sh
 
+      - name: Run alias parity test
+        run: |
+          chmod +x tests/test_alias_parity.sh
+          bash tests/test_alias_parity.sh
+
   lint-shell-scripts:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
