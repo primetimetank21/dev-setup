@@ -25,5 +25,6 @@ function Install-SquadCli {
     }
     Write-Info "Installing squad-cli..."
     npm install -g "@bradygaster/squad-cli"
+    Assert-LastExit -ToolName "squad-cli"
     Write-Ok "squad-cli installed"
 }
