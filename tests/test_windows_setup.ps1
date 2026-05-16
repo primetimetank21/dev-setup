@@ -1770,6 +1770,57 @@ Test-Scenario "Z-4: uninstall.ps1 - every Out-File call has -Encoding (future-pr
 }
 
 # ---------------------------------------------------------------------------
+# Group AA: uninstall unsets core.hooksPath
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group AA: uninstall unsets core.hooksPath" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "AA-1: uninstall.ps1 contains --unset-all core.hooksPath" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\uninstall.ps1') -Raw
+    if ($content -notmatch '--unset-all core\.hooksPath') {
+        throw "uninstall.ps1 does not call 'git config --unset-all core.hooksPath'"
+    }
+}
+
+Test-Scenario "AA-2: uninstall.sh contains --unset-all core.hooksPath" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts/linux/uninstall.sh') -Raw
+    if ($content -notmatch '--unset-all core\.hooksPath') {
+        throw "uninstall.sh does not call 'git config --unset-all core.hooksPath'"
+    }
+}
+
+Test-Scenario "AA-3: git unset-all core.hooksPath removes the local key (functional)" {
+    $aaTmpDir = Join-Path $PSScriptRoot "tmp_grpaa_$(Get-Random)"
+    New-Item -ItemType Directory -Path $aaTmpDir -Force | Out-Null
+    try {
+        # Simulate install: write hooksPath into a local repo config (no --global)
+        $tempRepo = Join-Path $aaTmpDir "repo"
+        New-Item -ItemType Directory -Path $tempRepo -Force | Out-Null
+        Push-Location $tempRepo
+        try {
+            & git init 2>&1 | Out-Null
+            & git config core.hooksPath '/fake/hooks' 2>&1 | Out-Null
+            $before = & git config --local --get core.hooksPath 2>&1
+            if ([string]::IsNullOrWhiteSpace($before)) {
+                throw "Pre-condition failed: hooksPath was not written to local gitconfig"
+            }
+            # Simulate uninstall: unset hooksPath (no --global, matches uninstall.ps1)
+            & git config --unset-all core.hooksPath 2>&1 | Out-Null
+            & git config --local --get core.hooksPath 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                throw "core.hooksPath still present after unset-all (exit code was 0)"
+            }
+        } finally {
+            Pop-Location
+        }
+    } finally {
+        Remove-Item $aaTmpDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 

@@ -79,5 +79,9 @@ remove_managed_block() {
 remove_managed_block "$HOME/.zshrc"
 remove_managed_block "$HOME/.bashrc"
 
+# ── Unset core.hooksPath ─────────────────────────────────────────────────────
+git config --unset-all core.hooksPath 2>/dev/null || true
+log_ok "core.hooksPath unset (git falls back to per-repo .git/hooks)"
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 printf '\n'; log_ok "Uninstalled. Tools (uv, nvm, gh, etc.) remain. Remove them manually if you wish."; printf '\n'

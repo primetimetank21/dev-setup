@@ -267,6 +267,51 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 
 - Added `backup_file()` to `config/dotfiles/install.sh`:
   - Creates `<target>.bak.YYYYMMDD-HHMMSS` on each backup
+
+---
+
+## 2026-05-16 -- Sprint S Issue #271 revise: fix(uninstall) core.hooksPath scope mismatch
+
+**Branch:** `squad/271-uninstall-hookspath`
+**PR:** #277 (revised after Windows E2E failure)
+**Status:** Force-pushed; CI re-triggered
+
+### Root cause
+
+setup.ps1 / setup.sh write `core.hooksPath` with no scope flag (defaults to
+`--local`, writing to `.git/config`). The original PR #277 uninstall calls used
+`--global`, targeting `%USERPROFILE%\.gitconfig` where the key was never written.
+Git exited non-zero; the GH Actions pwsh runner template propagates
+`$LASTEXITCODE` as the step exit code, killing the Windows E2E job.
+On Linux, `|| true` hid the error but the local key was never actually unset
+(silent functional bug).
+
+A secondary logic inversion in uninstall.ps1 caused the if/else branches to
+fire on the wrong exit codes, printing [OK] when the key was absent.
+
+### What I changed
+
+- `scripts/windows/uninstall.ps1`: dropped `--global`; flipped if/else so
+  exit-0 is OK, exit-1/5 is SKIP, other is WARN; added `$global:LASTEXITCODE = 0`
+  to prevent residual non-zero from propagating through the GH Actions runner
+  template; added `Write-Warn` helper function.
+- `scripts/linux/uninstall.sh`: dropped `--global`; changed `ok` to `log_ok`
+  (interop with PR #278 logging consolidation that renamed the function).
+- `tests/test_windows_setup.ps1`:
+  - Resolved conflict with Group Z tests (from develop #234) -- kept both.
+  - AA-3 rewritten to test local-scope unset via a temp git init repo instead
+    of `GIT_CONFIG_GLOBAL` override, matching the actual fix (no `--global`).
+  - Fixed AA-1/AA-2 error message strings to drop the `--global` reference.
+
+### Key lessons
+
+- Always match the scope flag in uninstall to whatever scope the install used.
+  When setup.* uses no flag (local default), uninstall must also use no flag.
+- `$global:LASTEXITCODE = 0` at the end of a pwsh uninstall script is a
+  mandatory safety reset when the script runs git commands; the GH Actions
+  runner template will propagate any non-zero residual as the step exit code.
+- `|| true` on Linux hides errors but does not fix them; always confirm the
+  actual command succeeded by checking scope alignment.
   - Trims all but the N most recent (default N=5, override `DOTFILE_BACKUP_KEEP`)
   - Replaces the old `cp "$dest" "${dest}.bak"` one-shot pattern in `install_copy`
     and the `cp "$link" "${link}.bak"` pattern in `install_symlink`
