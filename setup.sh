@@ -19,12 +19,8 @@ exec 2>&1  # Merge stderr into stdout for ordered output in piped/Devcontainer e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ── Logging helpers ──────────────────────────────────────────────────────────
-
-log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
-log_warn()  { printf '\033[0;33m[WARN]\033[0m  %s\n' "$*"; }
-log_error() { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; }
+# shellcheck disable=SC1091
+. "${SCRIPT_DIR}/scripts/linux/lib/log.sh"
 
 # ── OS Detection ─────────────────────────────────────────────────────────────
 
