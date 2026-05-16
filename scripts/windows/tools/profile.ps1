@@ -254,7 +254,7 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
     Write-Info "PS 5.1 profile path: $($profilePaths[0])"
     Write-Info "PS 7+  profile path: $($profilePaths[1])"
 
-    # Diagnostics: log execution policy before writing — helps diagnose load failures on PS 5.1
+    # Diagnostics: log execution policy before writing - helps diagnose load failures on PS 5.1
     $execPolicy = Get-ExecutionPolicy -Scope CurrentUser
     Write-Info "Execution policy (CurrentUser): $execPolicy"
     if ($execPolicy -eq 'Restricted' -or $execPolicy -eq 'Undefined') {
@@ -307,7 +307,7 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
             $fileSize = (Get-Item $profilePath).Length
             Write-Ok "Profile written: $profilePath ($fileSize bytes)"
         } else {
-            Write-Err "Profile write failed — file not found after write: $profilePath"
+            Write-Err "Profile write failed - file not found after write: $profilePath"
         }
     }
 }

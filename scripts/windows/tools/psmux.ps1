@@ -19,9 +19,9 @@ function Install-Psmux {
         return
     }
     # psmux is not yet available as a valid winget package ID (see issue #179, #197).
-    # Attempting `winget install --id psmux` fails on all setups — skip with warning
+    # Attempting `winget install --id psmux` fails on all setups - skip with warning
     # rather than aborting the entire setup. User must install manually.
     Write-Warn "psmux is not yet available via winget (see #179, #197)."
     Write-Warn "Install manually from: https://github.com/nicowillis/psmux"
-    Write-Warn "Skipping psmux install — continuing setup."
+    Write-Warn "Skipping psmux install - continuing setup."
 }
