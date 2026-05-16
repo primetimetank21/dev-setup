@@ -22,6 +22,7 @@ All session logs written to `.squad/log/`.
 | 2026-04-18 | Sprint 6 alias parity | ✅ |
 | 2026-04-18 | Sprint 6 wrapup | ✅ |
 | 2026-04-18 | **Sprint 7 implementation** | ✅ |
+| 2026-05-16 | PR #200 merge + Issue #197 closed | ✅ |
 
 ---
 

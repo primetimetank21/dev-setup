@@ -3159,3 +3159,47 @@ Root cause: UTF-8 em dash (U+2014) ends with byte 0x94, which CP1252 treats as a
 ### Outcome
 
 Template updated. README table updated to match. No other gitconfig shell-expansion patterns found in the template.
+
+---
+
+## # Decision: PR #200 — Merge Gate Review
+
+**Date:** 2026-05-16
+**Author:** Mickey (Lead)
+**PR:** [#200](https://github.com/primetimetank21/dev-setup/pull/200)
+**Branch:** `squad/197-ps51-compat-fix`
+**Verdict:** ✅ APPROVED
+
+### Summary
+
+PR #200 is the companion test coverage + ASCII safety skill for Issue #197 (PS 5.1 compatibility). PR #198 (already merged) fixed the runtime scripts; this PR hardens the test suite and documents the encoding rule as a reusable skill.
+
+### What Was Reviewed
+
+| File | Assessment |
+|------|-----------|
+| `tests/test_windows_setup.ps1` (Groups N, O, P) | Clean test design. N validates dual-profile write + all 11 AllScope alias guards. O proves Remove-Item + Set-Alias pattern works at runtime. P covers psmux syntax, conditional skip, and idempotency. |
+| `tests/test_windows_setup.ps1` (ASCII cleanup) | 14 non-ASCII chars removed: 8 emoji markers, 4 em dashes, 2 arrows. File is now fully ASCII-safe. |
+| `.github/workflows/validate.yml` | New "Test PS 5.1 profile write" step correctly uses `shell: powershell` and validates profile file existence. |
+| `.squad/skills/ps51-ascii-safety/SKILL.md` | Production-quality skill doc. Root cause (CP1252 byte interpretation), detection scripts, fix patterns, scope boundaries, and incident history all documented. |
+| `.squad/agents/chip/history.md` | Condensed from ~520 lines to ~130 lines. Sprint history preserved; older per-PR entries collapsed into summaries. Acceptable. |
+
+### CI Status
+
+All 5 checks green:
+- Lint PowerShell Scripts ✓
+- Lint Shell Scripts ✓
+- Validate Linux Setup ✓
+- Validate PowerShell 5.1 Compatibility ✓ (1m45s — the new step ran successfully)
+- Validate PowerShell Functionality ✓
+
+### Merge Instructions
+
+- Merge strategy: **regular merge commit** (not squash)
+- Target branch: `develop`
+- Command: `gh pr merge 200 --repo primetimetank21/dev-setup --merge`
+
+### Notes
+
+- Could not use `--approve` via GitHub CLI (same-user restriction). Left comment-review with approval verdict instead.
+- No code concerns. No follow-up actions required.

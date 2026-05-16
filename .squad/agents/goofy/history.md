@@ -50,6 +50,8 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 
 ## Learnings
 
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 - CP1252 encoding trap: Em dash U+2014 encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252; PS 5.1 treats as string terminator — always use ASCII hyphen in literals
 - Invoke-Expression for function loading: Load at Group scope before Test-Scenario; `& ([scriptblock]::Create(...))` creates child scope where functions vanish
 - PSScriptAnalyzer PS3109: Empty catch blocks forbidden; Write-Verbose satisfies requirement

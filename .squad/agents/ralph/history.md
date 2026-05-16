@@ -123,6 +123,8 @@ Agent Ralph initialized and ready for work.
 
 ## Learnings
 
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 Initial setup complete.
 
 ---

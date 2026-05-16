@@ -45,6 +45,8 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Learnings
 
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 - CP1252 encoding trap: Em dash `—` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
 - Invoke-Expression for function loading: Load functions at Group scope before Test-Scenario calls; `& ([scriptblock]::Create(...))` creates child scope where functions vanish after test
 - PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks — test suite requirements > runtime logic correctness

@@ -45,6 +45,8 @@ Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 
 ## Learnings
 
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 - Never probe gh built-ins with `--help` alone — use `gh copilot -- --help` to reach binary; `--` passes flag through unconditionally
 - Never use `gh extension list | grep` or `gh alias list | grep` as sole idempotency gate — always probe actual command with `--help`
 - gh alias conflict blocks extension install silently (stdout, not stderr) — guard with delete before install

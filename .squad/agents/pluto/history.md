@@ -15,6 +15,8 @@
 
 ## Learnings
 
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
 ### Worktree isolation pattern (Issue #56, 2026-04-07)

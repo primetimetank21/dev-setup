@@ -49,6 +49,8 @@ Lead architect; established foundational team process, architecture, and Windows
 
 ## Learnings
 
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 - `git add --renormalize` updates INDEX only, not working tree
 - `script -q /dev/null -c 'command'` for isatty()-gated CLIs (general pattern, deprecated for Copilot CLI)
 - Branch protection write via `gh api` blocked by Codespace token scope — manual UI required
@@ -624,3 +626,19 @@ Reviewed Goofy's PS 5.1 compatibility fix addressing two root causes from issue 
 - GitHub API self-approval blocked (expected) — approval posted as comment per `--admin` merge pattern
 
 **Key Learning:** When PS 5.1 fails silently, the right response is diagnostic logging at every critical step (dir creation, file write, post-write validation) plus pre-flight checks (execution policy). This turns invisible failures into actionable error messages.
+
+---
+
+## 2026-05-16 — PR #200: Merge Gate Review (PS 5.1 Test Coverage + ASCII Safety Skill)
+
+**PR:** #200 (`squad/197-ps51-compat-fix` → `develop`)
+**Verdict:** ✅ APPROVED
+**Decision:** `.squad/decisions/inbox/mickey-pr200-review.md`
+
+**What I reviewed:**
+- Test groups N (profile write + AllScope guards), O (alias override runtime), P (psmux install + skip + idempotency)
+- 14-char ASCII cleanup across existing test file (em dashes, arrows, emoji markers)
+- New CI step: "Test PS 5.1 profile write" under `shell: powershell`
+- New skill: `.squad/skills/ps51-ascii-safety/SKILL.md`
+
+**Key Learning:** Reusable skill documents (SKILL.md) are high-leverage artifacts — they encode root-cause analysis, detection scripts, and fix patterns so future agents don't rediscover the same encoding trap. The PS 5.1 ASCII safety skill is a model for how to document cross-cutting constraints.
