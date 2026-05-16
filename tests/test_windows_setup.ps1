@@ -494,12 +494,12 @@ Test-Scenario "G-2: Install-SquadCli is called in Main" {
     }
 }
 
-Test-Scenario "G-3: Install-SquadCli contains npm availability check (skip+warn)" {
+Test-Scenario "G-3: Install-SquadCli contains npm availability check (error+exit)" {
     if ($squadToolContent -notmatch 'Get-Command npm') {
         throw "Install-SquadCli does not check for npm availability"
     }
-    if ($squadToolContent -notmatch 'npm not found -- skipping squad-cli') {
-        throw "Install-SquadCli does not warn when npm is missing"
+    if ($squadToolContent -notmatch 'npm not found after nvm install') {
+        throw "Install-SquadCli does not emit error when npm is missing"
     }
 }
 
@@ -1197,6 +1197,79 @@ Test-Scenario "S-3 Invoke-GhAuth does not prompt when already authenticated" {
     $output = Invoke-GhAuth 2>&1 | Out-String
     if ($output -notmatch 'already authenticated') {
         throw "Expected 'already authenticated' message, got: $output"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group T: nvm.ps1 Node auto-install logic (Issue #201)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group T: nvm.ps1 Node auto-install (Issue #201)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$nvmScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'nvm.ps1'
+$nvmContent = Get-Content $nvmScript -Raw
+
+Test-Scenario "T-1 nvm.ps1 reads nodejs version from .tool-versions" {
+    if ($nvmContent -notmatch "Get-ToolVersion.*-Name\s+'nodejs'") {
+        throw "nvm.ps1 does not read nodejs version from .tool-versions via Get-ToolVersion"
+    }
+}
+
+Test-Scenario "T-2 nvm.ps1 skips install if node matches pinned version (idempotent)" {
+    if ($nvmContent -notmatch 'already installed.*skipping') {
+        throw "nvm.ps1 does not skip when node version matches pinned version"
+    }
+}
+
+Test-Scenario "T-3 nvm.ps1 refreshes PATH via registry read" {
+    $hasRefresh = $nvmContent -match "GetEnvironmentVariable\('Path',\s*'Machine'\)" -and
+                  $nvmContent -match "GetEnvironmentVariable\('Path',\s*'User'\)"
+    if (-not $hasRefresh) {
+        throw "nvm.ps1 does not refresh PATH from Machine+User registry"
+    }
+}
+
+Test-Scenario "T-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
+    $hasInstall = $nvmContent -match 'nvm install \$pinnedNode'
+    $hasUse     = $nvmContent -match 'nvm use \$pinnedNode'
+    if (-not $hasInstall -or -not $hasUse) {
+        throw "nvm.ps1 does not call nvm install/use with pinned version variable"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group U: squad-cli.ps1 loud error (Issue #201)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group U: squad-cli.ps1 loud error (Issue #201)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$squadScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'squad-cli.ps1'
+$squadContent = Get-Content $squadScript -Raw
+
+Test-Scenario "U-1 squad-cli.ps1 emits ERROR (not WARN) when npm missing" {
+    if ($squadContent -match 'Write-Warn.*npm not found') {
+        throw "squad-cli.ps1 still uses Write-Warn for npm-missing case"
+    }
+    if ($squadContent -notmatch 'Write-Err.*npm not found') {
+        throw "squad-cli.ps1 does not emit Write-Err when npm is missing"
+    }
+}
+
+Test-Scenario "U-2 squad-cli.ps1 exits non-zero when npm missing" {
+    if ($squadContent -notmatch 'exit\s+1') {
+        throw "squad-cli.ps1 does not exit 1 when npm is missing"
+    }
+}
+
+Test-Scenario "U-3 squad-cli.ps1 provides actionable troubleshooting hints" {
+    $hasHint1 = $squadContent -match 'close this terminal'
+    $hasHint2 = $squadContent -match 'nvm.*install.*failed'
+    if (-not $hasHint1 -or -not $hasHint2) {
+        throw "squad-cli.ps1 does not provide actionable troubleshooting hints"
     }
 }
 
