@@ -220,3 +220,39 @@ Added `tests/test_alias_parity.sh` -- a bash test that extracts alias names from
 **Scope:** tests/**, .github/workflows/**, CI matrix completeness, coverage gaps  
 **Findings:** 6 issues reported (F-1 through F-6) -- missing pre-commit and pre-push hook tests (medium severity gap), uninstall untested (low gap), macOS job incomplete vs Linux parity (medium gap), redundant chmod (improvement), PSScriptAnalyzer hook tests missing (low improvement). Details in `.squad/agents/chip/audit-findings.md`. Top priority: pre-push hook tests (safety gate). Second priority: pre-commit hook tests. Third priority: uninstall scripts.  
 **Findings document:** `.squad/agents/chip/audit-findings.md` (created 2026-05-23)
+
+## [2026-05-23T14:00:00Z] Read-only verification of audit findings (V-3, V-4, V-16)
+
+**Branch:** READ-ONLY verification, no changes  
+**Scope:** Deep verification of 3 claims before escalation to issue backlog  
+**Method:** File-by-file inspection of hooks, tests, CI workflows, uninstall scripts  
+
+**Verification Results:**
+- **V-3 (Hook coverage gaps):** PARTIALLY CONFIRMED. Prepare-commit-msg and commit-msg are well-tested in test_git_hooks.ps1 (Group B: 7 prepare-commit-msg scenarios + 5 commit-msg scenarios). Pre-commit and pre-push hooks lack behavioral tests (only existence/shebang checks in Group A). Pre-push is critical safety gate (blocks main push) -- highest priority for new tests.
+- **V-4 (macOS CI parity):** CONFIRMED. Linux job validates nvm + Node.js (lines 43-57) but macOS job does not (lines 83-142 skip this section). Claim about "squad-cli verification" is overstated -- neither Linux nor macOS CI actually runs squad-cli bootstrap/verification at runtime (test_nvm_bootstrap.sh is static lint, not runtime test, and not wired into validate.yml).
+- **V-16 (Uninstall coverage):** CONFIRMED. Both scripts/linux/uninstall.sh and scripts/windows/uninstall.ps1 exist with idempotent logic. Zero test references found in tests/ or .github/workflows/. Both scripts are production-ready but untested.
+
+**Citations:** Full report with line-number citations documented in decision inbox (chip-v3-v4-v16-verification.md).
+**Phase recommendation:** P1 (V-3 pre-push, V-4 macOS), P3 (V-16 uninstall, low criticality)
+**Next step:** Earl decides whether findings roll to issue backlog or are addressed in next sprint.
+
+---
+
+## [2026-05-16T07:35:02Z] Issue #239: P0 E2E Install Testing (Comprehensive Workflow)
+
+**Issue:** #239 (priority:p0, squad:chip, enhancement, area:ci)
+**Assigned to:** Chip — comprehensive E2E install verification on fresh runners
+
+**Scope:** Full tool-verification workflow across all 3 OS platforms (Linux, macOS, Windows):
+- squad-cli bootstrap verification (`squad --version`)
+- psmux (Windows tmux alias) setup
+- All tool installs: zsh, uv, nvm, gh, GitHub Copilot CLI
+- Fresh runner baseline (per-PR validation)
+- Nightly cron also approved
+
+**Key Context:**
+- Cost correction: dev-setup is PUBLIC repo; GitHub Actions runners are FREE
+- Scope expansion: Not just setup.sh/setup.ps1 routing, but full tool-verification scope
+- Priority framing: P0 "safety net for what really works on fresh machines"
+- Related: Supersedes #226 (macOS parity, narrower); overlaps #238 (uninstall tests)
+- Terminology: psmux is Windows tmux alias (NOT wezterm — coordinator error corrected)

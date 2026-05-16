@@ -210,3 +210,8 @@ Fixed three regressions introduced by PR #130:
 - 10 findings reported: 1 high-severity bug (nvm.ps1 path resolution), 1 medium (tool error handling), 8 low/improvements
 - 2 pass validations: AllScope alias guards complete, ASCII-only check clean
 - Coordinator can prioritize F-1 (path bug in PR #218), F-4 (error handling), F-2 (encoding consistency) for next sprint
+
+## [2026-05-17] Verification of Audit Findings (Read-Only Deep Dive)
+- **Status:** COMPLETED — 5/5 findings verified; V-1 confirmed P0 bug, V-7 & V-11 & V-15 confirmed P2 refactoring gaps, V-13 confirmed P1 error handling gap
+- **Method:** Systematic file inspection + citations to exact locations; compared against ps51-runtime-file-encoding skill
+- **Report:** .squad/agents/goofy/VERIFICATION_REPORT.md (13KB, detailed analysis per finding)

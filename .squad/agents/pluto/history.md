@@ -215,3 +215,10 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - Lens: configs / dotfiles / hooks
 - 9 findings reported to coordinator; top 3: .ps1 CRLF in .gitattributes, [[ ]] POSIX compatibility in .aliases, PSScriptAnalyzer advisory mode in pre-push.
 
+### Audit verification (V-9, V-15, V-17, V-11) - 2026-05-20
+- **V-9 (PSScriptAnalyzer advisory):** CONFIRMED. Intentional design per CONTRIBUTING.md. Lint before PR, not before push. Advisory protects local developer flow. Current behavior matches shellcheck.
+- **V-15 (dotfile .bak):** CONFIRMED. Linux overwrites .bak each run. Windows backs up once. Both lose history; no accumulation. Risk: prior backups deleted on re-run. Needs hybrid (timestamped or rotated) strategy.
+- **V-17 (core.hooksPath docs):** CONFIRMED. Both setup scripts configure it, but README/CONTRIBUTING don't document automatic setup. CONTRIBUTING still says "install manually" (outdated). Low effort fix.
+- **V-11 (.gitattributes CRLF for .ps1):** CONFIRMED. .ps1 files normalize to LF per global rule. Works fine on all PS versions. Missing explicit rule for clarity. Should add `*.ps1 text eol=lf` for intent transparency.
+- **Phasing:** P1 = V-17 (docs), V-15 (backup strategy). P2 = V-9 (already acceptable), V-11 (nice-to-have clarity).
+

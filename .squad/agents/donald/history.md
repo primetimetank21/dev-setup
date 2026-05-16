@@ -432,3 +432,10 @@ both platform branches get the package to maintain the cross-platform parity doc
 - What: Added scripts/windows/auth.ps1 with Invoke-GhAuth that mirrors Linux auth.sh
 - Key findings: Linux uses gh auth login with no flags; Windows uses --hostname github.com --git-protocol https --web for explicit interactive flow. Auth failure is always non-fatal (warn and continue). Non-interactive detection via CI/CODESPACES env vars and [Environment]::UserInteractive.
 - Tests: Group S verifies function exists (S-1), exits cleanly when gh missing (S-2), skips prompt when already authenticated (S-3)
+
+### Audit verification (2026-05-04)
+- **Task:** Verify 5 findings from gap-audit (V-2, V-4, V-10, V-12, V-14)
+- **Report:** .squad/agents/donald/verification-report-2026-05-04.md
+- **Summary:** V-2 CONFIRMED (logging consolidation, P1); V-4 CONFIRMED (macOS Homebrew guidance, P2); V-10 CONFIRMED but P3 (POSIX syntax in .aliases, not needed); V-12 CONFIRMED but needs design decision on squad-cli versioning; V-14 CONFIRMED but intentional in some tests (test harness pattern).
+- **Hits:** Real issues in logging duplication and test inconsistency.
+- **Misses:** V-10 and V-14 are design choices, not bugs. V-12 requires squad-cli versioning philosophy decision.
