@@ -46,9 +46,9 @@ function Install-Nvm {
             return
         }
         Write-Info "Waiting for nvm-windows installer to finish..."
-        $nvmHome = Wait-ForNvmInstall -TimeoutSeconds 90
+        $nvmHome = Wait-ForNvmInstall -TimeoutSeconds 180
         if (-not $nvmHome) {
-            Write-Warn "nvm-windows installer did not finish within 90s -- open a new terminal and re-run setup"
+            Write-Warn "nvm-windows installer did not finish within 180s -- open a new terminal and re-run setup"
             return
         }
         Refresh-SessionPath
