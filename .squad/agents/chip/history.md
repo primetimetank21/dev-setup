@@ -278,3 +278,4 @@ Added `tests/test_alias_parity.sh` -- a bash test that extracts alias names from
 - **Hard Gate:** Per Earl directive, no override path exists. Gate is strict and cannot be bypassed.
 
 **Key Integration:** The squad-history-check workflow itself enforces squad operational hygiene. It uses `squad:chip` label on its own PR, so it validates the new gate works before merge ("dogfood test").
+- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.

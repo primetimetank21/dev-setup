@@ -765,6 +765,7 @@ Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
   - P2: #229 (ARCHITECTURE.md refresh), #230 (auth.ps1 move), #231 (gitattributes .ps1), #232 (squad-cli versioning), #233 (pre-push comment), #234 (encoding ASCII)
   - P3: #235 (install-guard defer), #236 (.aliases POSIX), #237 (test harness docs), #238 (uninstall coverage)
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
+- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
 
 ### Filed P1 pre-commit hygiene hook (2026-05-16)
 

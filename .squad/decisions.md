@@ -3411,3 +3411,41 @@ One tool per line. Blank lines and # comments allowed.
 3. .squad/orchestration-log/{ISO8601-UTC}-{batch-name}.md — for batch evidence with citations (preferred for citation-heavy verification reports)
 Verifiers MUST NOT create files at .squad/agents/{name}/VERIFICATION_REPORT.md, .squad/verification-report.md, or any other random path. Spawn prompts for verifier-style batches MUST specify the target location explicitly. Coordinator MUST spawn Scribe IMMEDIATELY after any verifier batch — never delay to a downstream filing step.
 **Why:** Incident 2026-05-16. 3 rogue verification reports landed on develop uncommitted because (a) verifiers picked random paths and (b) coordinator delayed Scribe.
+
+---
+
+## # Decision Record: Hygiene Reliability Retro Complete
+
+**Date:** 2026-05-16
+**Source:** 2026-05-16 Hygiene Reliability Retro (facilitator: Coordinator)
+**Status:** ALL 4 action items shipped to develop. Both gates LIVE.
+
+### Action items shipped
+
+1. Pre-spawn-checklist skill (.squad/skills/pre-spawn-checklist/SKILL.md) -- commit 0431dc8
+2. Squad history-check CI gate (.github/workflows/squad-history-check.yml) -- PR #241 / merge c02d679
+3. PR template with hygiene checklist (.github/pull_request_template.md) -- PR #242 / merge 0fc8dcf
+4. Retro facilitation (this record)
+
+### Standing rules now in force
+
+- Every spawn prompt must include the hygiene tail (per pre-spawn-checklist skill)
+- squad:* PRs must update matching agent history.md or CI fails (hard gate, no override)
+- All squad PRs use the new template with hygiene checklist
+- Branches always forked from develop (never from another squad/* branch)
+- Verifier evidence goes to .squad/orchestration-log/*.md ONLY
+- Ralph owns end-of-session branch + worktree cleanup
+- Jiminy auto-audits before Coordinator returns to user, post-batch (3+ spawns), session-end
+
+### Belt-and-suspenders coverage
+
+- Pre-commit: TBD (issue #240 P1 for Pluto to implement)
+- CI gate: LIVE (Chip's squad-history-check)
+- PR template: LIVE (visible checklist)
+- Pre-spawn checklist: LIVE (Coordinator self-audit)
+- Post-spawn audit: LIVE (Jiminy reviewer gate)
+- End-of-session: LIVE (Ralph cleanup)
+
+This is the most comprehensive squad hygiene system any sprint has produced.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

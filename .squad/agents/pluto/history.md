@@ -223,3 +223,4 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - **Phasing:** P1 = V-17 (docs), V-15 (backup strategy). P2 = V-9 (already acceptable), V-11 (nice-to-have clarity).
 
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
+- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.

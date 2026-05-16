@@ -231,3 +231,4 @@ Fixed three regressions introduced by PR #130:
   8. No rogue files outside canonical `.squad/` paths
 - **Design:** HTML-comment-wrapped guidance in template prevents render clutter in PR body but remains visible in editor. Combined with Jiminy's CI gate (separate PR), provides both human-readable confirmation AND automated enforcement.
 - **Key Pattern:** Hygiene checklist goes BEFORE first PR body is authored (visible during composition), creates friction against skipping items. This is why appending to history.md in this very commit proves the pattern works — if Goofy had skipped it, the template itself would fail its own checklist.
+- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
