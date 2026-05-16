@@ -779,3 +779,27 @@ Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
 - Labels: `priority:p1`, `squad:pluto`, `area:hooks`, `enhancement`
 - Pluto (Config Engineer) owns implementation
 - No go:yes — Earl marks sprint-ready manually
+
+## Learnings -- Sprint Review Batch (2026-05-23)
+
+Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
+
+### PR #243 (Goofy) -- APPROVE
+- **Title:** fix(windows): nvm.ps1 lib path off-by-one
+- **Verdict:** Clean fix. Two-level Split-Path resolves correctly. Runtime assertion is a good pattern. Tests W-1/W-2/W-3 cover resolution, assertion presence, and pattern. CHANGELOG + history.md + template all correct.
+- **Follow-ups:** None.
+
+### PR #245 (Chip) -- REQUEST CHANGES
+- **Title:** feat(ci): e2e install smoke test across Linux/macOS/Windows
+- **Verdict:** Workflow structure is solid but missing required acceptance criteria: `squad --version` and `psmux --version` / `tmux --version` on Windows. These are explicitly required by issue #239. They are cheap to add (one line each) and since the jobs are continue-on-error: true, they cannot block merge even if they fail. Requested revision by a different agent per review rules.
+- **Follow-ups:** None (blocking on in-PR fix, not filing issues).
+
+### PR #246 (Pluto) -- COMMENT (soft accept)
+- **Title:** feat(hooks): pre-commit hygiene checks (ASCII PS, rogue paths, ancestry)
+- **Verdict:** Implementation is solid -- 4 fast checks, POSIX shell, good tests (13 cases). Non-blocking nit: PR body did not use the standard .github/pull_request_template.md format. Asked Pluto to update before merge for Jiminy compliance.
+- **Follow-ups:** None (nit is addressable in-PR).
+
+### Patterns observed
+- All 3 PRs used Conventional Commits + Co-authored-by Copilot trailer correctly.
+- Goofy and Chip used the PR template; Pluto used a custom checklist (close but not exact match).
+- Test coverage is good across the batch -- both pass and fail paths covered.
