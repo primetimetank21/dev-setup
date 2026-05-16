@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/squad-heartbeat.yml` removes noisy cron trigger; Ralph now fires on issue events only
 - `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
 
+### Fixed
+- `.github/workflows/e2e-install.yml` -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
+
 ### Added
 - Doc (Fact Checker) joins the squad -- new agent addressing the verifier/validator gap from Sprint Q retro. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings (Verified/Unverified/Contradicted/Needs Investigation). Charter: `.squad/agents/doc/charter.md`.
 - `.github/workflows/squad-label-enforce.yml` -- enforces mutual exclusivity for `go:`, `release:`, `type:`, `priority:` label groups
