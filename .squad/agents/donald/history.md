@@ -408,3 +408,15 @@ both platform branches get the package to maintain the cross-platform parity doc
 - Windows users with existing checkout still have CRLF .sh files; bind-mount sees `set: pipefail\r` errors
 - Fix: `onCreateCommand` strips `\r` before `postCreateCommand` runs
 - Rule: When adding .gitattributes eol rules, always add devcontainer onCreateCommand CRLF strip as defensive guard
+
+## Learnings
+
+### Issue #189 - Uninstall/cleanup scripts (2025-07-17)
+
+- Created scripts/linux/uninstall.sh and scripts/windows/uninstall.ps1
+- Linux markers: # --- dev-setup managed block (do not edit) --- / # --- end dev-setup managed block ---
+- Windows markers: # BEGIN dev-setup profile / # END dev-setup profile
+- Dotfile .bak paths: ~/.gitconfig, ~/.npmrc, ~/.editorconfig, ~/.aliases, ~/.vimrc
+- Windows profile paths: Documents/WindowsPowerShell and Documents/PowerShell
+- Uninstallers are idempotent; tools intentionally left installed
+- PS1 ASCII safety: box-drawing chars (U+2500 range) trigger the same CP1252 issue as em dashes
