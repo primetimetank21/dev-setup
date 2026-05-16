@@ -46,6 +46,7 @@ function Install-Nvm {
             return
         }
         Refresh-SessionPath
+        Add-NvmWindowsPaths
         if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
             Write-Warn "nvm not found on PATH after install -- open a new terminal and re-run setup"
             return

@@ -259,3 +259,6 @@ Fixed three regressions introduced by PR #130:
   - Post-idempotency assertion steps for all three platforms (verifies tools survive a second setup run)
 - **Decision on `|| true` vs hard fail:** Hard fail chosen. squad-cli is a required tool per acceptance criteria. Silent `|| true` would mask real install failures. The error message explicitly names the npm package so CI logs point directly at root cause.
 - **Why any agent could do this:** The changes are YAML workflow edits (no PS 5.1 compat concerns, no complex cross-platform logic). Selected per "different agent revises" rule, not technical necessity.
+
+### PR #257 v3 fix (2026-05-18)
+- v3 fix -- Add-NvmWindowsPaths defensive injection (winget->registry timing race); fixed 2 stale PS 5.1 tests (R-1 nodejs version, T-3 PATH refresh location).

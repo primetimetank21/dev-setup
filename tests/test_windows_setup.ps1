@@ -1110,8 +1110,8 @@ $toolVersionScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'lib' 
 
 Test-Scenario "R-1 Get-ToolVersion returns nodejs version" {
     $ver = Get-ToolVersion -Name 'nodejs'
-    if ($ver -ne '20.11.0') {
-        throw "Expected '20.11.0', got '$ver'"
+    if ($ver -ne '22.11.0') {
+        throw "Expected '22.11.0', got '$ver'"
     }
 }
 
@@ -1230,11 +1230,24 @@ Test-Scenario "T-2 nvm.ps1 skips install if node matches pinned version (idempot
     }
 }
 
-Test-Scenario "T-3 nvm.ps1 refreshes PATH via registry read" {
-    $hasRefresh = $nvmContent -match "GetEnvironmentVariable\('Path',\s*'Machine'\)" -and
-                  $nvmContent -match "GetEnvironmentVariable\('Path',\s*'User'\)"
+Test-Scenario "T-3 lib/path.ps1 contains PATH refresh via registry read" {
+    $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
+    $pathContent = Get-Content $pathLib -Raw
+    $hasRefresh = $pathContent -match "GetEnvironmentVariable\('Path',\s*'Machine'\)" -and
+                  $pathContent -match "GetEnvironmentVariable\('Path',\s*'User'\)"
     if (-not $hasRefresh) {
-        throw "nvm.ps1 does not refresh PATH from Machine+User registry"
+        throw "lib/path.ps1 does not refresh PATH from Machine+User registry"
+    }
+}
+
+Test-Scenario "T-3b lib/path.ps1 contains Add-NvmWindowsPaths defensive injection" {
+    $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
+    $pathContent = Get-Content $pathLib -Raw
+    $hasFunc = $pathContent -match 'function Add-NvmWindowsPaths'
+    $hasNvmDir = $pathContent -match 'AppData\\Roaming\\nvm'
+    $hasNodeDir = $pathContent -match 'C:\\Program Files\\nodejs'
+    if (-not $hasFunc -or -not $hasNvmDir -or -not $hasNodeDir) {
+        throw "lib/path.ps1 missing Add-NvmWindowsPaths or expected nvm/node paths"
     }
 }
 
