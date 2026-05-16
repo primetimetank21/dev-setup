@@ -676,3 +676,12 @@ Reviewed Goofy's PS 5.1 compatibility fix addressing two root causes from issue 
 - Updated Team Ownership Map and Dependency Order section
 - Confirmed examples/ directory is not referenced (removed in PR #202)
 - Added CHANGELOG entry under [Unreleased] -> Changed
+
+### 2026-05-16 — Batch 2 Review: PRs #205, #206, #207
+- **PR #205** (Pluto, closes #192): tmux auto-attach opt-in via TMUX_AUTOSTART. POSIX guard correct, CHANGELOG clear. Merged via admin bypass (self-approve blocked). ✅
+- **PR #206** (Mickey, closes #182): ARCHITECTURE.md + README.md file tree refresh. Self-reviewed rigorously — cross-checked against `git ls-files`, no stale `examples/` refs, all new files documented. Required rebase (CHANGELOG conflict with #205's new "### Changed" section). CI re-ran green. Merged. ✅
+- **PR #207** (Chip, closes #187): alias parity test. `gb:windows` in ALLOWED_ALIAS_DRIFT, test wired into validate-linux CI step. Merged cleanly. ✅
+- All 3 issues closed manually (auto-close fragile — confirmed pattern from batch 1).
+- Develop now at `c948c61` with 3 new merge commits. All squad branches deleted.
+
+**Key Learning:** Worktree isolation worked — no branch ancestry bleed in batch 2 (unlike batch 1). CHANGELOG conflicts remain the most common merge issue when batching PRs that all touch [Unreleased]. Merge in dependency order and rebase as needed.
