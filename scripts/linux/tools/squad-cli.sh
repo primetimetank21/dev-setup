@@ -7,9 +7,8 @@
 
 set -euo pipefail
 
-log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
-log_error() { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; }
+# shellcheck disable=SC1091
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 
 if command -v squad &>/dev/null; then
   log_ok "squad-cli already installed: $(squad --version 2>&1)"

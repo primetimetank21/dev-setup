@@ -203,9 +203,14 @@ Write-Host "========================================================" -Foregroun
 
 # Load Write-PowerShellProfile (and its logging helpers) from the tool script
 # Profile function is now in scripts/windows/tools/profile.ps1
+# Pre-load shared logging lib so Invoke-Expression can resolve dot-source lines
+. (Join-Path $RepoRoot 'scripts\windows\lib\logging.ps1')
 $profileToolPath = Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1'
 $profileToolContent = Get-Content $profileToolPath -Raw
-Invoke-Expression $profileToolContent
+# Strip the dot-source of logging.ps1 (already loaded above; $PSScriptRoot
+# resolves to the test dir inside Invoke-Expression, so the relative path fails)
+$profileToolExec = $profileToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*logging\.ps1"?', '# logging lib loaded by test harness'
+Invoke-Expression $profileToolExec
 
 # Also load setup.ps1 content for pattern checking (without executing Main)
 $windowsSetupPath    = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
@@ -975,7 +980,8 @@ Write-Host "========================================================" -Foregroun
 
 $psmuxToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
 $psmuxToolContent = Get-Content $psmuxToolPath -Raw
-Invoke-Expression $psmuxToolContent
+$psmuxToolExec = $psmuxToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*logging\.ps1"?', '# logging lib loaded by test harness'
+Invoke-Expression $psmuxToolExec
 
 Test-Scenario "P-1: psmux.ps1 can be dot-sourced without error and Install-Psmux is defined" {
     # Syntax check via AST parser
@@ -1270,6 +1276,41 @@ Test-Scenario "U-3 squad-cli.ps1 provides actionable troubleshooting hints" {
     $hasHint2 = $squadContent -match 'nvm.*install.*failed'
     if (-not $hasHint1 -or -not $hasHint2) {
         throw "squad-cli.ps1 does not provide actionable troubleshooting hints"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group V: shared logging lib (Issue #186)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group V: shared logging lib (Issue #186)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$loggingLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'logging.ps1'
+
+Test-Scenario "V-1 logging.ps1 defines Write-Info, Write-Ok, Write-Warn, Write-Err" {
+    . $loggingLib
+    foreach ($fn in @('Write-Info', 'Write-Ok', 'Write-Warn', 'Write-Err')) {
+        if (-not (Get-Command $fn -ErrorAction SilentlyContinue)) {
+            throw "$fn not defined after dot-sourcing logging.ps1"
+        }
+    }
+}
+
+Test-Scenario "V-2 logging functions do not throw" {
+    . $loggingLib
+    Write-Info "test" | Out-Null
+    Write-Ok "test" | Out-Null
+    Write-Warn "test" | Out-Null
+    Write-Err "test" | Out-Null
+}
+
+Test-Scenario "V-3 dot-sourcing logging.ps1 twice is idempotent" {
+    . $loggingLib
+    . $loggingLib
+    if (-not (Get-Command Write-Info -ErrorAction SilentlyContinue)) {
+        throw "Write-Info not defined after double dot-source"
     }
 }
 

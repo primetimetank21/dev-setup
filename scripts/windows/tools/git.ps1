@@ -6,10 +6,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Write-Info  { param([string]$Msg) Write-Output "[INFO]  $Msg" }
-function Write-Ok    { param([string]$Msg) Write-Output "[OK]    $Msg" }
-function Write-Warn  { param([string]$Msg) Write-Output "[WARN]  $Msg" }
-function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
+. "$PSScriptRoot\..\lib\logging.ps1"
 
 # Windows has no native zsh. Git for Windows ships Git Bash (MinGW bash),
 # which is the practical unix-shell equivalent on Windows.

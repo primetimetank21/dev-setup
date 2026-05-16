@@ -6,10 +6,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Write-Info  { param([string]$Msg) Write-Output "[INFO]  $Msg" }
-function Write-Ok    { param([string]$Msg) Write-Output "[OK]    $Msg" }
-function Write-Warn  { param([string]$Msg) Write-Output "[WARN]  $Msg" }
-function Write-Err   { param([string]$Msg) Write-Output "[ERROR] $Msg" }
+. "$PSScriptRoot\..\lib\logging.ps1"
 
 function Install-CopilotCli {
     # Accept either the standalone binary (winget) or the legacy gh extension
