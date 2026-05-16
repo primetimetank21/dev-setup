@@ -9,12 +9,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
-
-function Refresh-SessionPath {
-    $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
-    $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-    $env:Path    = "$machinePath;$userPath"
-}
+. "$PSScriptRoot\..\lib\path.ps1"
 
 function Install-Nvm {
     # Load pinned versions from .tool-versions

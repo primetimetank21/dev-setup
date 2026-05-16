@@ -182,6 +182,14 @@ Fixed three regressions introduced by PR #130:
 - Placed Install-Dotfiles after Install-SquadCli and before Write-PowerShellProfile in setup chain
 - Tests in Group Q of test_windows_setup.ps1 using temp USERPROFILE override
 
+### Issue #251 -- Session PATH not refreshed after winget installs (2026-05-17)
+- **PR:** fix(windows): refresh session PATH after winget installs (#251)
+- **Branch:** `goofy/251-windows-nvm-path` from `develop`
+- **Bug:** `winget install nvm` succeeded but the running PowerShell session kept its original PATH snapshot. `nvm install` then failed because `nvm.exe` was not on PATH. Same pattern affected git, gh, vim, copilot, psmux.
+- **Fix:** Extracted `Refresh-SessionPath` from `nvm.ps1` into shared `scripts/windows/lib/path.ps1`. Sourced it in the orchestrator and all 6 winget-based tool scripts. Added `Refresh-SessionPath` call after every `winget install` that is followed by usage of the just-installed binary. Replaced vim.ps1's inline PATH rebuild with the shared function.
+- **Pattern:** Any time a tool modifies the system/user PATH (winget, manual registry write), call `Refresh-SessionPath` before the next `Get-Command` or binary invocation in the same session.
+- **Key learning:** Windows PowerShell snapshots `$env:Path` at process start. Registry changes from installers are invisible until you explicitly re-read `[System.Environment]::GetEnvironmentVariable('Path', 'Machine')` and `'User'` and assign back to `$env:Path`. This is a shared-lib concern, not per-tool -- extract once, source everywhere.
+
 ### Issue #190 - Pin tool versions via .tool-versions (2026-05-16)
 - PR: #215 -- `feat(setup): pin tool versions via .tool-versions file`
 - Branch: `squad/190-tool-versions` from `develop`
