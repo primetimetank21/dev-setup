@@ -1315,6 +1315,43 @@ Test-Scenario "V-3 dot-sourcing logging.ps1 twice is idempotent" {
 }
 
 # ---------------------------------------------------------------------------
+# Group W: nvm.ps1 lib path resolution (Issue #221)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group W: nvm.ps1 lib path resolution (Issue #221)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$nvmScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'nvm.ps1'
+$nvmContent = Get-Content $nvmScript -Raw
+
+Test-Scenario "W-1 nvm.ps1 resolves lib path two levels up from tools dir" {
+    # Simulate the same path logic used in nvm.ps1
+    $toolsDir = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools'
+    $resolvedLib = Join-Path (Split-Path (Split-Path $toolsDir -Parent) -Parent) 'lib'
+    $target = Join-Path $resolvedLib 'Read-ToolVersion.ps1'
+    if (-not (Test-Path $target)) {
+        throw "Read-ToolVersion.ps1 not found at resolved path: $target"
+    }
+}
+
+Test-Scenario "W-2 nvm.ps1 contains runtime assertion for lib path" {
+    if ($nvmContent -notmatch 'Test-Path.*libDir') {
+        throw "nvm.ps1 missing runtime assertion (Test-Path) for lib directory"
+    }
+    if ($nvmContent -notmatch 'throw.*not found') {
+        throw "nvm.ps1 missing throw when lib path does not exist"
+    }
+}
+
+Test-Scenario "W-3 nvm.ps1 uses two-level Split-Path (not one)" {
+    # Ensure the fix uses two levels of Split-Path -Parent
+    if ($nvmContent -notmatch 'Split-Path\s*\(\s*Split-Path\s+\$PSScriptRoot\s+-Parent\s*\)\s+-Parent') {
+        throw "nvm.ps1 does not use two-level Split-Path for lib resolution"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 

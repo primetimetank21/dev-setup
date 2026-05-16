@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `scripts/windows/tools/nvm.ps1` resolved wrong lib path (one level up instead of two); `Read-ToolVersion.ps1` not found at runtime (closes #221)
+- Added runtime assertion in `nvm.ps1` to catch missing lib directory early
+
 ### Added
 - macOS CI validation via new `validate-macos` job in `validate.yml` (closes #181)
 - Windows GitHub auth step via `scripts/windows/auth.ps1` (closes #191)
