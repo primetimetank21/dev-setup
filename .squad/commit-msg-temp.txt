@@ -1,7 +1,0 @@
-docs(squad): log post-sprint 5-lens audit batch (Mickey/Donald/Goofy/Pluto/Chip)
-
-- 5 read-only audit reports captured to orchestration log
-- Decisions inbox merged into decisions.md
-- Findings synthesized to coordinator for issue triage
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

@@ -70,4 +70,5 @@ None. Jiminy begins auto-running on the next Coordinator return-to-user.
 
 ## Learnings
 
-(empty - Jiminy hasn't run yet)
+- **2026-05-16 -- First audit run.** Tree clean, branches clean, labels good. Main issues: 10 non-merge commits directly on main (Sprint 5 era hotfixes), 2 rogue files (.squad/commit-msg-temp.txt, .squad/agents/chip/audit-findings.md), duplicate log dirs (.squad/log/ vs .squad/logs/). Scribe history.md missing ## Learnings section. Patterns noticed: hotfix sessions historically bypass develop-first rule and commit straight to main.
+- **2026-05-16 -- First audit resolution (coordinator-applied).** All 4 auto-fixable items resolved: (1) `.squad/commit-msg-temp.txt` deleted; (2) `.squad/agents/chip/audit-findings.md` content merged into canonical `.squad/orchestration-log/2026-05-16T07-00-25Z-chip-testing-audit.md` (was a stub manifest, now has full findings appended), rogue deleted; (3) `.squad/logs/session_log.md` migrated to `.squad/log/session_log.md` and `.squad/logs/` dir deleted (canonical = singular `log/`); (4) Scribe history.md got `## Learnings` section. Main-branch direct commits ACCEPTED as historical -- Earl confirmed no retroactive history rewrite; standing directive (develop-first, merge commits only on main) enforces going forward.
