@@ -133,3 +133,12 @@ Updated all 5 Group K tests (K-1 through K-5) to track new file locations after 
 **Key Learning:** PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks. Always check if newer PR superseded earlier CI failures (stale artifacts common in shared repos).
 
 **Outcome:** Main and develop branches both green. All Sprint 7 CI issues resolved.
+
+---
+
+## [2026-05-16T02:00:00Z] Skill Created: ps51-ascii-safety
+
+**Location:** `.squad/skills/ps51-ascii-safety/SKILL.md`
+**Confidence:** high
+
+Formalized the PS 5.1 CP1252 encoding trap as a reusable skill. Covers detection, fix patterns, common offender table, and when-to-apply rules. Cite this skill in any future `.ps1` file review or creation task.
