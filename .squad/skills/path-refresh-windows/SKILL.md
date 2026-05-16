@@ -52,9 +52,14 @@ function Refresh-SessionPath {
    `CoreyButler.NVMforWindows` that wrap a setup.exe, `winget install --silent`
    can return BEFORE the inner installer has written files or updated the
    registry. Calling `Refresh-SessionPath` immediately after may find nothing.
+   The installer can take 100+ seconds in CI (observed ~100s on GH Actions
+   windows-latest), so the default timeout is 180s.
 
-   **Fix:** Poll for the installed binary in known locations with a timeout.
-   See `Wait-ForNvmInstall` in `scripts/windows/lib/path.ps1`.
+   **Fix:** `Wait-ForNvmInstall` in `scripts/windows/lib/path.ps1` polls with
+   a two-pronged strategy: (1) `Refresh-SessionPath` + `Get-Command nvm` as
+   the primary signal (catches the registry update regardless of install path),
+   and (2) direct path probing of 7 candidate directories as a fallback (catches
+   cases where the registry update is delayed).
 
 3. **Machine before User.** Windows resolves PATH left-to-right. Putting
    Machine first matches the default shell behavior.
@@ -77,3 +82,4 @@ function Refresh-SessionPath {
 
 - 2026-05-16: changed from replace to merge. Issue #251 (GH Actions tool-cache Node was being wiped).
 - 2026-05-18: added Wait-ForNvmInstall polling helper. winget returns before nvm-setup.exe finishes; polling 5 candidate paths with 90s timeout. Issue #251, PR #257.
+- 2026-05-18: v6 -- bumped timeout to 180s (installer took ~100s in CI); poll loop now uses Refresh-SessionPath + Get-Command as primary signal, expanded candidate paths (7 dirs) as fallback; diagnostic dump on timeout. Issue #251, PR #257.

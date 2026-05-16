@@ -1244,19 +1244,28 @@ Test-Scenario "T-3b lib/path.ps1 contains Wait-ForNvmInstall polling helper" {
     $pathLib = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'lib' | Join-Path -ChildPath 'path.ps1'
     $pathContent = Get-Content $pathLib -Raw
     $hasFunc = $pathContent -match 'function Wait-ForNvmInstall'
-    $hasTimeout = $pathContent -match '\$TimeoutSeconds'
+    $hasTimeout = $pathContent -match '\$TimeoutSeconds\s*=\s*180'
     $hasSleep = $pathContent -match 'Start-Sleep'
     $hasGetDate = $pathContent -match 'Get-Date'
     $hasRoaming = $pathContent -match 'AppData\\Roaming\\nvm'
     $hasNvm4w = $pathContent -match 'C:\\nvm4w\\nvm'
+    $hasCnvm = $pathContent -match "'C:\\nvm'"
+    $hasRefresh = $pathContent -match 'Refresh-SessionPath'
+    $hasGetCmd = $pathContent -match 'Get-Command nvm'
     if (-not $hasFunc -or -not $hasTimeout) {
-        throw "lib/path.ps1 missing Wait-ForNvmInstall or TimeoutSeconds parameter"
+        throw "lib/path.ps1 missing Wait-ForNvmInstall or default timeout not 180"
     }
     if (-not $hasSleep -or -not $hasGetDate) {
         throw "Wait-ForNvmInstall missing poll loop (Start-Sleep + Get-Date)"
     }
-    if (-not $hasRoaming -or -not $hasNvm4w) {
-        throw "Wait-ForNvmInstall missing expected candidate paths"
+    if (-not $hasRoaming -or -not $hasNvm4w -or -not $hasCnvm) {
+        throw "Wait-ForNvmInstall missing expected candidate paths (Roaming, nvm4w, C:\nvm)"
+    }
+    if (-not $hasRefresh) {
+        throw "Wait-ForNvmInstall does not call Refresh-SessionPath inside the loop"
+    }
+    if (-not $hasGetCmd) {
+        throw "Wait-ForNvmInstall does not call Get-Command nvm inside the loop"
     }
 }
 

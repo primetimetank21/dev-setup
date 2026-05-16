@@ -19,14 +19,18 @@ function Refresh-SessionPath {
 }
 
 function Wait-ForNvmInstall {
-    # Poll for nvm.exe after winget install of nvm-windows.
-    # winget returns before the inner installer finishes writing files,
-    # so we must wait. Returns the discovered NVM_HOME directory, or $null.
-    param([int]$TimeoutSeconds = 90)
+    # Poll for nvm-windows to become callable after winget install.
+    # winget returns before the inner installer finishes writing files and
+    # updating the registry. We try both PATH refresh (catches registry update)
+    # and direct path probing (catches unknown install locations).
+    # Returns the discovered install dir on success, $null on timeout.
+    param([int]$TimeoutSeconds = 180)
 
     $candidates = @(
         (Join-Path $env:USERPROFILE 'AppData\Roaming\nvm'),
         (Join-Path $env:APPDATA 'nvm'),
+        'C:\nvm',
+        'C:\nvm-windows',
         'C:\Program Files\nvm',
         'C:\ProgramData\nvm',
         'C:\nvm4w\nvm'
@@ -34,6 +38,15 @@ function Wait-ForNvmInstall {
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
+        Refresh-SessionPath
+
+        $cmd = Get-Command nvm -ErrorAction SilentlyContinue
+        if ($cmd) {
+            $dir = Split-Path $cmd.Source -Parent
+            if (-not $env:NVM_HOME) { $env:NVM_HOME = $dir }
+            return $dir
+        }
+
         foreach ($dir in $candidates) {
             $exe = Join-Path $dir 'nvm.exe'
             if (Test-Path $exe) {
@@ -49,7 +62,14 @@ function Wait-ForNvmInstall {
                 return $dir
             }
         }
-        Start-Sleep -Seconds 2
+
+        Start-Sleep -Seconds 3
     }
+
+    # Diagnostic dump on timeout (helps future debugging)
+    Write-Host "Wait-ForNvmInstall timed out. Diagnostics:"
+    Write-Host "  Candidates checked:"
+    foreach ($dir in $candidates) { Write-Host "    $dir (exists: $(Test-Path $dir))" }
+    Write-Host "  Current PATH: $env:Path"
     return $null
 }
