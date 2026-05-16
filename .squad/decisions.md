@@ -3098,3 +3098,64 @@ None — all decisions made with full confidence.
 ### Approval Method
 
 GitHub API self-approval blocked (single-user repo). Approval posted as PR comment per `--admin` merge pattern documented in CONTRIBUTING.md and decisions.md.
+
+---
+
+## # Decision: PS 5.1 ASCII Safety Skill
+
+**Agents:** Chip (Tester), Coordinator (Memory Manager)  
+**Date:** 2026-05-16  
+**Branch:** squad/197-ps51-compat-fix  
+
+### Context
+
+User directive: **Always learn from PS 5.1 encoding issues (em dashes, non-ASCII chars) as the team builds out. Capture as a reusable skill so all agents know the rule before touching any .ps1 file.**
+
+Root cause: UTF-8 em dash (U+2014) ends with byte 0x94, which CP1252 treats as a right double-quote, terminating string literals in PS 5.1. Same class of bug can recur with any non-ASCII char. Confirmed by two fixes in issue #197 (PR #198, PR #200).
+
+### Decision
+
+**Formalize PS 5.1 ASCII safety as a reusable team skill.** All agents MUST read `.squad/skills/ps51-ascii-safety/SKILL.md` before writing or reviewing any .ps1 file.
+
+**Why:** 
+- Reduces recurring debugging cycles for encoding issues
+- Captures permanent institutional knowledge
+- Provides detection scripts and fix patterns reusable across all scripts
+- Aligns with user's directive to learn and formalize team practices
+
+### Outcome
+
+✓ Skill authored at `.squad/skills/ps51-ascii-safety/SKILL.md`  
+✓ Committed and pushed to squad/197-ps51-compat-fix  
+✓ Will land in develop when PR #200 merges  
+
+---
+
+## # Decision: Gitconfig editor — literal value + override comment
+
+**Issue:** #184  
+**Agent:** Pluto (Config Engineer)  
+**Date:** 2025-07-14  
+
+### Context
+
+`config/dotfiles/.gitconfig.template` had `editor = ${EDITOR:-vim}` in `[core]`. Git does not invoke a shell when reading its config — this string was used literally as the editor command, which fails on every machine.
+
+### Options Considered
+
+- **Option A:** Replace with `editor = vim` — simple literal, works everywhere.
+- **Option B:** Replace with `editor = vim` AND add a comment showing how to override.
+
+### Decision
+
+**Option B** — literal `vim` default with an inline comment: `# Override with: git config --global core.editor <your-editor>`.
+
+### Rationale
+
+- `vim` is guaranteed installed by both Linux and Windows setup scripts.
+- A bare literal gives no guidance to users who prefer a different editor. The comment is zero-cost but high-value discoverability.
+- This follows the Pluto principle: sensible defaults with clear escape hatches.
+
+### Outcome
+
+Template updated. README table updated to match. No other gitconfig shell-expansion patterns found in the template.

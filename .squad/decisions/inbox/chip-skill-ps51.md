@@ -1,1 +1,0 @@
-ps51-ascii-safety skill created at high confidence. All agents should read it before writing or reviewing .ps1 files. Location: `.squad/skills/ps51-ascii-safety/SKILL.md`. Root cause: PS 5.1 reads .ps1 files as CP1252, causing UTF-8 multibyte sequences to be misinterpreted as string terminators. Confirmed by two fixes in issue #197 (PR #198, PR #200).
