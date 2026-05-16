@@ -64,7 +64,7 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 ## [2026-05-22T00:00:00Z] Issue #181: macOS CI validation job
 
 **Branch:** `squad/181-macos-ci`
-**PR:** TBD
+**PR:** #216
 **Status:** PR opened
 
 Added `validate-macos` job to `.github/workflows/validate.yml` (6th CI job). Runs on `macos-latest` and validates: Homebrew availability, zsh + gh pre-installed, uv install via curl, nvm + Node.js install, idempotency (second setup run), and `test_tool_versions.sh`. All tool install scripts (`zsh.sh`, `gh.sh`, `uv.sh`, `nvm.sh`) already handle macOS via `uname -s == Darwin` checks -- no script changes needed.
