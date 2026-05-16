@@ -232,3 +232,11 @@ Fixed three regressions introduced by PR #130:
 - **Design:** HTML-comment-wrapped guidance in template prevents render clutter in PR body but remains visible in editor. Combined with Jiminy's CI gate (separate PR), provides both human-readable confirmation AND automated enforcement.
 - **Key Pattern:** Hygiene checklist goes BEFORE first PR body is authored (visible during composition), creates friction against skipping items. This is why appending to history.md in this very commit proves the pattern works — if Goofy had skipped it, the template itself would fail its own checklist.
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
+
+## Learnings -- Issue #221 (nvm.ps1 lib path off-by-one)
+- **Date:** 2026-05-16
+- **Bug:** `nvm.ps1` used one `Split-Path -Parent` from `` (landing in `scripts\windows\lib\`) but `Read-ToolVersion.ps1` lives in `scripts\lib\` (two levels up from `scripts\windows\tools\`).
+- **Fix:** Changed to two-level `Split-Path` and added a `Test-Path` assertion so the failure is immediate and descriptive instead of a cryptic dot-source error.
+- **Spot-check:** Verified `uv.ps1` and `copilot.ps1` do NOT reference `Read-ToolVersion.ps1` -- no contagion.
+- **Pattern:** When tool scripts under `scripts\windows\tools\` need shared libs, the path is always `Split-Path (Split-Path $PSScriptRoot -Parent) -Parent | Join-Path -ChildPath 'lib'`. Add a guard assertion every time.
+- **Test:** Added Group W (W-1 through W-3) in `test_windows_setup.ps1` verifying path resolution, runtime assertion presence, and two-level Split-Path usage.

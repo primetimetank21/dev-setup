@@ -18,8 +18,16 @@ function Refresh-SessionPath {
 
 function Install-Nvm {
     # Load pinned versions from .tool-versions
-    $libDir = Join-Path (Split-Path $PSScriptRoot -Parent) 'lib'
-    . (Join-Path $libDir 'Read-ToolVersion.ps1')
+    # Two levels up: tools -> windows -> scripts, then into shared lib/
+    $libDir = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'lib'
+    if (-not (Test-Path $libDir)) {
+        throw "Shared lib directory not found at $libDir"
+    }
+    $readToolVersion = Join-Path $libDir 'Read-ToolVersion.ps1'
+    if (-not (Test-Path $readToolVersion)) {
+        throw "Read-ToolVersion.ps1 not found at $readToolVersion"
+    }
+    . $readToolVersion
     $pinnedNode = Get-ToolVersion -Name 'nodejs'
 
     # -- Check if Node is already installed at the pinned version -----------
