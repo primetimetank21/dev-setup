@@ -7,6 +7,7 @@
 #   Check 2: ASCII-only on staged *.ps1 files
 #   Check 3: Rogue path check under .squad/
 #   Check 4: Staged inbox file check
+#   Check 5: Protected branch refuse (develop/main/master)
 #
 # Usage:
 #   bash tests/test_precommit_hygiene.sh
@@ -241,6 +242,80 @@ if sh "$HOOK" >/dev/null 2>&1; then
   pass "T4b: no inbox files staged passes"
 else
   fail "T4b: no inbox files staged passes"
+fi
+
+# ===========================================================================
+# Check 5 Tests: Refuse commits on protected branches
+# ===========================================================================
+echo ""
+echo "=== Check 5: Protected branch refuse ==="
+
+# Test 5a: FAIL - commit on develop should be refused
+T5A_DIR="${TMPDIR_BASE}/t5a"
+setup_test_repo "$T5A_DIR"
+# Already on develop after setup_test_repo
+echo "bad" > bad.txt
+git add bad.txt
+if sh "$HOOK" >/dev/null 2>&1; then
+  fail "T5a: commit on develop should be refused"
+else
+  pass "T5a: commit on develop is refused"
+fi
+
+# Test 5b: FAIL - commit on main should be refused
+T5B_DIR="${TMPDIR_BASE}/t5b"
+setup_test_repo "$T5B_DIR"
+git checkout -q -b main
+echo "bad" > bad.txt
+git add bad.txt
+if sh "$HOOK" >/dev/null 2>&1; then
+  fail "T5b: commit on main should be refused"
+else
+  pass "T5b: commit on main is refused"
+fi
+
+# Test 5c: FAIL - commit on master should be refused
+T5C_DIR="${TMPDIR_BASE}/t5c"
+mkdir -p "$T5C_DIR"
+cd "$T5C_DIR"
+git init -q
+git config user.email "test@test.com"
+git config user.name "Test"
+echo "init" > README.md
+git add README.md
+git commit -q -m "chore: init"
+# Ensure we are on master (rename default branch if needed)
+git branch -m master 2>/dev/null || true
+echo "bad" > bad.txt
+git add bad.txt
+if sh "$HOOK" >/dev/null 2>&1; then
+  fail "T5c: commit on master should be refused"
+else
+  pass "T5c: commit on master is refused"
+fi
+
+# Test 5d: PASS - commit on squad/* branch is allowed
+T5D_DIR="${TMPDIR_BASE}/t5d"
+setup_test_repo "$T5D_DIR"
+git checkout -q -b squad/123-feature
+echo "good" > good.txt
+git add good.txt
+if sh "$HOOK" >/dev/null 2>&1; then
+  pass "T5d: commit on squad/* branch is allowed"
+else
+  fail "T5d: commit on squad/* branch is allowed"
+fi
+
+# Test 5e: PASS - commit on pluto/* branch is allowed
+T5E_DIR="${TMPDIR_BASE}/t5e"
+setup_test_repo "$T5E_DIR"
+git checkout -q -b pluto/249-fix
+echo "good" > good.txt
+git add good.txt
+if sh "$HOOK" >/dev/null 2>&1; then
+  pass "T5e: commit on pluto/* branch is allowed"
+else
+  fail "T5e: commit on pluto/* branch is allowed"
 fi
 
 # ===========================================================================

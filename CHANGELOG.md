@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - CI: Added nvm + Node.js validation step to validate-macos job, aligning with validate-linux (closes #225)
+- Pre-commit hook now refuses commits directly on `develop`, `main`, or `master` with a clear error message directing the user to create a feature branch (closes #249)
 
 ## [0.8.0] - 2026-05-16
 

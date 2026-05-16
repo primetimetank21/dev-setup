@@ -225,6 +225,14 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
 
+### 2026-05-21: Protected branch guard in pre-commit (Issue #249)
+
+- Recurring incident class: agents and humans committing directly to develop/main. Existing Check 1 catches ancestry bleed (squad/* not forked from develop) but does NOT block commits ON develop/main itself.
+- Fix: added Check 5 to pre-commit hook using `git rev-parse --abbrev-ref HEAD` + case match on develop/main/master. Exits 1 with actionable error message.
+- Renumbered existing shellcheck check from Check 5 to Check 6.
+- Added 5 test cases (develop, main, master refuse; squad/* and pluto/* allow).
+- Priority bumped to P0 this session due to 3+ recurrences.
+
 ### 2026-05-21: Pre-commit hygiene checks (Issue #240)
 
 **Design decisions:**

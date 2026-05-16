@@ -5,7 +5,8 @@
 #   2. ASCII-only on staged *.ps1 files
 #   3. Rogue path check under .squad/
 #   4. Staged inbox file check (.squad/decisions/inbox/ should be gitignored)
-#   5. Shellcheck on staged .sh files
+#   5. Refuse commits directly on develop/main/master
+#   6. Shellcheck on staged .sh files
 set -e
 
 # ---------------------------------------------------------------------------
@@ -149,7 +150,22 @@ if [ -n "$INBOX_STAGED" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Check 5: Shellcheck on staged .sh files (existing behavior)
+# Check 5: Refuse commits directly on develop / main / master
+# ---------------------------------------------------------------------------
+current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+case "$current_branch" in
+  develop|main|master)
+    echo ""
+    echo "ERROR: refusing to commit directly on '$current_branch'."
+    echo "       Create a feature branch first:"
+    echo "         git checkout -b squad/<issue>-<slug>"
+    echo ""
+    exit 1
+    ;;
+esac
+
+# ---------------------------------------------------------------------------
+# Check 6: Shellcheck on staged .sh files (existing behavior)
 # ---------------------------------------------------------------------------
 if ! command -v shellcheck >/dev/null 2>&1; then
   exit 0
