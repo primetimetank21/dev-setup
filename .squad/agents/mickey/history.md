@@ -711,3 +711,18 @@ Reviewed and merged 3 PRs in order: #214, #215, #213. All CI green (5/5 jobs SUC
 - **PR #215** (Goofy, closes #190): Added `.tool-versions` file pinning nodejs, nvm, uv, copilot-cli versions. New POSIX/PowerShell reader scripts (`read-tool-version.sh`, `Read-ToolVersion.ps1`), 4 install scripts updated to read pinned versions. Tests added (bash `test_tool_versions.sh` + Group R in `test_windows_setup.ps1`). ASCII-clean .ps1 files. CHANGELOG conflict with #214 resolved locally -- kept both [Unreleased] entries, committed as `chore(changelog): sync develop into squad/190-tool-versions` (the `merge` type was not yet valid before #213 landed). CI re-ran green after resolution push.
 - **PR #213** (Chip, closes #212): Added `prepare-commit-msg` hook that rewrites git auto-generated merge/revert messages into Conventional Commits form. Added `merge` to commit-msg type allowlist. 7 new Group B tests covering all rewrite patterns. Elegant approach -- normalization instead of bypass. Merged cleanly on GitHub (no CHANGELOG conflict despite touching it).
 - Develop tip after all merges: `afd56b4`. All 3 squad branches deleted on remote (local worktree branches remain per coordinator directive). No blockers encountered.
+
+## Batch 5 Review (2026-05-16)
+
+Reviewed and merged PRs #216, #217, #218 in order. All CI green before each merge.
+
+- **PR #216** (Chip, closes #181): CI-only change adding validate-macos job to validate.yml. 6/6 CI jobs passed (including new macOS job). Scope clean -- only workflow YAML, CHANGELOG, and chip history. 3 commits, all conventional format with Co-authored-by trailers. Merged cleanly, no conflicts.
+- **PR #217** (Donald, closes #191): Added Windows gh auth step via scripts/windows/auth.ps1 with Invoke-GhAuth function. Group S tests (S-1 through S-3) covering function existence, clean exit when gh missing, skip when already authed. ASCII-clean .ps1 files. 3 commits, all conventional format with Co-authored-by trailers. CHANGELOG conflict with #216 resolved locally -- kept both [Unreleased] entries. CI re-ran green (6/6 jobs) after resolution push.
+- **PR #218** (Goofy, closes #201): Auto-install Node LTS via nvm reading pinned version from .tool-versions. squad-cli.ps1 changed from WARN to ERROR+exit 1 when npm missing. Tests added for both features. ASCII-clean .ps1 files. 4 commits, all conventional format with Co-authored-by trailers. Three conflicts resolved: CHANGELOG (kept all entries), setup.ps1 (kept Goofy's removal of stale nvm next-step hint), test_windows_setup.ps1 (renamed Goofy's Group S to Group T and Group T to Group U to avoid collision with Donald's Group S). CI re-ran green (6/6 jobs) after resolution push.
+
+Hygiene findings:
+- Chip updated chip/history.md -- OK
+- Donald updated donald/history.md -- OK
+- Goofy updated goofy/history.md for #201 -- OK (confirmed; he missed #190 previously but not this time)
+
+Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
