@@ -199,7 +199,7 @@ Fixed three regressions introduced by PR #130:
 - **Related to #190:** Reads pinned nodejs version via `Get-ToolVersion -Name 'nodejs'` (PS) and `read-tool-version.sh nodejs` (bash) -- both from `.tool-versions` file added in #190.
 
 ### Issue #186 -- Shared logging helpers (2026-05-16)
-- PR: TBD -- `refactor(scripts): extract shared logging helpers to lib/`
+- PR: #219 -- `refactor(scripts): extract shared logging helpers to lib/`
 - Branch: `squad/186-shared-logging` from `develop`
 - What: Extracted log_info/log_ok/log_warn/log_error into scripts/linux/lib/log.sh and Write-Info/Write-Ok/Write-Warn/Write-Err into scripts/windows/lib/logging.ps1. Updated 8 shell callers + 11 PS callers to source from lib. Removed duplicate definitions.
 - Key findings: Shell tool scripts had drift -- some only defined 2-3 of 4 log functions (gh.sh had only log_info/log_ok, squad-cli.sh missing log_warn). PS uninstall.ps1 uses Write-Host format (not Write-Output) so was left alone. Tests using Invoke-Expression need logging lib pre-loaded and dot-source line stripped since $PSScriptRoot resolves to test dir.
