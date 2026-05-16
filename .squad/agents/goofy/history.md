@@ -240,3 +240,13 @@ Fixed three regressions introduced by PR #130:
 - **Spot-check:** Verified `uv.ps1` and `copilot.ps1` do NOT reference `Read-ToolVersion.ps1` -- no contagion.
 - **Pattern:** When tool scripts under `scripts\windows\tools\` need shared libs, the path is always `Split-Path (Split-Path $PSScriptRoot -Parent) -Parent | Join-Path -ChildPath 'lib'`. Add a guard assertion every time.
 - **Test:** Added Group W (W-1 through W-3) in `test_windows_setup.ps1` verifying path resolution, runtime assertion presence, and two-level Split-Path usage.
+### PR #245 Revision - Missing e2e assertions for squad/psmux/tmux (2026-05-17)
+- **Context:** Chip authored PR #245 (branch `chip/239-e2e-install`). Mickey's review flagged missing assertions per Issue #239 acceptance criteria. Per squad governance, a DIFFERENT agent must revise a rejected PR -- Goofy assigned.
+- **What was missing:** squad CLI assertion on Linux/macOS; squad, psmux, and tmux assertions on Windows. Also no post-idempotency re-assertions for these tools.
+- **What was added:**
+  - Linux fresh-shell: `squad --version` with explicit failure message
+  - macOS fresh-shell: `squad --version` with explicit failure message
+  - Windows fresh-shell: `Assert-Command 'squad' '--version'`, `Assert-Command 'psmux' '--version'`, `Assert-Command 'tmux' '--version'`
+  - Post-idempotency assertion steps for all three platforms (verifies tools survive a second setup run)
+- **Decision on `|| true` vs hard fail:** Hard fail chosen. squad-cli is a required tool per acceptance criteria. Silent `|| true` would mask real install failures. The error message explicitly names the npm package so CI logs point directly at root cause.
+- **Why any agent could do this:** The changes are YAML workflow edits (no PS 5.1 compat concerns, no complex cross-platform logic). Selected per "different agent revises" rule, not technical necessity.

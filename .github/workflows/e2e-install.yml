@@ -67,6 +67,12 @@ jobs:
             echo "--- Multiplexer ---"
             tmux -V
 
+            echo "--- Squad CLI ---"
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found or not executable. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+
             echo "--- Dotfiles ---"
             test -f "$HOME/.zshrc" && echo ".zshrc exists"
             test -f "$HOME/.bashrc" && echo ".bashrc exists"
@@ -90,6 +96,26 @@ jobs:
           echo "--- Running setup a second time ---"
           bash setup.sh
           echo "Idempotency check passed"
+
+      - name: Assert tools after idempotency (Linux)
+        run: |
+          bash -lc '
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            export PATH="$HOME/.local/bin:$PATH"
+
+            echo "--- Post-idempotency assertions ---"
+            tmux -V
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found after idempotency rerun. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+            node --version
+            uv --version
+            gh --version | head -1
+            echo "Post-idempotency assertions passed (Linux)"
+          '
 
       # -- Step 4: Uninstall and verify --
       - name: Run uninstall
@@ -176,6 +202,12 @@ jobs:
             echo "--- Multiplexer ---"
             tmux -V
 
+            echo "--- Squad CLI ---"
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found or not executable. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+
             echo "--- Dotfiles ---"
             test -f "$HOME/.zshrc" && echo ".zshrc exists"
             test -f "$HOME/.bashrc" && echo ".bashrc exists"
@@ -199,6 +231,26 @@ jobs:
           echo "--- Running setup a second time ---"
           bash setup.sh
           echo "Idempotency check passed"
+
+      - name: Assert tools after idempotency (macOS)
+        run: |
+          bash -lc '
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            export PATH="$HOME/.local/bin:$PATH"
+
+            echo "--- Post-idempotency assertions ---"
+            tmux -V
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found after idempotency rerun. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+            node --version
+            uv --version
+            gh --version | head -1
+            echo "Post-idempotency assertions passed (macOS)"
+          '
 
       # -- Step 4: Uninstall and verify --
       - name: Run uninstall
@@ -291,6 +343,13 @@ jobs:
             Write-Host "--- Editors ---"
             Assert-Command 'vim' '--version'
 
+            Write-Host "--- Squad CLI ---"
+            Assert-Command 'squad' '--version'
+
+            Write-Host "--- Multiplexer ---"
+            Assert-Command 'psmux' '--version'
+            Assert-Command 'tmux' '--version'
+
             Write-Host "--- Git hooks ---"
             $hooksPath = & git config core.hooksPath 2>$null
             if ($hooksPath -eq 'hooks') {
@@ -322,6 +381,38 @@ jobs:
           Write-Host "--- Running setup a second time ---"
           & .\setup.ps1
           Write-Host "Idempotency check passed"
+
+      - name: Assert tools after idempotency (Windows)
+        run: |
+          pwsh -NoProfile -Command {
+            $ErrorActionPreference = 'Stop'
+            $failures = @()
+
+            function Assert-Command {
+              param([string]$Name, [string]$Args)
+              try {
+                $output = & $Name $Args.Split(' ') 2>&1 | Out-String
+                Write-Host "[PASS] ${Name}: $($output.Trim().Split("`n")[0])"
+              } catch {
+                Write-Host "[FAIL] ${Name}: $_"
+                $script:failures += $Name
+              }
+            }
+
+            Write-Host "--- Post-idempotency assertions ---"
+            Assert-Command 'squad' '--version'
+            Assert-Command 'psmux' '--version'
+            Assert-Command 'tmux' '--version'
+            Assert-Command 'node' '--version'
+            Assert-Command 'uv' '--version'
+            Assert-Command 'gh' '--version'
+
+            if ($failures.Count -gt 0) {
+              Write-Host "`nFailed assertions: $($failures -join ', ')"
+              exit 1
+            }
+            Write-Host "`nPost-idempotency assertions passed (Windows)"
+          }
 
       # -- Step 4: Uninstall and verify --
       - name: Run uninstall
