@@ -254,3 +254,41 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - ASCII check: <10ms for typical staged .ps1 files (pipes through grep)
 - Rogue path check: <5ms (pure shell pattern matching)
 - Total hook overhead for clean commit: ~20ms (well under 100ms goal)
+
+---
+
+## 2026-05-16 -- Issue #227: Timestamp .bak backups (both platforms)
+
+**Branch:** `squad/227-bak-rotation`
+**PR:** (pending)
+**Status:** PR open, targeting `develop`
+
+### What I did
+
+- Added `backup_file()` to `config/dotfiles/install.sh`:
+  - Creates `<target>.bak.YYYYMMDD-HHMMSS` on each backup
+  - Trims all but the N most recent (default N=5, override `DOTFILE_BACKUP_KEEP`)
+  - Replaces the old `cp "$dest" "${dest}.bak"` one-shot pattern in `install_copy`
+    and the `cp "$link" "${link}.bak"` pattern in `install_symlink`
+- Added `Backup-File` function to `scripts/windows/tools/dotfiles.ps1`:
+  - Same timestamp format (`yyyyMMdd-HHmmss`), same N-keep trim
+  - Reads `$env:DOTFILE_BACKUP_KEEP` for override
+  - Replaces the "back up only if no .bak exists yet" guard
+- Updated `scripts/linux/uninstall.sh` `restore_backup()`:
+  - Picks newest `.bak.*` (last known good before most recent install)
+  - Falls back to legacy `.bak` for backward compat
+- Updated `scripts/windows/uninstall.ps1` `Restore-DotfileBackup`:
+  - Same strategy: newest `.bak.*` first, then legacy `.bak`
+  - Updated "foundAny" probe to check `.bak.*` glob too
+- Updated `tests/test_windows_setup.ps1`:
+  - Q-3 now asserts `.bak.*` (timestamped) pattern, not `.bak`
+  - Added Q-4: 3-run acceptance test -- 3 distinct timestamped backups verified
+- CHANGELOG.md [Unreleased] > Changed: appended entry
+- Decision file: `.squad/decisions/inbox/pluto-227-bak-rotation.md`
+
+### Key decisions
+
+- **Restore strategy:** newest backup = state before last install. Oldest = original-original (still accessible manually, kept by N=5 default). Decision file: `pluto-227-bak-rotation.md`.
+- **Default N=5:** env var override `DOTFILE_BACKUP_KEEP` on both platforms.
+- **Cleanup:** automatic inline trim after each backup write. No cron required.
+- **Timestamp format:** `YYYYMMDD-HHmmss` -- sortable, human-readable, filesystem-safe, identical on both platforms.
