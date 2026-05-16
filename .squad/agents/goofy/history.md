@@ -181,3 +181,11 @@ Fixed three regressions introduced by PR #130:
 - Windows uses `_vimrc` convention (underscore prefix) unlike Linux `.vimrc`
 - Placed Install-Dotfiles after Install-SquadCli and before Write-PowerShellProfile in setup chain
 - Tests in Group Q of test_windows_setup.ps1 using temp USERPROFILE override
+
+### Issue #190 - Pin tool versions via .tool-versions (2026-05-16)
+- PR: #215 -- `feat(setup): pin tool versions via .tool-versions file`
+- Branch: `squad/190-tool-versions` from `develop`
+- **What:** Added `.tool-versions` at repo root pinning nodejs 20.11.0, nvm 0.39.7, uv 0.4.18, copilot-cli 0.0.339. Added POSIX `scripts/lib/read-tool-version.sh` parser and PowerShell `scripts/lib/Read-ToolVersion.ps1` (`Get-ToolVersion` function). Updated 4 install scripts to read from `.tool-versions` instead of fetching latest.
+- **Tests:** Group R (R-1 through R-4) all pass; bash tests in `test_tool_versions.sh`. ASCII safety verified on all .ps1 files (per ps51-runtime-file-encoding skill).
+- **Docs:** README "Version Pinning" section, CHANGELOG under [Unreleased].
+- **Key pattern:** `.tool-versions` format is one `tool version` line per row, `#`-prefixed comments allowed. POSIX parser uses `awk` to find the matching row; PowerShell parser uses `Get-Content | Where-Object`.
