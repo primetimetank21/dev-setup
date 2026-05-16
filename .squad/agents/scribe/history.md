@@ -88,3 +88,19 @@ Appended team updates to:
 - Appended Doc's first-run reflections to .squad/agents/doc/history.md
 - Appended Mickey's PR #262 audit reflection to .squad/agents/mickey/history.md (if missing)
 - Created session log: .squad/log/2026-05-16-sprint-q-wrap-0.8.0-0.9.4-doc-hire.md
+
+### 2026-05-16 -- Session drain: Sprint R wrap + retro + agent histories
+- Drained 1 inbox decision: doc-sprint-r-batch-fact-check.md (Doc's batch verification of 5 PRs)
+  - Incorporated Doc's verdicts into retro: 2 real bugs caught pre-merge (autocrlf in #267, pipefail in #269)
+  - Documented Group X collision friction and CHANGELOG multi-PR conflicts
+- Created .squad/retros/2026-05-16-sprint-r-retro.md with full Sprint R recap:
+  - 5 PRs shipped (#265, #266, #267, #268, #269)
+  - Follow-up #271 filed (uninstall hooksPath gap)
+  - Wins: parallel worktrees, batch fact-check caught real bugs, E2E summary job
+  - Learnings: pre-commit Check 5 blocks direct develops, CHANGELOG conflicts predictable
+  - Action items: Group letter pre-assignment, charter clarification, lint checklist
+- Appended Sprint R entries to 4 agent history files:
+  - chip/history.md: PR #267 (hook behavioral tests, autocrlf fix, Group Y rename)
+  - goofy/history.md: PR #268 (winget exit assertion, Assert-LastExit pattern, Group X)
+  - pluto/history.md: PRs #266 (hooksPath docs) + #269 (.bak rotation, pipefail fix)
+  - ralph/history.md: already written by Ralph, folded into drain PR (no direct develop commit)

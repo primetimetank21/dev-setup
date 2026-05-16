@@ -292,3 +292,61 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - **Default N=5:** env var override `DOTFILE_BACKUP_KEEP` on both platforms.
 - **Cleanup:** automatic inline trim after each backup write. No cron required.
 - **Timestamp format:** `YYYYMMDD-HHmmss` -- sortable, human-readable, filesystem-safe, identical on both platforms.
+
+## 2026-05-16 -- Sprint R: HooksPath Documentation and .bak Rotation Fixes
+
+**PRs:** #266 (docs(contributing): document automatic hooks + branch-from-develop)
+         #269 (feat(dotfiles): timestamp .bak backups with N-keep retention)
+**Branches:** `squad/228-hookspath-docs` and `squad/227-bak-rotation`
+**Status:** MERGED to develop
+
+### PR #266 -- HooksPath Documentation
+
+What I did:
+- Updated CONTRIBUTING.md to replace stale "install hooks manually" section with
+  "Git Hooks / configured automatically" table showing core.hooksPath pattern
+- Added section verifying hooks are auto-configured on clone (no manual steps needed)
+- Added "Branch from develop" validation note to CONTRIBUTING.md to reinforce branch ancestry rule
+- README already had comprehensive Git Hooks section (lines 178+) -- verified and confirmed
+- CHANGELOG updated under [Unreleased] > Changed
+
+Key learnings:
+- Uninstall gap: scripts/linux/uninstall.sh and scripts/windows/uninstall.ps1 do NOT
+  run 'git config --unset core.hooksPath'. After uninstall, hooksPath still points to
+  hooks/ in detached repo. This is a correctness gap (filed as #271 follow-up).
+  Documentation is accurate but incomplete -- resolve #271 to make uninstall reversible.
+
+### PR #269 -- .bak Rotation and Pipefail Fix
+
+What I did:
+- Added timestamped backup pattern to both scripts/linux/uninstall.sh and
+  scripts/windows/uninstall.ps1 (timestamp format: YYYYMMDD-HHMMSS)
+- Updated restore_backup() to pick newest .bak.* file (most recent install state)
+- Fixed critical bug in scripts/linux/uninstall.sh restore_backup():
+  - Problem: 'set -euo pipefail' in uninstall.sh. When no .bak.* files exist,
+    'ls -t ${target}.bak.* 2>/dev/null' expands to literal string, ls exits 2,
+    and pipefail kills the script (this broke E2E uninstall on fresh runners)
+  - Fix: Added '|| newest=""' to the assignment to catch ls failure without dying
+  - This is a classic shell gotcha: glob that fails to expand under strict mode
+- Updated test Q-4 to verify 3 distinct timestamped backups from successive runs
+- CHANGELOG updated [Unreleased] > Added
+
+Key learnings:
+- Shell pipefail gotcha: Any pipeline component that exits non-zero kills the script
+  under 'set -euo pipefail'. Globs that fail to expand are a common trap.
+  Solution: Add '|| fallback' to handle the failure gracefully.
+- Cross-platform consistency: Both Linux and Windows now use identical timestamp
+  format (YYYYMMDD-HHMMSS, sortable, filesystem-safe). Backup strategy matches on both.
+- Defensive restoration: newest backup should restore the install state before the
+  most recent run. Oldest backups accumulate (up to N=5) for manual recovery.
+- Doc's batch fact-check caught the pipefail bug BEFORE merge. This prevented a
+  post-merge P0 fix and validated the batch-check role as high-ROI.
+
+### Notes on Batch Fact-Check
+
+Doc's verification identified 2 real bugs in Sprint R PRs before merge:
+1. #267 X-1 autocrlf failure -- caught and fixed by Chip (rebase)
+2. #269 uninstall.sh pipefail failure -- caught and fixed pre-merge (this work)
+
+This prevents post-merge firefighting and validates batch-check as a standing pattern.
+Recommend spawning Doc on any shell-heavy or multi-platform PR in future sprints.

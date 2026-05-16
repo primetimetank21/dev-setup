@@ -343,6 +343,40 @@ Created `.github/workflows/e2e-install.yml` -- full end-to-end install smoke tes
 
 - Windows tool assertions use `pwsh -NoProfile` to test that tools are on the system PATH (not just available via profile functions). This is the correct test -- if a tool only works because the profile adds it to PATH, it will fail for scripts/automation that run without profile. The nvm.ps1 bug (#221) was exactly this class of failure.
 
+## 2026-05-16 -- Sprint R: Hook Behavioral Testing
+
+**PR:** #267 (test(hooks): behavioral coverage for pre-commit and pre-push)
+**Branch:** `squad/224-hook-test-coverage`
+**Status:** MERGED to develop
+
+### What I did
+
+- Added Group Y (6 tests) to tests/test_windows_setup.ps1 for pre-commit and pre-push hook behavioral coverage:
+  - Y-1: pre-commit rejects .ps1 containing em-dash (UTF-8, non-ASCII)
+  - Y-2: pre-commit allows ASCII-only .ps1
+  - Y-3: pre-commit rejects rogue .squad/random/notes.md path
+  - Y-4: pre-push hard-rejects push with REMOTE_REF = refs/heads/main
+  - Y-5: pre-push allows push to refs/heads/develop
+  - Y-6: pre-push exits 0 on feature branch even with .ps1 present
+- Extended tests/test_precommit_hygiene.sh with pre-push section (5 bash scenarios Tpp1-Tpp5)
+- Discovered and fixed autocrlf bug: Windows CI runner has core.autocrlf active,
+  causing git to reprocess staged bytes. Em-dash test (Y-1) failed because byte
+  array changed post-CRLF conversion. Fix: added 'git config core.autocrlf false'
+  immediately after 'git init' in New-XTestRepo. This is a pattern for any
+  test that writes git objects with specific byte sequences.
+- Cross-PR collision: Group X collision with #268 required rebase + rename Group X to Group Y.
+
+### Key learnings
+
+- Windows CI autocrlf gotcha: git rewrites LF->CRLF on stage. Tests that validate
+  byte-level content (em-dash rejection) must disable autocrlf to prevent git
+  reprocessing. Always add 'git config core.autocrlf false' in test repo setup
+  when writing specific byte sequences for validation.
+- Hook test structure: pre-commit and pre-push are fast validation gates.
+  Behavioral coverage (what they reject vs accept) is more valuable than
+  existence checks alone.
+- Coordination: Group letter collision was preventable with upfront assignment.
+  Coordinator should hand out Group letters in spawn prompts to avoid collision.
 
 ## Learnings
 

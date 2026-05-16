@@ -306,3 +306,40 @@ Fixed three regressions introduced by PR #130:
 - v5 fix -- Root cause: winget returns before the inner nvm-setup.exe installer finishes writing files/registry. Replaced Add-NvmWindowsPaths with Wait-ForNvmInstall (polling helper, 90s timeout, 5 candidate paths). Kept v4 Refresh-SessionPath merge fix intact. Updated test T-3b, skill doc (Gotcha 2), CHANGELOG.
 - v6 fix -- v5 90s timeout was 10s too short (installer took ~100s in CI run 25970591039). v5 candidate paths also missed actual install location (registry update proved installer succeeded but none of 5 paths matched). v6 uses Refresh-SessionPath + Get-Command nvm as primary detection (path-agnostic), expanded candidate list (7 dirs including C:\nvm, C:\nvm-windows) as fallback, 180s default timeout, and diagnostic dump on timeout failure.
 - v8 fix -- Earl chose portable download approach. winget install was racy (3 different timings in CI: 24s, 100s, >180s). Replaced Wait-ForNvmInstall with Install-NvmPortable + Set-NvmEnvironment. Downloads nvm-noinstall.zip from GitHub releases, extracts to %USERPROFILE%\nvm (standard nvm-windows portable location). Sets NVM_HOME/NVM_SYMLINK at User scope so subsequent shells work too. Deterministic, no installer race.
+
+## 2026-05-16 -- Sprint R: Winget Exit Code Assertion
+
+**PR:** #268 (fix(scripts/windows): assert winget exit code)
+**Branch:** `squad/226-winget-exit-check`
+**Status:** MERGED to develop
+
+### What I did
+
+- Added Assert-LastExit helper to scripts/windows/lib/logging.ps1:
+  - Signature: `Assert-LastExit [int[]]$AllowedExitCodes = @(0)`
+  - Validates $LASTEXITCODE is in the allowed set; exits 1 with clear error message if not
+  - PS 5.1 compatible: uses -notcontains (not ternary or null-conditional)
+- Patched 7 install sites with Assert-LastExit calls after each winget/npm invocation:
+  - tools/git.ps1: winget Git.Git
+  - tools/gh.ps1: winget GitHub.cli
+  - tools/vim.ps1: winget vim.vim
+  - tools/psmux.ps1: winget marlocarlo.psmux
+  - tools/copilot.ps1: winget GitHub.Copilot
+  - tools/uv.ps1: IEX (uses @(0) only, no winget)
+  - tools/squad-cli.ps1: npm install -g
+- Added AllowedExitCodes parameter to handle winget-specific codes (e.g., -1978335189 = ALREADY_INSTALLED)
+- Added test X-9 to verify that simulated winget failure (exit 99) propagates correctly
+- Updated mock P-2 and P-3 to explicitly set $global:LASTEXITCODE = 0 (PS functions don't set it)
+
+### Key learnings
+
+- Winget idempotence: code -1978335189 means tool already installed. Must include in allowed list
+  to avoid false failures on re-run. This is winget-specific; npm uses standard 0.
+- PS function return codes: PowerShell functions do not automatically set $LASTEXITCODE.
+  Callers must check it explicitly after native binary invocation. Tests using mocks
+  must set $global:LASTEXITCODE explicitly before assertion.
+- Error propagation: Assert-LastExit centralizes the pattern, preventing silent failures.
+  Every external tool invocation should be followed by validation.
+- Group letter coordination: This PR also created Group X, but collision with #267 Group X
+  was resolved by merging #268 first and having #267 rebase to Group Y.
+  Lesson: Coordinator should pre-assign group letters in spawn prompts.
