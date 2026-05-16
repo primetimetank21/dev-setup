@@ -726,3 +726,14 @@ Hygiene findings:
 - Goofy updated goofy/history.md for #201 -- OK (confirmed; he missed #190 previously but not this time)
 
 Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
+
+### Sprint final review -- PR #219 (#186) (2026-05-16)
+- PR: #219 -- `refactor(scripts): extract shared logging helpers to lib/`
+- Branch: `squad/186-shared-logging` -> `develop`
+- Closes: #186 (LAST go:yes of the sprint)
+- Review outcome: approved and merged clean
+- Conflicts: none
+- CI: 6/6 green
+- Merge commit: 10828ae
+- Note: develop is now ready for sprint wrap PR to main.
+- Minor: CHANGELOG insertion splits an Added item under a new Changed header -- non-blocking, tidy in wrap if needed.
