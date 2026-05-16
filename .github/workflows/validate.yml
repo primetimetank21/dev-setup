@@ -104,6 +104,9 @@ jobs:
             shellcheck "$script"
           done
 
+      - name: Lint config/dotfiles/.aliases
+        run: shellcheck -s bash config/dotfiles/.aliases
+
   lint-powershell:
     name: Lint PowerShell Scripts
     runs-on: ubuntu-latest
