@@ -1,0 +1,123 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Shutdown aliases: `sdn`, `tsdn`, `cancel_tsdn` for Windows and Linux (PRs #175-#177)
+- Modular tool installer split -- 451-line `setup.ps1` monolith refactored into 76-line orchestrator + 9 per-tool files under `scripts/windows/tools/` (PR #195)
+- PS 5.1 test groups N, O, P and ASCII-clean test runner (PR #200)
+
+### Fixed
+- PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)
+
+## [0.7.0] - 2026-04-25 -- Sprint 7: Hooks, psmux, and profile hardening
+
+### Added
+- Git hooks infrastructure: pre-push hook with PSScriptAnalyzer advisory check (PRs #131, #149)
+- psmux (Windows tmux equivalent): winget install + aliases + `New-PsmuxSession` (PRs #141, #142)
+- `ep` alias to open PowerShell profile in editor (PR #170)
+- `Remove-Item` guards for `gcm` and `gcb` AllScope aliases (PR #161)
+- README documentation for git hooks auto-configuration (PR #163)
+- Batch README additions covering multiple features (PR #165)
+- `Get-MyIp` utility using `curl.exe` to avoid Invoke-WebRequest alias (PR #169)
+
+### Fixed
+- PS profile writer: strips and re-injects profile block instead of skipping (PR #145)
+- Dual PS profile paths: write to both PS 5.1 and PS 7+ locations with robust alias registration (PR #146)
+- `Install-GitHook` rename, removed unused `gitDir`, restored PSVersion guards (PR #133)
+- Hotfix PR #130 regressions: PS 5.1 crash + PSScriptAnalyzer warnings (PR #134)
+- Stale PS variable guard test updated to check PSVersion pattern (PR #136)
+
+### Changed
+- Branch isolation rule codified: always fork from develop HEAD (PR #129)
+- CONTRIBUTING updated with PowerShell 5.x compatibility checklist (PR #119)
+
+## [0.6.0] - 2026-04-18 -- Sprint 6: Tools and CI hardening
+
+### Added
+- Vim install via winget on Windows (PR #112)
+- Tmux added to system prerequisites (PR #84)
+- `va` alias to edit `~/.aliases` in vim (PR #86)
+- GitHub issue templates (PR #114)
+- Missing aliases added to PowerShell profile (PR #115)
+- PS 5.1 validation CI job on Windows runner (PR #116)
+- `squad-cli` global install in Windows and Linux setup (PR #118)
+- Windows regression tests: PS5 compat, profile idempotency, Copilot CLI install (PR #104)
+- Direct-push-to-main override policy documented (PR #117)
+
+### Fixed
+- Copilot CLI: remove conflicting `gh` alias before extension install (PR #63)
+- Copilot CLI: standalone binary install via official script (PRs #73, #78, #80, #82)
+- Dotfiles: append managed block to existing `.zshrc`/`.bashrc` (PR #65)
+- Line endings: `eol=lf` rules for shell scripts + enforce LF for shell dotfiles (PRs #66, #89, #90)
+- Shell: merge stderr into stdout for ordered output in piped environments (PR #70)
+- Devcontainer: strip CRLF from `.sh` files on container create (PR #71)
+- `sb`/`sz` aliases guarded to their respective shells (PR #93)
+- Em-dash in root `setup.ps1` replaced; PATH refreshed after vim install (PR #126)
+- `Test-Path` variable guards for PS 6+ auto-vars in `setup.ps1` (PR #130)
+
+### Changed
+- Sprint wrap: ban squash merges in favor of regular merge commits (PR #100)
+- Removed log/orchestration-log from git tracking (PR #101)
+
+## [0.5.0] - 2026-04-08 -- Sprint 5: Process stabilization
+
+### Added
+- Worktree isolation documentation for parallel agent runs (PR #58)
+- Agent timeout policy to prevent stalled loops (PR #61)
+- `enforce_admins` branch protection decision documented (PR #60)
+- Devcontainer: set git identity from env vars on postCreate (PR #49)
+- Sprint 5 review cycle completion log (PR #62)
+
+### Removed
+- `ps.tar.gz` binary artifact purged from repo; `.gitignore` updated (PR #59)
+
+## [0.4.0] - 2026-04-07 -- Sprint 4: Branch protection and testing
+
+### Added
+- Branch protection enabled on `develop` with documented merge gates (PR #47)
+- Mickey approval gate enforced and documented in Ralph spec (PR #48)
+- Regression test for `Remove-CustomItem` multi-argument behavior (PR #52)
+- Test coverage for `create_tmux()` session detection logic (PR #53)
+- `uv` replaces `pip` for Python tooling in devcontainer (PR #50)
+
+### Fixed
+- `create_tmux()`: named session check corrected, dead variable removed (PR #39)
+- `Remove-CustomItem`: silent data loss fixed by accepting `string[]` param (PR #40)
+
+## [0.3.0] - 2026-04-07 -- Sprint 3: Dotfiles and shell configuration
+
+### Added
+- `.vimrc` template wired into `install.sh` (PR #33)
+- Missing aliases and tmux functions added to dotfiles (PR #34)
+- Owner shortcuts added to Windows PowerShell profile setup (PR #35)
+
+### Changed
+- Example dotfiles consolidated into `examples/` folder (PR #36)
+
+## [0.2.0] - 2026-04-07 -- Sprint 2: CI and initial fixes
+
+### Added
+- Idempotency test suite (PR #26)
+- Auto-connect: prompt for GitHub auth during setup (PR #27)
+- Sprint 1 follow-up action items documented (PR #31)
+
+### Fixed
+- PSScriptAnalyzer violations resolved (PR #30)
+
+## [0.1.0] - 2026-04-07 -- Sprint 1: Foundation
+
+### Added
+- OS detection and script entry point architecture (PR #17)
+- Core setup script for Windows (PowerShell) (PR #23)
+- Core setup script for Linux/macOS (Bash) (PR #24)
+- Dev Container and Codespace post-create setup (PR #21)
+- GitHub Actions workflow for script validation (PR #20)
+- README documentation (PR #19)
+- Dotfile templates (PR #18)
+- Shell shortcuts and aliases (PR #22)
