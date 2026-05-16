@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tests/test_precommit_hygiene.sh
-# Tests for pre-commit hygiene checks (Issue #240)
+# Tests for pre-commit hygiene checks (Issue #240) and pre-push guard (Issue #224)
 #
 # Covers:
 #   Check 1: Branch ancestry (squad/* must descend from develop)
@@ -8,6 +8,7 @@
 #   Check 3: Rogue path check under .squad/
 #   Check 4: Staged inbox file check
 #   Check 5: Protected branch refuse (develop/main/master)
+#   pre-push: Main push guard + advisory PSScriptAnalyzer exit-code
 #
 # Usage:
 #   bash tests/test_precommit_hygiene.sh
@@ -316,6 +317,76 @@ if sh "$HOOK" >/dev/null 2>&1; then
   pass "T5e: commit on pluto/* branch is allowed"
 else
   fail "T5e: commit on pluto/* branch is allowed"
+fi
+
+# ===========================================================================
+# pre-push Tests: Main push guard + advisory exit-code
+# ===========================================================================
+echo ""
+echo "=== pre-push: main guard and advisory exit-code ==="
+
+PUSH_HOOK="${REPO_ROOT}/hooks/pre-push"
+
+# Helper: pipe a push-info line to the pre-push hook and return its exit code.
+# Usage: run_push_hook "LOCAL_REF SHA REMOTE_REF SHA"
+run_push_hook() {
+  printf '%s\n' "$1" | sh "$PUSH_HOOK" origin "https://github.com/test/repo" >/dev/null 2>&1
+}
+
+# Test PP1: FAIL -- push whose REMOTE_REF is refs/heads/main must hard-fail
+T_PP1_DIR="${TMPDIR_BASE}/tpp1"
+setup_test_repo "$T_PP1_DIR"
+cd "$T_PP1_DIR"
+if run_push_hook "refs/heads/develop abc1234 refs/heads/main def5678"; then
+  fail "Tpp1: direct push to main should hard-fail"
+else
+  pass "Tpp1: direct push to main is hard-rejected (exit non-zero)"
+fi
+
+# Test PP2: PASS -- push to develop is allowed
+T_PP2_DIR="${TMPDIR_BASE}/tpp2"
+setup_test_repo "$T_PP2_DIR"
+cd "$T_PP2_DIR"
+if run_push_hook "refs/heads/squad/224-test abc1234 refs/heads/develop def5678"; then
+  pass "Tpp2: push to develop exits 0"
+else
+  fail "Tpp2: push to develop exits 0"
+fi
+
+# Test PP3: PASS -- push to a squad/* feature branch is allowed
+T_PP3_DIR="${TMPDIR_BASE}/tpp3"
+setup_test_repo "$T_PP3_DIR"
+cd "$T_PP3_DIR"
+if run_push_hook "refs/heads/squad/224-test abc1234 refs/heads/squad/224-test def5678"; then
+  pass "Tpp3: push to feature branch exits 0"
+else
+  fail "Tpp3: push to feature branch exits 0"
+fi
+
+# Test PP4: FAIL -- any local ref pushing to refs/heads/main must be rejected
+T_PP4_DIR="${TMPDIR_BASE}/tpp4"
+setup_test_repo "$T_PP4_DIR"
+cd "$T_PP4_DIR"
+if run_push_hook "refs/heads/squad/hotfix abc1234 refs/heads/main def5678"; then
+  fail "Tpp4: push targeting main from feature branch should fail"
+else
+  pass "Tpp4: push targeting main from any local branch is rejected"
+fi
+
+# Test PP5: PASS -- advisory PSScriptAnalyzer block exits 0 even without pwsh
+# The hook uses `|| true` on all advisory commands so missing tools must not fail.
+T_PP5_DIR="${TMPDIR_BASE}/tpp5"
+setup_test_repo "$T_PP5_DIR"
+cd "$T_PP5_DIR"
+git checkout -q -b squad/224-advisory
+# Commit a .ps1 so the hook has content to attempt analysis
+echo 'Write-Host "advisory test"' > advisory.ps1
+git add advisory.ps1
+git commit -q -m "test: advisory ps1"
+if run_push_hook "refs/heads/squad/224-advisory abc1234 refs/heads/squad/224-advisory def5678"; then
+  pass "Tpp5: pre-push exits 0 on feature branch (advisory block does not fail CI)"
+else
+  fail "Tpp5: pre-push exits 0 on feature branch (advisory block does not fail CI)"
 fi
 
 # ===========================================================================
