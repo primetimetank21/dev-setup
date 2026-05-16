@@ -16,6 +16,7 @@ function Install-GhCli {
     }
     Write-Info "Installing GitHub CLI..."
     winget install --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements
+    Assert-LastExit -ToolName "GitHub CLI" -AllowedExitCodes @(0, -1978335189)
     Refresh-SessionPath
     Write-Ok "gh CLI installed"
 }

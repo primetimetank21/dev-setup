@@ -1007,6 +1007,7 @@ if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
         function global:winget {
             $script:WingetCalled = $true
             $script:WingetArgs = $args
+            $global:LASTEXITCODE = 0
         }
         try {
             $output = Install-Psmux 2>&1 | Out-String
@@ -1023,7 +1024,7 @@ if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
 }
 
 Test-Scenario "P-3: Install-Psmux is idempotent (second call does not throw)" {
-    function global:winget { }
+    function global:winget { $global:LASTEXITCODE = 0 }
     try {
         Install-Psmux | Out-Null
         Install-Psmux | Out-Null
@@ -1410,6 +1411,107 @@ Test-Scenario "W-3 nvm.ps1 uses two-level Split-Path (not one)" {
     if ($nvmContent -notmatch 'Split-Path\s*\(\s*Split-Path\s+\$PSScriptRoot\s+-Parent\s*\)\s+-Parent') {
         throw "nvm.ps1 does not use two-level Split-Path for lib resolution"
     }
+}
+
+# ---------------------------------------------------------------------------
+# Group X: winget / npm exit code assertion (Issue #226)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group X: winget/npm exit code assertion (Issue #226)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+. (Join-Path $RepoRoot 'scripts\windows\lib\logging.ps1')
+
+Test-Scenario "X-1: Assert-LastExit is defined in logging.ps1" {
+    $cmd = Get-Command Assert-LastExit -ErrorAction SilentlyContinue
+    if (-not $cmd) {
+        throw "Assert-LastExit not defined after dot-sourcing logging.ps1"
+    }
+}
+
+Test-Scenario "X-2: Assert-LastExit does not throw for exit code 0" {
+    $global:LASTEXITCODE = 0
+    Assert-LastExit -ToolName "test-tool"
+}
+
+Test-Scenario "X-3: Assert-LastExit does not throw for ALREADY_INSTALLED (-1978335189)" {
+    $global:LASTEXITCODE = -1978335189
+    Assert-LastExit -ToolName "test-tool" -AllowedExitCodes @(0, -1978335189)
+}
+
+Test-Scenario "X-4: Assert-LastExit throws for unexpected non-zero exit code" {
+    $global:LASTEXITCODE = 2
+    $threw = $false
+    try {
+        Assert-LastExit -ToolName "test-tool" -AllowedExitCodes @(0, -1978335189)
+    } catch {
+        $threw = $true
+    }
+    $global:LASTEXITCODE = 0
+    if (-not $threw) {
+        throw "Assert-LastExit did not throw for exit code 2"
+    }
+}
+
+Test-Scenario "X-5: All 5 winget install scripts call Assert-LastExit" {
+    $wingetScripts = @('git', 'gh', 'vim', 'psmux', 'copilot')
+    foreach ($s in $wingetScripts) {
+        $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
+        $content = Get-Content $path -Raw
+        if ($content -notmatch 'Assert-LastExit') {
+            throw "$s.ps1 does not call Assert-LastExit after winget install"
+        }
+    }
+}
+
+Test-Scenario "X-6: squad-cli.ps1 calls Assert-LastExit after npm install" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
+    if ($content -notmatch 'Assert-LastExit') {
+        throw "squad-cli.ps1 does not call Assert-LastExit after npm install"
+    }
+}
+
+Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\uv.ps1') -Raw
+    if ($content -notmatch 'Assert-LastExit') {
+        throw "uv.ps1 does not call Assert-LastExit after install command"
+    }
+}
+
+Test-Scenario "X-8: Assert-LastExit allowed codes include winget ALREADY_INSTALLED in all winget scripts" {
+    $wingetScripts = @('git', 'gh', 'vim', 'psmux', 'copilot')
+    foreach ($s in $wingetScripts) {
+        $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
+        $content = Get-Content $path -Raw
+        if ($content -notmatch '\-1978335189') {
+            throw "$s.ps1 does not include ALREADY_INSTALLED (-1978335189) in AllowedExitCodes"
+        }
+    }
+}
+
+if ($null -eq (Get-Command psmux -ErrorAction SilentlyContinue)) {
+    Test-Scenario "X-9: Simulated winget failure propagates from Install-Psmux" {
+        $psmuxContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1') -Raw
+        $psmuxExec = $psmuxContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
+        Invoke-Expression $psmuxExec
+        function global:winget { $global:LASTEXITCODE = 99 }
+        $threw = $false
+        try {
+            Install-Psmux 2>&1 | Out-Null
+        } catch {
+            $threw = $true
+        } finally {
+            Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
+            $global:LASTEXITCODE = 0
+        }
+        if (-not $threw) {
+            throw "Install-Psmux did not propagate the simulated winget failure"
+        }
+    }
+} else {
+    Write-Skip "X-9: Simulated winget failure propagates from Install-Psmux" `
+        "psmux is installed -- early-return path taken, winget not called"
 }
 
 # ---------------------------------------------------------------------------

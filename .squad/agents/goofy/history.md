@@ -106,7 +106,47 @@ Set-Alias -Name <name> -Value <custom-function> -Force -Scope Global
 
 ---
 
-## [2026-05-04] Issue #185: Windows Setup Refactor — 451-line monolith → 9 per-tool files (PR #195)
+## [2026-05-16T18:30:00Z] Issue #226: Assert winget exit code after installs
+
+**Branch:** `squad/226-winget-exit-check`
+**Status:** PR open -- awaiting Doc review
+
+**Bug Pattern:** `winget install` (and `npm install -g`, powershell IEX installs) can return
+non-zero on real failures while the script silently continued. 7 install sites all lacked
+any exit-code check.
+
+**Fix Applied:**
+- Added `Assert-LastExit` helper to `scripts/windows/lib/logging.ps1`
+- `Assert-LastExit -ToolName <name> -AllowedExitCodes @(0, -1978335189)` called immediately
+  after each install command in all 7 sites
+- Winget ALREADY_INSTALLED code 0x8A15002B (= -1978335189 signed int32) treated as success
+- PS function mocks in tests P-2/P-3 updated to set `$global:LASTEXITCODE = 0` explicitly
+  (PS functions do not set LASTEXITCODE; leaving it unset would be racy)
+- 9 new Group X tests added (X-1 through X-9)
+
+**7 Install Sites Fixed:**
+1. `tools/git.ps1` -- winget Git.Git
+2. `tools/gh.ps1` -- winget GitHub.cli
+3. `tools/vim.ps1` -- winget vim.vim
+4. `tools/psmux.ps1` -- winget marlocarlo.psmux
+5. `tools/copilot.ps1` -- winget GitHub.Copilot
+6. `tools/uv.ps1` -- powershell IEX (astral.sh install script)
+7. `tools/squad-cli.ps1` -- npm install -g
+
+**Key Learnings:**
+- PowerShell functions do NOT set `$LASTEXITCODE`; only native external commands do.
+  Test mocks that override winget with a PS function MUST explicitly set
+  `$global:LASTEXITCODE = 0` to avoid racy behavior.
+- Winget ALREADY_INSTALLED = 0x8A15002B = -1978335189 (signed int32). Always include in
+  AllowedExitCodes for winget calls.
+- `Assert-LastExit` must be called BEFORE any subsequent PS commands that might change
+  `$LASTEXITCODE` (i.e., before `Refresh-SessionPath` even though PS functions don't
+  affect it -- defense in depth).
+- `[Parameter(Mandatory)]` on the helper's ToolName param satisfies PSUseSingularNouns
+  and PSReviewUnusedParameter rules without extra suppressions.
+
+---
+
 
 **Status:** ✅ APPROVED, MERGED to develop
 

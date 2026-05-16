@@ -18,6 +18,7 @@ function Install-Git {
     }
     Write-Info "Installing Git for Windows (includes Git Bash)..."
     winget install --id Git.Git --silent --accept-source-agreements --accept-package-agreements
+    Assert-LastExit -ToolName "Git" -AllowedExitCodes @(0, -1978335189)
     Refresh-SessionPath
     Write-Ok "Git for Windows installed"
     Write-Info "Git Bash available at: C:\Program Files\Git\bin\bash.exe"

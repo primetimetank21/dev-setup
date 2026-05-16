@@ -17,6 +17,7 @@ function Install-Vim {
     }
     Write-Info "Installing vim..."
     winget install --id vim.vim --silent --accept-source-agreements --accept-package-agreements
+    Assert-LastExit -ToolName "vim" -AllowedExitCodes @(0, -1978335189)
     # winget does not reliably add vim to PATH -- find and register it manually
     $vimExe = Get-ChildItem 'C:\Program Files*\Vim\*\vim.exe' -ErrorAction SilentlyContinue |
               Sort-Object -Property FullName -Descending |

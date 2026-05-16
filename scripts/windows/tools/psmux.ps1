@@ -17,6 +17,7 @@ function Install-Psmux {
     }
     Write-Info "Installing psmux..."
     winget install --id marlocarlo.psmux --accept-source-agreements --accept-package-agreements --silent
+    Assert-LastExit -ToolName "psmux" -AllowedExitCodes @(0, -1978335189)
     Refresh-SessionPath
     Write-Ok "psmux installed."
 }

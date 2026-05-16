@@ -29,6 +29,7 @@ function Install-CopilotCli {
     # Mirrors the official install script (https://gh.io/copilot-install) on Windows:
     # on Windows it routes to `winget install GitHub.Copilot` (standalone binary).
     winget install --id GitHub.Copilot --silent --accept-source-agreements --accept-package-agreements
+    Assert-LastExit -ToolName "GitHub Copilot CLI" -AllowedExitCodes @(0, -1978335189)
     Refresh-SessionPath
     Write-Ok "Copilot CLI installed"
 }
