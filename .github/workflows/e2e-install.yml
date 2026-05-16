@@ -1,0 +1,466 @@
+# .github/workflows/e2e-install.yml
+# End-to-end install smoke test across Linux, macOS, and Windows.
+#
+# Exercises setup scripts on fresh runners to catch runtime failures
+# that syntax-only linting misses (e.g., nvm.ps1 path bug #221).
+#
+# NON-BLOCKING initially (continue-on-error on jobs). Will be flipped
+# to blocking after 2-3 consecutive green nightly runs.
+
+name: E2E Install Smoke Test
+
+on:
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Nightly at 04:00 UTC - catches third-party drift
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  e2e-linux:
+    name: E2E - Linux
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      CI: 'true'
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x setup.sh scripts/linux/setup.sh scripts/linux/tools/*.sh
+
+      # -- Step 1: Run setup --
+      - name: Run setup.sh
+        run: bash setup.sh
+
+      # -- Step 2: Fresh shell assertions --
+      - name: Assert tools (fresh shell)
+        run: |
+          bash -lc '
+            set -e
+            echo "--- Shell versions ---"
+            zsh --version
+            bash --version | head -1
+
+            echo "--- Node toolchain ---"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm --version
+            node --version
+            npm --version
+
+            echo "--- Python toolchain ---"
+            export PATH="$HOME/.local/bin:$PATH"
+            uv --version
+            python --version || python3 --version
+
+            echo "--- GitHub CLI ---"
+            gh --version | head -1
+
+            echo "--- Editors ---"
+            vim --version | head -1
+
+            echo "--- Multiplexer ---"
+            tmux -V
+
+            echo "--- Squad CLI ---"
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found or not executable. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+
+            echo "--- Dotfiles ---"
+            test -f "$HOME/.zshrc" && echo ".zshrc exists"
+            test -f "$HOME/.bashrc" && echo ".bashrc exists"
+            test -f "$HOME/.gitconfig" && echo ".gitconfig exists"
+
+            echo "--- Git hooks ---"
+            HOOKS_PATH=$(git config core.hooksPath)
+            if [ "$HOOKS_PATH" = "hooks" ]; then
+              echo "core.hooksPath=hooks OK"
+            else
+              echo "FAIL: core.hooksPath=$HOOKS_PATH (expected hooks)"
+              exit 1
+            fi
+
+            echo "All Linux assertions passed"
+          '
+
+      # -- Step 3: Idempotency --
+      - name: Idempotency (second run)
+        run: |
+          echo "--- Running setup a second time ---"
+          bash setup.sh
+          echo "Idempotency check passed"
+
+      - name: Assert tools after idempotency (Linux)
+        run: |
+          bash -lc '
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            export PATH="$HOME/.local/bin:$PATH"
+
+            echo "--- Post-idempotency assertions ---"
+            tmux -V
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found after idempotency rerun. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+            node --version
+            uv --version
+            gh --version | head -1
+            echo "Post-idempotency assertions passed (Linux)"
+          '
+
+      # -- Step 4: Uninstall and verify --
+      - name: Run uninstall
+        run: |
+          chmod +x scripts/linux/uninstall.sh
+          bash scripts/linux/uninstall.sh
+
+      - name: Assert clean state after uninstall
+        run: |
+          bash -lc '
+            set -e
+            echo "--- Verifying uninstall ---"
+
+            # .zshrc should not contain dev-setup managed block
+            if grep -qF "dev-setup managed block" "$HOME/.zshrc" 2>/dev/null; then
+              echo "FAIL: dev-setup block still in .zshrc"
+              exit 1
+            fi
+            echo ".zshrc clean (no managed block)"
+
+            if grep -qF "dev-setup managed block" "$HOME/.bashrc" 2>/dev/null; then
+              echo "FAIL: dev-setup block still in .bashrc"
+              exit 1
+            fi
+            echo ".bashrc clean (no managed block)"
+
+            # .bak files should not remain (they were restored)
+            for f in .gitconfig .npmrc .editorconfig .aliases .vimrc; do
+              if [ -f "$HOME/${f}.bak" ]; then
+                echo "FAIL: $HOME/${f}.bak still exists"
+                exit 1
+              fi
+            done
+            echo "No leftover .bak files"
+
+            echo "Uninstall verification passed"
+          '
+
+  e2e-macos:
+    name: E2E - macOS
+    runs-on: macos-latest
+    continue-on-error: true
+    env:
+      CI: 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x setup.sh scripts/linux/setup.sh scripts/linux/tools/*.sh
+
+      # -- Step 1: Run setup --
+      - name: Run setup.sh
+        run: bash setup.sh
+
+      # -- Step 2: Fresh shell assertions --
+      - name: Assert tools (fresh shell)
+        run: |
+          bash -lc '
+            set -e
+            echo "--- Shell versions ---"
+            zsh --version
+            bash --version | head -1
+
+            echo "--- Node toolchain ---"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm --version
+            node --version
+            npm --version
+
+            echo "--- Python toolchain ---"
+            export PATH="$HOME/.local/bin:$PATH"
+            uv --version
+            python --version || python3 --version
+
+            echo "--- GitHub CLI ---"
+            gh --version | head -1
+
+            echo "--- Editors ---"
+            vim --version | head -1
+
+            echo "--- Multiplexer ---"
+            tmux -V
+
+            echo "--- Squad CLI ---"
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found or not executable. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+
+            echo "--- Dotfiles ---"
+            test -f "$HOME/.zshrc" && echo ".zshrc exists"
+            test -f "$HOME/.bashrc" && echo ".bashrc exists"
+            test -f "$HOME/.gitconfig" && echo ".gitconfig exists"
+
+            echo "--- Git hooks ---"
+            HOOKS_PATH=$(git config core.hooksPath)
+            if [ "$HOOKS_PATH" = "hooks" ]; then
+              echo "core.hooksPath=hooks OK"
+            else
+              echo "FAIL: core.hooksPath=$HOOKS_PATH (expected hooks)"
+              exit 1
+            fi
+
+            echo "All macOS assertions passed"
+          '
+
+      # -- Step 3: Idempotency --
+      - name: Idempotency (second run)
+        run: |
+          echo "--- Running setup a second time ---"
+          bash setup.sh
+          echo "Idempotency check passed"
+
+      - name: Assert tools after idempotency (macOS)
+        run: |
+          bash -lc '
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            export PATH="$HOME/.local/bin:$PATH"
+
+            echo "--- Post-idempotency assertions ---"
+            tmux -V
+            if ! squad --version; then
+              echo "FAIL: squad CLI not found after idempotency rerun. Is @primetimetank21/squad-cli installed via npm?"
+              exit 1
+            fi
+            node --version
+            uv --version
+            gh --version | head -1
+            echo "Post-idempotency assertions passed (macOS)"
+          '
+
+      # -- Step 4: Uninstall and verify --
+      - name: Run uninstall
+        run: |
+          chmod +x scripts/linux/uninstall.sh
+          bash scripts/linux/uninstall.sh
+
+      - name: Assert clean state after uninstall
+        run: |
+          bash -lc '
+            set -e
+            echo "--- Verifying uninstall ---"
+
+            if grep -qF "dev-setup managed block" "$HOME/.zshrc" 2>/dev/null; then
+              echo "FAIL: dev-setup block still in .zshrc"
+              exit 1
+            fi
+            echo ".zshrc clean (no managed block)"
+
+            if grep -qF "dev-setup managed block" "$HOME/.bashrc" 2>/dev/null; then
+              echo "FAIL: dev-setup block still in .bashrc"
+              exit 1
+            fi
+            echo ".bashrc clean (no managed block)"
+
+            for f in .gitconfig .npmrc .editorconfig .aliases .vimrc; do
+              if [ -f "$HOME/${f}.bak" ]; then
+                echo "FAIL: $HOME/${f}.bak still exists"
+                exit 1
+              fi
+            done
+            echo "No leftover .bak files"
+
+            echo "Uninstall verification passed"
+          '
+
+  e2e-windows:
+    name: E2E - Windows
+    runs-on: windows-latest
+    continue-on-error: true
+    env:
+      CI: 'true'
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -- Step 1: Run setup (PS 7+) --
+      - name: Run setup.ps1 (pwsh)
+        run: |
+          & .\setup.ps1
+
+      # -- Step 2: Fresh shell assertions --
+      - name: Assert tools (fresh pwsh session)
+        run: |
+          # Spawn a fresh pwsh to pick up PATH changes
+          pwsh -NoProfile -Command {
+            $ErrorActionPreference = 'Stop'
+            $failures = @()
+
+            function Assert-Command {
+              param([string]$Name, [string]$Args)
+              try {
+                $output = & $Name $Args.Split(' ') 2>&1 | Out-String
+                Write-Host "[PASS] ${Name}: $($output.Trim().Split("`n")[0])"
+              } catch {
+                Write-Host "[FAIL] ${Name}: $_"
+                $script:failures += $Name
+              }
+            }
+
+            Write-Host "--- PowerShell version ---"
+            Write-Host "pwsh: $($PSVersionTable.PSVersion)"
+
+            Write-Host "--- Node toolchain ---"
+            Assert-Command 'nvm' 'version'
+            Assert-Command 'node' '--version'
+            Assert-Command 'npm' '--version'
+
+            Write-Host "--- Python toolchain ---"
+            Assert-Command 'uv' '--version'
+            Assert-Command 'python' '--version'
+
+            Write-Host "--- GitHub CLI ---"
+            Assert-Command 'gh' '--version'
+
+            Write-Host "--- Editors ---"
+            Assert-Command 'vim' '--version'
+
+            Write-Host "--- Squad CLI ---"
+            Assert-Command 'squad' '--version'
+
+            Write-Host "--- Multiplexer ---"
+            Assert-Command 'psmux' '--version'
+            Assert-Command 'tmux' '--version'
+
+            Write-Host "--- Git hooks ---"
+            $hooksPath = & git config core.hooksPath 2>$null
+            if ($hooksPath -eq 'hooks') {
+              Write-Host "[PASS] core.hooksPath=hooks"
+            } else {
+              Write-Host "[FAIL] core.hooksPath=$hooksPath (expected hooks)"
+              $failures += 'git-hooks'
+            }
+
+            Write-Host "--- Dotfiles ---"
+            $profilePath = [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
+            if (Test-Path $profilePath) {
+              Write-Host "[PASS] PS7 profile exists: $profilePath"
+            } else {
+              Write-Host "[FAIL] PS7 profile not found: $profilePath"
+              $failures += 'profile'
+            }
+
+            if ($failures.Count -gt 0) {
+              Write-Host "`nFailed assertions: $($failures -join ', ')"
+              exit 1
+            }
+            Write-Host "`nAll Windows assertions passed"
+          }
+
+      # -- Step 3: Idempotency --
+      - name: Idempotency (second run)
+        run: |
+          Write-Host "--- Running setup a second time ---"
+          & .\setup.ps1
+          Write-Host "Idempotency check passed"
+
+      - name: Assert tools after idempotency (Windows)
+        run: |
+          pwsh -NoProfile -Command {
+            $ErrorActionPreference = 'Stop'
+            $failures = @()
+
+            function Assert-Command {
+              param([string]$Name, [string]$Args)
+              try {
+                $output = & $Name $Args.Split(' ') 2>&1 | Out-String
+                Write-Host "[PASS] ${Name}: $($output.Trim().Split("`n")[0])"
+              } catch {
+                Write-Host "[FAIL] ${Name}: $_"
+                $script:failures += $Name
+              }
+            }
+
+            Write-Host "--- Post-idempotency assertions ---"
+            Assert-Command 'squad' '--version'
+            Assert-Command 'psmux' '--version'
+            Assert-Command 'tmux' '--version'
+            Assert-Command 'node' '--version'
+            Assert-Command 'uv' '--version'
+            Assert-Command 'gh' '--version'
+
+            if ($failures.Count -gt 0) {
+              Write-Host "`nFailed assertions: $($failures -join ', ')"
+              exit 1
+            }
+            Write-Host "`nPost-idempotency assertions passed (Windows)"
+          }
+
+      # -- Step 4: Uninstall and verify --
+      - name: Run uninstall
+        run: |
+          & .\scripts\windows\uninstall.ps1
+
+      - name: Assert clean state after uninstall
+        run: |
+          pwsh -NoProfile -Command {
+            $ErrorActionPreference = 'Stop'
+            $failures = @()
+
+            Write-Host "--- Verifying uninstall ---"
+
+            # Profile block should be removed
+            $profilePaths = @(
+              [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),
+              [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
+            )
+
+            foreach ($p in $profilePaths) {
+              if (Test-Path $p) {
+                $content = Get-Content $p -Raw -ErrorAction SilentlyContinue
+                if ($content -and $content -match 'BEGIN dev-setup profile') {
+                  Write-Host "[FAIL] dev-setup block still in $p"
+                  $failures += $p
+                } else {
+                  Write-Host "[PASS] $p clean (no managed block)"
+                }
+              } else {
+                Write-Host "[PASS] $p removed or absent"
+              }
+            }
+
+            # .bak files should not remain
+            $dotfiles = @('.gitconfig', '.npmrc', '.editorconfig', '.aliases', '.vimrc')
+            foreach ($f in $dotfiles) {
+              $bakPath = Join-Path $HOME "$f.bak"
+              if (Test-Path $bakPath) {
+                Write-Host "[FAIL] $bakPath still exists"
+                $failures += $bakPath
+              }
+            }
+            Write-Host "[PASS] No leftover .bak files"
+
+            if ($failures.Count -gt 0) {
+              Write-Host "`nFailed assertions: $($failures -join ', ')"
+              exit 1
+            }
+            Write-Host "`nUninstall verification passed"
+          }

@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Pre-commit hygiene checks: ASCII-only enforcement on staged `.ps1` files, rogue `.squad/` path validation, staged inbox file detection, and branch ancestry verification for squad branches (closes #240)
 - `tests/test_precommit_hygiene.sh` -- bash tests for all 4 pre-commit hygiene checks (13 pass/fail cases)
+- E2E install smoke test workflow `.github/workflows/e2e-install.yml` with 3-OS matrix (Linux, macOS, Windows) -- exercises full setup, tool assertions, idempotency, and uninstall on fresh runners (closes #239)
+  - Triggers: per-PR, nightly cron (04:00 UTC), manual workflow_dispatch
+  - Non-blocking initially (`continue-on-error: true` on all jobs); will flip to blocking after 2-3 green nightlies
+  - Stabilization plan: monitor nightly runs for 1 week; address third-party flakes (winget rate limits, brew network); then remove continue-on-error
 - macOS CI validation via new `validate-macos` job in `validate.yml` (closes #181)
 - Windows GitHub auth step via `scripts/windows/auth.ps1` (closes #191)
 - Automatic Node LTS install via nvm during setup; reads pinned version from `.tool-versions` (closes #201)
