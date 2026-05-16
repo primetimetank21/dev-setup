@@ -350,3 +350,29 @@ Doc's verification identified 2 real bugs in Sprint R PRs before merge:
 
 This prevents post-merge firefighting and validates batch-check as a standing pattern.
 Recommend spawning Doc on any shell-heavy or multi-platform PR in future sprints.
+
+### PR #275 -- PowerShell .gitattributes CRLF Rule (#231)
+
+**Date:** 2026-05-16  
+**Issue:** #231 -- chore(.gitattributes): add explicit line-ending rule for *.ps1  
+**Branch:** squad/231-ps1-gitattributes  
+**Status:** OPEN (awaiting review)
+
+What I did:
+- Added explicit .gitattributes rules for *.ps1, *.psm1, and *.psd1 files with text eol=crlf
+- Rationale: PowerShell tooling on Windows expects CRLF. When core.autocrlf=true (standard on Windows runners),
+  git normalizes files to LF by default. Setting explicit eol=crlf eliminates this platform divergence and ensures
+  consistent CRLF checkout on all platforms, preventing autocrlf surprises (relates to Sprint R #267 autocrlf lesson).
+- Updated CHANGELOG.md [Unreleased] > Changed section
+- Verified rule with git check-attr: all *.ps1 files now report eol: crlf
+
+Decision made:
+- Scoped to PowerShell files (.ps1/.psm1/.psd1) only, not shell scripts (.sh/.bash)
+- Reason: Shell scripts already have explicit eol=lf rules and are consistent. PowerShell files were missing
+  an explicit rule and were normalizing to the global default (LF), which is wrong for Windows tooling.
+- Shell scripts scope can be addressed in a follow-up if cross-platform shell portability becomes a concern.
+
+Key learnings:
+- Git .gitattributes explicit rules are the cleanest way to override autocrlf behavior consistently across platforms.
+- eol=crlf ensures the working tree always has CRLF on checkout, regardless of core.autocrlf setting.
+- This is especially important for Windows-specific tooling like PowerShell, which expects CRLF.
