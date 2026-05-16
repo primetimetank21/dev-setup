@@ -15,6 +15,8 @@
 
 ## Learnings
 
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
 ### Worktree isolation pattern (Issue #56, 2026-04-07)
@@ -25,6 +27,13 @@
 - `SQUAD_WORKTREES=1` is now set by default in `.devcontainer/devcontainer.json` `remoteEnv`.
 - Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md § "Parallel Agent Work"`.
 - PR: https://github.com/primetimetank21/dev-setup/pull/58
+
+### Gitconfig templates do not support shell expansion (Issue #184)
+
+- Git reads `.gitconfig` values as literal strings — `${EDITOR:-vim}` is NOT expanded by the shell, it becomes the literal editor command, which fails.
+- For any tool-config template that is NOT processed by a shell at apply time, always use literal values.
+- Pattern: use a sensible literal default + a comment showing how to override (e.g., `# Override with: git config --global core.editor <your-editor>`).
+- The dotfiles `install.sh` does `sed` substitution for `YOUR_NAME`/`YOUR_EMAIL` placeholders, but does NOT expand arbitrary shell variables in the gitconfig template.
 
 ## Work Log
 
@@ -185,4 +194,20 @@ PR #115 merged to `develop`. Mickey reviewed and approved — all 30 aliases cor
 **Date:** 2026-04-18  
 
 Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for reserved names, $args passthrough on all functions, inline comments, and PS 5.x strict-mode compatibility. High craft level. Issue closed.
+
+
+## Learnings
+
+### 2026-05-18: CHANGELOG.md created (Issue #188, PR #203)
+- Created CHANGELOG.md at repo root following Keep a Changelog format
+- Backfilled 7 sprints of history from git log and .squad/log/ files
+- Sprint boundaries inferred from retro files and explicit sprint-wrap PRs
+- Grouped ~60 PRs into meaningful bullets by theme rather than listing each individually
+- Branch: squad/188-add-changelog -> develop
+
+### 2025-07-14: Tmux auto-attach opt-in (Issue #192)
+- Wrapped `start_up` invocation in `.zshrc.template` behind `TMUX_AUTOSTART=1` guard
+- Breaking change: auto-attach now OFF by default; users must export the var
+- Used POSIX `[ "${VAR:-}" = "1" ]` for bash/zsh compatibility
+- Branch: squad/192-tmux-opt-in -> develop
 

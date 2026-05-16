@@ -70,7 +70,7 @@ Test-Scenario "core.hooksPath is set to hooks in repo" {
 }
 
 Test-Scenario "Hook files exist and are non-empty" {
-    $hookFiles = @("pre-commit", "commit-msg", "pre-push")
+    $hookFiles = @("pre-commit", "prepare-commit-msg", "commit-msg", "pre-push")
     foreach ($hook in $hookFiles) {
         $hookPath = Join-Path $RepoRoot "hooks\$hook"
         if (-not (Test-Path $hookPath)) {
@@ -87,32 +87,35 @@ Test-Scenario "Hook files exist and are non-empty" {
 }
 
 # ---------------------------------------------------------------------------
-# Group B: commit-msg hook validation
+# Group B: commit-msg and prepare-commit-msg hook validation
 # ---------------------------------------------------------------------------
+# NOTE: Temp commit-msg files MUST be written with -Encoding ASCII (not UTF8).
+# PS 5.1's Set-Content -Encoding UTF8 writes UTF-8 WITH BOM, which the POSIX
+# sh-based hooks read as the first bytes of the line, breaking the
+# conventional-commits regex. ASCII is safe on both PS 5.1 and PS 7 and the
+# test content is pure ASCII anyway.
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group B: commit-msg hook validation" -ForegroundColor Cyan
+Write-Host " Group B: commit-msg and prepare-commit-msg hook validation" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
+
+$commitMsgHook = Join-Path $RepoRoot "hooks\commit-msg"
+$prepareCommitMsgHook = Join-Path $RepoRoot "hooks\prepare-commit-msg"
 
 Test-Scenario "commit-msg hook rejects non-conventional message" {
     $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_$(Get-Random).txt"
     try {
-        Set-Content $tempMsgFile -Value "This is not conventional" -Encoding UTF8
-        
-        $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
-        
-        # Run via sh (Git Bash) which is the actual execution path
+        Set-Content $tempMsgFile -Value "This is not conventional" -Encoding ASCII
+
         if (Get-Command sh -ErrorAction SilentlyContinue) {
-            $result = & sh $hookPath $tempMsgFile 2>&1
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
             if ($LASTEXITCODE -eq 0) {
                 throw "commit-msg hook should have rejected non-conventional message, but returned exit 0"
             }
         } else {
-            Write-Host "  sh not found - testing via direct PowerShell simulation" -ForegroundColor Yellow
-            # Simulate the hook logic in PowerShell
             $msg = Get-Content $tempMsgFile -Raw
             $stripped = ($msg -split "`n" | Where-Object { $_ -notmatch "^#" -and $_ -notmatch "^$" } | Select-Object -First 1)
-            if ($stripped -match '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert)(\([a-zA-Z0-9/_-]+\))?!?: .+') {
+            if ($stripped -match '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert|merge)(\([a-zA-Z0-9/_-]+\))?!?: .+') {
                 throw "Non-conventional message should not have matched"
             }
         }
@@ -125,22 +128,17 @@ Test-Scenario "commit-msg hook rejects non-conventional message" {
 Test-Scenario "commit-msg hook accepts valid conventional message" {
     $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_valid_$(Get-Random).txt"
     try {
-        Set-Content $tempMsgFile -Value "feat(hooks): add commit message validation" -Encoding UTF8
-        
-        $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
-        
-        # Run via sh (Git Bash) which is the actual execution path
+        Set-Content $tempMsgFile -Value "feat(hooks): add commit message validation" -Encoding ASCII
+
         if (Get-Command sh -ErrorAction SilentlyContinue) {
-            $result = & sh $hookPath $tempMsgFile 2>&1
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
             if ($LASTEXITCODE -ne 0) {
                 throw "commit-msg hook rejected valid conventional message: $result"
             }
         } else {
-            Write-Host "  sh not found - testing via direct PowerShell simulation" -ForegroundColor Yellow
-            # Simulate the hook logic in PowerShell
             $msg = Get-Content $tempMsgFile -Raw
             $stripped = ($msg -split "`n" | Where-Object { $_ -notmatch "^#" -and $_ -notmatch "^$" } | Select-Object -First 1)
-            if ($stripped -notmatch '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert)(\([a-zA-Z0-9/_-]+\))?!?: .+') {
+            if ($stripped -notmatch '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert|merge)(\([a-zA-Z0-9/_-]+\))?!?: .+') {
                 throw "Valid conventional message should have matched"
             }
         }
@@ -159,23 +157,20 @@ Test-Scenario "commit-msg hook accepts multiple valid formats" {
         "feat!: breaking change with exclamation mark",
         "fix(core)!: breaking fix with scope and exclamation"
     )
-    
+
     foreach ($msg in $validMessages) {
         $tempMsgFile = Join-Path $PSScriptRoot "temp_commit_msg_multi_$(Get-Random).txt"
         try {
-            Set-Content $tempMsgFile -Value $msg -Encoding UTF8
-            
-            $hookPath = Join-Path $RepoRoot "hooks\commit-msg"
-            
+            Set-Content $tempMsgFile -Value $msg -Encoding ASCII
+
             if (Get-Command sh -ErrorAction SilentlyContinue) {
-                $result = & sh $hookPath $tempMsgFile 2>&1
+                $result = & sh $commitMsgHook $tempMsgFile 2>&1
                 if ($LASTEXITCODE -ne 0) {
                     throw "commit-msg hook rejected valid message: '$msg'"
                 }
             } else {
-                # PowerShell simulation
                 $stripped = ($msg -split "`n" | Where-Object { $_ -notmatch "^#" -and $_ -notmatch "^$" } | Select-Object -First 1)
-                if ($stripped -notmatch '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert)(\([a-zA-Z0-9/_-]+\))?!?: .+') {
+                if ($stripped -notmatch '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert|merge)(\([a-zA-Z0-9/_-]+\))?!?: .+') {
                     throw "Valid message should have matched: '$msg'"
                 }
             }
@@ -183,6 +178,169 @@ Test-Scenario "commit-msg hook accepts multiple valid formats" {
         finally {
             if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
         }
+    }
+}
+
+Test-Scenario "prepare-commit-msg rewrites Merge branch simple" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_pcm_b1_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "Merge branch 'develop'" -Encoding ASCII
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            & sh $prepareCommitMsgHook $tempMsgFile 2>&1 | Out-Null
+            $rewritten = (Get-Content $tempMsgFile -Encoding ASCII | Select-Object -First 1)
+            if ($rewritten -ne "merge(develop): merge branch") {
+                throw "Expected 'merge(develop): merge branch', got: '$rewritten'"
+            }
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg rejected rewritten message: $result"
+            }
+        } else {
+            Write-Host "  sh not found - skipping" -ForegroundColor Yellow
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "prepare-commit-msg rewrites Merge branch into target" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_pcm_b2_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "Merge branch 'feature' into develop" -Encoding ASCII
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            & sh $prepareCommitMsgHook $tempMsgFile 2>&1 | Out-Null
+            $rewritten = (Get-Content $tempMsgFile -Encoding ASCII | Select-Object -First 1)
+            if ($rewritten -ne "merge(feature): merge into develop") {
+                throw "Expected 'merge(feature): merge into develop', got: '$rewritten'"
+            }
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg rejected rewritten message: $result"
+            }
+        } else {
+            Write-Host "  sh not found - skipping" -ForegroundColor Yellow
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "prepare-commit-msg rewrites Merge remote-tracking branch" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_pcm_b3_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "Merge remote-tracking branch 'origin/main'" -Encoding ASCII
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            & sh $prepareCommitMsgHook $tempMsgFile 2>&1 | Out-Null
+            $rewritten = (Get-Content $tempMsgFile -Encoding ASCII | Select-Object -First 1)
+            if ($rewritten -ne "merge(remote): origin/main") {
+                throw "Expected 'merge(remote): origin/main', got: '$rewritten'"
+            }
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg rejected rewritten message: $result"
+            }
+        } else {
+            Write-Host "  sh not found - skipping" -ForegroundColor Yellow
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "prepare-commit-msg rewrites Merge pull request" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_pcm_b4_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "Merge pull request #42 from user/feature" -Encoding ASCII
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            & sh $prepareCommitMsgHook $tempMsgFile 2>&1 | Out-Null
+            $rewritten = (Get-Content $tempMsgFile -Encoding ASCII | Select-Object -First 1)
+            if ($rewritten -ne "merge(pr): #42 from user/feature") {
+                throw "Expected 'merge(pr): #42 from user/feature', got: '$rewritten'"
+            }
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg rejected rewritten message: $result"
+            }
+        } else {
+            Write-Host "  sh not found - skipping" -ForegroundColor Yellow
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "prepare-commit-msg rewrites Revert message" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_pcm_b5_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value 'Revert "feat: do thing"' -Encoding ASCII
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            & sh $prepareCommitMsgHook $tempMsgFile 2>&1 | Out-Null
+            $rewritten = (Get-Content $tempMsgFile -Encoding ASCII | Select-Object -First 1)
+            if ($rewritten -ne "revert: feat: do thing") {
+                throw "Expected 'revert: feat: do thing', got: '$rewritten'"
+            }
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg rejected rewritten message: $result"
+            }
+        } else {
+            Write-Host "  sh not found - skipping" -ForegroundColor Yellow
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "prepare-commit-msg leaves conventional commit unchanged" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_pcm_b6_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "feat: add thing" -Encoding ASCII
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            & sh $prepareCommitMsgHook $tempMsgFile 2>&1 | Out-Null
+            $rewritten = (Get-Content $tempMsgFile -Encoding ASCII | Select-Object -First 1)
+            if ($rewritten -ne "feat: add thing") {
+                throw "Expected 'feat: add thing' unchanged, got: '$rewritten'"
+            }
+        } else {
+            Write-Host "  sh not found - skipping" -ForegroundColor Yellow
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
+    }
+}
+
+Test-Scenario "commit-msg accepts hand-written merge type" {
+    $tempMsgFile = Join-Path $PSScriptRoot "temp_pcm_b7_$(Get-Random).txt"
+    try {
+        Set-Content $tempMsgFile -Value "merge(custom): special merge" -Encoding ASCII
+
+        if (Get-Command sh -ErrorAction SilentlyContinue) {
+            $result = & sh $commitMsgHook $tempMsgFile 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "commit-msg rejected hand-written merge type: $result"
+            }
+        } else {
+            $msg = Get-Content $tempMsgFile -Raw
+            $stripped = ($msg -split "`n" | Where-Object { $_ -notmatch "^#" -and $_ -notmatch "^$" } | Select-Object -First 1)
+            if ($stripped -notmatch '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert|merge)(\([a-zA-Z0-9/_-]+\))?!?: .+') {
+                throw "Hand-written merge type should have matched"
+            }
+        }
+    }
+    finally {
+        if (Test-Path $tempMsgFile) { Remove-Item $tempMsgFile -Force }
     }
 }
 

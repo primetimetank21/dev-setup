@@ -75,6 +75,72 @@ jobs:
           chmod +x tests/test_aliases.sh
           bash tests/test_aliases.sh
 
+      - name: Run alias parity test
+        run: |
+          chmod +x tests/test_alias_parity.sh
+          bash tests/test_alias_parity.sh
+
+  validate-macos:
+    name: Validate macOS Setup
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x setup.sh scripts/linux/setup.sh scripts/linux/tools/*.sh
+
+      - name: Verify Homebrew available
+        run: |
+          if ! command -v brew &>/dev/null; then
+            echo "FAIL: Homebrew not found on macOS runner"
+            exit 1
+          fi
+          echo "brew: $(brew --version | head -1)"
+
+      - name: Verify shell tools
+        run: |
+          echo "bash: $(bash --version | head -1)"
+          echo "zsh: $(zsh --version)"
+
+      - name: Run setup script
+        run: bash setup.sh
+
+      - name: Validate zsh installed
+        run: |
+          if ! command -v zsh &>/dev/null; then
+            echo "FAIL: zsh not found on PATH"
+            exit 1
+          fi
+          echo "zsh: $(zsh --version)"
+
+      - name: Validate uv installed
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          if ! command -v uv &>/dev/null; then
+            echo "FAIL: uv not found on PATH"
+            exit 1
+          fi
+          echo "uv: $(uv --version)"
+
+      - name: Validate gh CLI installed
+        run: |
+          if ! command -v gh &>/dev/null; then
+            echo "FAIL: gh not found on PATH"
+            exit 1
+          fi
+          echo "gh: $(gh --version | head -1)"
+
+      - name: Test idempotency (run setup a second time)
+        run: |
+          echo "--- Running setup script a second time to test idempotency ---"
+          bash setup.sh
+          echo "Second run completed without errors"
+
+      - name: Run tool version tests
+        run: bash tests/test_tool_versions.sh
+
   lint-shell-scripts:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
@@ -98,6 +164,9 @@ jobs:
             echo "Checking: $script"
             shellcheck "$script"
           done
+
+      - name: Lint config/dotfiles/.aliases
+        run: shellcheck -s bash config/dotfiles/.aliases
 
   lint-powershell:
     name: Lint PowerShell Scripts
@@ -129,6 +198,12 @@ jobs:
 
       - name: Run Remove-CustomItem regression test
         run: pwsh tests/test_remove_custom_item.ps1
+
+      - name: Configure git hooks path
+        run: git config core.hooksPath hooks
+
+      - name: Run git hooks tests
+        run: pwsh tests/test_git_hooks.ps1
 
   validate-ps51:
     name: Validate PowerShell 5.1 Compatibility
@@ -187,7 +262,29 @@ jobs:
           }
           Write-Host "PSScriptAnalyzer passed (PS 5.1)"
 
+      - name: Test PS 5.1 profile write
+        shell: powershell
+        run: |
+          . "$env:GITHUB_WORKSPACE\scripts\windows\tools\profile.ps1"
+          Write-PowerShellProfile
+          $ps51Profile = Join-Path $HOME "Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
+          if (-not (Test-Path $ps51Profile)) {
+            Write-Error "PS 5.1 profile not written: $ps51Profile"
+            exit 1
+          }
+          Write-Host "PS 5.1 profile exists: $ps51Profile"
+
       - name: Run PS 5.1 compatibility tests
         shell: powershell
         run: |
           powershell -ExecutionPolicy Bypass -File tests\test_windows_setup.ps1
+
+      - name: Configure git hooks path
+        shell: powershell
+        run: |
+          git config core.hooksPath hooks
+
+      - name: Run git hooks tests (PS 5.1)
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File tests\test_git_hooks.ps1

@@ -13,511 +13,153 @@
 - Dotfiles and shell configs are managed as templates
 - Scripts must be idempotent — safe to run multiple times
 
-
 ## Core Context
 
-**Sprint 1–4 Summary (2026-04-07 to 2026-04-12):**
+**Sprints 1–7 Summary (2026-04-07 to 2026-05-04):**
 
-Established foundational architecture, team processes, initial feature set, and Windows Devcontainer compatibility fixes.
+Lead architect; established foundational team process, architecture, and Windows/Linux integration across 7 sprints.
 
-- **Architecture (Issue #3, PR #17):** OS detection entry points (`setup.sh` Unix, `setup.ps1` Windows); router pattern; WSL routed as Linux; full directory structure
-- **Tool Implementation (Donald):** Linux/macOS core setup, 6 tool scripts (zsh, uv, nvm, gh, copilot-cli, auth)
-- **Config (Pluto):** Dotfile templates (.gitconfig, .editorconfig, .npmrc, .aliases, .zshrc), shell aliases, install.sh scaffolding
-- **Windows (Goofy):** PowerShell setup entry point (setup.ps1) and core Windows setup script
-- **CI (Chip):** GitHub Actions workflow validating all platforms
-- **Squad Governance:** Branch protection, review gates, admin merge pattern established
-- **Process Improvements (Sprint 5):** Issue #54–#57 (branch protection, agent timeout policy, worktree isolation, binary cleanup)
-- **Shell Compatibility (April 12):** PR #65 (append managed block to existing shells), PR #66 (.gitattributes eol=lf fix)
+- **Sprint 1–4:** OS detection entry points (setup.sh Unix, setup.ps1 Windows); router pattern; full directory structure; 6 core tool scripts; dotfile templates; GitHub Actions workflows
+- **Sprint 5:** Issue #54–#57 process items; bin cleanup; `exec 2>&1` stderr/stdout merge; devcontainer CRLF guard; CI=true Copilot CLI bypass
+- **Sprint 6:** Windows regression tests (15 tests, Groups A–D); alias consolidation & parity; dual-profile PowerShell (PS 5.1 + PS 7+); alias guards for AllScope conflicts (11 aliases: rm, gc, gl, gcm, gcb, gp, grb, grs, ni, h, ep)
+- **Sprint 7:** Git hooks (commit-msg Conventional Commits, pre-push branch protection + shellcheck), branch isolation rule, CI triage, PS 5.1 compatibility fixes
+- **Sprint 8 (Gap Audit):** 26-item audit → 17 issues (#178–#194); Windows setup split into per-tool files under tools/; highest-leverage refactor completed
 
-**Sprint 5 Summary (2026-04-08 to 2026-04-13):**
+**Key Patterns Established:**
+- `CI=true` for postCreateCommand: when CLI gates on `IsCI()`, set env var rather than PTY wrapping
+- Empty catch blocks: use `Write-Verbose` for intentional silence (PSScriptAnalyzer requirement)
+- PSVersion-based guards (ONLY safe pattern for PS 5.1 strict mode): `$PSVersionTable.PSVersion.Major -ge 6 -and $IsVariable`
+- Strip+re-inject for evolving config blocks (sentinel-based skip breaks incremental updates)
+- `--admin` merge workflow for single-user repos (standard, not override)
+- Process: Frame issues as problems, not implementations; consult decisions.md before planning
+- Retro loop works: action items from sprint N ship in sprint N+1
 
-Resolved Sprint 4 action items, shipped bug fixes, and completed Windows regression tests.
+**Key Files/Decisions:**
+- `.squad/decisions.md` — canonical decisions; decisions/inbox/ for agent-written docs
+- CONTRIBUTING.md — branch isolation rule, direct-push policy, PS 5.x checklist, hook workflow
+- .gitattributes — eol=lf for *.sh; devcontainer CRLF strip guard
+- hooks/ — commit-msg (Conventional Commits), pre-push (branch protection + shellcheck + optional PSScriptAnalyzer advisory)
 
-- **Issues #54–#57 resolved:** Branch protection docs, agent timeout policy (5/10/20 min tiers), worktree isolation (`SQUAD_WORKTREES=1`), binary cleanup
-- **PRs #58–#62 merged:** All Sprint 5 deliverables shipped to `develop`
-- **Issues #68–#69 (PRs #70–#71):** `exec 2>&1` stderr/stdout merge + `onCreateCommand` CRLF guard for Devcontainer
-- **Issue #72 (PRs #73, #78, #80):** Copilot CLI binary download fix — evolved from piped stdin to script(1) PTY to final `CI=true` bypass
-- **PR #77:** vim added to Linux prerequisites (Goofy). **PR #84:** tmux added to Linux prerequisites
-- **PR #104:** Windows PS regression tests (Groups A–D, 15 tests) — blocked by empty catch lint, fixed by Goofy (`Write-Verbose`), merged. Issues #102, #103 closed
-- **Issue #97 (PR #99):** No-squash policy for sprint wrap PRs codified in Ralph charter + issue-lifecycle template
+**Tech Debt Addressed:**
+- Branch ancestry bleed (fixed via rule in Sprint 7)
+- Stale CI failures on main (em-dash UTF-8 bug, historical artifacts)
+- Windows/Linux parity (aliases, setup.ps1 split into tools/)
 
-**Key Patterns Learned:**
-- `CI=true` for postCreateCommand: when a CLI gates on `IsCI()`, set env var rather than PTY/pipe wrapping
-- Empty catch blocks trigger PSScriptAnalyzer — use `Write-Verbose` for intentional silence
+---
+
+## Learnings
+
+⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+
 - `git add --renormalize` updates INDEX only, not working tree
-- `script -q /dev/null -c 'command'` for isatty()-gated CLIs (general pattern)
-- Branch protection write via `gh api` blocked by Codespace token scope — manual UI action required
-- Frame issues as problems, not implementations; consult decisions.md before sprint planning
-- Retro loop works: Sprint 4 action items all shipped in Sprint 5
-
-**Board Status (end Sprint 5):** All Sprint 5 issues closed. 6 action items queued for Sprint 6.
-
-**Sprint 6 Summary (2026-04-13 to 2026-04-25):**
-
-Completed Windows PowerShell compatibility hotfixes, alias consolidation, and utility expansion.
-
-- **Windows Regression Tests:** Issues #102–#104 (Groups A–D, 15 tests); Goofy fixed empty catch lint pattern with `Write-Verbose`; PR #104 merged
-- **Utility Expansion:** Issues #106, #107, #113 (squad-cli install, vim via winget, GitHub issue templates); PRs #118, #107, #114 merged
-- **Alias Consolidation:** Issues #108–#111, #160–#161 (PowerShell alias parity PR #115, AllScope guard audit, gcm/gcb fixes); decisions filed for future work
-- **PS 5.1 Hardening:** Issues #125, #130, #132–#136, #138, #144–#146 (guard regressions, stale test fixes, dual profile paths, sentinel-skip elimination)
-- **Hooks & Docs:** Issues #147, #151–#153 (PSScriptAnalyzer pre-push evaluation, documentation updates)
-- **Key Decision:** Native platform mechanisms (PowerShell + shell aliases) > cross-platform wrappers; PSVersion-based guards required for PS 5.1 strict mode
-
-**Board Status (end Sprint 6):** 22+ issues closed, 10+ PRs merged, PS 5.x compatibility hardened across all utility functions.
+- `script -q /dev/null -c 'command'` for isatty()-gated CLIs (general pattern, deprecated for Copilot CLI)
+- Branch protection write via `gh api` blocked by Codespace token scope — manual UI required
+- PR body linkage matters (Closes #X vs #Y)
+- Test framework emoji (✅/❌) vs brackets — pre-existing, flagged for housekeeping
+- BOM-encoding gotcha: PS 5.1 `Set-Content -Encoding UTF8` writes UTF-8 WITH BOM. POSIX sh hooks read BOM bytes as line content, breaking regex. Fix: use `-Encoding ASCII` for test temp files (see `.squad/skills/ps51-runtime-file-encoding/SKILL.md`)
+- Worktree isolation: batch 3 used separate worktrees per PR. Zero bleed across 3 parallel PRs. CHANGELOG conflicts are expected and trivial to resolve (combine both [Unreleased] entries).
+- commit-msg hook rejects merge commit messages (non-conventional format). Use `--no-verify` for merge commits during conflict resolution. This is fine.
 
 ---
 
-## Learnings
+## Recent Work
 
-<!-- Append new learnings below. Each entry is something lasting about the project. -->
+## [2026-05-18T02:00:00Z] Batch 3 Review + Merge (PRs #208, #209, #210)
 
-### 2026-05-04 — PR #175 Review: Shutdown Aliases (Issue #174)
+**PRs:** #208 (Chip), #209 (Goofy), #210 (Donald)
+**Issues closed:** #183, #180, #189
+**Conflicts:** CHANGELOG.md on #209 and #210 (expected, trivial combine)
+**Outcome:** All 3 merged with `--merge --delete-branch --admin`. All 3 issues auto-closed.
 
-Reviewed and approved PR #175 (shutdown aliases for Windows PowerShell + Unix .aliases). All 61 tests pass, zero regressions. Key patterns confirmed: `$LASTEXITCODE` is the correct way to check external command failure in PS (not try/catch), and `2>&1` captures stderr into a variable cleanly. Group M tests (M-1 through M-10) follow the established static-analysis pattern (regex against file content). The `.aliases` companion for Unix adds OS-aware cancel logic via `uname` case statement — good cross-platform parity.
+Review notes:
+- #208: BOM fix is correct. ASCII encoding for test temp files is the right call since content is pure ASCII anyway.
+- #209: Dotfiles installer is clean. Copy-with-backup pattern avoids symlink admin requirements. Tests cover parse, idempotency, and .bak creation.
+- #210: Uninstallers are idempotent. Markers are clear. Both platforms covered. No tests included (acceptable for cleanup scripts that are user-invoked).
 
----
+## [2026-05-16T01:30:00Z] PR #198 Review: PS 5.1 Em-Dash Fix & Psmux Skip-With-Warning (Issue #198)
 
-### [2026-04-25] Issues #167 & #168: Triaged, reviewed, approved both PRs ✅
+**PR:** #198 (`squad/184-gitconfig-editor-fix` → `develop`)  
+**Status:** In progress — Merge gate review
 
-**Task:** Convert retro action items from 2026-04-18 PS 5.x hotfix session into tracked GitHub issues for Sprint 6 visibility.
+Reviewing Goofy's two-part fix for PS 5.1 compatibility issues:
 
-**Issues Created:**
-- **Issue #111:** `docs(contributing): add PowerShell 5.x compatibility checklist` (Label: `enhancement`, Owner: Mickey)
-  - Adds PS 5.x review checklist to CONTRIBUTING.md
-  - Covers: `$PSScriptRoot` usage, version-guarded auto-vars, strict mode validation
-  
-- **Issue #109:** `ci: investigate PS 5.1 validation path on GitHub Actions` (Label: `enhancement`, Owner: Chip)
-  - Research Windows runner PS version availability
-  - Design PS 5.1 syntax/runtime validation step for CI
-  - Implement in `.github/workflows/`
-  
-- **Issue #110:** `docs: codify direct-push-to-main override policy` (Label: `documentation`, Owner: Mickey)
-  - Document override policy in CONTRIBUTING.md or docs/PROCESS.md
-  - Specify: acceptable conditions, required annotations, authorization rules
-  - Reference 2026-04-18 hotfix as precedent
+**Part 1: Em-Dash ASCII-Only Enforcement**
+- `scripts/windows/tools/profile.ps1` — 2 em dashes → ` - `
+- `scripts/windows/tools/psmux.ps1` — 2 em dashes → ` - `
+- Root cause: PS 5.1 reads files as CP1252; UTF-8 byte sequence `E2 80 94` for em dash (U+2014) produces byte `0x94` which CP1252 interprets as RIGHT DOUBLE QUOTATION MARK — PS 5.1 parser treats as string terminator
+- Fix pattern: Byte-level scan, replace ALL non-ASCII with ASCII equivalents in both comments and literals
 
-**Status:** All three issues created and visible on board. No assignee set for Mickey-owned issues (#111, #110) per established policy. Chip-owned issue (#109) assignee optional (repo assignment attempted if applicable).
+**Part 2: psmux Skip-With-Warning Pattern**
+- Winget ID `psmux` invalid (broken since #179)
+- Decision: Replace hard fail with `[WARN]` skip pattern + manual install link
+- Preserves idempotency guard: `Get-Command psmux -ErrorAction SilentlyContinue`
 
-**Next:** Issues queued for Sprint 6 planning pass. All three are small-scoped, problem-framed, and ready to assign.
+**Part 3: Profile Diagnostics**
+- Added verbose diagnostics (dir path, file exists, size, exec policy) to `Write-PowerShellProfile`
+- Will reveal actual failure point when Earl re-runs setup on PS 5.1 machine
 
----
-
-## 2026-04-19 — Issue Templates + Issue Fixes
-
-### Templates created (Issue #113, PR #114)
-- `.github/ISSUE_TEMPLATE/bug_report.md` — bug template with environment, steps, acceptance criteria
-- `.github/ISSUE_TEMPLATE/feature_request.md` — feature template with motivation, proposed change, idempotency criteria
-- `.github/ISSUE_TEMPLATE/documentation.md` — docs template with problem/proposed change structure
-- `.github/ISSUE_TEMPLATE/ci_infra.md` — CI/infra template for workflow and tooling changes
-- Branch: `squad/113-github-issue-templates` → PR #114 targeting `develop`
-
-### Issues fixed
-- **#106:** Replaced garbled body (backslashes replacing backticks, broken code fences) with correctly formatted version using `gh issue edit --body-file`
-- **#111:** Added `## Background` section above `## Problem` to capture orphaned intro paragraph; normalized heading style from `## Acceptance Criteria` to `## Acceptance criteria`
-
-### Decision
-Standard issue sections going forward: `## Summary`, then type-specific sections, then `## Acceptance criteria`. Templates enforce this automatically.
+**Outcome:** CI checks green after em-dash fixes. Formal decisions captured in decisions.md (goofy-em-dash-fix, goofy-ps51-impl). Chip fixing test file non-ASCII separately on squad/197-ps51-compat-fix branch.
 
 ---
 
-## 2026-04-19 — Code Review: PR #112 and PR #114
+## [2026-05-04] PR #195 Review: Windows Setup Split Refactor (Issue #185)
 
-**Reviewer:** Mickey (Lead)
+**PR:** #195 (`refactor(windows): split setup.ps1 into per-tool files under tools/`)  
+**Status:** ✅ APPROVED, MERGED to develop
 
-### PR #112 — feat(windows): install vim via winget
-- **Verdict:** ✅ APPROVED
-- **Branch:** `squad/107-install-vim-winget` → `develop`
-- **CI:** All 4 checks green
-- **Assessment:** Clean implementation. Idempotent install pattern matches existing functions. PS 5.x compatible — no banned patterns. Group E tests (E-1 through E-5) cover function existence, Main integration, winget package ID, and compat checks. No scope creep.
-- **Note:** Test framework uses emoji (✅/❌) instead of `[PASS]`/`[FAIL]` brackets — pre-existing, flagged for future housekeeping.
+Reviewed Goofy's highest-leverage refactor: monolithic `scripts/windows/setup.ps1` (451 lines) split into 9 per-tool files under `scripts/windows/tools/`, mirroring Linux structure.
 
-### PR #114 — feat(github): add GitHub issue templates
-- **Verdict:** ✅ APPROVED
-- **Branch:** `squad/113-github-issue-templates` → `develop`
-- **CI:** All 4 checks green
-- **Assessment:** All four template types present (bug, feature, docs, ci/infra). Consistent structure, proper front matter, checkbox acceptance criteria. Well done.
-- **Scope note:** PR bundles unrelated `.squad/` changes (Goofy's vim history, sprint 6 decisions, user directive). Not blocking since no functional impact, but flagged — future PRs should keep one concern per PR.
+**Assessment:**
+- Orchestrator (setup.ps1) reduced to 76 lines (clean dot-source pattern)
+- All 61 tests pass after Chip's Group K file path updates
+- 5/5 CI checks green (lint-ps, validate-ps, validate-ps51, lint-shell, validate-linux)
+- Architecture now consistent across platforms — enables future tool additions without monolithic bloat
 
-**Overall:** Both PRs ready to merge.
+**Key Learning:** When PowerShell scripts are split and tests use AST parsing or Invoke-Expression, update test file references to check new per-tool file paths. Relative dot-source paths work correctly when orchestrator invoked via `powershell -File`.
 
 ---
 
-## 2026-04-19 — Code Review: PR #115
+## [2026-04-20] Issue #138 Resolution: Dual-Path Profile + Force-Alias + Exec-Policy Diagnostic
 
-**Reviewer:** Mickey (Lead)
+**PR:** #146 (after test fix via Donald) → APPROVED, MERGED  
+**Issue:** #138 (remaining two root causes after PR #145 sentinel fix)
 
-### PR #115 — feat(windows): add missing aliases to PowerShell profile
-- **Verdict:** ✅ APPROVED
-- **Branch:** `squad/108-powershell-alias-parity` → `develop`
-- **CI:** All 4 checks green
-- **Author:** Pluto (Config Engineer)
-- **Assessment:** All 30 aliases present and correct (14 git, 5 gh CLI, 8 dev shortcuts, 3 utility). `gs` fix applied (`git status -sb`). All 5 built-in alias conflicts (`gp`, `grb`, `grs`, `ni`, `h`) properly guarded. Every function passes `$args` correctly, inline comments on all functions, PS 5.x strict mode compatible. Test group F (6 tests) covers all alias groups plus compat. ASCII-only throughout.
-- **Minor note:** Diff includes unrelated `.squad/agents/mickey/history.md` additions (prior review notes). Non-blocking, flagged for future discipline.
+Reviewed Donald's complex three-part fix for Windows PowerShell aliases not working on PS 5.1:
+1. **Dual profile paths:** Both PS 5.1 (`$env:PROFILE`) and PS 7+ (`$PROFILE`) updated with strip+re-inject
+2. **AllScope alias guards:** All 11 conflicting aliases (rm, gc, gl, gcm, gcb, gp, grb, grs, ni, h, ep) guarded with `Remove-Item -Force Alias:\<name>` before `Set-Alias`
+3. **Execution policy diagnostic:** Added check for `RemoteSigned` execution policy with helpful guidance when restricted
 
----
+**Test Failure Root Causes Identified:**
+- K-2: Regex expected joined path but code uses `Path::Combine` (no `Documents\PowerShell` literal in source)
+- C-1, C-4: Tests still referenced old `$PROFILE` variable name after refactor to `$profilePath` loop variable
 
-## 2026-04-19 — PRs #112, #114, #115 Merged; Issues #107, #108, #113 Closed
-
-All three Sprint 6 PRs merged to `develop`:
-- **PR #112** (vim via winget, closes #107) — merged
-- **PR #114** (GitHub issue templates, closes #113) — merged
-- **PR #115** (PowerShell alias parity, closes #108) — merged
-
-Issues #107, #108, #113 closed manually (GitHub doesn't auto-close on develop merges).
-
-**Earl directive captured:** Always use claude-opus-4.6 as default model — no usage limits.
+**Key Learning:** When refactoring variable names, grep existing tests for old names — static-analysis tests that match source patterns will break silently. Always validate tests against actual implementation before merging.
 
 ---
 
-## 2026-04-19 — Issues #110 and #111 Implemented
+## [2026-04-19] Pre-push Hook Evaluation & PSScriptAnalyzer Advisory (Issue #147)
 
-**Task:** Implement two documentation issues from Sprint 6 retro action items.
+**Task:** Evaluated adding PSScriptAnalyzer + PS 5.1 checks to pre-push hook.
 
-- **Issue #110** (direct-push override policy) → **PR #117** (`squad/110-direct-push-policy` → `develop`)
-  - Added "Direct-Push Override Policy" section to `CONTRIBUTING.md`
-  - Documents hotfix conditions, audit trail, and 2026-04-18 precedent
+**Decision Rendered:**
+- PSScriptAnalyzer advisory check in pre-push: ✅ FEASIBLE (warn-only via `pwsh`, graceful skip when absent)
+- PS 5.1 check in pre-push: ❌ NOT FEASIBLE (platform-dependent, must stay CI-only)
+- Recommendation: Partial adoption — advisory PSScriptAnalyzer in pre-push, PS 5.1 stays CI-only
 
-- **Issue #111** (PS 5.x compatibility checklist) → **PR #119** (`squad/111-ps5x-checklist` → `develop`)
-  - Added "PowerShell 5.x Compatibility" section to `CONTRIBUTING.md`
-  - 5-item checklist, testing guidance, known regressions table
-
-**Status:** Both PRs open, targeting `develop`. Awaiting review and merge.
+**Key Learning:** Distinguish "CI-only as hard gate" from "CI-only means never local." Advisory local checks with graceful degradation add value without platform-dependency issues that motivated original CI-only decision. Reversed Sprint 7 decision based on this distinction.
 
 ---
 
-## 2026-04-19 — Batch Code Review: PRs #116, #117, #118, #119
+## [2026-04-19] PR #145 Review: Sentinel Fix — Strip+Re-inject Pattern (Issue #144)
 
-**Reviewer:** Mickey (Lead)
-
-### PR #116 — Chip — `ci: add PS 5.1 validation job on Windows runner` (closes #109)
-- **Verdict:** ✅ APPROVED
-- **Branch:** `squad/109-ci-ps51-validation` → `develop`
-- **CI:** 5/5 green (including the new PS 5.1 job)
-- **Assessment:** Well-constructed CI job. All steps use `shell: powershell` (PS 5.1). `Parser::ParseFile` syntax checks correct. PSScriptAnalyzer without `-EnableExit`. Test path correct.
-- **Scope note:** Carries 5 unrelated files from #106/#110 due to branch ancestry bleed. Non-blocking.
-
-### PR #117 — Mickey (self) — `docs: codify direct-push-to-main override policy` (closes #110)
-- **Verdict:** ✅ SELF-VERIFIED
-- **Branch:** `squad/110-direct-push-policy` → `develop`
-- **CI:** 4/4 green
-- **Assessment:** Content complete per #110 acceptance criteria. 4 conditions, audit trail, 2026-04-18 reference.
-
-### PR #118 — Goofy — `feat(setup): install squad-cli globally in Windows and Linux setup` (closes #106)
-- **Verdict:** ✅ APPROVED
-- **Branch:** `squad/106-squad-cli-install` → `develop`
-- **CI:** 5/5 green
-- **Assessment:** Clean implementation. Idempotent check, npm guard, PS 5.x compatible. Linux follows run_tool pattern. Group G tests (G-1 through G-4) all present, ASCII-only.
-- **Scope note:** Carries unrelated validate.yml from #109 and CONTRIBUTING.md from #110. Non-blocking.
-
-### PR #119 — Mickey (self) — `docs(contributing): add PowerShell 5.x compatibility checklist` (closes #111)
-- **Verdict:** ✅ SELF-VERIFIED
-- **Branch:** `squad/111-ps5x-checklist` → `develop`
-- **CI:** 4/4 green
-- **Assessment:** 5-item checklist, testing guidance, known regressions table — all present per #111 criteria.
-
-**Process note:** PRs #116 and #118 have cross-branch contamination (shared commits from branching off each other instead of `develop`). Flagged in reviews — third occurrence. Recommending stricter branch isolation enforcement in Sprint 7.
-
----
-
-## 2026-04-19 — Git Hooks Design Consultation
-
-**Requested by:** Earl Tankard, Jr., Ph.D.
-**Type:** Architecture consultation (no code produced)
-
-**Question:** How to implement pre-commit/pre-push hooks for conventional commits, validation pipeline, and branch protection.
-
-**Recommendation delivered** → `.squad/decisions/inbox/mickey-githooks-design.md`
-
-**Key decisions recommended:**
-- **Framework:** `core.hooksPath` + committed `hooks/` directory — zero-dependency, cross-platform
-- **commit-msg hook:** POSIX shell regex for Conventional Commits, hard error with `--no-verify` escape
-- **pre-push hook:** Branch protection (block direct push to main) + shellcheck on changed `.sh` files
-- **Validation pipeline:** Full pipeline left to CI (`validate.yml`); hooks run only fast, high-signal checks
-- **Installation:** One-liner `git config core.hooksPath hooks` added to both setup scripts
-- **LFS compat:** Committed hooks chain to `git lfs` when installed
-
-**Open questions for Earl:** (1) Hard error vs warning on commit-msg, (2) PSScriptAnalyzer in pre-push or CI-only, (3) Whether to add a separate pre-commit hook.
-
-**Status:** Awaiting Earl's approval before implementation.
-### Lesson
-
-Branch protection write via `gh api` is blocked by the Codespace token scope. This is a repeated friction point. Earl should either (a) enable enforce_admins manually in the UI, or (b) provide a PAT with `repo` or `administration:write` scope for future branch protection API work.
-
----
-
-## 2026-04-08 — Sprint 5 Retrospective Insights
-
-### Key Learnings
-
-1. **Retro loop is working.** All 3 Sprint 4 action items shipped in Sprint 5: worktree isolation (#56), enforce_admins resolution (#54), agent timeout policy (#55). Retros produce real changes, not shelf-ware.
-
-2. **Check decisions.md before planning.** Sprint 5 re-attempted the API branch protection call despite it being a documented limitation from Sprint 3. Known constraints should be consulted during issue creation, not rediscovered during implementation.
-
-3. **`--admin` merge pattern is the standard.** `gh pr merge --admin` after Mickey approval is now the established everyday workflow for solo-repo branch protection. Documented in decisions.md and CONTRIBUTING.md.
-
-4. **Frame issues as problems, not implementations.** Issue #54 pivoted from "enable enforce_admins=true" to "document why we don't." Problem-framed issues absorb scope changes; implementation-framed issues create confusion.
-
-5. **Sequence chicken-and-egg tasks.** Pluto hit a race condition while building worktree isolation — the very feature designed to prevent race conditions. Infrastructure tasks that protect the build environment should run sequentially.
-
-6. **Persistently red CI erodes trust.** The PowerShell lint failure has been red since Sprint 4 and nobody has picked it up. Must not carry into Sprint 7.
-
-7. **Timeout policy is untested.** Agent timeout tiers (5/10/20 min) shipped as documentation but no agent triggered them. First parallel Sprint 6 session should instrument Ralph to validate the tiers.
-
----
-
-## Sprint 5 Closure
-
-**Status:** ✅ Complete  
-**All 4 issues resolved:** #54, #55, #56, #57  
-**All 5 PRs merged to develop:** #58, #59, #60, #61, #62
-
-**6 action items queued for Sprint 6:**
-- P1: Promote develop → main
-- P2: Consult decisions.md during planning; Fix PowerShell lint; Frame issues as problems
-- P3: Dry-run timeout policy; Sequence chicken-and-egg tasks
-
-**Next phase:** Sprint 6 planning to address action items.
-
----
-
-## Learnings
-
-### 2026-04-18 — PS 5.x Hotfix Session Retro
-
-**Session type:** Hotfix + triage (direct push to `main`, Earl override)
-
-#### What happened
-- Confirmed Sprint 5 → main was already promoted (PR #101). No action needed.
-- Fixed two PS 5.x bugs in `setup.ps1` caught by Earl on a stock Windows machine:
-  1. `$MyInvocation.MyCommand.Path` → `$PSScriptRoot` (null in hosted/dot-sourced contexts)
-  2. `$IsLinux`/`$IsMacOS`/`$IsWindows` unguarded on PS 5.x under `Set-StrictMode -Version Latest` → version-guarded short-circuit pattern
-- Answered Windows shortcuts scope question (aliases are Linux/macOS only currently)
-- Created issue #108: add `.aliases` to Windows PowerShell profile
-- Created issue #107: install vim on Windows via winget
-- Retro written to `.squad/log/retro-2026-04-18.md`
-- Action items written to `.squad/decisions/inbox/mickey-retro-actions.md`
-
-#### Durable learnings
-- **Always use `$PSScriptRoot`** in `.ps1` files for self-relative paths. `$MyInvocation.MyCommand.Path` is null in hosted, dot-sourced, and piped contexts.
-- **PS 6+ auto-vars must be version-guarded.** `$IsLinux`, `$IsMacOS`, `$IsWindows` do not exist on PS 5.x. Under `Set-StrictMode`, referencing them is a hard crash. Guard pattern: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux`.
-- **Windows code reviewed on PS 7+ will miss PS 5.x bugs.** We need a compat checklist and ideally a CI path on PS 5.1.
-- **Windows shell parity gap is real.** `.aliases` shortcuts (tmux, git, etc.) are fully absent for Windows PS users. Issue #108 is the entry point but the scope is broader.
-- **Direct-push-to-main override policy needs documentation.** Earl can authorize it, but it should leave a visible audit trail beyond squad notes alone.
-
----
-
-## 2026-04-19 — Sprint 6 Complete
-
-**Status:** ✅ All 8 issues closed (#106–#113). 7 PRs merged to develop. Sprint wrap PR #120 merged to main.
-
-### Key Learnings from Sprint 6
-
-1. **Branch ancestry bleed is the #1 process problem.** Three occurrences in one sprint. Feature branches forking from other feature branches instead of `develop` corrupts diffs and review scope. Must be codified as a hard rule in CONTRIBUTING.md for Sprint 7.
-2. **Merge strategy must be declared at sprint start, not mid-sprint.** The squash-to-regular pivot on PRs #116–#119 came too late. Sprint kickoff notes should state the merge policy explicitly.
-3. **Retro loop: 3 for 3.** Sprint 4 → Sprint 5 → Sprint 6: every retro has produced action items that shipped in the following sprint. The process works. Protect it.
-4. **Skip+warn for optional deps is the standard pattern.** Established via squad-cli install (#106). Any future optional tooling should follow: check → skip → warn → never fail.
-5. **Self-review is a known gap, not a failure.** Single-account repos can't get independent PR approval. Mitigate with thorough self-verification and acceptance criteria checks, but acknowledge the limit.
-6. **Squad metadata in PRs degrades review quality.** `.squad/` file changes must be committed separately from feature work. Enforce in Sprint 7.
-
-### Sprint 7 Action Items Queued (6 items)
-- P1: Branch isolation rule in CONTRIBUTING.md; Merge strategy in kickoff notes
-- P2: Git hooks implementation; Triage CI failures on main; One-concern-per-PR enforcement
-- P3: Separate squad metadata commits
-
----
-
-## 2026-04-19 — Sprint 7 Issues Created
-
-**Task:** Create GitHub issues for Sprint 7 action items using issue templates.
-
-**Issues Created:**
-- **Issue #121:** `feat(hooks): implement git hooks for commit-msg, pre-commit, and pre-push enforcement` (Labels: `squad`, `enhancement`)
-- **Issue #122:** `docs(contributing): add branch isolation rule — always fork from develop HEAD` (Labels: `squad`, `documentation`)
-- **Issue #123:** `ci: triage and resolve 5 historical CI failures on main branch` (Labels: `squad`, `bug`)
-
-**Status:** All three issues created with appropriate templates and labels. Ready for Sprint 7 assignment.
-
----
-
-## 2026-04-18 — Sprint 7 Execution Complete
-
-**Session Type:** Full autonomous execution (Earl AFK, cooking)
-**Status:** ✅ All Sprint 7 issues closed
-
-### Agents Spawned & Execution
-1. **hotfix-sprint-wrap (Mickey)** — Merged PR #127 (develop → main, em-dash + vim PATH fixes)
-2. **chip-121-git-hooks (Chip)** — Implemented git hooks (commit-msg, pre-push) + tests
-3. **mickey-122-branch-isolation (Mickey)** — Added branch isolation rule to CONTRIBUTING.md
-4. **chip-123-ci-triage (Chip)** — Triaged historical CI failures + fixed PS 5.1 variable guards
-5. **mickey-review-129 (Mickey)** — Reviewed & merged PR #129 (branch isolation)
-6. **mickey-review-130 (Mickey)** — Reviewed & merged PR #130 (git hooks + PS guards)
-7. **sprint7-wrap (Mickey)** — In progress (final develop → main merge pending)
-
-### Issues Closed
-| # | Title | PR | Status |
-|---|-------|----|----|
-| #121 | Git hooks implementation | #130 | ✅ Closed |
-| #122 | Branch isolation rule | #129 | ✅ Closed |
-| #123 | CI triage & PS 5.1 compat | #130 | ✅ Closed |
-
-### PRs Merged
-| # | Title | Type | Status |
-|---|-------|------|--------|
-| #127 | Sprint 6 hotfix wrap (develop → main) | Sprint wrap | ✅ Merged |
-| #129 | Branch isolation documentation | Feature | ✅ Merged |
-| #130 | Git hooks + PS variable guards | Feature | ✅ Merged |
-
-### Scope Summary
-**Sprint 6 Hotfix:**
-- Fixed em-dash CI failure (#124)
-- Fixed vim PATH availability (#125)
-- Merged develop → main via PR #127
-
-**Sprint 7 Features:**
-- Git hooks: commit-msg (Conventional Commits) + pre-push (branch protection + shellcheck)
-- Branch isolation rule documented in CONTRIBUTING.md
-- CI failures triaged; historical failures (5 on main) found to be stale artifacts
-- Pre-existing PS 5.1 failure fixed: replaced PSVersionTable checks with Test-Path Variable:* guards
-
-### Key Achievements
-✅ Zero manual intervention (full autonomy)
-✅ Zero PR blocker issues
-✅ Main branch: Green
-✅ Develop branch: Green
-✅ All Sprint 7 work validated and merged
-✅ Orchestration logs, session log, and decision merges complete
-
-**PR:** [#126](https://github.com/primetimetank21/dev-setup/pull/126) — `fix(setup): replace em-dash in root setup.ps1; refresh PATH after vim install`
-**Branch:** `squad/fix-ci-vim-path` → `develop`
-
-**Review verdict:** ✅ APPROVED
-
-**Fixes reviewed:**
-1. **#124 — em-dash fix:** Replaced UTF-8 em-dash (U+2014) with ASCII `--` on line 63 of root `setup.ps1`. Eliminates `PSUseBOMForUnicodeEncodedFile` CI failure.
-2. **#125 — vim PATH fix:** `Install-Vim` now searches `C:\Program Files*\Vim\*\vim.exe`, permanently writes vim dir to User PATH registry via `SetEnvironmentVariable(..., 'User')`, and refreshes session PATH. Vim available immediately and persists across new terminals.
-
-**CI:** 4/5 green. PS 5.1 Compatibility failure (`Test-Path Variable:IsLinux` guard) is pre-existing on develop HEAD — not introduced by this PR.
-
-**Actions taken:**
-- Reviewed and approved PR #126
-- Merged via `--merge --delete-branch --admin` (regular merge commit, branch deleted)
-- Closed #124 and #125 with closing comments
-
-## [2026-04-18] Sprint 7 wrap
-- PR #131: develop → main, regular merge, --admin
-- Sprint 7 complete: hooks (#121), branch isolation docs (#122), CI guards (#123)
-- Stale squad/* branches cleaned up
-
----
-
-## [2026-04-18] Created bug issue for PR #130 regressions (Issue #132)
-
-**Task:** File combined bug issue covering two regressions from PR #130 merge.
-
-**Bugs identified:**
-1. **PSScriptAnalyzer CI warnings in `scripts/windows/setup.ps1`:**
-   - Line 320: `Install-GitHooks` plural noun → `PSUseSingularNouns` warning (should be `Install-GitHook`)
-   - Line 322: `$gitDir` assigned but never used → `PSUseDeclaredVarsMoreThanAssignments` warning
-   - Affects both lint jobs on CI
-
-2. **Windows PS 5.1 runtime crash in `setup.ps1` (root, line ~32):**
-   - Error: `The variable '$IsWindows' cannot be retrieved because it has not been set.`
-   - Root cause: Chip's PR #130 replaced PSVersion-based guards with `Test-Path Variable:*` guards
-   - Under `Set-StrictMode -Version Latest` on PS 5.1, `$IsWindows` is undefined and throws even with short-circuit `-and`
-   - Fix: Revert to approved PSVersion-based guard pattern (already in decisions.md)
-
-**Issue created:** [#132](https://github.com/primetimetank21/dev-setup/issues/132)
-**Assigned to:** Goofy (via `squad:goofy` label)
-**Acceptance criteria:** Includes all fixes, CI passes, PS 5.1 compat verified
-
-**Key learning:** PR #130 merged with both a linting regression (unused var + function name convention) and a runtime regression (guard pattern incompatible with PS 5.1 strict mode). Demonstrates need for stricter pre-merge validation of PowerShell changes under strict mode before landing on develop/main.
-
-## [2026-04-18] #132 PS 5.1 guard regression review & PR #133 merge
-**Agent:** Mickey (review & merge)
-**PR #133:** Goofy's regression fix
-**Status:** ✅ Merged to develop with --admin flag
-
-**What I reviewed:**
-1. **PSScriptAnalyzer regressions (both fixed):**
-   - Function rename: `Install-GitHooks` → `Install-GitHook` (singular noun requirement met)
-   - Variable cleanup: `$gitDir` removed (no longer needed after refactor)
-   
-2. **PS 5.1 strict mode regression (fixed):**
-   - Root cause confirmed: `Test-Path Variable:IsWindows -and $IsWindows` pattern is broken under strict mode on PS 5.1
-   - Strict mode validates all variables at parse time, before short-circuit `-and` can prevent execution
-   - Fix applied: Restored PSVersion-based short-circuit pattern (`$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows`)
-   - This pattern was already approved in decisions.md from Sprint 6 retro; PR #130 accidentally reverted it
-
-**Key decision reaffirmed:** PSVersion-based short-circuit checks are the ONLY safe pattern for PS 5.1 strict mode compatibility. The RHS of `-and` is never evaluated when LHS is false, so PS 6+ variables are never accessed on PS 5.x.
-
-**Follow-up noted:** Test "Root setup.ps1 guards all three PS-Core-only variables" still expects the broken Test-Path Variable:* pattern. Needs stale test expectation update in future work.
-
-**Issue #132 closed.**
-
----
-
-## [2026-04-18] #135 Stale Test Fix Review & Merge (PR #136)
-
-**Agent:** Mickey (review & merge)
-**PR:** #136
-**Issue:** #135
-**Status:** ✅ Merged to develop
-
-### What This Was
-
-PR #136 fixed the stale test "Root setup.ps1 guards all three PS-Core-only variables" in `tests/test_windows_setup.ps1`.
-
-**Background:** Earlier on 2026-04-18, I noted that the test was checking for a broken `Test-Path Variable:*` pattern that doesn't exist in setup.ps1. The actual implementation uses PSVersion-based guards. Chip opened PR #136 to correct the test.
-
-### What I Reviewed
-
-1. **Test logic verification:**
-   - Old test checked for obsolete `Test-Path Variable:` pattern
-   - New test correctly validates PSVersion-based guards:
-     ```powershell
-     $guarded = @($setupLines | Where-Object { 
-       $_ -match ('\$' + $varName) -and $_ -match 'PSVersionTable\.PSVersion\.Major' 
-     })
-     ```
-   - Per-line matching ensures both variable reference and PSVersion check are present
-
-2. **Verification that setup.ps1 actually has these guards:**
-   - ✅ Line 32: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows`
-   - ✅ Line 34: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux`
-   - ✅ Line 35: `$PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS`
-
-3. **Encoding check:**
-   - ✅ No Unicode smart quotes (ASCII only)
-   - ✅ File is properly formatted
-
-### Actions Taken
-
-✅ Approved PR #136
-✅ Merged with regular merge commit (--merge, not squash)
-✅ Deleted feature branch locally and remotely
-✅ Closed issue #135
-
-### Key Outcome
-
-Test now correctly validates the actual implementation pattern. This resolves the false failures that were blocking CI. Test assertions must always match the actual implementation — when patterns change, tests must be updated in sync.
-
-**This closes the follow-up from the earlier PR #130/PR #133 regression work.**
-
-## [2026-04-19] PR #145 Review — Write-PowerShellProfile strip+re-inject fix
-
-**PR:** #145 (`squad/fix-sentinel-update-logic` → `develop`)
-**Author:** Goofy (via Copilot)
-**Issue:** #144 (child of #138)
+**PR:** #145 (`squad/144-sentinel-fix` → `develop`)  
 **Verdict:** ✅ APPROVED
 
-Reviewed strip+re-inject logic replacing the old "skip if sentinel present" pattern. All checklist items passed:
+Reviewed Goofy's strip+re-inject implementation replacing old "skip if sentinel" pattern:
 - Regex `(?s)\r?\n<BEGIN>.*?<END>\r?\n?` handles both LF and CRLF
-- No `return` in sentinel path — strips old block, falls through to inject fresh
-- `Write-Info` message shown on update (not first install)
-- `Set-Content -NoNewline` preserves raw content correctly
-- Group J tests (J-1 to J-4) cover markers, no-return, and strip logic
-- Groups A-I unaffected
-- Conventional commit format correct
+- No `return` after sentinel check — strips old block, falls through to inject fresh
+- Group J tests (J-1 to J-4) verify markers, no-return, strip logic present
+- All 4 Group J tests passing, 5/5 CI green
 
 **Non-blocking nit:** PR body says "Closes #138" instead of "Closes #144". #144 is the specific child issue; #138 is the broader parent.
 
@@ -640,6 +282,28 @@ Reviewed Goofy's hook implementation and Chip's Group L tests. All 7 acceptance 
 **Commits:** All 3 follow conventional format (`feat`, `test`, `docs` scopes).
 
 **Files modified:** Only expected files — `hooks/pre-push`, `tests/test_windows_setup.ps1`, `.squad/agents/chip/history.md`.
+
+---
+
+### 2026-05-04 — Sprint Retro: Gap Audit + Windows Setup Split (PR #195)
+
+**Session:** Gap audit → 26-item report → 17 issues (#178–#194) → PR #195 shipped (Issue #185).
+
+**Architecture decision:** Per-tool file split is now canonical. `scripts/windows/setup.ps1` is a thin orchestrator (76 lines); all `Install-*` functions live in `scripts/windows/tools/*.ps1`. This mirrors the Linux side. Any new Windows tool = new file under `tools/`.
+
+**Process decisions from retro:**
+1. Agent history updates must be atomic — same commit as the code change. Reviewers block PRs that violate this.
+2. Tests must use path helpers, not hardcoded file paths. Chip to create `tests/helpers/paths.ps1`.
+3. `--admin` merge pattern remains the accepted workflow (single-user token limitation, documented).
+4. Linux setup.sh should be audited for the same split pattern if it exceeds 200 lines.
+
+**Friction points resolved:**
+- Goofy's uncommitted `history.md` → now a review gate
+- Group K test brittleness → path helper pattern mandated
+- Token limitation → accepted, not worth additional infra
+
+**Retro file:** `.squad/log/retro-2026-05-04.md`  
+**Decisions filed:** `.squad/decisions/inbox/mickey-retro-decisions.md`
 
 ## Learnings
 
@@ -912,3 +576,164 @@ Both PRs (#175, #176) deliver coordinated cross-platform shutdown control:
 ### Outcome
 
 Both PRs merged to develop. Shutdown control now available across all supported platforms. Ready for feature consumption or main branch integration.
+---
+
+### 2026-05-14 — Triage: Issue #197 (PS 5.1 Compatibility)
+
+**Task:** Triage issue #197 (psmux install + alias failures on PS 5.1) and create implementation plan.
+
+**Root Cause Analysis:**
+
+1. **psmux install fails:** `scripts/windows/tools/psmux.ps1:22` uses `winget install --id psmux`, but `psmux` is not a valid winget package ID (related to #179). This silently fails or errors on every Windows setup run.
+
+2. **Aliases not applied:** Earl reports PowerShell profile/aliases were not applied on PS 5.1. Investigation reveals:
+   - PR #195 already implemented `Remove-Item -Force Alias:\<name>` pattern for all 11 PS 5.1 AllScope conflicts (gc, gcm, gcb, gl, gp, ni, rm, h, grb, grs, ep)
+   - Pattern is correct — so the problem is likely NOT AllScope override failure
+   - **Suspected cause:** Profile file not being written at all, OR execution policy blocking profile load
+
+3. **Profile write robustness:** `Write-PowerShellProfile` function in `profile.ps1` writes to BOTH PS 5.1 and PS 7+ profile paths. If directory creation fails or execution policy is Restricted, profiles won't load. Function has `$ErrorActionPreference = 'Stop'` but may fail silently if Earl's environment has non-standard `$PROFILE` path or permission issues.
+
+**Key Findings:**
+
+- AllScope alias override pattern is ALREADY implemented correctly in profile.ps1 (lines 46, 65, 75, 97, 101, 117, 127, 134, 166, 191, 195)
+- The issue title mentions "aliases broken" but the real problem is likely "profile not written" or "profile not loaded"
+- `validate-ps51` CI job (`.github/workflows/validate.yml:133-194`) validates syntax and PSScriptAnalyzer but does NOT test profile write or alias functionality at runtime
+
+**Recommended Fix Approach:**
+
+1. **psmux:** Quick fix = skip-with-warning pattern (don't block setup on missing winget ID). Follow-up = research correct install mechanism.
+2. **Profile diagnostics:** Add verbose logging to trace directory creation, file write, and post-write validation.
+3. **Test coverage:** Add PS 5.1 runtime tests for profile write and alias registration (new Groups N, O, P in test_windows_setup.ps1).
+
+**Assignment:**
+- **Goofy** (Cross-Platform Dev) — owns psmux.ps1 and profile.ps1 implementation
+- **Chip** (Tester) — owns test coverage expansion
+- Changed label from `squad:chip` to `squad:goofy` since implementation work is the primary blocker
+
+**Artifacts Created:**
+- Triage comment posted to #197 with full root cause analysis and fix recommendations
+- Implementation plan written to `.squad/decisions/inbox/mickey-ps51-fix-plan.md`
+
+**Decision Pattern Reinforced:**
+Always investigate EXISTING implementation before assuming known patterns are missing. The AllScope guard pattern was already present — the bug was elsewhere (profile write, not alias override).
+
+**Key Learning:** Sentinel-based idempotency that skips entirely breaks incremental feature additions. "Strip managed block + re-inject fresh" is the correct pattern for evolving config blocks. When reviewing regex for profile management, always verify leading/trailing newline anchors handle both LF and CRLF.
+
+---
+
+## [2026-05-14] PR #198 Review: PS 5.1 Compat — psmux skip-with-warning + profile diagnostics (Issue #197)
+
+**PR:** #198 (`squad/184-gitconfig-editor-fix` → `develop`)
+**Status:** ✅ APPROVED (comment-based, `--admin` merge pattern)
+
+Reviewed Goofy's PS 5.1 compatibility fix addressing two root causes from issue #197:
+
+**Changes Reviewed:**
+1. **psmux.ps1:** Dead `winget install --id psmux` replaced with skip-and-warn pattern — correct fix for #179 broken winget ID
+2. **profile.ps1:** Added verbose diagnostics to `Write-PowerShellProfile` — path logging, execution policy pre-check (moved before loop), try/catch on directory creation + file write, post-write file size validation
+3. **Em dash cleanup:** Both .ps1 files verified clean — zero non-ASCII characters remaining (fixes PS 5.1 CP1252 parsing crash)
+4. **Ancillary:** gitconfig template fixed to literal `vim` (#184), macOS brew install adds `vim` (#178)
+
+**Assessment:**
+- All changes additive and well-structured; idempotency preserved (strip+re-inject pattern unchanged)
+- No Linux/macOS regression risk — PowerShell changes are Windows-only
+- 5/5 CI checks green
+- GitHub API self-approval blocked (expected) — approval posted as comment per `--admin` merge pattern
+
+**Key Learning:** When PS 5.1 fails silently, the right response is diagnostic logging at every critical step (dir creation, file write, post-write validation) plus pre-flight checks (execution policy). This turns invisible failures into actionable error messages.
+
+---
+
+## 2026-05-16 — PR #200: Merge Gate Review (PS 5.1 Test Coverage + ASCII Safety Skill)
+
+**PR:** #200 (`squad/197-ps51-compat-fix` → `develop`)
+**Verdict:** ✅ APPROVED
+**Decision:** `.squad/decisions/inbox/mickey-pr200-review.md`
+
+**What I reviewed:**
+- Test groups N (profile write + AllScope guards), O (alias override runtime), P (psmux install + skip + idempotency)
+- 14-char ASCII cleanup across existing test file (em dashes, arrows, emoji markers)
+- New CI step: "Test PS 5.1 profile write" under `shell: powershell`
+- New skill: `.squad/skills/ps51-ascii-safety/SKILL.md`
+
+**Key Learning:** Reusable skill documents (SKILL.md) are high-leverage artifacts — they encode root-cause analysis, detection scripts, and fix patterns so future agents don't rediscover the same encoding trap. The PS 5.1 ASCII safety skill is a model for how to document cross-cutting constraints.
+
+---
+
+## 2026-05-16 — Batch 1 Review: PRs #202, #203, #204
+
+**Verdict:** ✅ All three approved and merged to `develop` in order.
+
+**PR #202 — `chore: remove unused examples/ directory` (Donald, closes #194)**
+- Verified branch ancestry bleed was fully resolved: 6 changed files (4 examples/* deletions + ARCHITECTURE.md + README.md doc updates). No `psmux.ps1` content.
+- Single commit on top of develop. 5/5 CI green. Merged with `--admin` bypass (self-authored, cannot self-approve).
+- Issue #194 did not auto-close on merge (escaped backticks in body broke the linker); closed manually with merge reference.
+
+**PR #203 — `docs: add CHANGELOG.md` (Pluto, closes #188)**
+- 2 commits, both on-scope: CHANGELOG.md (new, 123 lines, Keep a Changelog format) + pluto history log entry.
+- ASCII safety: 0 non-ASCII bytes in CHANGELOG.md. No `.ps1` files touched.
+- 5/5 CI green. Merged. Issue #188 closed manually (same linker quirk).
+
+**PR #204 — `fix(windows): use correct psmux winget id` (Goofy, closes #179)**
+- 3 commits: psmux.ps1 fix → test_windows_setup.ps1 P-2/P-3 stub refactor → goofy history log.
+- ASCII safety: 0 non-ASCII bytes in BOTH `scripts/windows/tools/psmux.ps1` and `tests/test_windows_setup.ps1`.
+- Test stub pattern is clean: P-2 stubs `winget` as a global function, asserts it was called with `marlocarlo.psmux`, cleans up in `finally`. P-3 stubs winget as no-op for idempotency. Skip path preserved when psmux is already present on the host.
+- 5/5 CI green. Merged. Issue #179 closed manually.
+
+**Outcome:** `origin/develop` now has 3 new merge commits (`bf8f72a`, `53186c8`, `bd1739b`) in order. All squad branches deleted. Three issues closed (#179, #188, #194).
+
+**Key Learning:** GitHub's "Closes #N" auto-linker is fragile when PR body markdown is malformed (escaped backticks/backslashes from agent serialization can break the parse). After every merge, explicitly check the referenced issue state and close manually if still OPEN. Cheaper than chasing dangling issues later in sprint wrap-up.
+
+
+### 2026-05-04 — Issue #182: Refresh ARCHITECTURE.md + README.md file trees
+- Updated file-tree diagrams in both docs to reflect current repo state
+- Added missing entries: auth.sh, squad-cli.sh, hooks/pre-commit, hooks/commit-msg, tests/, .devcontainer/, config/dotfiles/install.sh, CHANGELOG.md, windows/tools/ split
+- Updated Team Ownership Map and Dependency Order section
+- Confirmed examples/ directory is not referenced (removed in PR #202)
+- Added CHANGELOG entry under [Unreleased] -> Changed
+
+### 2026-05-16 — Batch 2 Review: PRs #205, #206, #207
+- **PR #205** (Pluto, closes #192): tmux auto-attach opt-in via TMUX_AUTOSTART. POSIX guard correct, CHANGELOG clear. Merged via admin bypass (self-approve blocked). ✅
+- **PR #206** (Mickey, closes #182): ARCHITECTURE.md + README.md file tree refresh. Self-reviewed rigorously — cross-checked against `git ls-files`, no stale `examples/` refs, all new files documented. Required rebase (CHANGELOG conflict with #205's new "### Changed" section). CI re-ran green. Merged. ✅
+- **PR #207** (Chip, closes #187): alias parity test. `gb:windows` in ALLOWED_ALIAS_DRIFT, test wired into validate-linux CI step. Merged cleanly. ✅
+- All 3 issues closed manually (auto-close fragile — confirmed pattern from batch 1).
+- Develop now at `c948c61` with 3 new merge commits. All squad branches deleted.
+
+**Key Learning:** Worktree isolation worked -- no branch ancestry bleed in batch 2 (unlike batch 1). CHANGELOG conflicts remain the most common merge issue when batching PRs that all touch [Unreleased]. Merge in dependency order and rebase as needed.
+
+---
+
+## Batch 4 Review (2026-05-19)
+
+Reviewed and merged 3 PRs in order: #214, #215, #213. All CI green (5/5 jobs SUCCESS) before each merge. All merges used `--merge --delete-branch --admin` (no squash, no rebase).
+
+- **PR #214** (Chip, closes #193): CI-only change adding shellcheck linting for `config/dotfiles/.aliases` with `-s bash` flag. Scope tight -- only `validate.yml`, CHANGELOG, and chip history. 2 commits, both conventional format with Co-authored-by trailers. Merged cleanly, no conflicts.
+- **PR #215** (Goofy, closes #190): Added `.tool-versions` file pinning nodejs, nvm, uv, copilot-cli versions. New POSIX/PowerShell reader scripts (`read-tool-version.sh`, `Read-ToolVersion.ps1`), 4 install scripts updated to read pinned versions. Tests added (bash `test_tool_versions.sh` + Group R in `test_windows_setup.ps1`). ASCII-clean .ps1 files. CHANGELOG conflict with #214 resolved locally -- kept both [Unreleased] entries, committed as `chore(changelog): sync develop into squad/190-tool-versions` (the `merge` type was not yet valid before #213 landed). CI re-ran green after resolution push.
+- **PR #213** (Chip, closes #212): Added `prepare-commit-msg` hook that rewrites git auto-generated merge/revert messages into Conventional Commits form. Added `merge` to commit-msg type allowlist. 7 new Group B tests covering all rewrite patterns. Elegant approach -- normalization instead of bypass. Merged cleanly on GitHub (no CHANGELOG conflict despite touching it).
+- Develop tip after all merges: `afd56b4`. All 3 squad branches deleted on remote (local worktree branches remain per coordinator directive). No blockers encountered.
+
+## Batch 5 Review (2026-05-16)
+
+Reviewed and merged PRs #216, #217, #218 in order. All CI green before each merge.
+
+- **PR #216** (Chip, closes #181): CI-only change adding validate-macos job to validate.yml. 6/6 CI jobs passed (including new macOS job). Scope clean -- only workflow YAML, CHANGELOG, and chip history. 3 commits, all conventional format with Co-authored-by trailers. Merged cleanly, no conflicts.
+- **PR #217** (Donald, closes #191): Added Windows gh auth step via scripts/windows/auth.ps1 with Invoke-GhAuth function. Group S tests (S-1 through S-3) covering function existence, clean exit when gh missing, skip when already authed. ASCII-clean .ps1 files. 3 commits, all conventional format with Co-authored-by trailers. CHANGELOG conflict with #216 resolved locally -- kept both [Unreleased] entries. CI re-ran green (6/6 jobs) after resolution push.
+- **PR #218** (Goofy, closes #201): Auto-install Node LTS via nvm reading pinned version from .tool-versions. squad-cli.ps1 changed from WARN to ERROR+exit 1 when npm missing. Tests added for both features. ASCII-clean .ps1 files. 4 commits, all conventional format with Co-authored-by trailers. Three conflicts resolved: CHANGELOG (kept all entries), setup.ps1 (kept Goofy's removal of stale nvm next-step hint), test_windows_setup.ps1 (renamed Goofy's Group S to Group T and Group T to Group U to avoid collision with Donald's Group S). CI re-ran green (6/6 jobs) after resolution push.
+
+Hygiene findings:
+- Chip updated chip/history.md -- OK
+- Donald updated donald/history.md -- OK
+- Goofy updated goofy/history.md for #201 -- OK (confirmed; he missed #190 previously but not this time)
+
+Develop tip after all merges: f4704ddfd145989a272963814256d321a430ac12
+
+### Sprint final review -- PR #219 (#186) (2026-05-16)
+- PR: #219 -- `refactor(scripts): extract shared logging helpers to lib/`
+- Branch: `squad/186-shared-logging` -> `develop`
+- Closes: #186 (LAST go:yes of the sprint)
+- Review outcome: approved and merged clean
+- Conflicts: none
+- CI: 6/6 green
+- Merge commit: 10828ae
+- Note: develop is now ready for sprint wrap PR to main.
+- Minor: CHANGELOG insertion splits an Added item under a new Changed header -- non-blocking, tidy in wrap if needed.

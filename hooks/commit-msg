@@ -7,8 +7,8 @@ MSG=$(cat "$COMMIT_MSG_FILE")
 STRIPPED=$(echo "$MSG" | grep -v '^#' | grep -v '^$' | head -1)
 
 # Conventional Commits regex: type(scope): description
-# Types: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert
-if ! echo "$STRIPPED" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert)(\([a-zA-Z0-9/_-]+\))?!?: .+'; then
+# Types: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert, merge
+if ! echo "$STRIPPED" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|ci|build|perf|revert|merge)(\([a-zA-Z0-9/_-]+\))?!?: .+'; then
   echo ""
   echo "ERROR: Commit message does not follow Conventional Commits format."
   echo ""
@@ -20,7 +20,7 @@ if ! echo "$STRIPPED" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|ci|b
   echo "    fix(windows): correct PATH for git bash"
   echo "    docs(contributing): add branch isolation rule"
   echo ""
-  echo "  Valid types: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert"
+  echo "  Valid types: feat, fix, docs, style, refactor, test, chore, ci, build, perf, revert, merge"
   echo "  Use --no-verify to bypass (emergency only)"
   echo ""
   exit 1

@@ -1686,6 +1686,145 @@ Converted three untracked retro action items from the 2026-04-18 PS 5.x hotfix s
 
 ---
 
+## Gap & Refactor Audit — Full Findings (2026-05-04)
+
+**Date:** 2026-05-04T06:15:00Z  
+**Author:** Mickey (Lead)  
+**Session:** Comprehensive codebase audit across structure, docs, features, quality, tests, CI, and config  
+**Status:** ✅ Complete — 26 distinct issues identified and categorized
+
+### Executive Summary
+
+Full audit completed of dev-setup project. Identified:
+- **3 P0 ship-blocking issues** (macOS vim gap, psmux invalid ID, Windows dotfile parity)
+- **3 P1 quality blockers** (missing macOS CI, stale docs, hooks tests not in CI)
+- **3 P2 tech debt items** (log duplication, monolithic Windows setup, no alias parity test)
+- **5+ P3 nice-to-haves** (uninstall mechanism, version pinning, CHANGELOG, etc.)
+
+### Priority Summary
+
+| Priority | Count | Key Items | Action |
+|----------|-------|-----------|--------|
+| **P0 — Ship-blocking** | 3 | macOS vim, psmux ID, Windows dotfiles | Fix before Sprint 7 start |
+| **P1 — Quality** | 3 | macOS CI, stale docs, hooks in CI | Sprint 7 candidates |
+| **P2 — Tech debt** | 3 | Log duplication, monolithic Windows, parity test | Plan for future |
+| **P3 — Nice to have** | 5+ | Uninstall, version pinning, CHANGELOG, auth parity, profile rewrite | Backlog |
+
+### Critical Gaps (P0 — Must Fix)
+
+#### #1: macOS `install_prerequisites` missing vim
+- **File:** `scripts/linux/setup.sh:62-66`
+- **Issue:** macOS Homebrew installs `curl git tmux` but NOT `vim`. Linux installs vim. README claims vim on "all platforms." macOS users get no vim.
+- **Fix:** Add `vim` to `brew install` line.
+
+#### #2: psmux winget ID likely wrong
+- **File:** `scripts/windows/setup.ps1:105`
+- **Issue:** `winget install --id psmux` — "psmux" is not a known winget package. Install will silently fail or error.
+- **Fix:** Verify winget ID or change install mechanism.
+
+#### #3: Dotfile install.sh not called on Windows
+- **File:** `scripts/windows/setup.ps1`
+- **Issue:** Windows setup writes profile but never installs `.gitconfig`, `.editorconfig`, `.npmrc`, `.vimrc`. Windows users get aliases but no dotfiles.
+- **Fix:** Create PowerShell equivalent of `config/dotfiles/install.sh` or document as intentional.
+
+### Quality Issues (P1)
+
+#### #9: No macOS CI job
+- **File:** `.github/workflows/validate.yml`
+- **Issue:** macOS listed as ✅ supported but zero CI validation. Linux, PS 7.x, and PS 5.1 all have jobs; macOS has none.
+- **Fix:** Add `validate-macos` job on `macos-latest`.
+
+#### #14-15: ARCHITECTURE.md and README stale
+- **Files:** `ARCHITECTURE.md:35`, `README.md:80-101`
+- **Issue:** File structure diagrams missing `auth.sh`, `squad-cli.sh`, `hooks/`, `tests/`, `.devcontainer/`. Last updated 2026-04-07; project evolved significantly since.
+- **Fix:** Update both file trees; add sections for hooks, tests, devcontainer.
+
+#### #21: Git hooks tests not in CI
+- **File:** `.github/workflows/validate.yml`
+- **Issue:** `tests/test_git_hooks.ps1` exists but workflow doesn't run it.
+- **Fix:** Wire `test_git_hooks.ps1` into validate workflow.
+
+### Refactor Opportunities (P2)
+
+#### #5: Duplicated logging helpers
+- **Files:** `setup.sh`, `scripts/linux/setup.sh`, 9+ tool scripts
+- **Issue:** `log_info`, `log_ok`, `log_warn`, `log_error` copy-pasted everywhere. Same for PowerShell `Write-Info`/`Write-Ok`/etc.
+- **Suggestion:** Extract to shared `scripts/linux/lib/log.sh` (sourced by tools). Create `scripts/windows/lib/logging.ps1` equivalent.
+
+#### #7: Windows setup monolithic
+- **File:** `scripts/windows/setup.ps1` (450+ lines)
+- **Issue:** Linux splits tools into individual files under `tools/`. Windows crams everything—Git, uv, nvm, gh, vim, psmux, Copilot, squad-cli, profile, hooks—into one file. Hard to test individual tools in isolation.
+- **Suggestion:** Mirror Linux structure: create `scripts/windows/tools/` with per-tool `.ps1` files.
+- **Impact:** Highest-leverage refactor; improves testability and maintainability significantly.
+
+#### #20: No alias parity test
+- **Issue:** Linux and Windows aliases maintained in parallel. No automated test verifies they define the same shortcut names. Drift has occurred (Windows has `gb` alias, Linux doesn't).
+- **Fix:** Add test that parses both alias definitions and compares sets.
+
+### Feature Gaps (P3 — Nice to Have)
+
+#### #10: No uninstall mechanism
+- **Issue:** Setup installs tools, dotfiles, profile blocks, symlinks. No way to reverse cleanly.
+- **Fix:** Create `uninstall.sh` / `Uninstall-DevSetup`, or document manual steps at minimum.
+
+#### #11: No version pinning strategy
+- **Files:** `nvm.sh`, `uv.sh`, `copilot-cli.sh`
+- **Issue:** All fetch "latest" release. Setup produces different results depending on when it runs. No reproducibility.
+- **Fix:** Add `.tool-versions` file or version config.
+
+#### #12: No auth step on Windows
+- **File:** `scripts/windows/setup.ps1`
+- **Issue:** Linux runs `auth.sh` after `gh.sh` for GitHub authentication. Windows skips this—parity gap.
+- **Fix:** Add Windows equivalent auth step (GitHub login prompt).
+
+#### #17: No CHANGELOG
+- **Issue:** 6 sprints of work, 100+ issues, no user-facing changelog. Users have no visibility into what changed.
+
+#### #22-26: Documentation and config polish
+- tmux auto-attach on every shell open (not opt-in)
+- `.gitconfig` uses shell variable expansion that won't work
+- Hook scripts use `#!/bin/sh` not `#!/usr/bin/env bash` (POSIX vs. bash convention)
+- `examples/` duplicates `config/dotfiles/` and `Write-PowerShellProfile`
+- `.aliases` not linted by shellcheck
+
+### Architectural Recommendations
+
+#### 1. Mirror Linux tool structure on Windows ⭐ **Highest Leverage**
+Split `scripts/windows/setup.ps1` into `scripts/windows/tools/*.ps1` files (one per tool). This is the single highest-leverage refactor:
+- Improves testability (individual tool tests possible)
+- Reduces file size (450+ lines → 50-100 per file)
+- Matches Linux structure (parity)
+- Simplifies maintenance and reviews
+
+#### 2. Add macOS CI
+Platform listed as ✅ but without CI is a lie. Add `validate-macos` job.
+
+#### 3. Shared logging library
+Extract log helpers to reduce copy-paste drift and improve consistency.
+
+#### 4. Dotfile parity on Windows
+Windows needs `.gitconfig`/`.editorconfig` installation, not just profile aliases.
+
+#### 5. Refresh stale documentation
+ARCHITECTURE.md, README.md, and test docs need updates to reflect current structure.
+
+### Findings References
+
+Full detailed analysis available in:
+- Orchestration log: `.squad/orchestration-log/2026-05-04T06-15-00Z-mickey-gap-audit.md`
+- Session log: `.squad/log/2026-05-04T06-15-00Z-gap-audit.md`
+- Decision inbox (original findings): `.squad/decisions/inbox/mickey-gap-audit-2026-05-04.md`
+
+### Next Steps
+
+1. **Immediate:** Prioritize P0 fixes (macOS vim, psmux ID, Windows dotfiles) for next sprint
+2. **Sprint 7 planning:** Include P1 quality issues in sprint backlog
+3. **Architecture review:** Team discusses mirror Windows structure proposal
+4. **Documentation:** Schedule refresh pass for ARCHITECTURE.md and README
+5. **All findings:** Available in squad decision log for future reference and implementation tracking
+
+---
+
 ## [2026-04-19] PR #115 Review — feat(windows): add missing aliases to PowerShell profile
 
 **Date:** 2026-04-19
@@ -2417,3 +2556,650 @@ The `ep` alias for opening the PowerShell profile:
 ### Rationale
 
 Using `notepad` on Windows is the simplest, most universally available editor on any Windows machine. If the user wants VS Code or another editor, they can override the alias in their own profile. The Linux/macOS version respects the `$EDITOR` convention standard in Unix environments.
+
+---
+
+## [2026-04-19] Decision: Shutdown Aliases Plan Review
+
+**Date:** 2026-04-19
+**Author:** Mickey (Lead)
+**Status:** APPROVED WITH NOTES
+
+### Verdict
+
+**APPROVED WITH NOTES** — The plan is solid and well-structured. Six items must be addressed before implementation begins.
+
+### What's Right
+
+- Shutdown commands are correct for each platform
+- The 2-issue split (shell vs Windows+tests) is clean and prevents merge conflicts
+- Naming convention follows the existing codebase pattern perfectly
+- PS 5.1 compatibility is fine
+
+### Outcome
+
+Plan is approved for implementation with six items addressed.
+
+---
+
+## [2026-04-25] Decision: Shutdown Aliases Placement in Windows PS Profile
+
+**Issue:** #174
+**Author:** Goofy (Cross-Platform Developer)
+**Date:** 2026-04-25
+
+### Context
+
+Three shutdown convenience functions needed to be added to the Windows PowerShell profile.
+
+### Decisions
+
+#### 1. Functions placed inside the heredoc
+**Choice:** All three functions and their Set-Alias calls go inside the heredoc.
+
+#### 2. ValidateRange for tsdn parameter
+**Choice:** Use ValidateRange with lower bound 1 to reject zero/negative values.
+
+#### 3. Graceful cancel_tsdn error handling
+**Choice:** Check LASTEXITCODE after shutdown /a and print friendly message.
+
+### Outcome
+
+Three shutdown aliases added to profile with PS 5.1 compatibility. Group M tests verify correctness.
+
+---
+
+## [2026-05-04] Decision: Shutdown Aliases — sudo and OS Detection in .aliases
+
+**Issue:** #173
+**PR:** #176
+**Agent:** Donald (Shell Dev)
+**Date:** 2026-05-04
+
+### Context
+
+.aliases had no prior use of sudo. Shutdown commands require elevated privileges on both Linux and macOS, and cancel semantics differ between the two OSes.
+
+### Decisions
+
+#### 1. sudo in .aliases
+**Choice:** Allow sudo with a section-level comment explaining why.
+**Why:** Shutdown inherently requires root.
+
+#### 2. OS detection for cancel_tsdn
+**Choice:** uname with case statement — Linux uses shutdown -c, macOS uses killall shutdown.
+**Why:** No POSIX-standard cancel flag exists.
+
+#### 3. Input validation for tsdn
+**Choice:** Bash regex ^[1-9][0-9]*$ — rejects zero, negative, float, and empty input.
+
+### Outcome
+
+Three shutdown functions added. First sudo usage in .aliases is documented inline.
+
+---
+
+## [2026-05-04] Mickey — PR #175 Review Decision
+
+**PR:** #175
+**Issue:** #174 — Shutdown aliases for Windows PowerShell
+**Date:** 2026-05-04
+**Verdict:** APPROVED
+
+### Checklist Results
+
+- [x] Functions follow Invoke-XxxYyy naming and function + Set-Alias pattern
+- [x] All code inside the heredoc
+- [x] ValidateRange properly implemented
+- [x] Error handling for cancel command
+- [x] PS 5.1 compatible
+- [x] Group M tests passing
+- [x] All 61 tests pass — no regressions
+
+### Notes
+
+Clean implementation. All requirements met.
+
+---
+
+## [2026-05-04] Mickey Review — PR #176
+
+**PR:** #176
+**Issue:** #173
+**Verdict:** APPROVED
+**Date:** 2026-05-04
+
+### Checklist
+
+- [x] Functions use funcname() POSIX style
+- [x] tsdn validates input with regex
+- [x] cancel_tsdn uses uname for OS detection
+- [x] Inline comments on every function
+- [x] No regressions
+
+### Notes
+
+Implementation is clean and meets all requirements.
+
+---
+
+## [2026-05-04] PR #195 Review: refactor(windows): split setup.ps1 into per-tool files under tools/
+
+**PR:** #195
+**Issue:** #185
+**Reviewer:** Mickey (Lead)
+**Author:** Goofy (Cross-Platform Developer)
+**Date:** 2026-05-04
+
+### Summary
+
+Goofy split the 451-line monolithic `scripts/windows/setup.ps1` into a 76-line orchestrator + 9 per-tool files under `scripts/windows/tools/`. This mirrors the Linux `tools/` structure and makes each installer independently testable and readable.
+
+### Architecture & Structure ✅
+
+- **Orchestrator is clean.** `setup.ps1` defines shared utilities (`Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err`, `Test-WingetAvailable`), dot-sources all 9 tool files via `$PSScriptRoot\tools\*.ps1`, keeps `Install-GitHook` and `Main` locally. Good separation.
+- **Dot-source chain is correct.** All 9 files are sourced in logical install order (git → uv → nvm → gh → vim → psmux → copilot → squad-cli → profile). Each becomes available before `Main` calls it.
+- **Each tool file follows a consistent pattern:** header comment, `Set-StrictMode`, `$ErrorActionPreference = 'Stop'`, logging helpers, single install function with idempotency check (`Get-Command ... -ErrorAction SilentlyContinue`) and early return.
+
+### PS 5.1 Compatibility ✅
+
+- No ternary operators (`? :`), null-coalescing (`??`), or pipeline chain operators (`&&`/`||`) in executable code.
+- All files use `Set-StrictMode -Version Latest` which works on 5.1.
+- String interpolation, `[System.Environment]::GetEnvironmentVariable()`, and `Get-ChildItem` patterns are all 5.1-safe.
+
+### Idempotency ✅
+
+Every tool function checks for prior installation before acting:
+- `Get-Command <tool> -ErrorAction SilentlyContinue` → early return if already present
+- Copilot has a dual check (standalone binary + gh extension fallback) — appropriate
+
+### Notes for Follow-up (non-blocking)
+
+1. **Duplicated logging helpers.** Each tool file re-declares `Write-Info`/`Write-Ok`/`Write-Warn`/`Write-Err`. Since the orchestrator already defines them before dot-sourcing, the tool files could skip these (they'd inherit from parent scope). However, this duplication makes each file standalone-runnable during development — acceptable trade-off. Consider extracting to a shared `_common.ps1` in a future PR if the tool count grows.
+
+2. **psmux winget ID.** Issue #179 is noted in the file comment — good. This isn't a regression from the refactor.
+
+### Group K Test Failures — Diagnosis
+
+**Root cause:** The 8 Group K tests (K-1 through K-5, likely with sub-assertions) use AST parsing (`Parser::ParseFile`) on `scripts\windows\setup.ps1` and search for `FunctionDefinitionAst` nodes named `Write-PowerShellProfile`. That function now lives in `scripts\windows\tools\profile.ps1`, so the AST search returns zero results and the tests throw.
+
+**This is purely a test-location problem, not a functional regression.** The function exists, is correct, and is callable from the orchestrator via dot-source. The tests just need to parse the new file path instead.
+
+### Directive for Chip (Tester)
+
+**Chip should update Group K tests to check the new tool file locations.** Specifically:
+- K-1, K-2, K-4, K-5: Change `$setupPath` from `scripts\windows\setup.ps1` to `scripts\windows\tools\profile.ps1`
+- K-3: Change `Get-Content` target from `setup.ps1` to `tools\profile.ps1` for the heredoc search
+
+This is the same pattern already applied to Groups C, D, and E in this PR — Goofy updated those but missed Group K.
+
+### Initial Review Verdict
+
+✅ **APPROVED** — merge-ready. The refactor is clean, well-structured, and functionally correct. The 8 test failures are exclusively test-side path issues that Chip can fix on the same branch before merge.
+
+---
+
+## [2026-05-04] Mickey — Final Review: PR #195
+
+**PR:** #195
+**Verdict:** ✅ APPROVED (Final)
+**Branch:** `squad/185-split-windows-setup` → `develop`
+**Date:** 2026-05-04
+**Reviewer:** Mickey (Lead)
+
+### Summary
+
+PR #195 is approved and ready to merge. The refactor cleanly splits the monolithic 451-line `scripts/windows/setup.ps1` into 9 focused tool files under `scripts/windows/tools/`, leaving a slim 76-line orchestrator that dot-sources each module. Idempotency guards (`Get-Command` checks) are preserved in every tool file. The dot-source pattern uses correct PS 5.1 syntax (`$PSScriptRoot\tools\*.ps1`). Chip's test fixes correctly retarget Group K (AST-based), Group C/D/E/F/M (content-based) checks to the new file locations with assertions unchanged. All 5 CI checks green.
+
+### Final Review Checklist
+
+- [x] Orchestrator is slim, readable, correct dot-source syntax
+- [x] All 9 tool files have `Set-StrictMode`, `$ErrorActionPreference = 'Stop'`, idempotency guards
+- [x] Group K tests (K-1 through K-5) retargeted to `scripts\windows\tools\profile.ps1`
+- [x] Groups C, D, E, F, M tests also updated to check tool files
+- [x] No behavioral change — same function names, same install flow
+- [x] CI: all 5 checks passing (lint-ps, validate-ps, validate-ps51, lint-shell, validate-linux)
+
+### Note
+
+GitHub blocked formal approval (cannot approve own PR via bot token). Approval posted as PR comment instead.
+
+### Final Verdict
+
+✅ **APPROVED FOR MERGE** — All test fixes complete, all CI checks green, no regressions.
+
+---
+
+## [2026-05-04T07:07:22Z] User Directive: No Hard Time Limits on Agents
+
+**By:** Earl Tankard (via Copilot)
+**What:** No hard time limits on agents. Don't cancel based on elapsed time. Just ensure no agent is visibly stuck (no progress, no output, no file changes).
+**Why:** User request — captured for team memory
+
+---
+
+## [2026-05-04] Post-Split Architecture & Process Fixes
+
+**Date:** 2026-05-04  
+**Author:** Mickey (Lead)  
+**Source:** Sprint Retrospective 2026-05-04  
+**Status:** ✅ Adopted
+
+### Decision 1: Per-Tool File Split is Canonical Architecture
+
+**What:** All future Windows tool installs MUST be individual files under `scripts/windows/tools/`. The orchestrator dot-sources and calls them.
+
+**Rationale:** Single-responsibility per file, easier testing, matches Linux-side pattern, reduces concurrent merge conflicts.
+
+### Decision 2: Tests Must Use Path Helpers, Not Hardcoded Paths
+
+**What:** All test files referencing source file paths must use a shared path resolution helper. Hardcoded paths in assertions are rejected in review.
+
+**Rationale:** File reorganization should not break unrelated tests. Reduces maintenance burden.
+
+### Decision 3: Agent History Updates Must Be Atomic
+
+**What:** Agent history updates MUST be part of the same commit as the code change they document. Separate commits are not allowed.
+
+**Rationale:** Prevents orphaned staged files, ensures git history is self-documenting.
+
+### Decision 4: --admin Merge Pattern Remains Acceptable
+
+**What:** `gh pr merge --admin` with comment-based approval is the standard merge pattern for this repo.
+
+**Rationale:** Solo developer + agent squad = single GitHub identity. This pattern is documented in CONTRIBUTING.md and audit trail is preserved.
+
+---
+
+## [2026-05-14] Decision: Issue #197 Implementation Plan (PS 5.1 Compatibility Fix)
+
+**Date:** 2026-05-14  
+**Issue:** #197 — PS 5.1 compatibility — psmux install fails + aliases broken  
+**Triage Owner:** Mickey (Lead)  
+**Implementation Owner:** Goofy  
+**Status:** ✅ Plan complete, implementation in progress
+
+### Root Cause Summary
+
+1. **psmux Installation Fails:** `winget install --id psmux` uses invalid package ID (related to issue #179)
+2. **Aliases Not Applied:** PowerShell 5.1 built-in AllScope aliases (gcm, gcb, gc, gl, gp, ni, rm, h, grb, grs, ep) cannot be overridden with `Set-Alias` alone — require explicit pre-removal with `Remove-Item -Force Alias:\<name>` first
+3. **Profile Write Suspected:** May be silent errors in `Write-PowerShellProfile` function during directory creation or content write
+
+### Implementation Strategy
+
+| Component | Priority | Action | Owner |
+|-----------|----------|--------|-------|
+| psmux fix | P0 | Skip-with-warning pattern + research alternative package managers | Goofy |
+| Alias fix | P0 | Add verbose logging to `Write-PowerShellProfile`, verify pre-removal guards | Goofy |
+| Test coverage | P1 | Groups N (PS 5.1 profile), O (alias override), P (psmux install) | Chip |
+| CI enhancement | P1 | Add PS 5.1 profile validation to existing `validate-ps51` job | Chip |
+
+### Affected Files
+
+- `scripts/windows/tools/profile.ps1` — Alias guards, profile write diagnostics
+- `scripts/windows/tools/psmux.ps1` — Skip logic with warning
+- `tests/test_windows_setup.ps1` — New test groups N, O, P
+
+### PR Strategy
+
+**Single PR:** `squad/197-ps51-compat-fix` → `develop`
+- All fixes tightly coupled (psmux unblocks script, alias + diagnostics solve user issue, tests validate both)
+- Branch ready for implementation
+
+### Success Criteria
+
+1. `./setup.ps1` completes without fatal error on PS 5.1
+2. psmux install either succeeds OR skips with clear warning
+3. PS 5.1 profile file written to correct path
+4. Profile contains all expected aliases
+5. All conflicting aliases have `Remove-Item -Force` guards
+6. New tests pass on PS 5.1 CI
+7. Idempotency maintained
+
+**Full detailed plan:** `.squad/decisions/inbox/mickey-ps51-fix-plan.md` (archived after merge)
+
+---
+
+## [2026-05-14] Finding: PowerShell 5.1 AllScope Alias Limitation
+
+**Date:** 2026-05-14  
+**Captured By:** Scribe (via Earl Tankard report)  
+**Issue:** #197
+
+### What
+
+On PowerShell 5.1 (built-in Windows PowerShell), `./setup.ps1` fails in two ways:
+1. psmux installation error (winget package ID broken)
+2. Custom aliases not applied
+
+### Root Cause: AllScope Alias Scope
+
+PowerShell 5.1 has built-in aliases marked with the `AllScope` scope modifier:
+- `gcm`, `gcb`, `gc`, `gl`, `gp`, `ni`, `rm`, `h`, and others
+
+These cannot be overridden with `Set-Alias -Force` alone. The solution:
+
+```powershell
+Remove-Item -Force Alias:\gcm -ErrorAction SilentlyContinue
+Set-Alias -Name gcm -Value <custom-function> -Force
+```
+
+Without the pre-removal, `Set-Alias` appears to succeed but the built-in remains bound.
+
+### Why
+
+PS 5.1 (and earlier) uses a different alias scoping mechanism than PS 6+. The AllScope modifier prevents override unless the built-in is explicitly removed first.
+
+### Affected Files
+
+- `scripts/windows/tools/profile.ps1` — Already has removal pattern for known conflicts
+- `scripts/windows/tools/psmux.ps1` — Installation failure (issue #179)
+
+### Fix Pattern
+
+All custom aliases conflicting with built-ins must follow:
+```powershell
+Remove-Item -Force Alias:\<name> -ErrorAction SilentlyContinue
+Set-Alias -Name <name> -Value <custom-function> -Scope Global -Force
+```
+
+**Status:** Implementation tracked in issue #197, test coverage in progress (groups N, O, P)
+## [2026-05-14] Decision: PS 5.1 Compatibility Implementation — Issue #197
+
+**Author:** Goofy (Cross-Platform Dev)
+**Date:** 2026-05-14
+**Issue:** #197
+**PR:** #198 (squad/197-ps51-compat-fix → develop)
+
+### Decisions Made
+
+#### 1. psmux: Skip-With-Warning (Option D from Mickey's plan)
+
+**Decision:** Replace broken `winget install --id psmux` with a `[WARN]` skip pattern.
+
+**Rationale:**
+- `psmux` is not a valid winget package ID — this has been broken since #179 and affects every Windows setup, not just PS 5.1.
+- Failing hard on an unknown winget ID aborts the entire setup script, blocking users from getting any other tools installed.
+- Option D (skip-with-warning) unblocks setup immediately. Options A/B/C (find correct package ID, Scoop, direct install) are follow-up work.
+- Idempotency is preserved: `Get-Command psmux -ErrorAction SilentlyContinue` guard remains at the top of `Install-Psmux`.
+
+**Pattern used:**
+```powershell
+Write-Warn "psmux is not yet available via winget (see #179, #197)."
+Write-Warn "Install manually from: https://github.com/nicowillis/psmux"
+Write-Warn "Skipping psmux install — continuing setup."
+```
+
+#### 2. profile.ps1: Verbose Diagnostics Over Code Changes
+
+**Decision:** Add diagnostics to `Write-PowerShellProfile` rather than changing the write logic itself.
+
+**Rationale:**
+- The AllScope `Remove-Item -Force Alias:\<name>` guards were already in place for all 11 PS 5.1 conflicting aliases (PR #195). No alias logic needed to change.
+- The root cause of "aliases not working" on Earl's PS 5.1 machine is unknown — could be profile not written, profile directory creation failing silently, or execution policy blocking load.
+- Diagnostics at each step (dir path, dir exists, file path, file exists + size, exec policy) will reveal the actual failure point when Earl re-runs setup.
+- `try/catch` + `continue` per path is the correct pattern under `$ErrorActionPreference = 'Stop'` — prevents one path failure from aborting the entire function.
+
+#### 3. Single PR (not split)
+
+**Decision:** Ship both psmux fix and profile diagnostics in one PR.
+
+**Rationale:** Both fixes are needed to unblock PS 5.1 users. Splitting would require two review cycles for tightly coupled work. Chip's test groups N, O, P will follow in a separate PR.
+
+### What Was NOT Changed
+
+- AllScope `Remove-Item` guards: already complete from PR #195, no changes needed.
+- No changes to test files in this PR — Chip owns Groups N, O, P.
+- No changes to CI workflow — the `validate-ps51` job already runs; Chip will add the profile write step per Mickey's plan.
+
+### References
+
+- Issue #179: psmux winget ID broken (original report)
+- Issue #197: PS 5.1 compat (this issue)
+- PR #195: Profile writer implementation (AllScope guards added here)
+- PR #198: This fix
+- Mickey's plan: `.squad/decisions/inbox/mickey-ps51-fix-plan.md`
+
+---
+
+## [2026-05-14] Decision: PS 5.1 ASCII-Only Rule for .ps1 Files
+
+**Date:** 2026-05-14
+**Author:** Goofy (#2)
+**Status:** Finalized
+**Context:** PR #198, branch `squad/184-gitconfig-editor-fix`
+
+### Problem
+
+PowerShell 5.1 on Windows uses the system's default code page (typically CP1252) when reading script files. The UTF-8 encoding of em dash (U+2014) is `E2 80 94`. Byte `0x94` maps to RIGHT DOUBLE QUOTATION MARK in CP1252, which PS 5.1 interprets as a string terminator. This causes `ParserError: TerminatorExpectedAtEndOfString` at parse time - the script won't even load.
+
+### Decision
+
+**All `.ps1` files in this repository MUST contain only ASCII characters (U+0000 - U+007F).**
+
+This applies to:
+- String literals
+- Comments
+- Variable names and identifiers
+- Any other source content
+
+#### Specific replacements:
+- Em dash (`—`) → ` - ` (space-hyphen-space)
+- Smart quotes → straight quotes
+- Any other non-ASCII → closest ASCII equivalent or removal
+
+### Rationale
+
+- PS 5.1 is still the default PowerShell on Windows 10 and Windows Server 2019
+- We explicitly support PS 5.1 (see CI job "Validate PowerShell 5.1 Compatibility")
+- BOM markers are fragile and not all editors/tools preserve them
+- ASCII-only is the simplest, most portable rule with zero edge cases
+
+### Enforcement
+
+- CI already validates PS 5.1 compatibility via syntax parsing
+- Developers should run byte-level scans when modifying .ps1 files
+- Code review should flag any non-ASCII characters in .ps1 files
+
+---
+
+## [2026-05-14] Decision: ASCII-only rule for PS test files
+
+**Proposed by:** Chip (Tester)
+**Date:** 2026-05-14
+**Status:** Finalized
+
+### Decision
+
+All `.ps1` test files must use only ASCII characters (bytes 0x00-0x7F) to be safe under PS 5.1 CP1252 encoding.
+
+### Context
+
+PowerShell 5.1 on Windows reads `.ps1` files using the system's default encoding (typically CP1252). UTF-8 multi-byte sequences for characters like em dashes (U+2014), arrows (U+2192), and emojis produce bytes that CP1252 interprets as control characters or punctuation (e.g., byte 0x94 = right double quote), causing `ParseException` crashes.
+
+The validate-ps51 CI job runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so any non-ASCII content in the test file will cause CI failures.
+
+### Rules
+
+- No emojis in string literals (use `[PASS]`, `[FAIL]`, `[SKIP]` tags instead)
+- No em dashes in comments (use ` - ` instead)
+- No arrows in comments (use `->` instead)
+- No smart quotes, accented characters, or any byte > 0x7F
+- Validate with: `Get-Content file.ps1 -Encoding UTF8 | Where-Object { $_ -cmatch '[^\x00-\x7F]' }`
+
+---
+
+## [2026-05-14] Decision: PS 5.1 Test Patterns for Issue #197
+
+**Author:** Chip (Tester)
+**Date:** 2026-05-14
+**Issue:** #197 — PS 5.1 compatibility: psmux install fails + aliases broken
+**Branch:** `squad/197-ps51-compat-fix`
+
+### Decisions Made
+
+#### 1. CP1252 string-literal encoding rule
+**Decision:** Never use Unicode dashes or other non-ASCII characters in test string literals.
+
+**Why:** PS 5.1 reads UTF-8 files without BOM using the system default encoding (Windows-1252). The em dash `—` (U+2014) encodes as UTF-8 bytes `E2 80 94`. Byte `0x94` is the RIGHT DOUBLE QUOTATION MARK in CP1252, which the PS 5.1 parser treats as a string terminator. This causes a cascade of parse errors, making every subsequent test fail silently.
+
+**Rule:** Use plain ASCII hyphen `-` wherever a dash is needed in test string literals, `Write-Skip` messages, and test names.
+
+#### 2. Invoke-Expression for cross-group tool loading
+**Decision:** Load psmux.ps1 (and any other tool script) via `Invoke-Expression` at Group scope, not inside `Test-Scenario` scriptblocks.
+
+**Why:** `Test-Scenario` uses `& $Test` to invoke the scriptblock, which runs in a child scope. Functions dot-sourced or defined inside `& $scriptblock` are only available within that child scope and are gone after the test block completes. `Invoke-Expression` at the outer scope makes functions available for all subsequent tests.
+
+**Pattern:**
+```powershell
+$psmuxToolContent = Get-Content $psmuxToolPath -Raw
+Invoke-Expression $psmuxToolContent
+# Now Install-Psmux is in scope for all subsequent tests
+```
+
+#### 3. Conditional skip pattern for binary-dependent tests
+**Decision:** Tests that require a binary to be absent (like P-2 for psmux) use an if/else outside Test-Scenario: `Write-Skip` if binary is present, `Test-Scenario` if absent.
+
+**Why:** This is the cleanest way to handle machine-dependent paths. In CI (no psmux), P-2 runs and validates the `[WARN]` output. On a dev machine with psmux installed, it skips gracefully without false failures.
+
+#### 4. CI profile write step is separate from unit test suite
+**Decision:** Added a dedicated `Test PS 5.1 profile write` step to `validate-ps51` BEFORE the test runner step.
+
+**Why:** The unit tests (Groups N-1, N-2) also verify profile write, but having a CI-level step provides a clearer failure message at the job level. If `Write-PowerShellProfile` fails silently, the CI step catches it with `Write-Error` and `exit 1`, which surfaces in the GitHub Actions summary without having to dig into test output.
+
+### Open Questions
+
+None — all decisions made with full confidence.
+
+---
+
+## [2026-05-14] Decision: PR #198 Review — PS 5.1 Compat Fix
+
+**PR:** #198
+**Issue:** #197
+**Reviewer:** Mickey (Lead)
+**Date:** 2026-05-14
+**Verdict:** ✅ APPROVED
+
+### What Was Reviewed
+
+- `scripts/windows/tools/psmux.ps1` — skip-with-warning for broken winget ID (#179)
+- `scripts/windows/tools/profile.ps1` — verbose diagnostics for PS 5.1 debugging
+- Em dash (U+2014) removal from both files — fixes CP1252 parsing crash on PS 5.1
+
+### Assessment
+
+1. **Correctness:** psmux skip is the right call — no valid winget ID exists. Profile diagnostics cover all failure points (dir creation, file write, post-write validation, execution policy).
+2. **Quality:** Code is clean, try/catch blocks are well-scoped with `continue` for graceful degradation. Idempotency preserved.
+3. **No regressions:** All changes are Windows-only PowerShell. No impact on Linux/macOS paths.
+4. **Em dash fix:** Both files verified clean of non-ASCII characters via automated scan.
+5. **CI:** 5/5 checks green.
+
+### Approval Method
+
+GitHub API self-approval blocked (single-user repo). Approval posted as PR comment per `--admin` merge pattern documented in CONTRIBUTING.md and decisions.md.
+
+---
+
+## # Decision: PS 5.1 ASCII Safety Skill
+
+**Agents:** Chip (Tester), Coordinator (Memory Manager)  
+**Date:** 2026-05-16  
+**Branch:** squad/197-ps51-compat-fix  
+
+### Context
+
+User directive: **Always learn from PS 5.1 encoding issues (em dashes, non-ASCII chars) as the team builds out. Capture as a reusable skill so all agents know the rule before touching any .ps1 file.**
+
+Root cause: UTF-8 em dash (U+2014) ends with byte 0x94, which CP1252 treats as a right double-quote, terminating string literals in PS 5.1. Same class of bug can recur with any non-ASCII char. Confirmed by two fixes in issue #197 (PR #198, PR #200).
+
+### Decision
+
+**Formalize PS 5.1 ASCII safety as a reusable team skill.** All agents MUST read `.squad/skills/ps51-ascii-safety/SKILL.md` before writing or reviewing any .ps1 file.
+
+**Why:** 
+- Reduces recurring debugging cycles for encoding issues
+- Captures permanent institutional knowledge
+- Provides detection scripts and fix patterns reusable across all scripts
+- Aligns with user's directive to learn and formalize team practices
+
+### Outcome
+
+✓ Skill authored at `.squad/skills/ps51-ascii-safety/SKILL.md`  
+✓ Committed and pushed to squad/197-ps51-compat-fix  
+✓ Will land in develop when PR #200 merges  
+
+---
+
+## # Decision: Gitconfig editor — literal value + override comment
+
+**Issue:** #184  
+**Agent:** Pluto (Config Engineer)  
+**Date:** 2025-07-14  
+
+### Context
+
+`config/dotfiles/.gitconfig.template` had `editor = ${EDITOR:-vim}` in `[core]`. Git does not invoke a shell when reading its config — this string was used literally as the editor command, which fails on every machine.
+
+### Options Considered
+
+- **Option A:** Replace with `editor = vim` — simple literal, works everywhere.
+- **Option B:** Replace with `editor = vim` AND add a comment showing how to override.
+
+### Decision
+
+**Option B** — literal `vim` default with an inline comment: `# Override with: git config --global core.editor <your-editor>`.
+
+### Rationale
+
+- `vim` is guaranteed installed by both Linux and Windows setup scripts.
+- A bare literal gives no guidance to users who prefer a different editor. The comment is zero-cost but high-value discoverability.
+- This follows the Pluto principle: sensible defaults with clear escape hatches.
+
+### Outcome
+
+Template updated. README table updated to match. No other gitconfig shell-expansion patterns found in the template.
+
+---
+
+## # Decision: PR #200 — Merge Gate Review
+
+**Date:** 2026-05-16
+**Author:** Mickey (Lead)
+**PR:** [#200](https://github.com/primetimetank21/dev-setup/pull/200)
+**Branch:** `squad/197-ps51-compat-fix`
+**Verdict:** ✅ APPROVED
+
+### Summary
+
+PR #200 is the companion test coverage + ASCII safety skill for Issue #197 (PS 5.1 compatibility). PR #198 (already merged) fixed the runtime scripts; this PR hardens the test suite and documents the encoding rule as a reusable skill.
+
+### What Was Reviewed
+
+| File | Assessment |
+|------|-----------|
+| `tests/test_windows_setup.ps1` (Groups N, O, P) | Clean test design. N validates dual-profile write + all 11 AllScope alias guards. O proves Remove-Item + Set-Alias pattern works at runtime. P covers psmux syntax, conditional skip, and idempotency. |
+| `tests/test_windows_setup.ps1` (ASCII cleanup) | 14 non-ASCII chars removed: 8 emoji markers, 4 em dashes, 2 arrows. File is now fully ASCII-safe. |
+| `.github/workflows/validate.yml` | New "Test PS 5.1 profile write" step correctly uses `shell: powershell` and validates profile file existence. |
+| `.squad/skills/ps51-ascii-safety/SKILL.md` | Production-quality skill doc. Root cause (CP1252 byte interpretation), detection scripts, fix patterns, scope boundaries, and incident history all documented. |
+| `.squad/agents/chip/history.md` | Condensed from ~520 lines to ~130 lines. Sprint history preserved; older per-PR entries collapsed into summaries. Acceptable. |
+
+### CI Status
+
+All 5 checks green:
+- Lint PowerShell Scripts ✓
+- Lint Shell Scripts ✓
+- Validate Linux Setup ✓
+- Validate PowerShell 5.1 Compatibility ✓ (1m45s — the new step ran successfully)
+- Validate PowerShell Functionality ✓
+
+### Merge Instructions
+
+- Merge strategy: **regular merge commit** (not squash)
+- Target branch: `develop`
+- Command: `gh pr merge 200 --repo primetimetank21/dev-setup --merge`
+
+### Notes
+
+- Could not use `--approve` via GitHub CLI (same-user restriction). Left comment-review with approval verdict instead.
+- No code concerns. No follow-up actions required.

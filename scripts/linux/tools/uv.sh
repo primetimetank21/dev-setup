@@ -7,8 +7,8 @@
 
 set -euo pipefail
 
-log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
+# shellcheck disable=SC1091
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 
 if command -v uv &>/dev/null; then
   log_ok "uv already installed: $(uv --version)"
@@ -16,7 +16,9 @@ if command -v uv &>/dev/null; then
 fi
 
 log_info "Installing uv..."
-curl -LsSf https://astral.sh/uv/install.sh | sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+UV_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" uv)"
+curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
 
 # uv installs to ~/.local/bin — ensure it's on PATH in current session
 export PATH="$HOME/.local/bin:$PATH"

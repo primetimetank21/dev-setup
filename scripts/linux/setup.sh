@@ -17,10 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS_DIR="${SCRIPT_DIR}/tools"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
-log_warn()  { printf '\033[0;33m[WARN]\033[0m  %s\n' "$*"; }
-log_error() { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2; }
+# shellcheck disable=SC1091
+. "$(dirname "${BASH_SOURCE[0]}")/lib/log.sh"
 
 # Source a tool script, logging success/failure
 run_tool() {
@@ -63,7 +61,7 @@ install_prerequisites() {
       log_warn "Homebrew not found — install it from https://brew.sh and re-run setup"
       return 0
     fi
-    brew install curl git tmux
+    brew install curl git vim tmux
   else
     sudo apt-get update -qq
     sudo apt-get install -y curl git build-essential vim tmux

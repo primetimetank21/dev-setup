@@ -12,9 +12,8 @@
 
 set -euo pipefail
 
-log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
-log_warn()  { printf '\033[0;33m[WARN]\033[0m  %s\n' "$*"; }
+# shellcheck disable=SC1091
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 
 COPILOT_BIN="${HOME}/.local/bin/copilot"
 
@@ -24,6 +23,10 @@ if [[ -x "$COPILOT_BIN" ]]; then
 fi
 
 log_info "Installing GitHub Copilot CLI..."
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COPILOT_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" copilot-cli)"
+log_info "Pinned copilot-cli version: ${COPILOT_VERSION}"
 
 # Official install script. Non-root: installs to ~/.local/bin/copilot (in PATH).
 # Root: installs to /usr/local/bin/copilot.
