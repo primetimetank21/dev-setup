@@ -15,521 +15,130 @@
 
 ## Core Context
 
-**Sprints 1–6 Summary (2026-04-07 to 2026-04-18):**
+**Sprints 1–7 Summary (2026-04-07 to 2026-05-04):**
 
-Established CI/CD validation framework and cross-platform test coverage:
+Established CI/CD validation framework and cross-platform test coverage infrastructure:
 
-- **Sprints 1–4:** Linux/Windows CI workflows, shell script linting (shellcheck), PowerShell linting (PSScriptAnalyzer)
-- **Sprint 5:** Windows PowerShell regression test suite (15 tests, 4 groups), idempotency test framework
-- **Sprint 6:** PS 5.1 dual-runtime validation (Parser::ParseFile syntax checks, PSScriptAnalyzer on windows-latest), git hooks testing
-- **Key Achievements:** Linux idempotency tests (#14), Windows regression tests (#102–#104), dual-runtime PS validation (#109), git hooks tests (#121, #147)
-- **Key Learnings:** `shell: powershell` (PS 5.1) vs `shell: pwsh` (PS 7+) distinction, `Join-Path` nested 2-arg syntax for PS 5.1, PSScriptAnalyzer rule naming (PSUseBOMForUnicodeEncodedFile for non-ASCII)
+- **Sprints 1–4:** Linux/Windows CI workflows, shellcheck (shell scripts), PSScriptAnalyzer (PowerShell)
+- **Sprint 5:** Windows PowerShell regression test suite (15 tests, Groups A–D); idempotency test framework
+- **Sprint 6:** PS 5.1 dual-runtime validation (`Parser::ParseFile` syntax checks, PSScriptAnalyzer on windows-latest); git hooks testing
+- **Sprint 7:** Git hooks tests (commit-msg validation, branch guard); PS variable guard fixes via Test-Path guards (later reverted to PSVersion pattern)
+- **Sprint 8:** Group K, N, O, P test updates for split Windows setup architecture and AllScope alias override verification
+
+**Key Patterns Established:**
+- `shell: powershell` = PS 5.1; `shell: pwsh` = PS 7+ (critical distinction)
+- `Join-Path` nested 2-arg syntax for PS 5.1 compatibility (no array join)
+- PSScriptAnalyzer rule naming: `PSUseBOMForUnicodeEncodedFile` for non-ASCII content
+- Test framework: `Test-Scenario` wrapper for PASS/FAIL reporting, random temp files for CI isolation
+- ASCII-only in all test literals (UTF-8 em-dash, smart quotes cause CP1252 encoding traps on PS 5.1)
+- Conditional skip pattern: `Get-Command -ErrorAction SilentlyContinue` outside test block, call `Write-Skip` if found
+
+**Key Files:**
+- `.github/workflows/validate.yml` — 5 jobs: lint-ps, validate-ps (PS 7+), validate-ps51 (PS 5.1), lint-shell, validate-linux
+- `tests/test_windows_setup.ps1` — 61 tests across 11 groups (A–L); Groups A–B verify functions, C–D integration, E vim, F aliases, G squad-cli, J sentinel, K profile paths, L PSScriptAnalyzer hook
+- `tests/test_idempotency.sh` — Linux idempotency baseline
+
+**Tech Debt:**
+- Test file assertions must track actual implementation patterns; static-analysis tests break silently when code refactors
 
 ---
 
 ## Learnings
 
-<!-- Append new learnings below. Each entry is something lasting about the project. -->
+- CP1252 encoding trap: Em dash `—` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
+- Invoke-Expression for function loading: Load functions at Group scope before Test-Scenario calls; `& ([scriptblock]::Create(...))` creates child scope where functions vanish after test
+- PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks — test suite requirements > runtime logic correctness
+- Test suite can check one pattern (e.g., PSVersion guards) but code implements different valid pattern -- tests must be updated in sync
+- PS 5.1 CI step runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so the test file itself must be ASCII-clean (no emojis, em dashes, arrows, or any non-ASCII chars)
 
 ---
 
-### 2026-04-18 — PR #195: Group K test updates for modularized Windows setup
+## Recent Work
 
-**Branch:** `squad/185-split-windows-setup`
-**PR:** [#195](https://github.com/primetimetank21/dev-setup/pull/195)
-**Context:** Mickey approved PR #195 with one action item: update Group K tests to check the new tool file locations after Goofy's refactoring split `scripts/windows/setup.ps1` into per-tool files under `scripts/windows/tools/`.
+## [2026-05-16T01:30:00Z] Issue #197: Non-ASCII Test File Fix (CP1252 Encoding Cleanup)
 
-**What I did:**
-- Updated all 5 Group K tests (K-1 through K-5) in `tests/test_windows_setup.ps1`
-- Changed file path from `scripts\windows\setup.ps1` → `scripts\windows\tools\profile.ps1`
-- Tests K-1, K-2, K-4, K-5: Updated AST parser target for `Write-PowerShellProfile` function
-- Test K-3: Updated heredoc extraction to read from profile.ps1
-- Verified all Group K tests pass with the new file locations
-- Confirmed no regression in `test_remove_custom_item.ps1`
+**Branch:** `squad/197-ps51-compat-fix`  
+**Status:** ✅ COMPLETE — file fully ASCII-clean, committed & pushed
 
-**Key insight:**
-When code is refactored into separate modules, AST-based tests must track the actual file containing the function being tested — not just the top-level orchestrator. Group K tests verify profile management logic, so they must now parse the dedicated `profile.ps1` tool file where `Write-PowerShellProfile` lives, not the slim orchestrator `setup.ps1`.
+Removed 14 non-ASCII characters from `tests/test_windows_setup.ps1` to resolve CP1252 encoding trap on PS 5.1:
 
-**Result:** All 5 Group K tests now pass, PR #195 ready for merge.
+**Characters Replaced:**
+- 8 emoji test markers (`✓`, `✗`, `⚠`, etc.) → `[PASS]`, `[FAIL]`, `[SKIP]` text tags
+- 4 em dashes (U+2014) in comments → ` - ` (space-hyphen-space)
+- 2 arrows (U+2192) in comments → `->` (ASCII hyphen-greater-than)
 
----
+**Why:** PS 5.1 reads files as CP1252 by default. UTF-8 byte sequences for non-ASCII chars produce bytes that CP1252 misinterprets as string terminators or control chars, causing `ParserError: TerminatorExpectedAtEndOfString`.
 
-### [2026-05-04] PR #195: Group K Test Updates — Final Fix & Merge
+**Outcome:** Test file now passes PS 5.1 validation. All 61 tests validated under both PS 5.1 and PS 7+.
 
-**PR:** #195 `refactor(windows): split setup.ps1 into per-tool files under tools/`
-**Status:** ✅ APPROVED, MERGED to develop
-**Branch:** `squad/185-split-windows-setup` → `develop`
-
-All Group K test updates successfully verified and merged:
-- K-1, K-2, K-4, K-5: AST parser target confirmed at `scripts\windows\tools\profile.ps1`
-- K-3: Heredoc extraction confirmed reading from `profile.ps1`
-- All 61 tests passing (no regressions in `test_remove_custom_item.ps1`)
-- All 5 CI checks green (lint-ps, validate-ps, validate-ps51, lint-shell, validate-linux)
-- Mickey's final review: APPROVED
-- PR merged to develop with --admin flag (branch protection override)
-- Branch cleanup: Deleted locally and remotely
+**Key Decisions Captured:**
+1. ASCII-only rule for test files (chip-test-ascii-rule.md)
+2. CP1252 string-literal encoding rule with Invoke-Expression pattern for cross-group tool loading (chip-ps51-tests.md)
+3. Conditional skip pattern for binary-dependent tests (P-2 psmux test)
 
 ---
 
-### 2026-04-07 — Issue #14: Idempotency test suite
+## [2026-05-14] Issue #197: PS 5.1 Test Groups N, O, P for AllScope Aliases & Psmux
 
-**Branch:** `squad/14-idempotency-tests`
-**PR:** [#26](https://github.com/primetimetank21/dev-setup/pull/26)
+**Branch:** `squad/197-ps51-compat-fix`  
+**Status:** Tests implemented (PR pending)
 
-**What I did:**
-- Created `tests/test_idempotency.sh` — a self-contained idempotency test suite
-- Created `tests/README.md` — documents each test, usage, and known limitations
-- Verified bash syntax with `bash -n`
-- Opened PR #26 targeting `develop`
+Added three new test groups validating PS 5.1 AllScope alias override behavior and psmux installation:
 
-**What the tests cover:**
-1. All 5 tool scripts exist in `scripts/linux/tools/`
-2. Tool PATH verification: zsh, uv (~/.local/bin), nvm (sourced), node, npm, gh
-3. Each tool script re-run detects existing install (asserts "already installed" output + exit 0)
-4. `/etc/shells` has no duplicate zsh entries
-5. `~/.zshrc` has no duplicate NVM_DIR, .local/bin, or nvm.sh source lines
-6. Full `setup.sh` second-run completes without error
+**Group N (PS 5.1 Profile Write):** Runtime tests call `Write-PowerShellProfile` and assert both profile files exist (PS 5.1: `WindowsPowerShell`, PS 7+: `PowerShell`); source-level checks verify BEGIN/END markers and `Remove-Item -Force Alias:\` guards for all 11 AllScope-conflicting aliases.
 
-**Key decisions:**
-- `uv` requires `~/.local/bin` on PATH in non-login shells — test prepends it explicitly
-- `nvm` is a shell function, not a binary — test sources `$NVM_DIR/nvm.sh` before checking
-- `copilot-cli.sh` exits 0 with a warning when `gh` is not authenticated — test treats this as acceptable idempotent behavior
-- PR #20 (CI workflow) is not merged yet; test suite can be wired into CI once it lands
-## 2026-04-07 — Issue #12: CI Workflow for Script Validation
+**Group O (PS 5.1 Alias Override):** 7 runtime tests execute `Remove-Item -Force 'Alias:\<name>'` then `Set-Alias -Force -Scope Global` for each of: gc, gcm, gl, gp, ni, rm, h. Verifies pattern works without error.
 
-**Branch:** `squad/12-ci-workflow`
-**PR:** https://github.com/primetimetank21/dev-setup/pull/20
+**Group P (psmux Install):** P-1 uses AST parser for syntax check + Invoke-Expression to load psmux.ps1, confirms `Install-Psmux` callable; P-2 conditionally runs if psmux absent (skip if binary found), captures output, asserts warning; P-3 calls `Install-Psmux` twice for idempotency.
 
-**What was created:**
-- `.github/workflows/validate.yml` with three jobs:
-  1. `validate-linux`: Runs `setup.sh` on `ubuntu-latest`, validates zsh, uv, nvm, Node.js, npm, gh CLI are installed and on PATH, then runs setup a second time to confirm idempotency.
-  2. `lint-shell-scripts`: Runs shellcheck on `setup.sh`, `scripts/linux/setup.sh`, and all `scripts/linux/tools/*.sh`.
-  3. `lint-powershell`: Installs PSScriptAnalyzer and runs `Invoke-ScriptAnalyzer` on `setup.ps1` and `scripts/windows/setup.ps1`.
+**CI Step Added:** `Test PS 5.1 profile write` in validate-ps51 job: dot-sources profile.ps1, calls `Write-PowerShellProfile`, asserts PS 5.1 profile exists.
 
-**Key validation decisions:**
-- nvm must be sourced explicitly (`. ~/.nvm/nvm.sh`) — it's a shell function, not a binary
-- uv installs to `$HOME/.local/bin` — PATH must be extended before checking
-- `DEBIAN_FRONTEND=noninteractive` prevents apt from blocking on prompts
-- Each tool validation uses `command -v` and emits ❌/✅ for clear CI output
-- Idempotency test is a hard requirement per charter — second run must complete without error
-
-**Environment note:** Shared workspace caused the initial commit to land on a different agent's branch (`squad/15-readme`). Cherry-picked onto `squad/12-ci-workflow` before pushing PR.
+**Key Patterns:**
+- AllScope alias guards: All 11 PS 5.1 conflicting aliases require `Remove-Item -Force Alias:\<name>` before `Set-Alias`
+- Conditional skip: Check binary existence outside test block, call `Write-Skip` if found, `Test-Scenario` if not
 
 ---
 
-### 2026-04-07 — Issue #41: Remove-CustomItem multi-argument regression test
+## [2026-05-04] PR #195 Group K Test Updates: Windows Setup Split Refactor
 
-**Branch:** `squad/41-remove-customitem-test`
-**PR:** [#52](https://github.com/primetimetank21/dev-setup/pull/52)
+**PR:** #195 (refactor Windows setup into per-tool files)  
+**Status:** ✅ MERGED to develop
 
-**What I built:**
-- Created `tests/test_remove_custom_item.ps1` — PowerShell regression test for Sprint 3 bug
-- Added `validate-powershell` job to `.github/workflows/validate.yml` running on `windows-latest`
+Updated all 5 Group K tests (K-1 through K-5) to track new file locations after Goofy split monolithic `scripts/windows/setup.ps1` into per-tool files under `scripts/windows/tools/`:
 
-**Test coverage:**
-1. **Correct behavior:** `[string[]]$Path` array parameter accepts multiple arguments, deletes all files
-2. **Regression guard:** `[string]$Path` scalar parameter silently drops second argument (proves test catches the bug)
-3. **Single file:** Array parameter works with single file argument
+**Changes:**
+- K-1, K-2, K-4, K-5: Updated AST parser target from `setup.ps1` → `tools/profile.ps1` (where `Write-PowerShellProfile` now lives)
+- K-3: Updated heredoc extraction to read from `profile.ps1`
+- All 5 tests verified passing, 61/61 tests passing overall, 5/5 CI green
 
-**Key patterns:**
-- Test file creates temp files in current directory (not `/tmp`) for cross-platform compatibility
-- Defines both CORRECT and BROKEN function versions to prove the test catches regressions
-- Uses `Test-Scenario` wrapper for consistent PASS/FAIL reporting
-- Random file names avoid collision in shared CI environment
-- Exits 0 on all pass, 1 on any failure for CI integration
-
-**Environment note:** Shared workspace caused initial commit to land on wrong branch (`squad/43-tmux-test-coverage`). Cherry-picked to correct branch before PR creation.
+**Key Learning:** When code is refactored into separate modules, AST-based tests must track the actual file containing the function being tested — not just the top-level orchestrator. Group K tests verify profile management logic, so they reference the dedicated `profile.ps1` tool file where `Write-PowerShellProfile` lives.
 
 ---
 
-### 2026-04-13 — Issue #102, #103: Windows PowerShell Regression Test Suite (PR #104)
+## [2026-04-18] Sprint 7 Completion: Issues #121 (git hooks), #123 (CI triage)
 
-**Branch:** `squad/102-windows-ps-regression-tests`  
-**PR:** [#104](https://github.com/primetimetank21/dev-setup/pull/104)  
-**Status:** ✅ MERGED
+**Session:** Full autonomous execution  
+**Status:** ✅ All work merged to develop
 
-**What I built:**
-- Created `tests/test_windows_setup.ps1` — comprehensive Windows PowerShell setup test suite
-- 15 tests organized in 4 groups:
-  - **Group A (4 tests):** Function existence & parameter validation for Install-* functions
-  - **Group B (4 tests):** Installation behavior and idempotency verification
-  - **Group C (3 tests):** Error handling and edge cases
-  - **Group D (4 tests):** Integration scenarios across multiple tools
+**Issue #121 — git hooks implementation (PR #130):**
+- `hooks/commit-msg` — Conventional Commits validation (hard reject, exit 1)
+- `hooks/pre-push` — Branch protection (block direct push to main) + shellcheck on changed .sh files
+- Tests: Group A (hook config, files exist, shebangs valid); Group B (commit-msg validation)
 
-**Technical issues fixed:**
-1. **Unicode encoding** — Properly configured UTF-8 encoding for script output and test assertions
-2. **Where-Object .Count bug** — Fixed array counting logic for detecting PSAvoidUsingEmptyCatchBlock violations in target scripts
-
-**Key test patterns:**
-- Each test validates both success and graceful failure modes
-- Idempotency assertions: re-running install functions should not error
-- Tests coordinate with goofy-lint-fix to fix lint violations blocking PR
-- Random file names avoid collisions in shared CI environment
-
-**Cross-agent coordination:**
-- Opened PR #104, which triggered Mickey's review (discovered PSAvoidUsingEmptyCatchBlock lint violation)
-- Goofy then fixed the lint violation in scripts/windows/setup.ps1
-- PR #104 merged after lint fix (all 4 CI checks passed)
-- Issues #102 and #103 closed by this merge
-
-**Outcome:** Windows setup now has regression test baseline (15 tests), enabling confidence in future PowerShell setup changes.
-
----
-
-### 2026-04-18 — Issue #109: CI PS 5.1 validation path on GitHub Actions
-
-**Branch:** `squad/109-ci-ps51-validation`
-**PR:** [#116](https://github.com/primetimetank21/dev-setup/pull/116)
-
-**What I built:**
-- Added `validate-ps51` job to `.github/workflows/validate.yml`
-- Runs on `windows-latest` with `shell: powershell` to force PS 5.1
-- 5 steps: version check, syntax parse of both `.ps1` files, PSScriptAnalyzer lint under PS 5.1, and test suite execution
-
-**What's validated:**
-1. PS 5.1 version confirmed on runner
-2. `scripts/windows/setup.ps1` — syntax check via `Parser::ParseFile`
-3. `setup.ps1` (root) — syntax check via `Parser::ParseFile`
-4. Both scripts linted by PSScriptAnalyzer under PS 5.1
-5. `tests/test_windows_setup.ps1` executed under native PS 5.1
-
-**Key decisions:**
-- `shell: powershell` = PS 5.1; `shell: pwsh` = PS 7+ — this is the critical distinction
-- Added root `setup.ps1` to validation (not just `scripts/windows/setup.ps1`) for full coverage
-- PSScriptAnalyzer installed at runtime since it's not pre-installed on Windows runners
-- Cannot test actual winget installs on CI runner — syntax and lint only for install functions
-
-**Outcome:** PowerShell scripts are now validated under the same PS 5.1 runtime that real Windows users have.
-
-## Sprint 6: PS 5.1 CI Validation (Issue #109)
-
-**PR:** #116  
-**Date:** 2026-04-18  
-
-Designed and implemented PS 5.1 validation job using `windows-latest` runner with Windows PowerShell 5.1. Used `shell: powershell` to invoke native PS 5.1, Parser::ParseFile for syntax validation, and PSScriptAnalyzer for linting. Dual-runtime coverage now active (PS 7+ and PS 5.1). Issue closed.
-
----
-
-### 2026-04-18 — Hotfix: CI em-dash + vim PATH (Issues #123, #107)
-
-**Branch:** `squad/fix-ci-vim-path`
-**PR:** [#126](https://github.com/primetimetank21/dev-setup/pull/126)
-
-**What I fixed:**
-1. **CI failure (PSUseBOMForUnicodeEncodedFile):** Replaced UTF-8 em-dash (U+2014) on line 63 of root `setup.ps1` with ASCII `--`. This non-ASCII byte triggered PSScriptAnalyzer's `PSUseBOMForUnicodeEncodedFile` rule, breaking both `Lint PowerShell Scripts` and `Validate PowerShell 5.1 Compatibility` CI jobs. Verified zero non-ASCII bytes remain.
-2. **Vim not on PATH after install:** Added `$env:PATH` refresh in `Install-Vim` (`scripts/windows/setup.ps1`) after `winget install`. Reads Machine + User PATH from the registry so vim is available immediately without restarting the terminal. Added fallback warning if vim still not found on PATH.
-
-**Key decisions:**
-- Used `[System.Environment]::GetEnvironmentVariable('PATH', 'Machine')` — works on PS 5.1+ (no PS6+ auto-vars)
-- Fallback `Write-Warn` keeps user informed without failing the setup
-
-
----
-
-## [2026-04-18] #123 CI Triage — Historical Failures + IsLinux Guard
-
-**Branch:** `squad/121-git-hooks` (shared branch)  
-**PR:** [#130](https://github.com/primetimetank21/dev-setup/pull/130)  
-**Status:** 🔄 Pending merge
-
-**What I investigated:**
-- 5 historical CI failures on main branch (April 18 ~04:58 UTC)
-- Pre-existing PS 5.1 validation failure on develop HEAD: "Root setup.ps1 guards all three PS-Core-only variables"
-
-**Root cause discovered:**
-1. **Historical failures:** Non-ASCII em-dash (U+2014) in root setup.ps1 triggered PSScriptAnalyzer `PSUseBOMForUnicodeEncodedFile` rule. **Superseded by PR #126** (em-dash removed), so main branch is already green.
-2. **Pre-existing develop failure:** Root setup.ps1 used `$PSVersionTable.PSVersion.Major -ge 6` checks instead of `Test-Path Variable:*` guards for IsLinux/IsWindows/IsMacOS. PS 5.1 validation suite specifically requires source-level guards, not runtime version checks.
-
-**What I fixed:**
-- Replaced all PSVersionTable version checks with proper `Test-Path Variable:*` guards:
-  - `IsWindows`: `(Test-Path Variable:IsWindows -and $IsWindows)` with fallback to `$env:OS -eq 'Windows_NT'` for PS 5.x
-  - `IsLinux`: `Test-Path Variable:IsLinux -and $IsLinux`
-  - `IsMacOS`: `Test-Path Variable:IsMacOS -and $IsMacOS`
-- Pattern aligns with guards already in `scripts/windows/setup.ps1`
-
-**Key outcome:**
-- Historical failures on main: ✅ Stale (resolved by PR #126)
-- Pre-existing develop failure: 🔄 Fixed by PR #130
-- Once #130 merges: Both main and develop branches will be green
-
-**Techniques learned:**
-- PowerShell 5.1 compat validation is strict about source-level syntax (not runtime checks)
-- Always check if a newer PR has superseded earlier CI failures (stale artifacts common in shared repos)
-- Test suite requirements > runtime logic correctness (guards must exist in source even if redundant at runtime)
-
----
-
-## [2026-04-18] #121 git hooks implementation
-
-**Branch:** `squad/121-git-hooks`
-**PR:** [#130](https://github.com/primetimetank21/dev-setup/pull/130)
-**Status:** 🔄 Pending merge
-
-**What I built:**
-- Created `hooks/` directory: three POSIX sh hooks
-  - `hooks/pre-commit`: runs shellcheck on staged .sh files (graceful skip if absent)
-  - `hooks/commit-msg`: enforces Conventional Commits format (hard reject, exit 1)
-  - `hooks/pre-push`: blocks direct push to main, runs shellcheck on changed .sh files
-- Wired git config `core.hooksPath hooks` in both setup.sh and setup.ps1
-- Added `Install-GitHooks` function to setup.ps1 (called after Write-PowerShellProfile)
-- Created `tests/test_git_hooks.ps1` with hook validation tests (4 test groups)
-
-**Design constraints (approved by Earl):**
-- POSIX sh only — no external dependencies (no husky/lefthook)
-- Works in Git Bash on Windows (tested with `/bin/sh` shebang)
-- PSScriptAnalyzer: CI-only, NOT in any hook
-- `--no-verify` escape hatch documented in all hook error messages
-- Conventional Commits validation: hard reject (exit 1) on non-conforming messages
-
-**Test coverage:**
-- Group A: Hook configuration (core.hooksPath set, files exist, shebangs valid)
-- Group B: commit-msg validation (rejects bad messages, accepts valid Conventional Commits)
-
-**Key outcome:**
-- Local development quality gates now enforced via git hooks
-- Cross-platform POSIX sh ensures Git Bash compatibility on Windows
-- ✅ PR #130 merged to develop (2026-04-18)
-- ✅ Issue #121 closed
-
----
-
-## [2026-04-18] Sprint 7 Completion — Issues #121, #123
-
-**Session:** Full autonomous execution (Earl AFK, cooking)
-**Status:** ✅ Complete
-
-### Issue #121 — git hooks implementation (PR #130)
-✅ Merged to develop. All hooks implemented and tested:
-- `hooks/commit-msg` — Conventional Commits validation
-- `hooks/pre-push` — Branch protection + shellcheck
-
-### Issue #123 — CI triage (PR #130)
-✅ Merged to develop. Findings:
-- Historical failures (5 on main): Stale artifacts, superseded by PR #126
+**Issue #123 — CI triage & PS 5.1 compat (PR #130):**
+- 5 historical CI failures on main branch: Stale, superseded by PR #126 (em-dash removal)
 - Pre-existing develop failure: Root setup.ps1 using PSVersionTable checks instead of Test-Path Variable:* guards
-- **Fix applied in PR #130:** Replaced all version checks with Test-Path guards (pattern: `Test-Path Variable:IsWindows -and $IsWindows`)
+- Fix: Replaced all version checks with Test-Path Variable:* guards (pattern: `Test-Path Variable:IsWindows -and $IsWindows`)
 
-**Key learning:** PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks.
+**Key Learning:** PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks. Always check if newer PR superseded earlier CI failures (stale artifacts common in shared repos).
 
-**Final state:**
-- Main branch: ✅ Green (PR #126 fixed em-dash)
-- Develop branch: ✅ Green (PR #130 fixed PS guards)
-- All Sprint 7 CI issues resolved
+**Outcome:** Main and develop branches both green. All Sprint 7 CI issues resolved.
 
 ---
 
-## [2026-04-18] Issue #135 — Stale Test Fix (PR #136)
+## [2026-05-16T02:00:00Z] Skill Created: ps51-ascii-safety
 
-**Session:** Post-merge follow-up (same day)
-**Branch:** `squad/135-fix-stale-ps-guard-test`
-**PR:** #136
-**Status:** ✅ Merged to develop
+**Location:** `.squad/skills/ps51-ascii-safety/SKILL.md`
+**Confidence:** high
 
-### What Happened
-
-The test "Root setup.ps1 guards all three PS-Core-only variables" was failing because it was checking for an obsolete pattern.
-
-**Root Cause:**
-- Test expected `Test-Path Variable:$varName` guards
-- Actual implementation uses PSVersion-based guards (from PR #130)
-- This was a false failure — setup.ps1 was actually correct
-
-### What I Did
-
-Updated `tests/test_windows_setup.ps1` to check for the correct guard pattern:
-
-**Before (broken):**
-```powershell
-if ($setupContent -notmatch "Test-Path Variable:$varName") {
-    throw "Root setup.ps1 is missing 'Test-Path Variable:$varName' guard"
-}
-```
-
-**After (correct):**
-```powershell
-$guarded = @($setupLines | Where-Object { 
-    $_ -match ('\$' + $varName) -and $_ -match 'PSVersionTable\.PSVersion\.Major' 
-})
-if ($guarded.Count -eq 0) {
-    throw "Root setup.ps1 is missing PSVersion-based guard for '$varName'"
-}
-```
-
-Also updated the test header comment to describe the actual pattern.
-
-### Key Learning
-
-**Test assertions must match the actual implementation pattern.** When implementation patterns change, tests must be updated in sync. Stale tests checking for superseded patterns are false failures that block CI and mislead developers.
-
-### Outcome
-
----
-
-### 2026-05-14 — PS 5.1 AllScope Alias Finding (#197)
-
-**Context:** Earl reported real-world failure on PS 5.1 where custom aliases defined in the PowerShell profile were not being applied despite setup.ps1 running successfully.
-
-**Root cause:** PS 5.1 built-in aliases marked with `AllScope` scope (gcm, gc, gl, gp, ni, rm, h, etc.) cannot be overridden with `Set-Alias -Force` alone. The Set-Alias call silently succeeds but the built-in alias remains active.
-
-**Solution:** Explicitly remove AllScope aliases before attempting to override:
-```powershell
-Remove-Item -Force Alias:\gcm -ErrorAction SilentlyContinue
-Set-Alias -Name gcm -Value <custom-function> -Force
-```
-
-**Affected files:**
-- `scripts/windows/tools/profile.ps1` — Custom alias definitions
-- `scripts/windows/tools/psmux.ps1` — psmux install failure (related: issue #179)
-
-**Issue:** #197 (filed by Ralph, in triage)
-
-**Impact on testing:** CI/CD dual-runtime validation must account for AllScope behavior when testing alias setup on PS 5.1. This is a PS 5.1-specific issue; PS 7+ does not exhibit it.
-
-✅ PR #136 merged to develop
-✅ Issue #135 closed
-✅ Test now correctly validates PSVersion-based guards
-✅ CI no longer reports false failures
-
----
-
-## [2026-04-18] Issue #138 — Group K Tests for Profile Fixes
-
-**Branch:** `chip/138-group-k-tests-temp` (awaiting Goofy's branch)
-**Status:** 🔄 Commit ready, awaiting merge target
-
-### What I Built
-
-Created Group K tests (K-1 through K-5) for issue #138 fix, adding them to `tests/test_windows_setup.ps1`:
-
-**Fix A — Dual profile paths:**
-- K-1: Verifies `Write-PowerShellProfile` contains `WindowsPowerShell` (PS 5.1 path)
-- K-2: Verifies `Write-PowerShellProfile` contains `Documents\PowerShell` (PS 7+ path, not WindowsPowerShell)
-
-**Fix B — Robust Set-Alias:**
-- K-3: Verifies all `Set-Alias` calls in `$profileContent` heredoc have `-Force` flag
-
-**Fix C — Execution policy diagnostic:**
-- K-4: Verifies `Write-PowerShellProfile` contains `Get-ExecutionPolicy` check
-- K-5: Verifies `Write-PowerShellProfile` contains `RemoteSigned` remediation hint
-
-### Technical Approach
-
-All tests use AST parsing and static string analysis:
-- Tests K-1, K-2, K-4, K-5: Parse AST to extract `Write-PowerShellProfile` function body, then use regex matching
-- Test K-3: Reads file as raw text, extracts heredoc with regex `(?s)\$profileContent\s*=\s*@'(.*?)'@`, then validates each `Set-Alias` line
-
-### Key Decisions
-
-1. **Test pattern consistency:** Followed existing Group J pattern (AST + string matching)
-2. **K-2 specificity:** Regex `Documents[/\\]PowerShell[^\\]` ensures match is NOT part of `WindowsPowerShell`
-3. **K-3 heredoc extraction:** Used raw file read + regex instead of AST to capture literal string content
-4. **Anticipatory testing:** Tests written before seeing Goofy's implementation (per charter: "write from specs, not implementation")
-
-### Coordination Issue
-
-Goofy's branch `squad/138-fix-profile-aliases` did not exist after 5 polling attempts (50 seconds). Per task instructions, created temp branch `chip/138-group-k-tests-temp` with commit ready for cherry-pick or rebase once Goofy's branch is available.
-
-### Outcome
-
-✅ 5 new tests added (Group K) to `tests/test_windows_setup.ps1`
-✅ Commit `82544ef` pushed to `chip/138-group-k-tests-temp`
-🔄 Awaiting Goofy's branch for final merge target
-
-## 2026-04-19 — Issue #138 Fix Complete: Test Design Session Wrap-up
-
-**Session ID:** issue-138-fix-complete  
-**Date:** 2026-04-19T21:59:45Z  
-
-**Test Design Contributions:**
-Anticipatory test design for Group K (Issue #138 profile fixes) before implementation:
-- K-2: Regex pattern for dual-path profile detection (later updated by Donald to match Combine() syntax)
-- K-3: Heredoc extraction + line-by-line validation for `-Force -Scope Global` on Set-Alias calls
-
-**Note on K-2 Mismatch:** Designed test expecting literal path string, but implementation used `[System.IO.Path]::Combine()` method calls. Donald updated the test pattern in regression fix phase. This is normal in anticipatory testing — spec validation happens during implementation review.
-
-**Outcome:** Test design contributed to comprehensive validation of dual-path profile fix. All Group K tests now passing as part of PR #146 merged to main.
-
-**Key Reflection:** Anticipatory testing per charter ("work from specs, not implementations") sometimes requires test adaptation when implementation details differ from predicted patterns. This is expected and healthy — the alternative of writing tests after implementation introduces "testing to the code" bias.
-
----
-
-## [2026-04-19] Issue #147 — Group L Tests for pre-push PSScriptAnalyzer Block
-
-**Branch:** `squad/147-prepush-psscriptanalyzer` (Goofy's branch)
-**Commit:** 467aeae
-**Status:** ✅ Committed and pushed
-
-### What I Built
-
-Added Group L tests (L-1 through L-5) to `tests/test_windows_setup.ps1` to verify the new PSScriptAnalyzer block in `hooks/pre-push`. All tests are **static validation** — they read and verify hook file structure without executing the hook.
-
-**Test Coverage:**
-- **L-1:** Verifies `command -v pwsh` guard exists (graceful skip path for systems without PowerShell Core)
-- **L-2:** Verifies `Invoke-ScriptAnalyzer` invocation exists (the actual PS lint check)
-- **L-3:** Verifies PSScriptAnalyzer module check or skip message (handles module-not-installed case)
-- **L-4:** Verifies NO `exit 1` on PSScriptAnalyzer lines — check is advisory only (distinguishes from main-branch guard which rightfully has exit 1)
-- **L-5:** Verifies hook shebang is `#!/bin/sh` for POSIX compatibility (not `#!/bin/bash`)
-
-### Technical Approach
-
-All tests use static file analysis:
-- Read `hooks/pre-push` file content with `Get-Content`
-- Use regex matching to verify expected patterns
-- L-4 specifically checks for co-occurrence of `PSScriptAnalyzer` AND `exit 1` on same line to catch accidental hard-fail behavior
-
-### Key Pattern Decisions
-
-1. **Followed Group K pattern:** Used existing `Test-Scenario` helper, `$RepoRoot` path construction, ASCII-only strings
-2. **L-3 defensive OR check:** Accepts EITHER skip message OR module check (implementation could use either pattern)
-3. **L-4 line-by-line scan:** Reads file as array of lines to check each individually — prevents false positive from unrelated `exit 1` (main branch guard)
-4. **L-5 exact shebang match:** Requires EXACTLY `#!/bin/sh` to enforce POSIX sh requirement (Git Bash on Windows compatibility)
-
-### Coordination
-
-Goofy's branch `squad/147-prepush-psscriptanalyzer` already existed with the hook implementation. Checked out branch, added tests after Group K, committed with Conventional Commits format and Co-authored-by trailer, pushed directly to Goofy's branch as instructed.
-
-### Outcome
-
-✅ 5 new tests added (Group L) to `tests/test_windows_setup.ps1`
-✅ Commit 467aeae pushed to `squad/147-prepush-psscriptanalyzer`
-✅ Tests ready for CI validation once branch is merged
-
-**Testing Philosophy:** Static validation tests like these catch structural issues (missing guards, wrong shebang, accidental hard-fail) without requiring a full git environment or execution context. They complement integration tests and catch regressions early.
-
----
-
-## 2025-01-XX: PS 5.1 Compatibility Fix - Group L Tests (#147)
-
-### Problem
-
-All 5 Group L tests (L-1 through L-5) were failing in CI with:
-```
-Error: A positional parameter cannot be found that accepts argument 'pre-push'.
-```
-
-Root cause: PS 5.1's `Join-Path` only accepts 2 positional arguments. Multi-segment calls like:
-```powershell
-Join-Path $RepoRoot 'hooks' 'pre-push'
-```
-fail on PS 5.1 (the third argument `'pre-push'` has no positional parameter). PS 7+ allows multiple child segments, but PS 5.1 does not.
-
-### Fix
-
-Replaced all 5 occurrences of multi-segment `Join-Path` in Group L (lines 734, 745, 756, 769, 783) with nested two-argument calls:
-```powershell
-# PS 5.1 + PS 7+ compatible:
-$hookPath = Join-Path (Join-Path $RepoRoot 'hooks') 'pre-push'
-```
-
-### Key Lesson
-
-**ALWAYS use nested `Join-Path` calls with exactly 2 arguments for PS 5.1 compatibility.**
-
-This applies to ALL test code and any PowerShell scripts that must run on both PS 5.1 and PS 7+. Never assume multi-segment positional syntax is available.
-
-### Outcome
-
-✅ Fixed all 5 Group L tests in `tests/test_windows_setup.ps1`
-✅ Commit 4dfacfe pushed to `squad/147-prepush-psscriptanalyzer`
-✅ Tests should now pass on both PS 5.1 and PS 7+ in CI
-
+Formalized the PS 5.1 CP1252 encoding trap as a reusable skill. Covers detection, fix patterns, common offender table, and when-to-apply rules. Cite this skill in any future `.ps1` file review or creation task.

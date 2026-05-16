@@ -15,172 +15,84 @@
 
 ## Core Context
 
-**Sprints 1–6 Summary (2026-04-07 to 2026-04-18):**
+**Sprints 1–7 Summary (2026-04-07 to 2026-05-04):**
 
 Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 
-- **Sprints 1–4:** 6 tool install scripts (zsh, uv, nvm, gh CLI, GitHub Copilot CLI, auth), shell profile injection for multiple shells (.bashrc, .zshrc), idempotency across multiple runs
-- **Sprint 5:** gh 2.89.0+ built-in promotion handling (`--` passthrough to binary), CI=true env var for isatty()-gated CLI probes, Copilot CLI download workarounds (PTY script, stdin pipe, CI=true final fix)
-- **Sprint 6:** tmux addition to prerequisites, CRLF guard patterns for DevContainer onCreateCommand
-- **Key Learnings:** Never probe gh built-ins with `--help` alone (use `-- --help`), CI=true > PTY wrapping for CLI probes, shell function sourcing required for nvm validation, uv prefers ~/.local/bin for non-login shells
+- **Sprints 1–4:** 6 tool install scripts (zsh, uv, nvm, gh CLI, GitHub Copilot CLI, auth); shell profile injection for multiple shells (.bashrc, .zshrc); idempotency across multiple runs
+- **Sprint 5:** gh 2.89.0+ built-in promotion handling (`gh copilot -- --help` passthrough); CI=true env var for isatty()-gated CLI probes; Copilot CLI download workarounds (PTY script, stdin pipe, final CI=true fix); exec 2>&1 stderr/stdout merge; CRLF guard in devcontainer
+- **Sprint 6:** tmux addition to prerequisites; issue #138 (dual-path profile, AllScope alias guards)
+- **Sprint 7–8:** vim PATH permanence via registry SetEnvironmentVariable
+
+**Key Patterns Established:**
+- `set -euo pipefail` + `exec 2>&1` for ordered diagnostic output
+- gh built-in probe: never use `--help` alone; always use `-- --help` to pass through to binary; never use `gh extension list` or `gh alias list` as idempotency gate
+- `CI=true timeout 60 gh copilot >/dev/null 2>&1 || true` for non-interactive Copilot binary download (isatty() gate bypass)
+- Shell function sourcing required for nvm validation (not a binary)
+- uv prefers `~/.local/bin` for non-login shells; export explicitly
+- Idempotency: skip+warn pattern when optional tools missing (npm, gh)
+
+**Key Files:**
+- `scripts/linux/setup.sh` — orchestrator: prerequisite install, run_tool helper, profile injection
+- `scripts/linux/tools/*.sh` — 6 tool scripts + auth; each has `set -euo pipefail`, idempotency guard at top
+- `.gitattributes` — eol=lf for *.sh; paired with devcontainer CRLF strip guard
+
+**Tech Debt Addressed:**
+- ps.tar.gz binary artifact removed (69MB compiled PowerShell/.NET SDK)
+- .gitignore updated to prevent future binary commits (*.tar.gz, *.zip, *.dll, *.exe)
 
 ---
 
 ## Learnings
 
-<!-- Append new learnings below. Each entry is something lasting about the project. -->
-
-- Added tmux to install_prerequisites() (issue #83, PR #84 opened) - brew and apt-get lines updated
-
-### 2026-04-12: Bug fix — gh 2.89.0+ idempotency check uses wrong command (PR #63 additional fix)
-
-`gh copilot --help` exits 0 unconditionally on gh 2.89.0+ because gh intercepts the flag
-and shows its own wrapper help — it never touches the Copilot CLI binary. This caused the
-idempotency check to always short-circuit on fresh systems, skipping the binary download.
-
-Fix: change to `gh copilot -- --help`. The `--` passes the flag through to the actual binary.
-On gh 2.89.0+ without the binary, this triggers a proactive download. On older gh without the
-extension, it exits non-zero and falls through to `gh extension install` as intended.
-
-Updated file-header comment in `scripts/linux/tools/copilot-cli.sh` to document the nuance.
-Decision dropped to `.squad/decisions/inbox/donald-idempotency-passthrough.md`.
-Branch: `squad/fix-copilot-cli-alias-conflict` — PR #63.
-
-**Rule:** Never probe a gh built-in wrapper with `--help` alone. Use `-- --help` to reach the binary.
+- Never probe gh built-ins with `--help` alone — use `gh copilot -- --help` to reach binary; `--` passes flag through unconditionally
+- Never use `gh extension list | grep` or `gh alias list | grep` as sole idempotency gate — always probe actual command with `--help`
+- gh alias conflict blocks extension install silently (stdout, not stderr) — guard with delete before install
+- `CI=true` is correct non-interactive trigger for any gh built-in that gates on `IsCI()`; never use `CanPrompt()` in postCreateCommand (no TTY)
+- `script(1)` PTY is right tool for isatty-gated CLIs but not when parent pipe may close early (e.g., container lifecycle hooks)
+- Directory existence check for Copilot binary: `~/.local/share/gh/copilot` (not exit code probe)
+- sed -i 's/\r//' chosen over dos2unix for POSIX portability
 
 ---
 
-### 2026-04-08: gh 2.x+ built-in promotion breaks extension install (PR #63 revised)
+## Recent Work
 
-`gh 2.89.0` promotes `gh copilot` to a **built-in command**. This breaks two earlier patterns:
+## [2026-04-18] Issue #68–#69: Merged (exec 2>&1 + CRLF guard)
 
-- `gh extension list | grep -q "gh-copilot"` — misses built-ins (only lists extensions)
-- `gh alias list | grep copilot` — misses built-ins (only lists aliases)
-- `gh extension install github/gh-copilot` — fails with `"copilot" matches the name of a built-in command` (stdout, not stderr)
+**PRs:** #70 (Issue #68), #71 (Issue #69)  
+**Status:** ✅ Both merged to develop via squash
 
-**Correct idempotency check:** `gh copilot --help &>/dev/null 2>&1` — succeeds whether copilot is a built-in, extension, or alias. Version-agnostic.
+**PR #70 — Issue #68 — stdout/stderr merge:**
+- Added `exec 2>&1` after `set -euo pipefail` in setup.sh and scripts/linux/setup.sh
+- Purpose: Merge stderr into stdout for ordered diagnostic output in piped contexts
+- Audited all 6 tool scripts — none use `>&2` directly; tool scripts don't need it
+- Rule: `exec 2>&1` at root only; child processes inherit merged FD
 
-**Correct install failure handling:** Use `set +e` to capture stdout+stderr from `gh extension install`, then grep for the "built-in" error string and exit 0 gracefully. Never let a version-gated "already built-in" failure propagate as a setup error.
-
-**Rule:** Never use `gh extension list` or `gh alias list` as the sole idempotency gate for gh subcommands — probe the actual command with `--help` instead.
-
-### 2026-04-08: Bug fix — gh alias conflict blocks copilot-cli extension install
-
-`gh extension install` silently fails (stdout, not stderr) when an existing gh alias matches the extension's command name. For `gh-copilot`, this means any stale `copilot` alias from a prior partial install blocks reinstall entirely.
-
-Fix pattern: guard with `gh alias list | grep -q "^copilot"` and delete before installing. Applied to `scripts/linux/tools/copilot-cli.sh` on branch `squad/fix-copilot-cli-alias-conflict`, PR #63.
-
-Also: never use `$(gh copilot --version)` in a post-install check — if the alias conflict exists, that subshell triggers the same error and leaks it into log output. Use `gh extension list | grep -q "gh-copilot"` or a plain success string instead.
-
-### 2026-04-07: Issues #1, #4, #5, #6, #7, #9 — Core Linux/macOS setup scripts implemented
-
-Implemented the full installer suite on branch `squad/1-linux-core-setup` (based on Mickey's `squad/3-os-detection-entry-point`):
-
-- `scripts/linux/setup.sh` — orchestrator: platform detection, apt/brew prerequisites, runs all tools, hooks dotfiles
-- `scripts/linux/tools/zsh.sh` — installs zsh via apt/brew, sets as default shell (idempotent `$SHELL` check)
-- `scripts/linux/tools/uv.sh` — installs uv via official installer, exports `~/.local/bin` to PATH
-- `scripts/linux/tools/nvm.sh` — fetches latest nvm release tag from GitHub API, installs, sources in session, installs Node LTS
-- `scripts/linux/tools/gh.sh` — uses GitHub's official apt keyring on Linux; brew on macOS
-- `scripts/linux/tools/copilot-cli.sh` — installs `gh-copilot` extension; gracefully skips if gh not installed or not authenticated
-
-All scripts: `set -euo pipefail`, idempotency guard at top, consistent log helpers.
-WSL treated as Linux throughout — no special-casing needed beyond what Mickey already handles in root `setup.sh`.
-
-### 2026-04-07: Issue #13 — auth.sh re-implemented from develop (PR #25 was lost)
-
-Previous PR #25 was closed because its base branch (`squad/1-linux-core-setup`) had been merged and deleted.
-Re-implemented from `develop` on branch `squad/13-auth-prompt`.
-
-- `scripts/linux/tools/auth.sh` — new file: checks `gh auth status`, prompts interactively, skips gracefully in CI/Codespaces/non-interactive
-- `scripts/linux/setup.sh` — added `run_tool "auth"` between `run_tool "gh"` and `run_tool "copilot-cli"`
-
-Idempotent: exits 0 immediately if already authenticated. Copilot CLI install (which follows) needs auth to work.
-PR: #24 (open, targeting `develop`)
-
-### 2026-04-07: Issue #13 — GitHub auth prompt step added to setup
-
-Implemented `scripts/linux/tools/auth.sh` on branch `squad/13-auth-prompt` (based on `squad/1-linux-core-setup`):
-
-- Checks `gh auth status` — exits 0 immediately if already authenticated (prints username)
-- Detects non-interactive environments via `CI`, `CODESPACES`, and TTY check — skips gracefully with guidance message
-- In interactive environments: launches `gh auth login` and confirms result
-- `scripts/linux/setup.sh` updated to call `run_tool "auth"` between `run_tool "gh"` and `run_tool "copilot-cli"`
-
-This ensures copilot-cli install always has an authenticated gh CLI available.
-PR: #25 (open, targeting `squad/1-linux-core-setup`)
+**PR #71 — Issue #69 — CRLF guard in devcontainer:**
+- Added `onCreateCommand` to `.devcontainer/devcontainer.json`: `find . -name '*.sh' | xargs sed -i 's/\r//'`
+- Purpose: Strip CRLF from working tree files on container create (defensive for existing Windows checkouts)
+- Paired with PR #66 `.gitattributes` eol=lf — INDEX renormalization alone doesn't fix working tree
+- Guard is defensive: no-op on LF systems, idempotent, safe to run multiple times
 
 ---
 
-## 2026-04-08 — Issue #57: Remove ps.tar.gz Binary Artifact
+## [2026-04-13] Issue #72: Directory-based install check & printf pipe (PR #73)
 
-**Branch:** `squad/57-remove-ps-tar-gz`  
-**PR:** #59 (open, targeting `develop`)  
-**Status:** Ready for review
+**Status:** ✅ Merged to develop via squash
 
-**What I did:**
-- Removed `ps.tar.gz` (69MB compiled PowerShell/.NET SDK DLLs) from working tree
-- Updated `.gitignore` to prevent future accidental commits
+`gh copilot -- --help` swallows the "Install? [y/N]" prompt on gh 2.89.0+; stdin gets EOF → defaults to 'N' → binary never downloads.
 
-**Why:** Binary artifact; no runtime purpose in a setup scripts repository. Adds significant bloat. Currently tracked in git; now prevented via .gitignore.
+**Fix:**
+- Check `~/.local/share/gh/copilot` directory existence for idempotency
+- Trigger download: `printf 'y\n' | timeout 60 gh copilot >/dev/null 2>&1`
+- Verify by re-checking directory
+- Removed `gh extension install` and `gh alias delete` code paths entirely
 
-**Future consideration:** Optional git history cleanup with `git-filter-repo` or `bfg` (cost/benefit analysis deferred)
-
-**Part of Sprint 5 Round 1:** Coordinated parallel work with Mickey (issue #54) and Pluto (issue #56). All agents worked concurrently on separate branches without conflicts.
-### 2026-04-08: Issue #57 — Removed ps.tar.gz binary artifact and updated .gitignore
-
-Cleaned up the 69MB PowerShell/.NET SDK DLL archive (`ps.tar.gz`) that was accidentally committed in Sprint 1:
-
-- Removed file from git tracking via `git rm ps.tar.gz`
-- Updated `.gitignore` to prevent future binary artifact commits: added `*.tar.gz`, `*.zip`, `*.dll`, `*.exe`
-- Created branch `squad/57-remove-ps-tar-gz` from `develop`
-- Committed with proper trailer: `chore: remove ps.tar.gz binary artifact and update .gitignore (#57)`
-- Pushed to origin and opened PR #59
-
-This reduces repo size and prevents accidental commits of compiled binaries. Note: git history rewrite skipped per issue spec (nice-to-have only).
-PR: #59 (open, targeting `develop`)
-
-## CRLF fix
-- Fixed .gitattributes to add eol=lf for *.sh/*.bash
-- Root cause: Windows git checkout writes CRLF; Linux bash chokes on \r at line ends
-- PR #66 opened
-
-## Learnings
-
-### 2026-04-12: Issues #68 and #69 — stdout/stderr ordering and CRLF guard in devcontainer
-
-**#68 — exec 2>&1 for ordered log output (PR #70)**
-
-`log_error()` in setup.sh and scripts/linux/setup.sh writes to `stderr` (`>&2`). In a
-Devcontainer or piped environment, stderr and stdout buffers are independent — error lines
-can appear before or after unrelated INFO/OK lines, making failures hard to trace.
-
-Fix: `exec 2>&1` immediately after `set -euo pipefail` in both root scripts. This merges
-file descriptor 2 into 1 for the lifetime of the process, including all child processes
-spawned via `bash ${tool_script}`. Audited all 6 tool scripts in `scripts/linux/tools/` —
-none use `>&2` directly; no changes needed there.
-
-**Rule:** `exec 2>&1` at the root entry point is sufficient — FD inheritance covers all
-child processes. No need to add it to tool scripts.
-
-**#69 — onCreateCommand CRLF guard in devcontainer.json (PR #71)**
-
-PR #66 added `*.sh text eol=lf` to `.gitattributes` and ran `git add --renormalize .`.
-This updates git's INDEX (what git will write on future checkouts) but NOT the working tree.
-Windows users with an existing checkout still have CRLF `.sh` files. When the Devcontainer
-bind-mounts the workspace, bash sees `set: pipefail\r` errors.
-
-Fix: `onCreateCommand` in `.devcontainer/devcontainer.json` strips `\r` from all `.sh` files
-before `postCreateCommand` runs. The `find . -name '*.sh' | xargs sed -i 's/\r//'` is
-a no-op on already-LF files and in Codespaces. Placed BEFORE `postCreateCommand` for both
-readability and correct execution order.
-
-**Rule:** When adding `.gitattributes` eol rules, always add a devcontainer `onCreateCommand`
-CRLF strip as a defensive guard — index renormalization alone doesn't fix working tree files
-for existing Windows checkouts.
+**Key Learning:** Never use `gh copilot` exit code as install probe — gh intercepts before binary runs. Use filesystem state instead. Rule: `CI=true timeout 60 gh copilot` is now preferred for non-interactive (always use CI=true over printf pipe).
 
 ---
 
-## 2026-04-13 — Session Complete: Issues #68–#69 Implemented & Merged
+## [2026-04-12] Issues #68–#69: stdout/stderr & CRLF Guard Fixes
 
 **Issues:** #68 (exec 2>&1 output merge), #69 (CRLF guard)  
 **PRs:** #70, #71 (both merged to `develop`)  
@@ -481,3 +393,16 @@ The `install_prerequisites()` function in `scripts/linux/setup.sh` maintains sep
 for macOS (brew) and Linux (apt). These lists can silently drift apart — vim was present in the
 Linux apt path but missing from the macOS brew path. When adding new prerequisites, always verify
 both platform branches get the package to maintain the cross-platform parity documented in README.
+**PRs:** #70, #71  
+**Status:** ✅ Both merged to develop
+
+**Issue #68 — exec 2>&1 for ordered log output:**
+- Root cause: stderr and stdout buffers independent in piped environments; error lines appear before unrelated INFO/OK lines
+- Fix: `exec 2>&1` immediately after `set -euo pipefail` in setup.sh and scripts/linux/setup.sh
+- Rule: FD inheritance covers all child processes; no need to add to tool scripts
+
+**Issue #69 — onCreateCommand CRLF guard in devcontainer:**
+- Root cause: PR #66 added `.gitattributes` eol=lf + `git add --renormalize`, but this updates git INDEX only, not working tree
+- Windows users with existing checkout still have CRLF .sh files; bind-mount sees `set: pipefail\r` errors
+- Fix: `onCreateCommand` strips `\r` before `postCreateCommand` runs
+- Rule: When adding .gitattributes eol rules, always add devcontainer onCreateCommand CRLF strip as defensive guard
