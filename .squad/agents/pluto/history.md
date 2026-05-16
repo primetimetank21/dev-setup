@@ -195,3 +195,13 @@ PR #115 merged to `develop`. Mickey reviewed and approved — all 30 aliases cor
 
 Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for reserved names, $args passthrough on all functions, inline comments, and PS 5.x strict-mode compatibility. High craft level. Issue closed.
 
+
+## Learnings
+
+### 2026-05-18: CHANGELOG.md created (Issue #188, PR #203)
+- Created CHANGELOG.md at repo root following Keep a Changelog format
+- Backfilled 7 sprints of history from git log and .squad/log/ files
+- Sprint boundaries inferred from retro files and explicit sprint-wrap PRs
+- Grouped ~60 PRs into meaningful bullets by theme rather than listing each individually
+- Branch: squad/188-add-changelog -> develop
+
