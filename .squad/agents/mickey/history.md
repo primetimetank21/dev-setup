@@ -699,4 +699,15 @@ Reviewed Goofy's PS 5.1 compatibility fix addressing two root causes from issue 
 - All 3 issues closed manually (auto-close fragile — confirmed pattern from batch 1).
 - Develop now at `c948c61` with 3 new merge commits. All squad branches deleted.
 
-**Key Learning:** Worktree isolation worked — no branch ancestry bleed in batch 2 (unlike batch 1). CHANGELOG conflicts remain the most common merge issue when batching PRs that all touch [Unreleased]. Merge in dependency order and rebase as needed.
+**Key Learning:** Worktree isolation worked -- no branch ancestry bleed in batch 2 (unlike batch 1). CHANGELOG conflicts remain the most common merge issue when batching PRs that all touch [Unreleased]. Merge in dependency order and rebase as needed.
+
+---
+
+## Batch 4 Review (2026-05-19)
+
+Reviewed and merged 3 PRs in order: #214, #215, #213. All CI green (5/5 jobs SUCCESS) before each merge. All merges used `--merge --delete-branch --admin` (no squash, no rebase).
+
+- **PR #214** (Chip, closes #193): CI-only change adding shellcheck linting for `config/dotfiles/.aliases` with `-s bash` flag. Scope tight -- only `validate.yml`, CHANGELOG, and chip history. 2 commits, both conventional format with Co-authored-by trailers. Merged cleanly, no conflicts.
+- **PR #215** (Goofy, closes #190): Added `.tool-versions` file pinning nodejs, nvm, uv, copilot-cli versions. New POSIX/PowerShell reader scripts (`read-tool-version.sh`, `Read-ToolVersion.ps1`), 4 install scripts updated to read pinned versions. Tests added (bash `test_tool_versions.sh` + Group R in `test_windows_setup.ps1`). ASCII-clean .ps1 files. CHANGELOG conflict with #214 resolved locally -- kept both [Unreleased] entries, committed as `chore(changelog): sync develop into squad/190-tool-versions` (the `merge` type was not yet valid before #213 landed). CI re-ran green after resolution push.
+- **PR #213** (Chip, closes #212): Added `prepare-commit-msg` hook that rewrites git auto-generated merge/revert messages into Conventional Commits form. Added `merge` to commit-msg type allowlist. 7 new Group B tests covering all rewrite patterns. Elegant approach -- normalization instead of bypass. Merged cleanly on GitHub (no CHANGELOG conflict despite touching it).
+- Develop tip after all merges: `afd56b4`. All 3 squad branches deleted on remote (local worktree branches remain per coordinator directive). No blockers encountered.
