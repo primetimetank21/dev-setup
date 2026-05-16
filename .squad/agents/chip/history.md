@@ -337,3 +337,13 @@ Created `.github/workflows/e2e-install.yml` -- full end-to-end install smoke tes
 - Kept echo messages without emoji (ASCII-only) to match existing macOS job style, unlike validate-linux which uses emoji markers.
 - Verification approach: YAML structure validated by maintaining consistent indentation; shell commands are POSIX-compatible and work in bash 3.2+.
 - Placement: step inserted between 'Validate uv installed' and 'Validate gh CLI installed' to match the logical order in validate-linux.
+
+### Issue #252: Node version pinned at 20.11.0, squad-cli requires >=22.5.0
+
+- Root cause: `.tool-versions` pinned `nodejs 20.11.0`, which both Linux/macOS (`nvm.sh`) and Windows (`nvm.ps1`) read via `read-tool-version.sh` / `Read-ToolVersion.ps1`. The version 20.11.0 predates the `squad-cli` engine requirement of `>=22.5.0`.
+- Fix: Bumped `.tool-versions` from `nodejs 20.11.0` to `nodejs 22.11.0` (Node 22 LTS baseline). No script changes needed -- both platform scripts already read from `.tool-versions`.
+- Regression guard: Added a `Node version gate (>=22)` assertion to both Linux and macOS e2e-install.yml fresh-shell steps. The assertion extracts the major version from `node --version` and fails the job if it is below 22.
+- Windows parity: Windows `nvm.ps1` also reads from `.tool-versions`, so the bump applies automatically. No separate Windows fix needed.
+- Lesson: When a centralized version file like `.tool-versions` exists, version drift bugs are single-line fixes -- but only if e2e assertions actually check the installed version against downstream requirements. Always add version-gate assertions for tools with engine constraints.
+- v2 fix -- added `nvm alias default "$PINNED_NODE"` after `nvm use`. v1 missed it. CI exposed the gap via fresh-shell assertion: `nvm install` + `nvm use` only sets the version for the current shell, but a fresh `bash -lc` shell sources `~/.nvm/nvm.sh` with no default alias and falls back to the system Node (e.g., v20 on Ubuntu runners). This is the same root cause as the warning Linux was silently producing (#255). One-line fix closes both issues.
+- v3 fix -- test_tool_versions.sh was stale (expected nodejs 20.11.0). Bumped to match new pinned version.

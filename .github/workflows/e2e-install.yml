@@ -53,6 +53,14 @@ jobs:
             node --version
             npm --version
 
+            echo "--- Node version gate (>=22) ---"
+            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)
+            if [ "$NODE_MAJOR" -lt 22 ]; then
+              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22 (squad-cli requires >=22.5.0)"
+              exit 1
+            fi
+            echo "Node major version $NODE_MAJOR OK"
+
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"
             uv --version
@@ -187,6 +195,14 @@ jobs:
             nvm --version
             node --version
             npm --version
+
+            echo "--- Node version gate (>=22) ---"
+            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)
+            if [ "$NODE_MAJOR" -lt 22 ]; then
+              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22 (squad-cli requires >=22.5.0)"
+              exit 1
+            fi
+            echo "Node major version $NODE_MAJOR OK"
 
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"

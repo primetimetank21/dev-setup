@@ -19,7 +19,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 READER="${REPO_ROOT}/scripts/lib/read-tool-version.sh"
 
 # Test 1: nodejs returns expected value
-expected="20.11.0"
+expected="22.11.0"
 got="$(sh "$READER" nodejs)"
 if [ "$got" = "$expected" ]; then
     pass "nodejs version is $expected"
