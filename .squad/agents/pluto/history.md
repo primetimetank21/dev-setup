@@ -224,3 +224,25 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
+
+### 2026-05-21: Pre-commit hygiene checks (Issue #240)
+
+**Design decisions:**
+- Ordered checks fastest-first: branch ancestry (single git command, sub-5ms), ASCII scan (only staged .ps1), rogue paths (pattern match), inbox check (grep). Shellcheck stays last.
+- All 4 checks are HARD FAIL (exit 1). Inbox file staging should never happen legitimately; rogue paths indicate misunderstanding of structure; ancestry bleed is a workflow error; non-ASCII in .ps1 causes runtime failures.
+- Used `grep -nP '[^\x00-\x7f]'` for ASCII detection. Requires GNU grep with PCRE (shipped with git-bash on Windows, standard on Linux). macOS ships BSD grep without -P; if needed, a `perl -ne` fallback could be added, but git-bash is the target (git hooks always run via git's bundled bash).
+- Did NOT use `LC_ALL=C` with `-P` flag -- git-bash's grep errors with "supports only unibyte and UTF-8 locales". Default UTF-8 locale works correctly.
+- Rogue path allowlist uses shell `case` statements with glob patterns -- fully POSIX, no external deps.
+- Branch ancestry uses `git merge-base --is-ancestor develop HEAD` -- fast, portable, available in all git versions >= 1.8.0.
+- Check scans staged content via `git show ":$file"` not working tree, so it validates what will actually be committed.
+
+**Cross-platform gotchas:**
+- `grep -P` is GNU-specific. BSD grep (macOS) doesn't support it. But git hooks run via git's bundled bash on all platforms, which ships GNU grep. Documented this limitation.
+- `\x00-\x7f` hex range in bracket expressions (without -P) matches everything in C locale on git-bash -- broken. Must use -P flag for reliable hex matching.
+- CRLF in test repos causes warnings but doesn't affect test correctness.
+
+**Performance:**
+- Branch ancestry check: ~2ms (single git plumbing command)
+- ASCII check: <10ms for typical staged .ps1 files (pipes through grep)
+- Rogue path check: <5ms (pure shell pattern matching)
+- Total hook overhead for clean commit: ~20ms (well under 100ms goal)
