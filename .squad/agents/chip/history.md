@@ -57,6 +57,13 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Recent Work
 
+## [2026-05-18T00:00:00Z] Issue #183: Wire test_git_hooks.ps1 into validate.yml
+
+**Branch:** `squad/183-test-git-hooks-ci`
+**What:** Added `tests/test_git_hooks.ps1` to both `validate-powershell` (pwsh) and `validate-ps51` (powershell) CI jobs. Added prerequisite `git config core.hooksPath hooks` step so the hook-path assertion passes on fresh runner checkouts.
+
+---
+
 ## [2026-05-16T01:30:00Z] Issue #197: Non-ASCII Test File Fix (CP1252 Encoding Cleanup)
 
 **Branch:** `squad/197-ps51-compat-fix`  
