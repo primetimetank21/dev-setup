@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Uninstall scripts (`scripts/linux/uninstall.sh`, `scripts/windows/uninstall.ps1`) that revert profile blocks and restore dotfile .bak files. Tools remain installed.
 - Windows now installs dotfiles (gitconfig, editorconfig, npmrc, vimrc) with .bak backup (PR #180)
 - CI now runs `tests/test_git_hooks.ps1` to catch git hook regressions
 - Alias parity test between Linux .aliases and Windows PowerShell profile (PR #187)
