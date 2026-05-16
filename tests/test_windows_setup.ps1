@@ -1135,6 +1135,72 @@ Test-Scenario "R-4 Get-ToolVersion throws on unknown tool" {
 }
 
 # ---------------------------------------------------------------------------
+# Group S: GitHub auth step (Issue #191)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group S: GitHub auth step (Issue #191)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$authScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'auth.ps1'
+
+. $authScript
+
+Test-Scenario "S-1 Invoke-GhAuth is a function after dot-sourcing auth.ps1" {
+    $cmd = Get-Command Invoke-GhAuth -ErrorAction SilentlyContinue
+    if (-not $cmd) {
+        throw 'Invoke-GhAuth not found after dot-sourcing auth.ps1'
+    }
+    if ($cmd.CommandType -ne 'Function') {
+        throw "Expected Function, got $($cmd.CommandType)"
+    }
+}
+
+Test-Scenario "S-2 Invoke-GhAuth exits cleanly when gh is missing" {
+    # Temporarily hide gh by aliasing it to a nonexistent command
+    $origPath = $env:PATH
+    try {
+        # Set PATH to empty so gh cannot be found
+        $env:PATH = ''
+        $output = Invoke-GhAuth 2>&1 | Out-String
+        if ($output -notmatch 'not found') {
+            throw "Expected warning about gh not found, got: $output"
+        }
+    } finally {
+        $env:PATH = $origPath
+    }
+}
+
+Test-Scenario "S-3 Invoke-GhAuth does not prompt when already authenticated" {
+    # Only run if gh is available and already authenticated
+    $hasGh = $null -ne (Get-Command gh -ErrorAction SilentlyContinue)
+    if (-not $hasGh) {
+        $script:TestsPassed--
+        $script:TestsSkipped++
+        Write-Host "[SKIP] gh not on PATH" -ForegroundColor Yellow
+        return
+    }
+    $isAuthed = $false
+    try {
+        $authOut = & gh auth status 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0) { $isAuthed = $true }
+    } catch {
+        # gh auth status failed - not authenticated
+    }
+    if (-not $isAuthed) {
+        $script:TestsPassed--
+        $script:TestsSkipped++
+        Write-Host "[SKIP] not authenticated" -ForegroundColor Yellow
+        return
+    }
+    # Should return immediately with "already authenticated" message
+    $output = Invoke-GhAuth 2>&1 | Out-String
+    if ($output -notmatch 'already authenticated') {
+        throw "Expected 'already authenticated' message, got: $output"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
