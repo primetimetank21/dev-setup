@@ -1135,29 +1135,95 @@ Test-Scenario "R-4 Get-ToolVersion throws on unknown tool" {
 }
 
 # ---------------------------------------------------------------------------
-# Group S: nvm.ps1 Node auto-install logic (Issue #201)
+# Group S: GitHub auth step (Issue #191)
 # ---------------------------------------------------------------------------
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group S: nvm.ps1 Node auto-install (Issue #201)" -ForegroundColor Cyan
+Write-Host " Group S: GitHub auth step (Issue #191)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$authScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'auth.ps1'
+
+. $authScript
+
+Test-Scenario "S-1 Invoke-GhAuth is a function after dot-sourcing auth.ps1" {
+    $cmd = Get-Command Invoke-GhAuth -ErrorAction SilentlyContinue
+    if (-not $cmd) {
+        throw 'Invoke-GhAuth not found after dot-sourcing auth.ps1'
+    }
+    if ($cmd.CommandType -ne 'Function') {
+        throw "Expected Function, got $($cmd.CommandType)"
+    }
+}
+
+Test-Scenario "S-2 Invoke-GhAuth exits cleanly when gh is missing" {
+    # Temporarily hide gh by aliasing it to a nonexistent command
+    $origPath = $env:PATH
+    try {
+        # Set PATH to empty so gh cannot be found
+        $env:PATH = ''
+        $output = Invoke-GhAuth 2>&1 | Out-String
+        if ($output -notmatch 'not found') {
+            throw "Expected warning about gh not found, got: $output"
+        }
+    } finally {
+        $env:PATH = $origPath
+    }
+}
+
+Test-Scenario "S-3 Invoke-GhAuth does not prompt when already authenticated" {
+    # Only run if gh is available and already authenticated
+    $hasGh = $null -ne (Get-Command gh -ErrorAction SilentlyContinue)
+    if (-not $hasGh) {
+        $script:TestsPassed--
+        $script:TestsSkipped++
+        Write-Host "[SKIP] gh not on PATH" -ForegroundColor Yellow
+        return
+    }
+    $isAuthed = $false
+    try {
+        $authOut = & gh auth status 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0) { $isAuthed = $true }
+    } catch {
+        # gh auth status failed - not authenticated
+    }
+    if (-not $isAuthed) {
+        $script:TestsPassed--
+        $script:TestsSkipped++
+        Write-Host "[SKIP] not authenticated" -ForegroundColor Yellow
+        return
+    }
+    # Should return immediately with "already authenticated" message
+    $output = Invoke-GhAuth 2>&1 | Out-String
+    if ($output -notmatch 'already authenticated') {
+        throw "Expected 'already authenticated' message, got: $output"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group T: nvm.ps1 Node auto-install logic (Issue #201)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group T: nvm.ps1 Node auto-install (Issue #201)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
 $nvmScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'nvm.ps1'
 $nvmContent = Get-Content $nvmScript -Raw
 
-Test-Scenario "S-1 nvm.ps1 reads nodejs version from .tool-versions" {
+Test-Scenario "T-1 nvm.ps1 reads nodejs version from .tool-versions" {
     if ($nvmContent -notmatch "Get-ToolVersion.*-Name\s+'nodejs'") {
         throw "nvm.ps1 does not read nodejs version from .tool-versions via Get-ToolVersion"
     }
 }
 
-Test-Scenario "S-2 nvm.ps1 skips install if node matches pinned version (idempotent)" {
+Test-Scenario "T-2 nvm.ps1 skips install if node matches pinned version (idempotent)" {
     if ($nvmContent -notmatch 'already installed.*skipping') {
         throw "nvm.ps1 does not skip when node version matches pinned version"
     }
 }
 
-Test-Scenario "S-3 nvm.ps1 refreshes PATH via registry read" {
+Test-Scenario "T-3 nvm.ps1 refreshes PATH via registry read" {
     $hasRefresh = $nvmContent -match "GetEnvironmentVariable\('Path',\s*'Machine'\)" -and
                   $nvmContent -match "GetEnvironmentVariable\('Path',\s*'User'\)"
     if (-not $hasRefresh) {
@@ -1165,7 +1231,7 @@ Test-Scenario "S-3 nvm.ps1 refreshes PATH via registry read" {
     }
 }
 
-Test-Scenario "S-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
+Test-Scenario "T-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
     $hasInstall = $nvmContent -match 'nvm install \$pinnedNode'
     $hasUse     = $nvmContent -match 'nvm use \$pinnedNode'
     if (-not $hasInstall -or -not $hasUse) {
@@ -1174,17 +1240,17 @@ Test-Scenario "S-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
 }
 
 # ---------------------------------------------------------------------------
-# Group T: squad-cli.ps1 loud error (Issue #201)
+# Group U: squad-cli.ps1 loud error (Issue #201)
 # ---------------------------------------------------------------------------
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group T: squad-cli.ps1 loud error (Issue #201)" -ForegroundColor Cyan
+Write-Host " Group U: squad-cli.ps1 loud error (Issue #201)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
 $squadScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'squad-cli.ps1'
 $squadContent = Get-Content $squadScript -Raw
 
-Test-Scenario "T-1 squad-cli.ps1 emits ERROR (not WARN) when npm missing" {
+Test-Scenario "U-1 squad-cli.ps1 emits ERROR (not WARN) when npm missing" {
     if ($squadContent -match 'Write-Warn.*npm not found') {
         throw "squad-cli.ps1 still uses Write-Warn for npm-missing case"
     }
@@ -1193,13 +1259,13 @@ Test-Scenario "T-1 squad-cli.ps1 emits ERROR (not WARN) when npm missing" {
     }
 }
 
-Test-Scenario "T-2 squad-cli.ps1 exits non-zero when npm missing" {
+Test-Scenario "U-2 squad-cli.ps1 exits non-zero when npm missing" {
     if ($squadContent -notmatch 'exit\s+1') {
         throw "squad-cli.ps1 does not exit 1 when npm is missing"
     }
 }
 
-Test-Scenario "T-3 squad-cli.ps1 provides actionable troubleshooting hints" {
+Test-Scenario "U-3 squad-cli.ps1 provides actionable troubleshooting hints" {
     $hasHint1 = $squadContent -match 'close this terminal'
     $hasHint2 = $squadContent -match 'nvm.*install.*failed'
     if (-not $hasHint1 -or -not $hasHint2) {

@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- macOS CI validation via new `validate-macos` job in `validate.yml` (closes #181)
+- Windows GitHub auth step via `scripts/windows/auth.ps1` (closes #191)
 - Automatic Node LTS install via nvm during setup; reads pinned version from `.tool-versions` (closes #201)
 - `tests/test_nvm_bootstrap.sh` -- bash tests for nvm/squad-cli bootstrap behavior
-- Group S tests in `test_windows_setup.ps1` for nvm.ps1 Node auto-install logic
-- Group T tests in `test_windows_setup.ps1` for squad-cli.ps1 loud error behavior
+- Group T tests in `test_windows_setup.ps1` for nvm.ps1 Node auto-install logic
+- Group U tests in `test_windows_setup.ps1` for squad-cli.ps1 loud error behavior
 - `.tool-versions` file for pinning tool versions (nodejs, nvm, uv, copilot-cli)
 - `scripts/lib/read-tool-version.sh` -- POSIX sh helper to read pinned versions
 - `scripts/lib/Read-ToolVersion.ps1` -- PowerShell `Get-ToolVersion` function

@@ -80,6 +80,67 @@ jobs:
           chmod +x tests/test_alias_parity.sh
           bash tests/test_alias_parity.sh
 
+  validate-macos:
+    name: Validate macOS Setup
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x setup.sh scripts/linux/setup.sh scripts/linux/tools/*.sh
+
+      - name: Verify Homebrew available
+        run: |
+          if ! command -v brew &>/dev/null; then
+            echo "FAIL: Homebrew not found on macOS runner"
+            exit 1
+          fi
+          echo "brew: $(brew --version | head -1)"
+
+      - name: Verify shell tools
+        run: |
+          echo "bash: $(bash --version | head -1)"
+          echo "zsh: $(zsh --version)"
+
+      - name: Run setup script
+        run: bash setup.sh
+
+      - name: Validate zsh installed
+        run: |
+          if ! command -v zsh &>/dev/null; then
+            echo "FAIL: zsh not found on PATH"
+            exit 1
+          fi
+          echo "zsh: $(zsh --version)"
+
+      - name: Validate uv installed
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          if ! command -v uv &>/dev/null; then
+            echo "FAIL: uv not found on PATH"
+            exit 1
+          fi
+          echo "uv: $(uv --version)"
+
+      - name: Validate gh CLI installed
+        run: |
+          if ! command -v gh &>/dev/null; then
+            echo "FAIL: gh not found on PATH"
+            exit 1
+          fi
+          echo "gh: $(gh --version | head -1)"
+
+      - name: Test idempotency (run setup a second time)
+        run: |
+          echo "--- Running setup script a second time to test idempotency ---"
+          bash setup.sh
+          echo "Second run completed without errors"
+
+      - name: Run tool version tests
+        run: bash tests/test_tool_versions.sh
+
   lint-shell-scripts:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest

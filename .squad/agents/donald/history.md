@@ -420,3 +420,10 @@ both platform branches get the package to maintain the cross-platform parity doc
 - Windows profile paths: Documents/WindowsPowerShell and Documents/PowerShell
 - Uninstallers are idempotent; tools intentionally left installed
 - PS1 ASCII safety: box-drawing chars (U+2500 range) trigger the same CP1252 issue as em dashes
+
+### Issue #191 - Windows GitHub auth step (2026-05-16)
+- PR: TBD -- `feat(windows): add gh auth step`
+- Branch: `squad/191-windows-auth` from `develop`
+- What: Added scripts/windows/auth.ps1 with Invoke-GhAuth that mirrors Linux auth.sh
+- Key findings: Linux uses gh auth login with no flags; Windows uses --hostname github.com --git-protocol https --web for explicit interactive flow. Auth failure is always non-fatal (warn and continue). Non-interactive detection via CI/CODESPACES env vars and [Environment]::UserInteractive.
+- Tests: Group S verifies function exists (S-1), exits cleanly when gh missing (S-2), skips prompt when already authenticated (S-3)

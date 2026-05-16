@@ -61,6 +61,22 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Recent Work
 
+## [2026-05-22T00:00:00Z] Issue #181: macOS CI validation job
+
+**Branch:** `squad/181-macos-ci`
+**PR:** #216
+**Status:** PR opened
+
+Added `validate-macos` job to `.github/workflows/validate.yml` (6th CI job). Runs on `macos-latest` and validates: Homebrew availability, zsh + gh pre-installed, uv install via curl, nvm + Node.js install, idempotency (second setup run), and `test_tool_versions.sh`. All tool install scripts (`zsh.sh`, `gh.sh`, `uv.sh`, `nvm.sh`) already handle macOS via `uname -s == Darwin` checks -- no script changes needed.
+
+**Key findings:**
+- All tool scripts in `scripts/linux/tools/` already branch on Darwin vs Linux -- no macOS-specific forks required
+- `test_setup_basic.sh` does not exist; `test_tool_versions.sh` is POSIX sh and works cross-platform
+- macOS GitHub runners have Homebrew and zsh pre-installed; gh is also pre-installed
+- Used plain ASCII text in step output (no emoji) to keep the new job ASCII-clean
+
+---
+
 ## [2026-05-19T00:00:00Z] Issue #212: commit-msg hook rejects merge/revert commits
 
 **Branch:** `squad/212-commit-msg-merge-bypass`
