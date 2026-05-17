@@ -230,3 +230,38 @@ Appended team updates to:
   this retro for `Sprint T` -> `Sprint 11` (the retro H1 itself uses the
   new name only; old references inside CHANGELOG headers and other retros
   carry the alias on first mention).
+- **Sprint 12 Wave 1 fold (2026-05-17).** Folded 5-agent batch with 2 inbox
+  decisions, 5 orchestration-log entries, 1 session log, and a Jiminy
+  history-rescue. Patterns earned:
+  - **5-agent batch fold pattern.** When Wave N closes with 4-5 merged PRs +
+    1 audit-only issue close, one Scribe fold PR covers the whole wave.
+    Spawn manifest goes straight from coordinator into individual
+    orchestration-log entries -- one file per agent, ISO 8601 UTC timestamp
+    with colons replaced by dashes (`2026-05-17T06-01-33Z-{agent}-{slug}.md`).
+    Keep each entry small (~1-2 KB) using the template field table.
+  - **Jiminy-history-rescue pattern.** When an agent has violated the
+    develop-commit ban by writing loose to their own `history.md` on develop,
+    Scribe rescues that file in the same fold PR as the inbox drain. Stage
+    `.squad/agents/{agent}/history.md` explicitly with `git add -- <path>` --
+    do NOT broaden the staging glob. Note the rescue in the PR body so the
+    audit trail is clear ("pre-existed in main checkout before this PR --
+    earlier rules violation now resolved"). This is the documented drain SOP.
+  - **Obsolete fold-request handling.** A `history-fold-request` inbox file
+    is OBSOLETE if the target agent self-appended the content directly
+    (rules violation aside, the content is in place). Delete the inbox file
+    without re-merging (would duplicate content). Document the disposition
+    in decisions.md as a "Fold note (Scribe)" subsection on the partner
+    decision entry so the audit trail survives the delete.
+  - **Size-gated 7-day archive cut.** At >= 50 KB, the 7-day rule fires.
+    Find the date boundary (entries dated > N-7 days are KEEP; <= N-7 days
+    are ARCHIVE). Cut on the trailing `---` separator before the first
+    KEEP entry so both files have clean section boundaries. Move content
+    via PowerShell `[System.IO.File]::WriteAllText` with
+    `UTF8Encoding($false)` (no BOM) to preserve existing em-dashes in
+    archive without polluting the rewritten live file. Result this fold:
+    164,339 B -> 44,473 B live, 122,314 B archive.
+  - **History-summarization scope tension.** When a fold's staging scope
+    is restricted (per-task spec) and the 15-KB hard gate fires on agents
+    outside that scope, defer summarization and flag in the health report
+    rather than expanding the staging glob. The hard gate fires next pass;
+    discipline beats sprawl.
