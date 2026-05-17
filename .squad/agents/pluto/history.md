@@ -470,3 +470,42 @@ Therefore: NO behavior change in this PR, NO follow-up issue required.
   who see `|| true` and think "bug" need the comment within eyeshot, not three docs away.
 - README/CONTRIBUTING already said "advisory, never blocks" but never said WHY. The why is
   what prevents tightening. Always document the rationale, not just the behavior.
+
+### Sprint 12 (Wave 1): Legacy priority label cleanup (issue #254)
+
+**Context:** Issue #254 -- delete legacy `priority: high/medium/low` labels (with spaces) that
+predated the canonical `priority:p0..p3` taxonomy. Reassigned from Mickey to Pluto since
+this is config-engineering work (label inventory + workflow files).
+
+**Pre-deletion audit:**
+- Confirmed all three legacy labels existed (`gh label list --limit 100`).
+- Confirmed canonical `priority:p0`, `priority:p1`, `priority:p2`, `priority:p3` all in place.
+- Verified ZERO OPEN issues/PRs used legacy labels. 18 CLOSED issues (chip era: #178-194)
+  had used them, but closed issues retaining history was acceptable per task scope (the
+  explicit gate was `any OPEN issue/PR`).
+- Grepped `.github/`, `.squad/`, `CONTRIBUTING.md`, `README.md`, issue templates for any
+  references. Only matches were historical (a retro doc + decisions.md prose using
+  `Priority: HIGH` as a severity ranking, NOT label names).
+- Verified `.github/workflows/sync-squad-labels.yml` is additive-only (no delete pass) and
+  defines PRIORITY_LABELS as p0/p1/p2 only -- does NOT reference legacy labels, so deletion
+  is safe from auto-recreation.
+
+**Deletion:** `gh label delete "priority: high" --yes` (and medium/low). All three confirmed
+removed. Post-delete label list shows only `priority:p0..p3`.
+
+**Side observation (out of scope, flagged for follow-up):** `sync-squad-labels.yml`
+PRIORITY_LABELS list is missing `priority:p3` -- the label exists in the repo but the
+workflow will not re-sync it if deleted. Not in scope for #254 (which is removal-only) but
+worth tracking. `priority:p3` was likely added manually after the workflow was written.
+
+**Takeaway -- label hygiene SOP:**
+1. ALWAYS audit BEFORE delete: `gh label list --limit 100` (default limit 30 lies),
+   `gh issue list --label "X" --state open` (not `--state all`), `gh pr list --label "X"`.
+2. Grep the repo for the label name in workflows, issue templates, CONTRIBUTING, README,
+   and `.squad/`. A label that is mechanically defined in a workflow will silently auto-
+   recreate after manual deletion -- must be removed at the source.
+3. Closed-issue history loss is acceptable if the canonical taxonomy supersedes it.
+   Open-issue label loss is NOT -- would orphan triage signal.
+4. Captured this pattern in `.squad/skills/label-hygiene/SKILL.md` for the team.
+
+**PR:** #315 (filed end-of-session).
