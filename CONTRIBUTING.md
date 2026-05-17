@@ -177,6 +177,14 @@ Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
 
 The hook auto-detects `pwsh` and the module. If either is absent, the check is silently skipped.
 
+### Why is PSSA advisory in `pre-push`?
+
+PSSA findings warn but never block local pushes. The hook intentionally exits 0 even when PSSA reports issues. Three reasons:
+
+1. **Availability gap.** Not every contributor host has `pwsh` + the PSScriptAnalyzer module installed (e.g., Linux/macOS without PowerShell Core, or Windows boxes without PSGallery network access). Blocking would punish hosts that simply lack the tool.
+2. **Subjective rules.** Many PSSA rules (`PSAvoidUsingWriteHost`, `PSUseSingularNouns`, etc.) are style preferences, not bugs. CI -- not the developer's machine -- is the right gate for those.
+3. **Out of scope to harden.** Making PSSA blocking locally would require pinning a module version and curating a cmdlet allowlist. That work is deferred; if you need strict local linting today, run `Invoke-ScriptAnalyzer` manually before pushing. The inline comment block at the top of the PSSA section in `hooks/pre-push` records this intent so the `|| true` is not "fixed" away.
+
 ---
 
 ## Direct-Push Override Policy
