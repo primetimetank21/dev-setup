@@ -169,3 +169,64 @@ Appended team updates to:
   no new retro file, no edits to other agents' history.md, no direct
   develop commits (branch `squad/scribe-post-090-retro` from develop @
   `94b696c`).
+
+### 2026-05-17 -- Sprint 11 retro filed (PR #303)
+
+- Filed `.squad/retros/2026-05-17-sprint-11-retro.md` (originally named
+  `2026-05-17-sprint-t-retro.md`) via PR #303 on branch
+  `squad/scribe-sprint-t-retro`. Merged at 04:16 UTC, before the 0.9.1 release cut.
+- This retro covered Sprint 11 proper -- 4 work PRs (#296, #297, #298, #301)
+  closing 4 issues (#229, #230, #233, #292), plus 2 bonus Jiminy audit PRs
+  (#299, #302). First sprint exercising the PR #293 SOPs; all exercisable
+  gates passed clean.
+- The retro filename was renamed via `git mv` in PR #308 minutes later (Tier 3
+  sprint-naming sweep). The H1 picked up the `(formerly Sprint T)` alias.
+
+### 2026-05-17 -- Mini-event retro: 0.9.1 release + sprint naming rename
+
+- Created `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md`.
+  Mini-event retro covering work that landed AFTER PR #303 in the same session:
+  0.9.1 release (PRs #305 + #307, tag, GH release), the Tier 3 sprint-naming
+  sweep (Mickey PR #308 + Doc commit `56c3c1f`), and the Sprint 12 backlog
+  enumeration (2 new issues #309 + #310).
+- Decision: mini-events get their own tighter retro file rather than folding
+  into a session log. Rationale: (a) sprint naming convention is now permanent
+  policy worth surfacing in retro history; (b) the Doc no-worktree decision
+  and the `area:scripts` label gotcha are operational learnings that would get
+  lost in `.squad/log/`. Two-page retro is the right size; full sprint retros
+  remain the larger format.
+- Updated `.squad/agents/mickey/history.md`: appended PR #308 merge outcome,
+  Sprint 12 backlog summary, label gotcha note.
+- Updated `.squad/agents/doc/history.md`: appended pattern note documenting
+  the one-off fact-check NO-worktree decision rule (codified in the retro).
+- Updated `.squad/agents/scribe/history.md` (this entry): logged Sprint 11
+  retro PR #303 plus this mini-event retro.
+- Hard guardrails honored: branch `squad/scribe-0.9.1-rename-retro` from
+  `develop @ c93a54c`, no direct develop commits, ASCII only in new content,
+  conventional commit prefix `docs(scribe):`, PR not merged (left for
+  coordinator review). No inbox drop (no reusable decision worth recording --
+  the policy is already in CONTRIBUTING.md).
+
+## Learnings (Scribe)
+
+- **Mini-event retros work.** When a session ships work that does not belong
+  in a full sprint retro (release cut + meta-cleanup + backlog sweep), a
+  smaller-scope retro file in `.squad/retros/` is the right home. Keep it
+  to ~1-2 pages. Reference but do not rewrite any sprint retro the mini-event
+  follows.
+- **Label-vocab gotcha is worth a one-line entry in any retro that hits it.**
+  Future Scribes filing retros that mention `gh issue create` failures
+  (`area:scripts` not existing, missing `priority:p4`, etc.) should call out
+  the actual label set in the retro so the next session does not repeat the
+  lookup. Six area labels exist: ci, hooks, windows, macos, linux, meta.
+- **Sprint rename sweeps require Scribe to think about retro filenames.** When
+  a Tier 3 rename runs in the same session as a retro PR (this session: #303
+  filed then #308 renamed it), the retro file itself gets `git mv`-ed and the
+  H1 picks up the alias. Not a problem -- just a pattern worth flagging so
+  future Scribes do not double-write or get confused about which filename is
+  canonical.
+- **`(formerly Sprint X)` aliasing on first-occurrence-per-file** is now the
+  team convention for any historical reference. Applied automatically in
+  this retro for `Sprint T` -> `Sprint 11` (the retro H1 itself uses the
+  new name only; old references inside CHANGELOG headers and other retros
+  carry the alias on first mention).

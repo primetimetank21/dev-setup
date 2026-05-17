@@ -1087,3 +1087,30 @@ needed for this design-pass PR until merge.
 - **Issue #306:** Body updated to use new names + acceptance criterion added.
 - **Outcome:** Zero orphan `Sprint [QRST]` refs outside alias contexts. PR opened
   targeting `develop`. Doc fact-check pass to follow.
+
+## 2026-05-17 -- PR #308 merged (sprint rename sweep + Sprint 12 backlog)
+
+- **PR #308 merged** at 05:24 UTC after Doc fact-check verdict "Verified" on a 9-lane
+  audit (mapping consistency / alias convention / filename renames / orphan check /
+  historical narrative / CHANGELOG headers / CONTRIBUTING section / issue #306 body /
+  this history entry). Final stats: 21 files, 297+/189-.
+- **Doc caught one consistency miss:** the CHANGELOG `[0.8.0]` header lacked the
+  `(formerly Sprint Q)` alias that `[0.9.0]` and `[0.9.1]` both carried. Fixed in
+  Doc commit `56c3c1f` folded into PR #308 before merge. Single-line addition,
+  no narrative change.
+- **First-occurrence aliasing is now muscle memory.** Applied across CHANGELOG
+  version headers, retro H1s, agent history entries, and CONTRIBUTING narrative.
+  The pattern: `Sprint N (formerly Sprint X)` on the FIRST mention per file, then
+  `Sprint N` alone for the rest. Mapping tables are exempt. This will be the
+  convention going forward for any historical reference.
+- **Sprint 12 backlog enumerated.** 7 inherited P3 issues + 2 new (#309, #310 --
+  ARCHITECTURE Script Conventions rewrite and Windows Dependency Order chain,
+  both flagged out-of-scope during PR #298 review). Mickey load: 5 of 9 tickets
+  (#235, #254, #306, #309, #310). Coordinator flagged the imbalance to Earl;
+  rebalance vs accept-docs-heavy-sprint deferred to Sprint 12 kickoff.
+- **Label gotcha for future reference:** `area:scripts` does not exist. Only six
+  area labels: `ci`, `hooks`, `windows`, `macos`, `linux`, `meta`. Both #309 and
+  #310 got `area:meta`. Run `gh label list --limit 100` before assuming.
+- **Issue #306 body updated mid-sweep** to use "Sprint 12" (was "Sprint U") plus
+  a new acceptance criterion referencing the new naming. Stays consistent when
+  Sprint 12 picks it up.
