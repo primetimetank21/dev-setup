@@ -1,19 +1,19 @@
 ---
 name: "ci-validation-gates"
-description: "Defensive CI/CD patterns: semver validation, token checks, retry logic, draft detection — earned from v0.8.22"
+description: "Defensive CI/CD patterns: semver validation, token checks, retry logic, draft detection -- earned from v0.8.22"
 domain: "ci-cd"
 confidence: "high"
-source: "extracted from Drucker and Trejo charters — earned knowledge from v0.8.22 release incident"
+source: "extracted from Drucker and Trejo charters -- earned knowledge from v0.8.22 release incident"
 ---
 
 ## Context
 
-CI workflows must be defensive. These patterns were learned from the v0.8.22 release disaster where invalid semver, wrong token types, missing retry logic, and draft releases caused a multi-hour outage. Both Drucker (CI/CD) and Trejo (Release Manager) carried this knowledge in their charters — now centralized here.
+CI workflows must be defensive. These patterns were learned from the v0.8.22 release disaster where invalid semver, wrong token types, missing retry logic, and draft releases caused a multi-hour outage. Both Drucker (CI/CD) and Trejo (Release Manager) carried this knowledge in their charters -- now centralized here.
 
 ## Patterns
 
 ### Semver Validation Gate
-Every publish workflow MUST validate version format before `npm publish`. 4-part versions (e.g., 0.8.21.4) are NOT valid semver — npm mangles them.
+Every publish workflow MUST validate version format before `npm publish`. 4-part versions (e.g., 0.8.21.4) are NOT valid semver -- npm mangles them.
 
 ```yaml
 - name: Validate semver
@@ -21,17 +21,17 @@ Every publish workflow MUST validate version format before `npm publish`. 4-part
     VERSION="${{ github.event.release.tag_name }}"
     VERSION="${VERSION#v}"
     if ! npx semver "$VERSION" > /dev/null 2>&1; then
-      echo "❌ Invalid semver: $VERSION"
+      echo "[ ] Invalid semver: $VERSION"
       echo "Only 3-part versions (X.Y.Z) or prerelease (X.Y.Z-tag.N) are valid."
       exit 1
     fi
-    echo "✅ Valid semver: $VERSION"
+    echo "[x] Valid semver: $VERSION"
 ```
 
 ### NPM Token Type Verification
 NPM_TOKEN MUST be an Automation token, not a User token with 2FA:
-- User tokens require OTP — CI can't provide it → EOTP error
-- Create Automation tokens at npmjs.com → Settings → Access Tokens → Automation
+- User tokens require OTP -- CI can't provide it -> EOTP error
+- Create Automation tokens at npmjs.com -> Settings -> Access Tokens -> Automation
 - Verify before first publish in any workflow
 
 ### Retry Logic for npm Registry Propagation
@@ -49,12 +49,12 @@ npm registry uses eventual consistency. After `npm publish` succeeds, the packag
     for attempt in $(seq 1 $MAX_ATTEMPTS); do
       echo "Attempt $attempt/$MAX_ATTEMPTS: Checking $PACKAGE@$VERSION..."
       if npm view "$PACKAGE@$VERSION" version > /dev/null 2>&1; then
-        echo "✅ Package verified"
+        echo "[x] Package verified"
         exit 0
       fi
       [ $attempt -lt $MAX_ATTEMPTS ] && sleep $WAIT_SECONDS
     done
-    echo "❌ Failed to verify after $MAX_ATTEMPTS attempts"
+    echo "[ ] Failed to verify after $MAX_ATTEMPTS attempts"
     exit 1
 ```
 
@@ -64,7 +64,7 @@ Draft releases don't emit `release: published` event. Workflows MUST:
 - If using workflow_dispatch: verify release is published via GitHub API before proceeding
 
 ### Build Script Protection
-Set `SKIP_BUILD_BUMP=1` (or `$env:SKIP_BUILD_BUMP = "1"` on Windows) before ANY release build. bump-build.mjs is for dev builds ONLY — it silently mutates versions.
+Set `SKIP_BUILD_BUMP=1` (or `$env:SKIP_BUILD_BUMP = "1"` on Windows) before ANY release build. bump-build.mjs is for dev builds ONLY -- it silently mutates versions.
 
 ## Known Failure Modes (v0.8.22 Incident)
 
@@ -77,8 +77,8 @@ Set `SKIP_BUILD_BUMP=1` (or `$env:SKIP_BUILD_BUMP = "1"` on Windows) before ANY 
 | 5 | Version mutated during release | bump-build.mjs ran in release | SKIP_BUILD_BUMP=1 |
 
 ## Anti-Patterns
-- ❌ Publishing without semver validation gate
-- ❌ Single-shot verification without retry
-- ❌ Hard-coded secrets in workflows
-- ❌ Silent CI failures — every error needs actionable output with remediation
-- ❌ Assuming npm publish is instantly queryable
+- [ ] Publishing without semver validation gate
+- [ ] Single-shot verification without retry
+- [ ] Hard-coded secrets in workflows
+- [ ] Silent CI failures -- every error needs actionable output with remediation
+- [ ] Assuming npm publish is instantly queryable

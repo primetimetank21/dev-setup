@@ -104,23 +104,10 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - **Fixes applied:** 1 minor -- CHANGELOG 0.8.0 header: added `(formerly Sprint Q)` for consistency with 0.9.0 and 0.9.1 headers.
 - **Verdict:** Doc minor fixes pushed (1 issue). Confidence: Verified.
 
-### 2026-05-17 -- Pattern note: one-off fact-check WITHOUT a dedicated worktree
+### 2026-05-17 -- Pattern note: worktree decision rule
 
-- The PR #308 fact-check (above) was the first Doc dispatch deliberately run
-  WITHOUT a dedicated `..\dev-setup-doc` worktree. Per the SOP from PR #293,
-  Doc's default is a dedicated per-sprint worktree on `squad/doc-history-sprint-<N>`.
-- This dispatch was a single-PR fact-check on Mickey's in-flight
-  `chore/sprint-naming-convention` branch with at most a small fixup commit
-  expected. Doc worked directly on Mickey's branch, produced commit `56c3c1f`
-  (1-line CHANGELOG header alias), and stopped. No cumulative history.md write,
-  no cross-sprint state.
-- Decision rule, now in retro `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md`:
-  - **One-off, single-PR fact-check with at most a fixup commit on the same branch** -> NO worktree.
-  - **Cumulative history.md writes spanning multiple PRs in a sprint** -> dedicated worktree per the PR #293 SOP.
-- The deviation worked cleanly this time. The SOP still holds for batch
-  fact-checks (Sprint 9 / Sprint 10 batch reviews) because those produce
-  cumulative `.squad/agents/doc/history.md` entries that benefit from the
-  isolated worktree pattern.
+- PR #308 fact-check was first dispatch WITHOUT a dedicated worktree (worked directly on Mickey's branch, commit `56c3c1f`).
+- Decision rule (retro `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md`): one-off single-PR fact-check -> NO worktree; cumulative multi-PR batch -> dedicated worktree per PR #293 SOP.
 
 
 ### 2026-05-17 -- Sixth verification: Issue #342 README fact-check audit (Sprint 13 changes)
@@ -166,3 +153,13 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - Audit file: .squad/decisions/doc-readme-audit-2026-05-17.md (14770 bytes,
   0 non-ASCII). Inbox mirror: .squad/decisions/inbox/doc-readme-audit-2026-05-17.md
   (gitignored, not committed).
+
+### 2026-05-17 -- Sprint 15 #356 ASCII sweep fact-check + ship
+
+- **Scope:** Sweep 33 tracked .md files for legacy non-ASCII characters (em-dashes, smart quotes, box-drawing) pre-dating the #334 ASCII hook expansion.
+- **Files cleaned:** 30 .copilot/skills/*.md + ARCHITECTURE.md + tests/README.md + .github/agents/squad.agent.md. Total: ~1,250 non-ASCII bytes removed.
+- **Methodology:** ascii-sweep.py tool + hand-conversion for fenced code blocks (tool preserves fences by design).
+- **Fence handling pattern:** Box-drawing (|---|`--) -> ASCII (+--|`--), em-dash (--) -> --, smart quotes -> straight quotes, ellipsis -> ....
+- **PR shipped:** #358. Branch: squad/356-md-ascii-sweep off develop @ caf5c64.
+- **Verification:** Pre-commit hook passes; `git grep "[^\\x00-\\x7F]"` returns 0 matches on tracked .md files.
+- **Learnings:** Worktree setup requires explicit CWD tracking in multi-worktree environments; file I/O via PowerShell [System.IO] can appear to succeed but not persist (use Python pathlib or direct git commands for reliability). UTF-8 byte counting (where multi-byte chars count as N bytes) differs from Unicode character counting -- use Python's `ord(ch) > 127` for accurate non-ASCII detection.

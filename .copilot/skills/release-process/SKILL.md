@@ -1,6 +1,6 @@
 ---
 name: "release-process"
-description: "Step-by-step release checklist for Squad — prevents v0.8.22-style disasters"
+description: "Step-by-step release checklist for Squad -- prevents v0.8.22-style disasters"
 domain: "release-management"
 confidence: "high"
 source: "team-decision"
@@ -45,11 +45,11 @@ npm token list
 ```
 
 Look for:
-- ✅ `read-write` tokens with NO 2FA requirement = Automation token (correct)
-- ❌ Tokens requiring OTP = User token (WRONG, will fail in CI)
+- [x] `read-write` tokens with NO 2FA requirement = Automation token (correct)
+- [ ] Tokens requiring OTP = User token (WRONG, will fail in CI)
 
 **How to create an Automation token:**
-1. Go to npmjs.com → Settings → Access Tokens
+1. Go to npmjs.com -> Settings -> Access Tokens
 2. Click "Generate New Token"
 3. Select **"Automation"** (NOT "Publish")
 4. Copy token and save as GitHub secret: `NPM_TOKEN`
@@ -176,9 +176,9 @@ gh run view --log
 ```
 
 **Expected flow:**
-1. `publish-sdk` job runs → publishes `@bradygaster/squad-sdk`
+1. `publish-sdk` job runs -> publishes `@bradygaster/squad-sdk`
 2. Verify step runs with retry loop (up to 5 attempts, 15s interval) to confirm SDK on npm registry
-3. `publish-cli` job runs → publishes `@bradygaster/squad-cli`
+3. `publish-cli` job runs -> publishes `@bradygaster/squad-cli`
 4. Verify step runs with retry loop to confirm CLI on npm registry
 
 **If workflow fails:** Check the logs. Common issues:
@@ -354,7 +354,7 @@ git push origin main
 **Root cause:** npm registry propagation delay (5-30 seconds).  
 **Fix:** Verify step now has retry loop (5 attempts, 15s interval). Should auto-resolve. If not, wait 2 minutes and re-run workflow.
 
-### Version Mismatch (package.json ≠ tag)
+### Version Mismatch (package.json ? tag)
 
 **Symptom:** Verify step fails with "Package version (X) does not match target version (Y)".  
 **Root cause:** package.json version doesn't match the tag version.  
@@ -415,9 +415,9 @@ This skill was created after the v0.8.22 release disaster. Full retrospective: `
 
 **Key learnings:**
 1. No release without a runbook = improvisation = disaster
-2. Semver validation is mandatory — 4-part versions break npm
-3. NPM_TOKEN type matters — User tokens with 2FA fail in CI
-4. Draft releases are a footgun — they don't trigger automation
-5. Retry logic is essential — npm propagation takes time
+2. Semver validation is mandatory -- 4-part versions break npm
+3. NPM_TOKEN type matters -- User tokens with 2FA fail in CI
+4. Draft releases are a footgun -- they don't trigger automation
+5. Retry logic is essential -- npm propagation takes time
 
 **Never again.**

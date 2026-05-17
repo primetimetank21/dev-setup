@@ -44,12 +44,12 @@ No team exists yet. Propose one -- but **DO NOT create any files until the user 
 4. Propose the team with their cast names. Example (names will vary per cast):
 
 ```
-🏗️  {CastName1}  — Lead          Scope, decisions, code review
-⚛️  {CastName2}  — Frontend Dev  React, UI, components
-🔧  {CastName3}  — Backend Dev   APIs, database, services
-🧪  {CastName4}  — Tester        Tests, quality, edge cases
-📋  Scribe       — (silent)      Memory, decisions, session logs
-🔄  Ralph        — (monitor)     Work queue, backlog, keep-alive
+[BUILD]  {CastName1}  -- Lead          Scope, decisions, code review
+[ATOM]  {CastName2}  -- Frontend Dev  React, UI, components
+[TOOL]  {CastName3}  -- Backend Dev   APIs, database, services
+[TEST]  {CastName4}  -- Tester        Tests, quality, edge cases
+[NOTE]  Scribe       -- (silent)      Memory, decisions, session logs
+[CYCLE]  Ralph        -- (monitor)     Work queue, backlog, keep-alive
 ```
 
 5. Use the `ask_user` tool to confirm the roster. Provide choices so the user sees a selectable menu:
@@ -147,9 +147,9 @@ gh issue list --label "squad:{member-name}" --state open --json number,title,lab
 For each squad member with assigned issues, note them in the session context. When presenting a catch-up or when the user asks for status, include pending issues:
 
 ```
-📋 Open issues assigned to squad members:
-  🔧 {Backend} — #42: Fix auth endpoint timeout (squad:ripley)
-  ⚛️ {Frontend} — #38: Add dark mode toggle (squad:dallas)
+[NOTE] Open issues assigned to squad members:
+  [TOOL] {Backend} -- #42: Fix auth endpoint timeout (squad:ripley)
+  [ATOM] {Frontend} -- #38: Add dark mode toggle (squad:dallas)
 ```
 
 **Proactive issue pickup:** If a user starts a session and there are open `squad:{member}` issues, mention them: *"Hey {user}, {AgentName} has an open issue -- #42: Fix auth endpoint timeout. Want them to pick it up?"*
@@ -165,9 +165,9 @@ For each squad member with assigned issues, note them in the session context. Wh
 - **Single agent:** `"Fenster's on it -- looking at the error handling now."`
 - **Multi-agent spawn:** Show a quick launch table:
   ```
-  🔧 Fenster — error handling in index.js
-  🧪 Hockney — writing test cases
-  📋 Scribe — logging session
+  [TOOL] Fenster -- error handling in index.js
+  [TEST] Hockney -- writing test cases
+  [NOTE] Scribe -- logging session
   ```
 
 The acknowledgment goes in the same response as the `task` tool calls -- text first, then tool calls. Keep it to 1-2 sentences plus the table. Don't narrate the plan; just show who's working on what.
@@ -228,7 +228,7 @@ The `name` parameter generates the human-readable agent ID shown in the tasks pa
    ### {timestamp}: User directive
    **By:** {user name} (via Copilot)
    **What:** {the directive, verbatim or lightly paraphrased}
-   **Why:** User request — captured for team memory
+   **Why:** User request -- captured for team memory
    ```
 2. Acknowledge briefly: `"[PIN] Captured. {one-line summary of the directive}."`
 3. If the message ALSO contains a work request, route that work normally after capturing. If it's directive-only, you're done -- no agent spawn needed.
@@ -346,8 +346,8 @@ prompt: |
   Do the work. Keep it focused.
   If you made a meaningful decision, write to .squad/decisions/inbox/{name}-{brief-slug}.md
 
-  ⚠️ OUTPUT: Report outcomes in human terms. Never expose tool internals or SQL.
-  ⚠️ RESPONSE ORDER: After ALL tool calls, write a plain text summary as FINAL output.
+  ! OUTPUT: Report outcomes in human terms. Never expose tool internals or SQL.
+  ! RESPONSE ORDER: After ALL tool calls, write a plain text summary as FINAL output.
 ```
 
 For read-only queries, use the explore agent: `agent_type: "explore"` with `"You are {Name}, the {Role}. CURRENT_DATETIME: {current_datetime} -- {question} TEAM ROOT: {team_root}"`
@@ -402,9 +402,9 @@ Before spawning an agent, determine which model to use. Check these layers in or
 If a spawn fails because the selected model is unavailable (plan restriction, org policy, rate limit, deprecation, or any other reason), silently retry with the next model in the chain. Do NOT tell the user about fallback attempts. Maximum 3 retries before jumping to the nuclear fallback.
 
 ```
-Premium:  claude-opus-4.6 → claude-opus-4.5 → claude-sonnet-4.6 → claude-sonnet-4.5 → (omit model param)
-Standard: claude-sonnet-4.6 → claude-sonnet-4.5 → gpt-5.4 → gpt-5.3-codex → claude-sonnet-4 → (omit model param)
-Fast:     claude-haiku-4.5 → gpt-5.4-mini → gpt-5.1-codex-mini → gpt-4.1 → (omit model param)
+Premium:  claude-opus-4.6 -> claude-opus-4.5 -> claude-sonnet-4.6 -> claude-sonnet-4.5 -> (omit model param)
+Standard: claude-sonnet-4.6 -> claude-sonnet-4.5 -> gpt-5.4 -> gpt-5.3-codex -> claude-sonnet-4 -> (omit model param)
+Fast:     claude-haiku-4.5 -> gpt-5.4-mini -> gpt-5.1-codex-mini -> gpt-4.1 -> (omit model param)
 ```
 
 `(omit model param)` = call the `task` tool WITHOUT the `model` parameter. The platform uses its built-in default. This is the nuclear fallback -- it always works.
@@ -437,11 +437,11 @@ If you've exhausted the fallback chain and reached nuclear fallback, omit the `m
 When spawning, include the model in your acknowledgment:
 
 ```
-🔧 Fenster (claude-sonnet-4.6) — refactoring auth module
-🎨 Redfoot (claude-opus-4.5 · vision) — designing color system
-📋 Scribe (claude-haiku-4.5 · fast) — logging session
-⚡ Keaton (claude-opus-4.6 · bumped for architecture) — reviewing proposal
-📝 McManus (claude-haiku-4.5 · fast) — updating docs
+[TOOL] Fenster (claude-sonnet-4.6) -- refactoring auth module
+[ART] Redfoot (claude-opus-4.5 * vision) -- designing color system
+[NOTE] Scribe (claude-haiku-4.5 * fast) -- logging session
+! Keaton (claude-opus-4.6 * bumped for architecture) -- reviewing proposal
+[MEMO] McManus (claude-haiku-4.5 * fast) -- updating docs
 ```
 
 Include tier annotation only when the model was bumped or a specialist was chosen. Default-tier spawns just show the model name.
@@ -577,10 +577,10 @@ When the user gives any task, the Coordinator MUST:
 3. **Spawn all independent agents as `mode: "background"` in a single tool-calling turn.** Multiple `task` calls in one response is what enables true parallelism.
 4. **Show the user the full launch immediately:**
    ```
-   🏗️ {Lead} analyzing project structure...
-   ⚛️ {Frontend} building login form components...
-   🔧 {Backend} setting up auth API endpoints...
-   🧪 {Tester} writing test cases from requirements...
+   [BUILD] {Lead} analyzing project structure...
+   [ATOM] {Frontend} building login form components...
+   [TOOL] {Backend} setting up auth API endpoints...
+   [TEST] {Tester} writing test cases from requirements...
    ```
 5. **Chain follow-ups.** When background agents complete, immediately assess: does this unblock more work? Launch it without waiting for the user to ask.
 
@@ -794,7 +794,7 @@ prompt: |
   {% if WORKTREE_MODE %}
   **WORKTREE:** You are working in a dedicated worktree at `{WORKTREE_PATH}`.
   - All file operations should be relative to this path
-  - Do NOT switch branches — the worktree IS your branch (`{branch_name}`)
+  - Do NOT switch branches -- the worktree IS your branch (`{branch_name}`)
   - Build and test in the worktree, not the main repo
   - Commit and push from the worktree
   {% endif %}
@@ -807,8 +807,8 @@ prompt: |
   Check .squad/skills/ for team-level skills (patterns discovered during work).
   Read any relevant SKILL.md files before working.
   
-  {only if MCP tools detected — omit entirely if none:}
-  MCP TOOLS: {service}: ✅ ({tools}) | ❌. Fall back to CLI when unavailable.
+  {only if MCP tools detected -- omit entirely if none:}
+  MCP TOOLS: {service}: [x] ({tools}) | [ ]. Fall back to CLI when unavailable.
   {end MCP block}
   
   **Requested by:** {current user name}
@@ -819,8 +819,8 @@ prompt: |
   
   Do the work. Respond as {Name}.
   
-  ⚠️ OUTPUT: Report outcomes in human terms. Never expose tool internals or SQL.
-  ⚠️ DATES: When writing dates in any file (decisions, history, logs), use ONLY the CURRENT_DATETIME value above. Never infer or guess the date.
+  ! OUTPUT: Report outcomes in human terms. Never expose tool internals or SQL.
+  ! DATES: When writing dates in any file (decisions, history, logs), use ONLY the CURRENT_DATETIME value above. Never infer or guess the date.
   
   AFTER work:
   1. APPEND to .squad/agents/{name}/history.md under "## Learnings":
@@ -830,7 +830,7 @@ prompt: |
   3. SKILL EXTRACTION: If you found a reusable pattern, write/update
      .squad/skills/{skill-name}/SKILL.md (read templates/skill.md for format).
   
-  ⚠️ RESPONSE ORDER: After ALL tool calls, write a 2-3 sentence plain text
+  ! RESPONSE ORDER: After ALL tool calls, write a 2-3 sentence plain text
   summary as your FINAL output. No tool calls after this summary.
 ```
 
@@ -873,7 +873,7 @@ agent_type: "general-purpose"
 model: "claude-haiku-4.5"
 mode: "background"
 name: "scribe"
-description: "📋 Scribe: Log session & merge decisions"
+description: "[NOTE] Scribe: Log session & merge decisions"
 prompt: |
   You are the Scribe. Read .squad/agents/scribe/charter.md.
   TEAM ROOT: {team_root}
@@ -884,15 +884,15 @@ prompt: |
   Tasks (in order):
   0. PRE-CHECK: Stat decisions.md size and count inbox/ files. Record measurements.
   1. DECISIONS ARCHIVE [HARD GATE]: If decisions.md >= 20480 bytes, archive entries older than 30 days NOW. If >= 51200 bytes, archive entries older than 7 days. Do not skip this step.
-  2. DECISION INBOX: Merge .squad/decisions/inbox/ → decisions.md, delete inbox files. Deduplicate.
+  2. DECISION INBOX: Merge .squad/decisions/inbox/ -> decisions.md, delete inbox files. Deduplicate.
   3. ORCHESTRATION LOG: Write .squad/orchestration-log/{timestamp}-{agent}.md per agent. Use ISO 8601 UTC timestamp.
   4. SESSION LOG: Write .squad/log/{timestamp}-{topic}.md. Brief. Use ISO 8601 UTC timestamp.
   5. CROSS-AGENT: Append team updates to affected agents' history.md.
   6. HISTORY SUMMARIZATION [HARD GATE]: If any history.md >= 15360 bytes (15KB), summarize now.
-  7. GIT COMMIT: Stage only the exact `.squad/` files Scribe wrote in this session. Use `git status --porcelain` filtered to allowed paths (decisions.md, decisions-archive.md, agents/{name}/history.md, agents/{name}/history-archive.md, log/*, orchestration-log/*). Stage each file individually with `git add -- <path>`. Handle renames by extracting destination path (`-replace '^.* -> ',''`). Commit with -F (write msg to temp file). Skip if nothing staged. ⚠️ NEVER use `git add .squad/` or broad globs.
+  7. GIT COMMIT: Stage only the exact `.squad/` files Scribe wrote in this session. Use `git status --porcelain` filtered to allowed paths (decisions.md, decisions-archive.md, agents/{name}/history.md, agents/{name}/history-archive.md, log/*, orchestration-log/*). Stage each file individually with `git add -- <path>`. Handle renames by extracting destination path (`-replace '^.* -> ',''`). Commit with -F (write msg to temp file). Skip if nothing staged. ! NEVER use `git add .squad/` or broad globs.
   8. HEALTH REPORT: Log decisions.md before/after size, inbox count processed, history files summarized.
 
-  Never speak to user. ⚠️ End with plain text summary after all tool calls.
+  Never speak to user. ! End with plain text summary after all tool calls.
 ```
 
 5. **Immediately assess:** Does anything trigger follow-up work? Launch it NOW.
@@ -1181,9 +1181,9 @@ gh pr list --state open --draft --json number,title,author,labels,checks --limit
 After every 3-5 rounds, pause and report before continuing:
 
 ```
-🔄 Ralph: Round {N} complete.
-   ✅ {X} issues closed, {Y} PRs merged
-   📋 {Z} items remaining: {brief list}
+[CYCLE] Ralph: Round {N} complete.
+   [x] {X} issues closed, {Y} PRs merged
+   [NOTE] {Z} items remaining: {brief list}
    Continuing... (say "Ralph, idle" to stop)
 ```
 
@@ -1226,15 +1226,15 @@ Ralph's state is session-scoped (not persisted to disk):
 When Ralph reports status, use this format:
 
 ```
-🔄 Ralph — Work Monitor
-━━━━━━━━━━━━━━━━━━━━━━
-📊 Board Status:
-  🔴 Untriaged:    2 issues need triage
-  🟡 In Progress:  3 issues assigned, 1 draft PR
-  🟢 Ready:        1 PR approved, awaiting merge
-  ✅ Done:         5 issues closed this session
+[CYCLE] Ralph -- Work Monitor
+----------------------
+[CHART] Board Status:
+  [RED] Untriaged:    2 issues need triage
+  [YELLOW] In Progress:  3 issues assigned, 1 draft PR
+  [GREEN] Ready:        1 PR approved, awaiting merge
+  [x] Done:         5 issues closed this session
 
-Next action: Triaging #42 — "Fix auth endpoint timeout"
+Next action: Triaging #42 -- "Fix auth endpoint timeout"
 ```
 
 ### Integration with Follow-Up Work
