@@ -37,7 +37,7 @@ cd dev-setup
 bash setup.sh
 ```
 
-> **GitHub Authentication:** During setup, `auth.sh` checks whether you are already authenticated with the GitHub CLI. If not, it launches `gh auth login` interactively so you can complete authentication. In non-interactive environments (CI, GitHub Codespaces, piped stdin), the prompt is skipped automatically and a warning is printed — run `gh auth login` manually after setup completes if you need to authenticate.
+> **GitHub Authentication:** During setup, `scripts/linux/tools/auth.sh` (Linux/macOS/WSL) or `scripts/windows/tools/auth.ps1` (Windows) checks whether you are already authenticated with the GitHub CLI. If not, it launches `gh auth login` interactively so you can complete authentication. In non-interactive environments (CI, GitHub Codespaces, piped stdin), the prompt is skipped automatically and a warning is printed -- run `gh auth login` manually after setup completes if you need to authenticate.
 
 ### Windows (PowerShell)
 
@@ -100,11 +100,13 @@ dev-setup/
 │   │       └── zsh.sh
 │   └── windows/
 │       ├── setup.ps1         — Orchestrator (dot-sources tools/ scripts)
+│       ├── uninstall.ps1     — Idempotent reverse of the installer
 │       └── tools/            — Per-tool install scripts
-│           ├── copilot.ps1, gh.ps1, git.ps1, nvm.ps1
+│           ├── auth.ps1      — GitHub CLI authentication (interactive)
+│           ├── copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
 │           ├── profile.ps1, psmux.ps1, squad-cli.ps1
 │           ├── uv.ps1, vim.ps1
-│           └── (9 files total)
+│           └── (11 files total)
 ├── config/
 │   └── dotfiles/             — Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
 │       └── install.sh        — Dotfile installer
@@ -120,7 +122,11 @@ dev-setup/
 │   └── test_windows_setup.ps1
 ├── .devcontainer/            — Dev Container / Codespace configuration
 ├── .github/workflows/        — CI validation and squad automation
-└── .squad/                   — Internal squad coordination (not shipped)
+└── .squad/                   — Squad coordination (committed; not installed onto end-user machines)
+    ├── agents/                 — per-agent charter.md + history.md
+    ├── decisions.md            — append-only decision log; older entries fold to decisions-archive.md
+    ├── retros/                 — sprint retrospectives (committed; pre-commit allow-listed)
+    └── ...                     — see ARCHITECTURE.md for the full breakdown
 ```
 
 Root entry points (`setup.sh`, `setup.ps1`) are thin routers — they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
@@ -213,7 +219,7 @@ Use `--no-verify` to bypass hooks in emergencies.
 
 ### Version Pinning
 
-Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format). Setup scripts read this file directly -- no asdf or mise dependency needed.
+Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format). This file is the single source of truth for every tool version installed by setup, including `nvm-windows`. Setup scripts read it directly via `scripts/lib/read-tool-version.sh` (POSIX) and `scripts/lib/Read-ToolVersion.ps1` (`Get-ToolVersion`) -- no asdf or mise dependency needed.
 
 ```
 nodejs 22.11.0
@@ -221,6 +227,8 @@ nvm 0.39.7
 nvm-windows 1.2.2
 uv 0.4.18
 copilot-cli 1.0.48
+squad-cli 0.9.4
+gh 2.92.0
 ```
 
 To bump a tool version, edit the version number in `.tool-versions` and re-run setup. Each line is `toolname version`, one per line. Blank lines and lines starting with `#` are ignored.
@@ -231,8 +239,12 @@ To bump a tool version, edit the version number in `.tool-versions` and re-run s
 
 ## Contributing
 
-This repo is maintained by the **dev-setup squad** — a set of specialized AI agents, each owning a slice of the codebase. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full technical overview, team ownership map, and guide on how to add a new tool.
+This repo is maintained by the **dev-setup squad** -- a team of nine specialized AI agents (Mickey, Donald, Goofy, Pluto, Chip on engineering; Jiminy, Doc, Scribe, Ralph on process and hygiene), each owning a slice of the codebase. Human contributors are welcome too.
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) -- full technical overview, OS detection logic, script conventions, Windows dependency order, team ownership map, and a guide for adding a new tool.
+- [CONTRIBUTING.md](./CONTRIBUTING.md) -- contributor workflow: branch naming (`squad/{issue}-{slug}` from `develop`), PR checklist, Conventional Commits, test harness pattern, sprint naming convention.
+- [CHANGELOG.md](./CHANGELOG.md) -- release history in Keep a Changelog format. Sprints use numeric naming (Sprint 1 through Sprint 12); historical letter-named sprints (Q, R, S, T) appear as `Sprint N (formerly Sprint X)` aliases for grep continuity.
 
 ---
 
-For deeper technical detail — OS detection logic, script conventions, decision records — see [ARCHITECTURE.md](./ARCHITECTURE.md).
+For deeper technical detail -- OS detection logic, script conventions, decision records -- see [ARCHITECTURE.md](./ARCHITECTURE.md).

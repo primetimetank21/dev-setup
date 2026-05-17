@@ -1170,3 +1170,40 @@ needed for this design-pass PR until merge.
 - CHANGELOG.md (+1 line under Unreleased / Changed)
 
 **Commit:** `docs(mickey): document Windows orchestrator Dependency Order chain in ARCHITECTURE.md (closes #310)`
+
+
+### 2026-05-17T03:55-04:00 -- Sprint 12 Wave 3 -- README refresh (#306)
+
+**Issue:** #306 -- docs(readme): refresh README.md to reflect Sprints 8-12 changes
+**Branch:** squad/306-readme-refresh (worktree: dev-setup-306)
+**Mode:** SOLO dispatch, Wave 3
+
+**What changed in README.md:**
+1. GitHub Authentication blockquote now names both `scripts/linux/tools/auth.sh` and `scripts/windows/tools/auth.ps1` (PR #297 moved auth.ps1 into per-tool layout; README previously referenced only auth.sh).
+2. Repo Structure tree: Windows `scripts/windows/tools/` listing now includes `auth.ps1` and `dotfiles.ps1`; total file count corrected from 9 to 11 (verified via Get-ChildItem). Also added `uninstall.ps1` to the Windows subtree.
+3. `.tool-versions` Version Pinning section: example block now reflects all 7 pins (added `squad-cli 0.9.4` and `gh 2.92.0`); narrative names this file as the single source of truth including `nvm-windows` and points at the canonical parsers (`read-tool-version.sh` POSIX, `Read-ToolVersion.ps1` PowerShell `Get-ToolVersion`).
+4. `.squad/` tree entry expanded with 4 sub-entries (agents/, decisions.md + fold note, retros/, `...`) and a "see ARCHITECTURE.md" redirect; dropped misleading "(not shipped)" qualifier in favor of "committed; not installed onto end-user machines".
+5. Contributing section: now names the 9-agent roster (5 engineering, 4 process) and adds bullet links to ARCHITECTURE.md / CONTRIBUTING.md / CHANGELOG.md with one-line scope blurbs each. Mentions numeric sprint naming + `(formerly Sprint X)` aliasing convention in the CHANGELOG bullet.
+
+**Verification methodology:**
+Each change was grounded by reading the cited file:
+- `scripts/windows/tools/auth.ps1` (confirmed file exists at per-tool location; matches CHANGELOG #292 move)
+- `.tool-versions` (read full file; 7 pins confirmed)
+- `.squad/team.md` (confirmed 9-member roster; Doc + Jiminy present)
+- `.squad/decisions.md` + `.squad/decisions-archive.md` (workflow + archive file present at 122 KB)
+- `.squad/retros/` (confirmed dir + 5 retro files, pre-commit allow-list per CHANGELOG #189)
+- `CHANGELOG.md` (Sprint 8 through Sprint 11 entries; numeric convention with `(formerly Sprint X)` aliases per Sprint 12 Wave 2)
+- `ARCHITECTURE.md` (cross-ref target; #310 Windows dependency order + #309 Script Conventions sections live)
+- `CONTRIBUTING.md` (cross-ref target; Test Harness Pattern at line 259 per #237, Sprint Naming Convention at line 417, Group Letter Assignment at 405)
+
+**Out-of-scope items observed (filed as follow-ups):**
+- ARCHITECTURE.md still references `scripts/windows/auth.ps1` (top-level) at line 54 of File Structure tree and line 505 of Team Ownership Map -- both should point to `scripts/windows/tools/auth.ps1`. Scope rule (do not touch ARCHITECTURE.md) honored; will file separate issue.
+- README "Git Hooks" section (line 192) claims "three hooks are active" and lists pre-commit/commit-msg/pre-push; `prepare-commit-msg` (PR #212, Sprint 8-hotfix) is missing. Scope: not in the named items list; will file separate issue.
+
+**CWD-pin protocol:** verified pre-edit; every powershell call prefixed by `Set-Location -LiteralPath` + `` guard. All file writes used absolute worktree path prefix. Post-commit main-checkout audit pending.
+
+**Files touched:**
+- README.md (~26 lines changed; 5 surgical edits)
+- CHANGELOG.md (+1 entry under Unreleased / Changed)
+
+**Commit:** `docs(mickey): refresh README.md for Sprints 8-12 changes (closes #306)`
