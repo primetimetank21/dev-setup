@@ -445,3 +445,4 @@ both platform branches get the package to maintain the cross-platform parity doc
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
 
 - **2026-05-16 -- Reviewed PR #244 (Mickey's retroactive tags + 0.8.0 cut).** Verdict: APPROVE (posted as comment since GitHub single-owner repos cannot self-approve; --admin merge used). CHANGELOG cut is clean (empty Unreleased, all entries under 0.8.0, no drops). Spot-checked 3/7 SHAs (0.1.0, 0.5.0, 0.7.0) -- all point at release-shaped merge commits matching Mickey's rationale table. All 7 tags and GitHub releases confirmed present. Commit uses Conventional Commits format with Copilot co-author trailer.
+2026-05-16 -- #223 logging consolidation

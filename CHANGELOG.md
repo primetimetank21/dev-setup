@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
 - Dotfile backup strategy: `.bak` files are now timestamped (`.bak.YYYYMMDD-HHMMSS`) on both Linux (`config/dotfiles/install.sh`) and Windows (`scripts/windows/tools/dotfiles.ps1`). Keeps last 5 backups by default (override with `DOTFILE_BACKUP_KEEP` env var); previous versions of dotfiles are no longer lost on re-run (closes #227).
 - `.gitattributes` now pins `*.ps1`, `*.psm1`, and `*.psd1` files to explicit CRLF line endings, eliminating platform divergence when `core.autocrlf` is enabled (closes #231).
+- `setup.sh` and `scripts/linux/uninstall.sh` now source `scripts/linux/lib/log.sh` instead of defining their own logging helpers. Local `log_*` / `ok` / `info` / `skip` definitions removed; all call sites updated to the canonical `log_ok` / `log_info` / `log_warn` / `log_error` names (closes #223).
 
 ### Fixed
 - `.github/workflows/e2e-install.yml` -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
