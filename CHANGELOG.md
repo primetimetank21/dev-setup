@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - README refreshed: pre-commit 6-check description (F1), ascii-sweep.py docs (F2), file-tree hand-converted to ASCII (F3), file-tree updated (F4), pre-commit one-liner expanded (F5) (#342)
+- Label taxonomy slimmed from 45 to 32 labels (drop 8 GitHub-default duplicates, 4 stale release version labels, 1 lonely status label; rename area:linux/macos/windows -> platform:*) (#347)
 
 ### Fixed
 
