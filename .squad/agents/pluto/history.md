@@ -199,3 +199,29 @@ once thresholds met.
 
 Decision drop: `.squad/decisions/pluto-skill-drift-2026-05-17.md`
 Inbox memo: `.squad/decisions/inbox/pluto-367-skill-drift.md`
+
+---
+
+## Sprint 16 W1 -- Issue #362: ascii-docs-about-non-ascii SKILL.md
+
+**Branch:** `squad/362-ascii-docs-skill`
+**Issue:** #362
+**Status:** Complete.
+
+Drafted and committed `.copilot/skills/ascii-docs-about-non-ascii/SKILL.md`
+formalizing the "self-documenting non-ASCII" discipline at medium confidence.
+The pattern: when any agent writes documentation about non-ASCII characters,
+they must reference the character by its Unicode codepoint name only (e.g.,
+"em-dash U+2014") and never include the literal character anywhere in the
+committed file -- not in prose, not in parens, not in a code fence, not in
+a table column. The skill includes a full ASCII substitution mapping table
+covering 13 common characters and a pre-commit verification command. Confidence
+is medium because two independent incidents demonstrated the same failure mode:
+Sprint 14 #340 (Doc audit notes with literal arrow chars) and Sprint 15
+#356/#359 (decision file for the ASCII sweep whose own mapping table contained
+the literal chars being mapped). Both required Coordinator recovery. The
+SKILL.md file itself was verified at 0 non-ASCII bytes before commit -- the
+skill must follow the rule it teaches. Skill placed in `.copilot/skills/`
+(not `.squad/skills/` as originally suggested) to match the existing 30-skill
+convention. Decision drop at
+`.squad/decisions/inbox/pluto-362-ascii-docs-skill.md`.
