@@ -114,3 +114,15 @@ This catch-up entry was appended by Jiminy as part of the Sprint 13 Wave 2 post-
 
 ## 2026-05-17 0.9.3 Release Fold
 Cut the 0.9.3 release CHANGELOG fold (Sprint 13 wrap). Renamed [Unreleased] -> [0.9.3] - 2026-05-17 -- Sprint 13: Documentation accuracy and ASCII policy hardening. Created fresh empty [Unreleased] section above it with the four standard subheadings. Preserved all eight Sprint 13 entries verbatim (1 Added, 4 Changed, 3 Fixed, 0 Removed). Theme captures the two structural shifts: doc accuracy (ARCH path #325, README hooks count #326) and ASCII policy hardening (sweep #322A + hook extension #322B). Follows the proven 0.9.1/0.9.2 pattern: PR to develop with regular merge, Coordinator opens develop->main, tags on main. Sprint 13 retro to be written separately by Scribe.
+
+## 2026-05-17 Sprint 14 Wave 1 -- Issue #343: CHANGELOG editorial (Sprint 13 retro placement)
+
+Resolved Jiminy's EOS-audit CONCERN that the Sprint 13 retro pointer (added by Scribe PR #339 AFTER 0.9.3 was tagged at edc67e2) sat in `[Unreleased]` while prior-sprint convention places retros under their own sprint's release section. Chose Option A: retroactive fold into `[0.9.3] ### Added` to match Sprint 11 retro (under `[0.9.1]`) and Sprint 12 retro (under `[0.9.2]`). CHANGELOG is a curated narrative, not a tag-bound ledger; the `0.9.3` tag stays immutable and the editorial edit rides the next regular develop->main merge.
+
+Codified the rule in `.squad/decisions/changelog-retro-placement.md` so future Coordinators have a deterministic playbook: (1) fold post-tag retros into the released section, (2) never re-tag, (3) Lead owns the call at EOS, (4) batch multiple post-tag drops, (5) preferred Sprint 14 dispatch sequencing puts retro PR BEFORE release-cut PR to sidestep this entire class of issue.
+
+**Files touched:** CHANGELOG.md (moved 1 line from `[Unreleased]` to `[0.9.3]` ### Added with retroactive-fold annotation), `.squad/decisions/changelog-retro-placement.md` (new), this entry.
+
+**ASCII discipline:** pre-commit ASCII gate (extended in PR #334) kept happy throughout; byte-scan verified pre-stage.
+
+**Pattern note:** "post-tag retro fold" is now formalized. Watch Sprint 14 wrap for the recommended retro-PR-before-release-cut sequencing.
