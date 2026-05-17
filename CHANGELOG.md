@@ -8,10 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Sprint 14 retro at .squad/retros/2026-05-17-sprint-14-retro.md
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.9.5] - 2026-05-17 -- Sprint 15: Legacy non-ASCII sweep + Sprint number normalization
+
+### Added
+- Sprint 14 retro at .squad/retros/2026-05-17-sprint-14-retro.md (retroactive Sprint 14 artifact, folded into 0.9.5)
+- Doc canonical decision record at .squad/decisions/doc-356-ascii-sweep.md documenting #356 sweep scope, methodology, and conversion mapping table (#359)
 
 ### Changed
 - Normalized historical Sprint letter references (Sprint R/S/T) to numbers (Sprint 11/12/13) in CHANGELOG.md historical entries for consistency with current Sprint NN numbering (#355).
+- Swept legacy non-ASCII characters (em-dashes, smart quotes, box-drawing) from 33 tracked .md files (.copilot/skills/, ARCHITECTURE.md, tests/README.md, .github/agents/squad.agent.md); ~1250 non-ASCII bytes removed (#356).
 - history-compression skill: confidence medium -> high (8+ applications in Sprint 14)
 - per-topic-inbox-routing skill: confidence medium -> high (7+ applications in Sprint 14)
 
