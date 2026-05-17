@@ -61,6 +61,86 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Recent Work
 
+## [2026-05-16 -- #255 squad-cli session warning]
+
+**Branch:** `squad/255-squad-cli-warning`
+**PR:** TBD (opened after commit)
+**Status:** PR opened
+
+**What was reported:**
+e2e-install Linux step printed during squad --version:
+  "Squad will attempt to continue, but session persistence may fail."
+
+**Investigation:**
+Searched @bradygaster/squad-cli 0.9.4, @bradygaster/squad-sdk 0.9.4, and
+@github/copilot-sdk (transitive dep) for the exact warning text. Not found
+in any of these packages at current versions.
+
+Root cause: The warning originates in the @github/copilot-sdk layer (used by
+squad-sdk for Copilot API sessions). When squad starts in shell mode on an
+environment without a writable HOME dir or without node:sqlite availability
+(requires Node >= 22.5.0), it attempts to initialize SQLite-backed session
+storage and emits this warning before falling back. In squad-cli 0.9.4,
+the --version command exits immediately after console.log(VERSION) with no
+session storage initialization -- the warning cannot be triggered by --version
+in the current build.
+
+**Determination:** Category (b) -- benign in current version (0.9.4), not
+emitted by --version path. Was likely from an older version or a full shell
+invocation without proper environment.
+
+**Fix / coverage added:**
+- tests/test_nvm_bootstrap.sh: T6 (correct package name), T7 (stderr capture)
+- e2e-install.yml: capture squad --version 2>&1 and assert warning absent
+  on both Linux and macOS (initial + idempotency runs)
+- CHANGELOG.md: [Unreleased] ### Fixed
+
+**Key learnings:**
+- squad --version exits immediately (return; line 128 of cli-entry.js) -- no
+  session init, so the warning cannot be from --version
+- @github/copilot-sdk is a transitive dep (squad-sdk -> copilot-sdk); this is
+  the layer that manages node:sqlite session storage for Copilot API calls
+- Always capture 2>&1 in already-installed checks so warnings visible in CI
+- The correct npm package is @bradygaster/squad-cli (not @primetimetank21/...)
+
+## [Sprint S -- #279 revise: YAML/bash quoting fix]
+
+**Branch:** `squad/255-squad-cli-warning`
+**PR:** #279 (force-push revision)
+**Status:** Fixed, pushed
+
+**Root cause of CI failure:**
+e2e-install.yml uses `run: |` block scalars (YAML literal), but the inner
+`bash -lc '...'` command uses bash single-quoting. Bash (not YAML) tokenizes
+the outer run script. Any literal `'` inside the bash single-quoted block
+terminates the -lc argument prematurely.
+
+The error `persistence: -c: line 14: unexpected EOF while looking for
+matching '"'` confirmed bash was treating `persistence` as a command after
+`'session` terminated the single-quoted -lc arg early.
+
+**Fix applied (Option A -- YAML doubled-single-quote):**
+In YAML literal block scalars, there is no YAML-level escaping. But the
+bash-level fix is the same: replace `'word'` with `''word''` inside any
+`bash -lc '...'` body. Shell comments also affected.
+
+5 locations fixed in `.github/workflows/e2e-install.yml`:
+1. Linux fresh-shell: comment on line 84 (# Regression: assert no '...')
+2. Linux fresh-shell: echo FAIL message (#255)
+3. Linux post-idempotency: echo FAIL message (#255)
+4. macOS fresh-shell: echo FAIL message (#255)
+5. macOS post-idempotency: echo FAIL message (#255)
+
+**Pre-existing hazard noted (not fixed -- out of scope):**
+`sed 's/^v//'` on NODE_MAJOR lines (pre-existing in both Linux and macOS
+blocks, not introduced by PR #279). Doc or Donald should evaluate separately.
+
+**Key learnings:**
+- `bash -lc '...'` bodies must have ALL `'` escaped -- even in shell comments
+- In YAML literal block scalars (`|`), YAML does not escape; bash is the
+  tokenizer that matters
+- Scan shell comments and echo strings alike when auditing single-quote safety
+
 ## [2026-05-16T18:30:00-04:00] Issue #253: e2e-install failure-summary step
 
 **Branch:** `squad/253-e2e-summary`
