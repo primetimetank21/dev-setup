@@ -306,3 +306,34 @@ Appended team updates to:
   Recommend Coordinator schedule history-archival sweep (issue #319 scope)
   after Wave 2 settles.
 - Main-checkout post-commit verification: see PR description / summary.
+- **2026-05-17 -- Sprint 12 retrospective + Jiminy session-end audit fold.**
+  Created `.squad/retros/2026-05-17-sprint-12-retro.md` (10268 bytes, ASCII
+  clean -- pre-commit `*.md` scope gap #322 still open so defensive).
+  Retro covers 3 waves, 10 PRs (8 work + 2 Scribe folds), 9 Sprint 12
+  issues closed, scope rebalance (#254 Mickey -> Pluto, #235 Mickey ->
+  Goofy), and 5 follow-ups carried (#317, #319, #322, #325, #326).
+  Harvested Jiminy session-end audit entry from main checkout
+  (`.squad/agents/jiminy/history.md` 24344 -> 28051 bytes) and folded into
+  this branch alongside the retro. CHANGELOG `[Unreleased] ### Changed`
+  appended with retro file reference.
+- **Lesson (own bug, fix forward): atomic inbox drain.** Wave 2 fold (PR
+  #323) merged 4 drop files' CONTENT into decisions.md but did NOT
+  `git rm` the source drop files; Coordinator manually deleted them
+  post-Jiminy audit. Going forward, every Scribe fold MUST stage
+  `git rm -- .squad/decisions/inbox/<file>` in the SAME commit as the
+  `decisions.md` append, so drain is atomic with merge. Per-file
+  staging (not bulk `git rm .squad/decisions/inbox/*.md`) to keep
+  staging discipline intact.
+- **Lesson (own bug, write-path resolution): .NET file APIs use process
+  CWD, not PowerShell `Set-Location`.** When running ASCII-verify via
+  `[System.IO.File]::ReadAllBytes(".\path")`, the relative path
+  resolved against the main checkout (process CWD) not the worktree.
+  Fix: use FULL absolute paths with .NET APIs. PowerShell native
+  cmdlets (`Get-Content -LiteralPath`, `Get-Item`) respect
+  `Set-Location` correctly; .NET static methods do not. This is the
+  same class of failure as Mickey's #310 worktree-isolation violation.
+- **History gate (post-this-entry):** scribe ~17 KB (past 15 KB gate);
+  Mickey 75 KB, goofy 40 KB, chip 37 KB, pluto 30 KB, donald 28 KB,
+  jiminy 28 KB (incl session-end audit entry), ralph 24 KB. Eight
+  agents above gate. Archival sweep (#319) is now Sprint 13 P0 -- run
+  before Sprint 13's first PRs land.
