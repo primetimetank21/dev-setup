@@ -255,3 +255,23 @@ checklist without code changes.
 retro branch. 10 PRs merged, 2 inbox files drained, 1 retro authored, 2
 agent history.md files brought up to date. Ready for Ralph's EOS sweep
 and Sprint T.
+
+## Action Items Closed (post-0.9.0)
+
+Following the 0.9.0 release, Sprint S retro action items were closed in a mini-batch:
+
+| Action item | Resolution |
+|---|---|
+| Author `pwsh-lastexitcode` skill | PR #291 (closes #288) -- skill + CONTRIBUTING section + audit of `scripts/windows/` |
+| Decide Doc subagent worktree pattern | PR #293 (closes #289) -- Option B: dedicated `..\dev-setup-doc` worktree on per-sprint `squad/doc-history-sprint-<N>` branch |
+| Auto-enforce Jiminy post-batch dispatch | PR #293 (closes #290) -- Option A: 3-surface checklist (charter + loop.md + ceremonies.md) |
+
+### Spillover into Sprint T
+
+- **Issue #292** -- 5 unmitigated `$LASTEXITCODE` sites in `scripts/windows/setup.ps1` + `auth.ps1` (surfaced by #291 audit; assigned to Goofy, P2)
+- All other action items closed.
+
+### Verification
+- [ ] Sprint T's first multi-agent batch will exercise the new Jiminy auto-dispatch gate
+- [ ] Sprint T's first Doc fact-check will exercise the new dedicated-worktree pattern
+- [ ] Issue #292 will be picked up in Sprint T triage

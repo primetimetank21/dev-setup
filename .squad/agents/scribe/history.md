@@ -124,3 +124,36 @@ Appended team updates to:
   dispatch Ralph after this PR merges.
 - Logged session locally to `.squad/log/2026-05-17-sprint-s-retro-fold.md`
   (gitignored, local-only).
+
+### 2026-05-17 -- Post-0.9.0 Action Items Closeout
+- Amended `.squad/retros/2026-05-17-sprint-s-retro.md` in place with a new
+  "Action Items Closed (post-0.9.0)" section at the bottom. No new retro
+  file authored -- the 3-PR follow-up batch is too small to warrant its
+  own doc. Section folds three closures into the existing Sprint S retro:
+  - PR #291 (Mickey) -- `.squad/skills/pwsh-lastexitcode/SKILL.md` +
+    CONTRIBUTING "PowerShell Exit Code Discipline" section + audit of
+    `scripts/windows/`. Closes #288. Audit surfaced 5 unmitigated
+    `$LASTEXITCODE` sites in `setup.ps1` + `auth.ps1`, filed as #292
+    (Goofy, P2) and tracked as Sprint T spillover.
+  - PR #293 (Mickey) -- combined decision + template changes for Doc
+    worktree pattern (Option B: dedicated `..\dev-setup-doc` worktree on
+    per-sprint `squad/doc-history-sprint-<N>` branch) and Jiminy
+    auto-dispatch (Option A: 3-surface checklist in charter + loop.md +
+    ceremonies.md). Closes #289 + #290. Replaces the dual-fold-PR pattern
+    that produced #281 + #283 in Sprint S.
+- Verified no stale doc references in README.md or ARCHITECTURE.md (no
+  mentions of "Doc commits to develop", "Jiminy dispatch is manual",
+  Doc worktree pattern, or `pwsh-lastexitcode` at all -- those concepts
+  live in CONTRIBUTING.md and `.squad/` only). CONTRIBUTING.md already
+  updated by #291 + #293; CHANGELOG `[Unreleased]` already references
+  #288/#289/#290 correctly via Mickey's entries. No stale-doc edits
+  needed in this PR.
+- Inbox state: empty (`.squad/decisions/inbox/` clean from Sprint S
+  drain). No additional drain required.
+- Verification checklist seeded for Sprint T: first multi-agent batch
+  exercises Jiminy auto-dispatch gate; first Doc fact-check exercises
+  the dedicated-worktree pattern; #292 picked up in Sprint T triage.
+- Hard guardrails honored: no edits to `[0.9.0]` CHANGELOG section,
+  no new retro file, no edits to other agents' history.md, no direct
+  develop commits (branch `squad/scribe-post-090-retro` from develop @
+  `94b696c`).
