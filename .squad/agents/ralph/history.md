@@ -303,3 +303,49 @@ Initial setup complete.
   - Open PRs: 1 (this history-fold)
 - **Verdict:** CLEAN. 6 stale Sprint-S branches reaped. Sprint S backlog
   complete.
+
+## Post-0.9.0 Mini-Batch EOS Cleanup -- 2026-05-17
+
+- **Trigger:** Post-0.9.0 action-item closeout sweep. 3 PRs merged (#291,
+  #293, #294) plus issue #232 closed (resolved by #282). Coordinator
+  requested Ralph EOS pass before Sprint T dispatch. develop @ `3630c31`
+  (post-#294 merge), working tree clean.
+- **PR verification:** Re-verified both candidate branches via
+  `gh pr list --state merged --head <branch>`. Both confirmed MERGED with
+  base `develop`:
+  * squad/288-pwsh-lastexitcode -> PR #291 (merged 2026-05-17T02:35:56Z,
+    sha `836a26f`): `docs(squad): add pwsh-lastexitcode skill (closes #288)`
+  * squad/289-290-squad-automation -> PR #293 (merged
+    2026-05-17T02:53:38Z, sha `f7a7bcf`):
+    `docs(squad): codify Doc worktree pattern + Jiminy auto-dispatch SOP
+    (closes #289, #290)`
+- **Branches deleted (2):** Both remote refs successfully removed via
+  single `git push origin --delete squad/288-pwsh-lastexitcode
+  squad/289-290-squad-automation`. `git fetch --prune origin` cleaned
+  tracking refs. Post-delete `git branch -r | findstr squad/` returns
+  empty.
+- **GitHub `gh pr merge --delete-branch` quirk:** Both PRs were merged
+  with `--delete-branch` (GitHub UI reported success on each), yet the
+  remote refs survived. Coordinator's pre-flight scan caught both via
+  `gh api repos/.../branches/<name>`. Worth filing a tracking issue if it
+  recurs on the next sprint -- pattern observed on 2 of 3 most recent
+  merges (#291, #293; #294's `squad/scribe-post-090-retro` was reaped
+  cleanly). Mitigation today: manual `git push origin --delete` works.
+- **Local cleanups:** None needed -- pre-flight already showed only
+  `develop` + `main` locally, 1 worktree, empty
+  `.squad/decisions/inbox/`, and clean `.squad/agents/` (no uncommitted
+  history.md drift).
+- **Refused / anomalies:** None. Both branches met the delete criteria
+  (PR MERGED, base=develop, no other open PRs). Zero force-deletes.
+- **History-fold:** This entry committed on `squad/ralph-post-090-eos`
+  branch + PR opened (charter ban on direct develop commits, per #274).
+  Coordinator will review and merge.
+- **Final repo state:**
+  - develop: `3630c31` (working tree clean)
+  - Local branches: develop, main, squad/ralph-post-090-eos (this PR)
+  - Remote branches: develop, main, origin/squad/ralph-post-090-eos
+    (this PR)
+  - Worktrees: 1 (primary)
+  - Open PRs: 1 (this history-fold)
+- **Verdict:** CLEAN. 2 stale post-Sprint-S branches reaped. Ready for
+  Sprint T dispatch.
