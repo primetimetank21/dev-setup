@@ -168,6 +168,10 @@ Decision drop: `.squad/decisions/sync-workflow-followups-2026-05-17.md`
 
 **Branch:** `squad/367-skill-drift-audit`
 **PR:** #368
+## Sprint 15 -- Issue #364: worktree-base-refresh SKILL.md
+
+**Branch:** `squad/364-worktree-base-refresh-skill`
+**Issue:** #364
 **Status:** Complete.
 
 ### What I did
@@ -199,3 +203,62 @@ once thresholds met.
 
 Decision drop: `.squad/decisions/pluto-skill-drift-2026-05-17.md`
 Inbox memo: `.squad/decisions/inbox/pluto-367-skill-drift.md`
+
+---
+
+## Sprint 16 W1 -- Issue #362: ascii-docs-about-non-ascii SKILL.md
+
+**Branch:** `squad/362-ascii-docs-skill`
+**Issue:** #362
+**Status:** Complete.
+
+Drafted and committed `.copilot/skills/ascii-docs-about-non-ascii/SKILL.md`
+formalizing the "self-documenting non-ASCII" discipline at medium confidence.
+The pattern: when any agent writes documentation about non-ASCII characters,
+they must reference the character by its Unicode codepoint name only (e.g.,
+"em-dash U+2014") and never include the literal character anywhere in the
+committed file -- not in prose, not in parens, not in a code fence, not in
+a table column. The skill includes a full ASCII substitution mapping table
+covering 13 common characters and a pre-commit verification command. Confidence
+is medium because two independent incidents demonstrated the same failure mode:
+Sprint 14 #340 (Doc audit notes with literal arrow chars) and Sprint 15
+#356/#359 (decision file for the ASCII sweep whose own mapping table contained
+the literal chars being mapped). Both required Coordinator recovery. The
+SKILL.md file itself was verified at 0 non-ASCII bytes before commit -- the
+skill must follow the rule it teaches. Skill placed in `.copilot/skills/`
+(not `.squad/skills/` as originally suggested) to match the existing 30-skill
+convention. Decision drop at
+`.squad/decisions/inbox/pluto-362-ascii-docs-skill.md`.
+Drafted and landed `.copilot/skills/worktree-base-refresh/SKILL.md` --
+the first formal writeup of the stale-sprint-branch recovery pattern that
+surfaced in Sprint 15 PR #359.
+
+The skill documents:
+- Why the pre-commit branch-ancestry hook (Check 1) fires when a sprint
+  branch is cut from an old develop tip and develop has since advanced.
+- Why `git reset --soft` is unsafe (leaves INDEX pinned to divergent base,
+  spurious mass-staging result).
+- The 3-phase recovery recipe: backup staged files to
+  `scripts/_tmp_recovery_<slug>/`, `git reset --hard origin/develop`,
+  restore + commit + cleanup.
+- Three acceptance checks before pushing (status clean, diff clean,
+  ancestry verified via `git merge-base --is-ancestor origin/develop HEAD`).
+- Anti-patterns and when to use `git rebase` instead.
+
+Confidence set to `low` (1 application: Sprint 15 #359, recovery commit
+`d3229c8`). Will graduate to medium on second observation.
+
+### Key learnings
+
+- **`git reset --soft` on a diverged branch produces a mass-staging trap.**
+  The INDEX is still set relative to the old base tip, so every file develop
+  changed appears as a staged modification. With 30+ changed files this is
+  effectively un-reviewable and risks committing a silent reversion.
+- **`git reset --hard origin/develop` + copy-back is the safe path** when
+  the branch has no unique commits. It fully syncs the working tree and index
+  to develop's state, leaving only the explicitly restored files as staged.
+- **`git merge-base --is-ancestor origin/develop HEAD`** is the canonical
+  post-recovery verification -- exits 0 means ancestry is correct and the
+  hook will pass.
+
+Decision drop: `.squad/decisions/inbox/pluto-364-worktree-base-refresh.md`

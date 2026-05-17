@@ -5,50 +5,43 @@
 
 ---
 
-> Compressed 2026-05-17 per #319 (Option A: older entries summarized in-place; no archive file). Re-compressed 2026-05-17 (W2 fold) per #319 gate -- Sprint 12 W2 fold entry condensed; Sprint 13 entries kept verbatim.
+> Compressed 2026-05-17 per #319 (Option A: older entries summarized in-place). Re-compressed post-Sprint 15 per history-compression skill + #363 gate.
 
 ## Pre-2026-05-16 Activity (summary)
 
-Compressed; older session logs kept as short bullets.
-
-- **2026-04-07 to 2026-04-18** 12 session logs written to `.squad/log/` covering squad init, issue creation, Sprint 5 retro/close, Sprint 6 kickoff/alias-parity/wrapup, Sprint 7 implementation, PS 5.x hotfix retro, setup.ps1 scriptdir fix.
-- **2026-04-18** Merged 6 decision inbox files into `decisions.md` (chip-121-hooks, chip-123-ci-triage, mickey-122-branch-isolation, mickey-bug-issues-124-125, mickey-hotfix-wrap, mickey-review-130). All inbox files deleted post-merge.
-- **2026-04-18T20-53-40Z** Per-agent orchestration logs created: hotfix-sprint-wrap (Mickey), 121-git-hooks (Chip), 122-branch-isolation (Mickey), 123-ci-triage (Chip), review-129 (Mickey), review-130 (Mickey), sprint7-wrap (Mickey).
-- **2026-04-18** Cross-agent history appended: Chip got Sprint 7 completion summary (#121, #123, PR #130); Mickey got full Sprint 7 execution summary.
-- **2026-05-16** PR #200 merge + Issue #197 closed session logged.
+- **2026-04-07 to 2026-04-18:** Squad init, sprints 5-7, hotfix retro; merged 6 inbox drops; cross-agent histories appended.
 
 ---
 
 ## Learnings
 
-- `git add .squad/` stages everything under `.squad/` including pre-existing untracked rogue files. Before staging, run `git status --porcelain -- .squad/` and confirm only intended files appear. If rogues exist, escalate to coordinator (do not auto-commit them).
-- Decision inbox path (`.squad/decisions/inbox/`) is gitignored by design (`.gitignore:4`). Inbox files are drop-box drains, never committed. Drain by reading, merging content into `decisions.md`, then deleting the inbox file.
-- Canonical squad write locations only: `agents/{name}/charter.md|history.md`, `decisions.md|decisions-archive.md`, `decisions/inbox/*.md`, `orchestration-log/*.md`, `log/*.md`, `skills/{name}/SKILL.md`, `templates/*.md`, `casting/*.json`, `identity/*.md`, `plugins/*.json`, `team.md|routing.md|ceremonies.md|config.json`. Any other path is rogue; flag to Jiminy.
-- Canonical log dir is `.squad/log/` (singular). The stray `.squad/logs/` (plural) was deprecated 2026-05-16; do not write to `logs/`.
-- Append-only convention for `casting/history.json`: mid-assignment additions use new entries with `type: "addendum"` and `parent_assignment_id`. Never mutate prior snapshots.
-- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
+- git add .squad/ stages everything under .squad/ including pre-existing untracked rogue files. Before staging, run git status --porcelain -- .squad/ and confirm only intended files appear. If rogues exist, escalate to coordinator (do not auto-commit them).
+- Decision inbox path (.squad/decisions/inbox/) is gitignored by design (.gitignore:4). Inbox files are drop-box drains, never committed. Drain by reading, merging content into decisions.md, then deleting the inbox file.
+- Canonical squad write locations only: gents/{name}/charter.md|history.md, decisions.md|decisions-archive.md, decisions/inbox/*.md, orchestration-log/*.md, log/*.md, skills/{name}/SKILL.md, 	emplates/*.md, casting/*.json, identity/*.md, plugins/*.json, 	eam.md|routing.md|ceremonies.md|config.json. Any other path is rogue; flag to Jiminy.
 
+## Sprint 13-15 (compressed)
 
-### Session drains 2026-05-16 to 2026-05-17 (summary, compressed)
+- **Sprint 12 W2 (2026-05-17):** Folded 5-agent batch. Lessons: atomic inbox drain (per-file discipline, NO glob), .NET APIs use process CWD.
+- **Sprint 13:** Compressed 8 over-gate histories, formalized history-compression skill. Retro: 8 lessons, 5 issues.
+- **Sprint 14:** 6 issues, 0.9.4 shipped, 84-issue label migration. history-compression + per-topic-inbox-routing HIGH confidence (5+ applications). Retro: skill graduation noted.
+- **Sprint 15 (current):** 6 issues, 0.9.5 shipped. Scribe charter scope catch (CHANGELOG routed to Mickey). Doc dual-worktree validated. 8 lessons.
 
-- 2026-05-16: Sprint 8-hotfix wrap. Drained inbox decisions: mickey-squad-0.9.4-upgrade (#262), mickey-hire-doc (#263), doc-pr-263-fact-check. Log: `.squad/log/2026-05-16-sprint-q-wrap-0.8.0-0.9.4-doc-hire.md`.
-- 2026-05-16: Sprint 9 wrap. Created retro (5 PRs #265-#269). Doc caught 2 bugs: autocrlf #267, pipefail #269.
-- 2026-05-17: Sprint 10 retro (10 PRs #274-#283). Folded Jiminy history + backfilled Mickey #274.
-- 2026-05-17: Sprint 11 retro (6 PRs #296-#302, gate clean twice, `gh --delete-branch` filed #300).
-- 2026-05-17: Post-0.9.0 closeout (PR #291 pwsh-lastexitcode skill, PR #293 Doc/Jiminy dispatch pattern).
-- 2026-05-17: Sprint 11 retro filed PR #303 (4 issues + 2 Jiminy audits). Renamed via PR #308 minutes later.
-- 2026-05-17: Mini-event retro (0.9.1 release, sprint-naming rename, PR #305+#307+#308 Tier 3, backlog #309+#310).
+### 2026-05-17 Sprint 16 Archival Pass (#363)
 
-## Learnings (Scribe)
+**By:** Scribe (via Copilot)  
+**Date:** 2026-05-17T19:06:31-04:00  
+**Issue:** #363 -- Archival pass, decisions.md exceeded 51200 byte hard gate.
 
-- **Mini-event retros work.** When a session ships work that doesn't fit a full sprint retro (release cut + meta-cleanup + backlog sweep), a smaller-scope retro file is the right home. ~1-2 pages. Reference but don't rewrite any sprint retro it follows.
-- **Label-vocab gotcha worth a one-line entry in any retro that hits it.** Future Scribes filing retros mentioning `gh issue create` failures should call out the actual label set. Six area labels: ci, hooks, windows, macos, linux, meta.
-- **Sprint rename sweeps require Scribe to think about retro filenames.** When a Tier 3 rename runs in same session as a retro PR (this session: #303 filed -> #308 renamed it), the retro file itself gets `git mv`-ed and the H1 picks up the alias. Not a problem -- just flag so future Scribes don't double-write.
-- **`(formerly Sprint X)` aliasing on first-occurrence-per-file** is team convention for historical references. Applied automatically in retros.
-- **Sprint 12 Wave 1 fold (2026-05-17).** Folded 5-agent batch with 2 inbox decisions, 5 orchestration-log entries, 1 session log, 1 Jiminy history-rescue. Lessons earned: 5-agent batch fold pattern (one PR per wave, per-agent orchestration logs ~1-2 KB each with ISO 8601 UTC timestamps); Jiminy-history-rescue pattern (stage explicitly with `git add -- <path>`, do NOT broaden glob, note rescue in PR body); obsolete fold-request handling (delete inbox file without re-merging if content is already in place); size-gated 7-day archive cut (>=50 KB triggers rule, cut on trailing `---` separator, use `[System.IO.File]::WriteAllText` with no-BOM UTF8); history-summarization scope tension (defer when 15-KB hard gate fires outside fold scope -- discipline beats sprawl).
+**What:** Executed archival fold for entries dated 2026-05-09 or earlier. Found 1 qualifying entry:
+- 2025-07-14 Gitconfig decision (1153 bytes)
 
-### 2026-05-17 -- Sprint 12 W2 fold + retro (summary)
+**Outcome:**  
+- decisions.md: 60270 -> 59116 bytes (1154 bytes removed) -- STILL OVER hard gate
+- decisions-archive.md: 121949 -> 123109 bytes (1160 bytes added)
+- Entry count verified: 1 moved, no loss
+- Header note updated to reference "2026-05-09 second fold"
 
+**Note:** Hard gate (51200 bytes) NOT met. Archiving the single entry before 2026-05-10 was insufficient. Next fold should consider earlier cutoff (e.g., 2026-05-04 or aggressive pruning of 2026-05-14+ entries).
 - Sprint 12 W2 fold (PR #323): drained 4 inbox decisions for #310/#237/#235/jiminy-audit; decisions.md 44473 -> 57253 B (50 KB gate crossed; 7-day eligibility empty). Surfaced #319 (8 over-gate histories) and #322 (ASCII scope) as Sprint 13 follow-ups.
 - Sprint 12 retro: created .squad/retros/2026-05-17-sprint-12-retro.md (10268 B). Jiminy session-end audit folded alongside (24344 -> 28051 B).
 - **Lesson (atomic inbox drain):** W2 fold merged drop CONTENT but did NOT remove source drops. Every future Scribe fold MUST stage source-drop removal in the SAME commit as the append. Per-file discipline (no bulk glob). Inbox is gitignored -- physical delete IS the atomic action.
