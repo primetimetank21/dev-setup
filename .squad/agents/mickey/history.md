@@ -68,40 +68,22 @@ Lead architect; established foundational team process, architecture, and Windows
 
 ---
 
-> Compressed 2026-05-17 per #319. Older entries summarized; full pre-Sprint-11 history at history-archive.md.
+> Re-compressed 2026-05-17 (W2 fold) per #319 gate. Sprint 13+ entries kept verbatim; older Sprint 11/12 entries condensed.
 
 ## Recent Work (pre-Sprint-11 summary)
 
-Full detail in `history-archive.md`. Highlights:
+Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #145, #146 REJECTED, #149 PSScriptAnalyzer pre-push, #138, #160 AllScope, #169, #170, #175/#176); Sprint 8 PS 5.1 compat (PRs #198, #200 merge gate + ASCII-safety skill, batch reviews #202-#210, #222 tag discipline); Sprint 8h/9/10 squad upgrade + retros (0.9.4 audit PR #262 rogue-file bug + git-workflow SKILL overwrite risk, Sprint 8h/9 retros, PR #274, pwsh-lastexitcode skill PR #288, #239 E2E filed). Lessons preserved verbatim in Learnings (CI=true, BOM gotcha, worktree isolation, commit-msg merge bypass, Doc hire pattern).
 
-- **2026-04-19 to 2026-05-04** Sprint 6 / 7 lead reviews: PR #145 (sentinel strip+re-inject for #144), PR #146 REJECTED (3 CI failures), PR #149 PSScriptAnalyzer pre-push hook (advisory only), #138 dual-path profile fix, #151 docs approval, #160 gcm/gcb AllScope alias bug, PR #169 (curl.exe), PR #170 (`ep` alias, two-pass review), PR #175/#176 + plan approvals.
-- **2026-05-14 to 2026-05-16** PS 5.1 compat sprint: PR #198 (psmux skip-with-warning + profile diagnostics, #197), PR #200 merge gate (PS 5.1 test coverage + ASCII-safety skill), Batch 1/4/5 reviews (PRs #202-#210 across multiple waves), #222 retroactive 0.1.0-0.7.0 tag discipline.
-- **2026-05-16 to 2026-05-17** Squad upgrade + retros: 0.9.4 upgrade audit (PR #262 -- rogue-file bug + git-workflow SKILL overwrite risk noted), Sprint 8-hotfix retro authored, Sprint 9 retro action items (PR #274), pwsh-lastexitcode skill authored for Sprint 11 (PR for #288), Sprint review batch learnings, Issue #239 (E2E install) framed and filed.
+## Sprint 11-12 entries (summary)
 
-Lessons preserved verbatim in Learnings section above (CI=true, BOM-encoding gotcha, worktree isolation, commit-msg merge bypass, hire pattern for Doc, etc.).
-
----
-
-## Sprint 11 entries (summary)
-
-- **2026-05-17 -- pwsh-lastexitcode skill (PR for #288).** Authored `.squad/skills/pwsh-lastexitcode/SKILL.md` documenting the `$LASTEXITCODE` propagation anti-pattern across `&` boundaries; added CONTRIBUTING "PowerShell Exit Code Discipline" section + audit of `scripts/windows/`. 5 unmitigated sites flagged in setup.ps1/auth.ps1 (deferred to Goofy #292).
-- **2026-05-19 -- Design pass PR for #289 + #290.** Single PR for Doc subagent worktree pattern (Option B: dedicated `..\dev-setup-doc` worktree) and Jiminy auto-dispatch (Option A: 3-surface checklist in charter + loop.md + ceremonies.md). Replaces dual-fold-PR pattern from Sprint 10 (#281+#283).
-- **2026-05-19 -- ARCHITECTURE.md refresh (PR for #229).** Synced file tree (added lib/ dirs, uninstall.*, auth.ps1, dotfiles.ps1, .tool-versions, .gitattributes); refreshed workflows/hooks/tests lists; added new sections (Tool Version Pinning, Git Hooks, CI Workflows, Squad Roster). Held back Linux-only Dependency Order (Windows version became #310) and Script Conventions prose (became #309).
-- **2026-05-20 -- Sprint rename Tier 3 sweep (chore/sprint-naming-convention).** 21 files, 6 categories. Mapping: Q->8-hotfix, R->9, S->10, T->11, U->12. Aliasing convention: `Sprint N (formerly Sprint X)` first-occurrence-per-file. PR #308 merged after Doc fact-check verdict "Verified".
-
-## Sprint 12 entries (summary, except final release cut)
-
-- **2026-05-17 -- PR #308 merge + Sprint 12 backlog.** PR #308 (Tier 3 rename) merged after Doc fact-check; 21 files, 297+/189-. Doc caught CHANGELOG `[0.8.0]` missing `(formerly Sprint Q)` alias (fixed via folded commit). Sprint 12 backlog: 7 inherited P3 + 2 new (#309, #310). Label gotcha: `area:scripts` does not exist (only 6 area labels: ci, hooks, windows, macos, linux, meta).
-- **2026-05-17 -- PR #314 ARCHITECTURE Script Conventions rewrite (#309).** Replaced obsolete "copy from setup.sh/setup.ps1" advice with explicit named lib files (`scripts/linux/lib/log.sh`, `scripts/windows/lib/logging.ps1`, etc.) plus copy-paste loading patterns. Documented bash subshell-vs-PowerShell dot-source asymmetry. Version-pin pattern made canonical (read-tool-version.sh / Get-ToolVersion). Held back #310 Windows Dep Order to Wave 2.
-- **2026-05-17 -- PR #321 Wave 2: Windows orchestrator Dependency Order (#310).** Added `### Windows orchestrator chain` subsection under existing `## Dependency Order`. 12-step chain documented verbatim from setup.ps1 Main() (Install-Git through Install-GitHook). Style: ASCII `->` arrows (defensive even though hook only enforces ASCII on `*.ps1`). Caught 3 stray U+2014 em-dashes pre-commit. Filed File-Structure-tree-stale follow-up (still shows auth.ps1 at scripts/windows/ root).
-- **2026-05-17 -- PR #324 Wave 3: README refresh (#306).** GitHub auth blockquote names both auth.sh + auth.ps1; Repo Structure tree adds auth.ps1/dotfiles.ps1/uninstall.ps1 with corrected file count (9->11); `.tool-versions` example reflects all 7 pins; `.squad/` tree expanded; Contributing section names 9-agent roster + cross-links. CWD-pin discipline applied throughout (lesson from #310 violation).
-
-## 2026-05-17 -- 0.9.2 release cut (Sprint 12 wrap)
-
-Cut 0.9.2 from `release/0.9.2` (develop @ `5e0fb53`). Folded [Unreleased] -> [0.9.2] in CHANGELOG, harvested Ralph's Sprint 12 EOS hygiene tail (~50 lines) from main checkout into release worktree. Sprint 12 ships 9 issues across 10 PRs in a 3-wave doc-quality sweep. Three releases this session: 0.9.0 (Sprint 9+10), 0.9.1 (Sprint 11 architecture), 0.9.2 (Sprint 12 doc-quality). Identical flow each: release branch from develop -> PR to develop (CHANGELOG fold) -> coordinator merges develop -> main (REGULAR merge) -> tag bare X.Y.Z on main -> `gh release create --target main`.
-
-**Worktree-isolation lesson:** My #310 PR earlier this sprint violated CWD-pin discipline and triggered cross-worktree write contamination (caught by Jiminy audit). Wave 3 #306 corrected the protocol: `Set-Location -LiteralPath` + path-mismatch guard at top of every powershell call, plus absolute path prefixes on every file write. Codified in Sprint 12 retro + every Mickey dispatch brief.
-**Job ends here:** Coordinator merges this release/0.9.2 -> develop PR, then opens develop -> main with regular merge, tags  .9.2, and runs gh release create --target main. I do not touch main or tag anything.
+- **2026-05-17 -- pwsh-lastexitcode skill (PR for #288).** Authored `.squad/skills/pwsh-lastexitcode/SKILL.md` documenting `\0` propagation anti-pattern across `&` boundaries; added CONTRIBUTING "PowerShell Exit Code Discipline" + audit. 5 unmitigated sites flagged in setup.ps1/auth.ps1 (deferred to Goofy #292).
+- **2026-05-19 -- PR for #289 + #290.** Single PR for Doc subagent worktree pattern (Option B: dedicated `..\dev-setup-doc`) + Jiminy auto-dispatch (Option A: 3-surface checklist). Replaces dual-fold pattern from Sprint 10 (#281+#283).
+- **2026-05-19 -- ARCHITECTURE.md refresh (PR for #229).** Synced file tree (lib/, uninstall.*, auth.ps1, dotfiles.ps1, .tool-versions, .gitattributes); refreshed workflows/hooks/tests; added Tool Version Pinning, Git Hooks, CI Workflows, Squad Roster sections. Held back Linux-only Dep Order (->#310) and Script Conventions (->#309).
+- **2026-05-20 -- Sprint rename Tier 3 sweep (PR #308).** 21 files, 6 categories. Q->8-hotfix, R->9, S->10, T->11, U->12. Aliasing: `Sprint N (formerly Sprint X)` first-occurrence-per-file. Merged after Doc fact-check "Verified". Doc caught CHANGELOG [0.8.0] missing `(formerly Sprint Q)` alias (folded fix). Label gotcha logged: `area:scripts` doesn't exist (6 area labels only).
+- **2026-05-17 -- PR #314 ARCH Script Conventions rewrite (#309).** Replaced obsolete "copy from setup.sh/setup.ps1" advice with explicit named lib files + copy-paste loading patterns. Bash-subshell vs PowerShell-dot-source asymmetry documented. Version-pin pattern canonical (read-tool-version.sh / Get-ToolVersion).
+- **2026-05-17 -- PR #321 Wave 2: Windows orchestrator Dep Order (#310).** Added `### Windows orchestrator chain` under `## Dependency Order`. 12-step chain from setup.ps1 Main(). ASCII `->` arrows. Caught 3 stray U+2014 em-dashes pre-commit. Filed File-Structure-tree-stale follow-up.
+- **2026-05-17 -- PR #324 Wave 3: README refresh (#306).** GitHub auth blockquote names auth.sh + auth.ps1; Repo Structure tree adds auth.ps1/dotfiles.ps1/uninstall.ps1 (count 9->11); .tool-versions example covers 7 pins; .squad/ tree expanded; 9-agent roster named. CWD-pin discipline applied throughout (lesson from #310 violation).
+- **2026-05-17 -- 0.9.2 release cut (Sprint 12 wrap).** Cut from release/0.9.2 (develop @ 5e0fb53). Folded [Unreleased] -> [0.9.2], harvested Ralph EOS tail. Sprint 12: 9 issues, 10 PRs, 3-wave doc-quality sweep. Three releases this session (0.9.0, 0.9.1, 0.9.2) -- identical flow: release branch from develop -> PR to develop (CHANGELOG fold) -> coordinator merges develop->main (REGULAR) -> tag X.Y.Z on main -> `gh release create --target main`. **Worktree-isolation lesson:** my #310 PR violated CWD-pin discipline (Jiminy caught contamination). Wave 3 #306 corrected: `Set-Location -LiteralPath` + path-mismatch guard + absolute path prefixes everywhere. Codified in Sprint 12 retro + Mickey dispatch brief.
 
 
 ## 2026-05-17 Sprint 13 Wave 1 (#325, #326)
