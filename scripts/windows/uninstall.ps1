@@ -14,6 +14,7 @@ $ErrorActionPreference = 'Stop'
 function Write-Ok   { param([string]$Msg) Write-Host "[OK]   $Msg" -ForegroundColor Green }
 function Write-Skip { param([string]$Msg) Write-Host "[SKIP] $Msg" -ForegroundColor Yellow }
 function Write-Info { param([string]$Msg) Write-Host "[INFO] $Msg" -ForegroundColor Cyan }
+function Write-Warn { param([string]$Msg) Write-Host "[WARN] $Msg" -ForegroundColor Yellow }
 
 # -- Restore dotfile .bak files ------------------------------------------------
 # Restores the newest timestamped backup (.bak.YYYYMMDD-HHmmss).
@@ -111,6 +112,17 @@ $profilePaths = @(
 foreach ($p in $profilePaths) {
     Remove-DevSetupProfileBlock -ProfilePath $p
 }
+
+# -- Unset core.hooksPath ------------------------------------------------------
+& git config --unset-all core.hooksPath 2>&1 | Out-Null
+if ($LASTEXITCODE -eq 0) {
+    Write-Ok "core.hooksPath unset (git falls back to per-repo .git/hooks)"
+} elseif ($LASTEXITCODE -in @(1, 5)) {
+    Write-Skip "core.hooksPath was not set (nothing to unset)"
+} else {
+    Write-Warn "git config --unset-all exited $LASTEXITCODE (unexpected; proceeding)"
+}
+$global:LASTEXITCODE = 0
 
 # -- Summary -------------------------------------------------------------------
 Write-Host ""

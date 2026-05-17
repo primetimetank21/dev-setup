@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `setup.sh` and `scripts/linux/uninstall.sh` now source `scripts/linux/lib/log.sh` instead of defining their own logging helpers. Local `log_*` / `ok` / `info` / `skip` definitions removed; all call sites updated to the canonical `log_ok` / `log_info` / `log_warn` / `log_error` names (closes #223).
 
 ### Fixed
+- `scripts/linux/uninstall.sh` and `scripts/windows/uninstall.ps1` now run `git config --global --unset-all core.hooksPath` during uninstall so git falls back to per-repo `.git/hooks` defaults instead of pointing at the (now-deleted) dev-setup hooks dir (closes #271).
 - `.github/workflows/e2e-install.yml` -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
 - `scripts/windows/tools/*.ps1` -- winget install calls now assert `$LASTEXITCODE` and surface failures to `setup.ps1` (closes #226). 7 install sites previously swallowed non-zero exits silently.
 
