@@ -189,7 +189,7 @@ Both `setup.sh` and `setup.ps1` automatically configure git to use this repo's h
 git config core.hooksPath hooks
 ```
 
-No manual copying needed. After running setup, three hooks are active:
+No manual copying needed. After running setup, four hooks are active:
 
 ### `pre-commit`
 
@@ -204,6 +204,10 @@ type(scope): description
 ```
 
 Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. Hard reject on non-conforming messages.
+
+### `prepare-commit-msg`
+
+Rewrites git's auto-generated merge/revert commit messages into Conventional Commits form so `commit-msg` can validate them (e.g. `Merge pull request #N from USER/BRANCH` -> `merge(pr): #N from USER/BRANCH`, `Revert "SUBJECT"` -> `revert: SUBJECT`). Non-matching messages are left unchanged.
 
 ### `pre-push`
 

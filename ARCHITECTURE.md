@@ -50,13 +50,13 @@ dev-setup/
 │   │       └── zsh.sh             # Install zsh + set as default shell
 │   │
 │   └── windows/
-│       ├── setup.ps1              # Orchestrator — dot-sources lib + tool modules below
-│       ├── auth.ps1               # GitHub CLI authentication (interactive)
+│       ├── setup.ps1              # Orchestrator -- dot-sources lib + tool modules below
 │       ├── uninstall.ps1          # Idempotent reverse of the installer
 │       ├── lib/
 │       │   ├── logging.ps1        # Write-Info / Write-Ok / Write-Warn / Write-Err + Assert-LastExit
-│       │   └── path.ps1           # Refresh-SessionPath — re-reads Machine+User PATH from registry
+│       │   └── path.ps1           # Refresh-SessionPath -- re-reads Machine+User PATH from registry
 │       └── tools/                  # Per-tool installers (orchestrator + 10 modules; PR #195 split)
+│           ├── auth.ps1           # GitHub CLI authentication (interactive; moved from top-level in PR #297)
 │           ├── copilot.ps1        # GitHub Copilot CLI (pin from .tool-versions)
 │           ├── dotfiles.ps1       # Apply config/dotfiles/ on Windows
 │           ├── gh.ps1             # GitHub CLI (pin from .tool-versions)
@@ -502,7 +502,7 @@ Permanent cross-agent decisions live in `.squad/decisions/*.md` (e.g., `doc-and-
 | `scripts/windows/setup.ps1` | Goofy | #2, #195 |
 | `scripts/windows/lib/` | Goofy | #195 |
 | `scripts/windows/tools/` | Goofy | #195 |
-| `scripts/windows/auth.ps1` | Goofy | #2 |
+| `scripts/windows/tools/auth.ps1` | Goofy | #2 |
 | `scripts/windows/uninstall.ps1` | Goofy | — |
 | `hooks/pre-commit` | Goofy | #138 |
 | `hooks/prepare-commit-msg` | Goofy | #212 |
