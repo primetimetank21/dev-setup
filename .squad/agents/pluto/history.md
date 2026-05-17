@@ -168,6 +168,10 @@ Decision drop: `.squad/decisions/sync-workflow-followups-2026-05-17.md`
 
 **Branch:** `squad/367-skill-drift-audit`
 **PR:** #368
+## Sprint 15 -- Issue #364: worktree-base-refresh SKILL.md
+
+**Branch:** `squad/364-worktree-base-refresh-skill`
+**Issue:** #364
 **Status:** Complete.
 
 ### What I did
@@ -225,3 +229,36 @@ skill must follow the rule it teaches. Skill placed in `.copilot/skills/`
 (not `.squad/skills/` as originally suggested) to match the existing 30-skill
 convention. Decision drop at
 `.squad/decisions/inbox/pluto-362-ascii-docs-skill.md`.
+Drafted and landed `.copilot/skills/worktree-base-refresh/SKILL.md` --
+the first formal writeup of the stale-sprint-branch recovery pattern that
+surfaced in Sprint 15 PR #359.
+
+The skill documents:
+- Why the pre-commit branch-ancestry hook (Check 1) fires when a sprint
+  branch is cut from an old develop tip and develop has since advanced.
+- Why `git reset --soft` is unsafe (leaves INDEX pinned to divergent base,
+  spurious mass-staging result).
+- The 3-phase recovery recipe: backup staged files to
+  `scripts/_tmp_recovery_<slug>/`, `git reset --hard origin/develop`,
+  restore + commit + cleanup.
+- Three acceptance checks before pushing (status clean, diff clean,
+  ancestry verified via `git merge-base --is-ancestor origin/develop HEAD`).
+- Anti-patterns and when to use `git rebase` instead.
+
+Confidence set to `low` (1 application: Sprint 15 #359, recovery commit
+`d3229c8`). Will graduate to medium on second observation.
+
+### Key learnings
+
+- **`git reset --soft` on a diverged branch produces a mass-staging trap.**
+  The INDEX is still set relative to the old base tip, so every file develop
+  changed appears as a staged modification. With 30+ changed files this is
+  effectively un-reviewable and risks committing a silent reversion.
+- **`git reset --hard origin/develop` + copy-back is the safe path** when
+  the branch has no unique commits. It fully syncs the working tree and index
+  to develop's state, leaving only the explicitly restored files as staged.
+- **`git merge-base --is-ancestor origin/develop HEAD`** is the canonical
+  post-recovery verification -- exits 0 means ancestry is correct and the
+  hook will pass.
+
+Decision drop: `.squad/decisions/inbox/pluto-364-worktree-base-refresh.md`
