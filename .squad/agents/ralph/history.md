@@ -349,3 +349,28 @@ Initial setup complete.
   - Open PRs: 1 (this history-fold)
 - **Verdict:** CLEAN. 2 stale post-Sprint-S branches reaped. Ready for
   Sprint T dispatch.
+
+## Sprint T End-of-Session Cleanup -- 2026-05-17
+
+- **Trigger:** Sprint T fully wrapped (Jiminy PR #302 merged, Scribe retro
+  PR #303 merged). Coordinator handed off to Ralph as final EOS step.
+  develop @ `d58576a`, working tree clean.
+- **PR:** #304 (squad/ralph-sprint-t-eos)
+- **Previous EOS:** PR #295 (post-0.9.0 mini-batch cleanup)
+- **Initial state snapshot:**
+  - Local branches: develop, main (no squad/* branches)
+  - Remote branches: origin/develop, origin/main (no squad/* branches)
+  - Worktrees: 1 (primary at C:\Users\Earl Tankard\Coding\dev-setup)
+- **Cleanup actions:** None -- state was already clean.
+- **gh `--delete-branch` quirk (issue #300):** NOT encountered this session.
+  All Sprint T PR merges appear to have reaped their branches cleanly via
+  `--delete-branch`. No ghost refs found.
+- **Final repo state:**
+  - develop: `d58576a` (working tree clean)
+  - Local branches: develop, main, squad/ralph-sprint-t-eos (this PR)
+  - Remote branches: origin/develop, origin/main,
+    origin/squad/ralph-sprint-t-eos (this PR)
+  - Worktrees: 1 (primary)
+  - Open PRs: 1 (this history-fold)
+- **Verdict:** CLEAN. 0 straggler branches, 0 worktrees to remove. Sprint T
+  EOS complete.
