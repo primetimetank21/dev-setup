@@ -87,3 +87,19 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - Verdict: BLOCK (P0). Required fix: update copilot-cli pin to a real npm version.
   Everything else in the PR is clean.
 - Report written to .squad/decisions/inbox/doc-pr-282-fact-check.md.
+
+### 2026-05-20 -- Fifth verification: PR #308 sprint rename sweep fact-check
+
+- **Scope:** Full 9-lane audit of Mickey's Tier 3 sprint-naming rename sweep (21 files, ~170 refs).
+- **Lanes checked:**
+  - (A) Mapping consistency: All Q→8-hotfix, R→9, S→10, T→11 replacements verified correct. No cross-mappings.
+  - (B) Alias convention: `(formerly Sprint X)` format correct on all first-per-file occurrences. Subsequent uses correctly omit alias.
+  - (C) Filename renames: All 4 retro files renamed correctly. H1 headers include `(formerly Sprint X)` alias.
+  - (D) Orphan check: Zero orphan `Sprint [QRST]` refs. All grep matches are legitimate aliases or mapping tables.
+  - (E) Historical narrative: Sprint 8-hotfix retro line 3 preserves chronology ("P0 emergency batch fixed AFTER Sprint 8 wrap"). Scribe history unchanged in meaning. CHANGELOG narratives factually intact.
+  - (F) CHANGELOG version headers: 0.9.1 (Sprint 11) ✓, 0.9.0 (Sprint 9 + Sprint 10) ✓. 0.8.0 was missing `(formerly Sprint Q)` alias — fixed.
+  - (G) CONTRIBUTING Sprint Naming Convention: mapping table present + correct, Sprint 12 explicit, aliasing convention documented, hotfix-suffix rule preserved.
+  - (H) Issue #306: No stray "Sprint U" in body. Uses "Sprint 12" throughout. Acceptance criterion #8 references new naming.
+  - (I) Mickey's history entry: Date (2026-05-20), branch (`chore/sprint-naming-convention`), file count (21), mapping table, and Sprint 11 naming all correct.
+- **Fixes applied:** 1 minor — CHANGELOG 0.8.0 header: added `(formerly Sprint Q)` for consistency with 0.9.0 and 0.9.1 headers.
+- **Verdict:** Doc minor fixes pushed (1 issue). Confidence: Verified.

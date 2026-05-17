@@ -76,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/windows/tools/*.ps1` -- winget install calls now assert `$LASTEXITCODE` and surface failures to `setup.ps1` (closes #226). 7 install sites previously swallowed non-zero exits silently.
 - `.github/workflows/e2e-install.yml` -- bash `-lc` step bodies now use YAML doubled-single-quote escapes for embedded apostrophes; previously, an inner `'session persistence may fail'` could terminate the wrapping single-quoted YAML scalar mid-string.
 
-## [0.8.0] - 2026-05-16 -- Sprint 8 + Sprint 8-hotfix: Gap audit refactor and install regression P0s
+## [0.8.0] - 2026-05-16 -- Sprint 8 + Sprint 8-hotfix (formerly Sprint Q): Gap audit refactor and install regression P0s
 
 ### Added
 - Pre-commit hygiene checks: ASCII-only enforcement on staged `.ps1` files, rogue `.squad/` path validation, staged inbox file detection, and branch ancestry verification for squad branches (closes #240)
