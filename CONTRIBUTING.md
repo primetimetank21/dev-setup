@@ -261,7 +261,7 @@ Or list all active worktrees with `git worktree list`.
 Behavioral tests in `tests/test_windows_setup.ps1` are organized by alphabetic groups
 (Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel agents may extend this
 file in the same sprint, the **coordinator pre-assigns Group letters in each spawn prompt**
-to prevent collisions. Sprint R example: Chip #267 picked "Group X" independently while
+to prevent collisions. Sprint 9 (formerly Sprint R) example: Chip #267 picked "Group X" independently while
 Goofy #268 also picked "Group X" - required a manual rename to Group Y during rebase.
 Going forward, the coordinator's spawn checklist includes Group letter assignment for any
 agent that may add tests to this file.
@@ -272,25 +272,44 @@ agent that may add tests to this file.
 
 Sprints use **numeric naming** (Sprint 1, Sprint 2, ...).
 
+### Historical mapping (letters -> numbers)
+
+| Old (letter) | New (number) | Reason |
+|---|---|---|
+| Sprint Q | **Sprint 8-hotfix** | P0 emergency batch fixed AFTER Sprint 8 wrap but BEFORE 0.8.0 ship; #249, #251, #252. Shipped inside 0.8.0. |
+| Sprint R | **Sprint 9** | Hygiene backlog sprint, post-0.8.0. |
+| Sprint S | **Sprint 10** | Tool-version pin sweep sprint. |
+| Sprint T | **Sprint 11** | ARCHITECTURE refresh + auth.ps1 move + PSSA advisory + LASTEXITCODE hardening. |
+
+Next sprint = **Sprint 12** (was going to be Sprint U).
+
+### Aliasing convention
+
+First-occurrence-per-file mentions of old names include a `(formerly Sprint X)` parenthetical
+for grep continuity. Subsequent occurrences in the same file use the new numeric name alone.
+This preserves searchability for anyone referencing old PR titles, commit messages, or external
+docs that used the letter names.
+
 ### History
 
 - **Sprints 1-7** -- numbered, each shipped its own version (0.1.0 - 0.7.0). CHANGELOG headers
   used the suffix `-- Sprint N: name`.
-- **Sprint 8** -- gap audit / Windows setup refactor (PR #195 et al). Folded into 0.8.0 alongside Sprint Q.
-- **Sprint Q** -- emergency hotfix batch fixed AFTER Sprint 8 wrap but BEFORE 0.8.0 ship.
+- **Sprint 8** -- gap audit / Windows setup refactor (PR #195 et al). Folded into 0.8.0 alongside Sprint 8-hotfix.
+- **Sprint 8-hotfix (formerly Sprint Q)** -- emergency hotfix batch fixed AFTER Sprint 8 wrap but BEFORE 0.8.0 ship.
   Three P0 install regressions (#249, #251, #252). Got the letter "Q" because it was an
   out-of-cadence quality/hotfix interjection.
-- **Sprint R, S, T** -- continued the letter scheme instead of switching back to numbers. With
-  only 26 letters in the alphabet and 4 already used in 2 weeks, the letter scheme isn't
-  sustainable. Reverting to numbers (decision: 0.9.1 release wrap, Earl-driven).
+- **Sprint 9 (formerly Sprint R), Sprint 10 (formerly Sprint S), Sprint 11 (formerly Sprint T)** --
+  continued the letter scheme instead of switching back to numbers. With only 26 letters in
+  the alphabet and 4 already used in 2 weeks, the letter scheme isn't sustainable.
+  Reverting to numbers (decision: 0.9.1 release wrap, Earl-driven).
 
 ### Convention going forward
 
-- Next sprint after Sprint T = **Sprint 9** (NOT Sprint U).
+- Next sprint after Sprint 11 = **Sprint 12** (NOT Sprint U).
 - CHANGELOG release headers MUST include `-- Sprint N: short-name` suffix (matches the 0.1.0-0.7.0 pattern).
 - Retro file naming: `.squad/retros/YYYY-MM-DD-sprint-N-retro.md` (numeric).
-- Sprint Q/R/S/T retros stay named as-is (historical record).
-- Out-of-cadence hotfix sprints (a la Sprint Q) get a `-hotfix` suffix in retro filename:
+- Retro files renamed to numeric (e.g., `2026-05-16-sprint-8-hotfix-retro.md`).
+- Out-of-cadence hotfix sprints (a la Sprint 8-hotfix) get a `-hotfix` suffix in retro filename:
   `.squad/retros/YYYY-MM-DD-sprint-N-hotfix-retro.md` -- the version header attribution stays
   on the numeric parent (e.g., `Sprint 8 + Sprint 8-hotfix`).
 
@@ -415,7 +434,7 @@ so a single forgotten checkpoint doesn't silently break the SOP. Source decision
 
 Doc (Fact Checker) is a `general-purpose` subagent that inherits the Coordinator's
 CWD by default. To prevent his `.squad/agents/doc/history.md` writes from landing
-as `M` on `develop` in the primary worktree (Sprint S anti-pattern: required PRs
+as `M` on `develop` in the primary worktree (Sprint 10 anti-pattern: required PRs
 #281 + #283), Doc runs in a dedicated per-sprint worktree.
 
 **Sprint kickoff (Coordinator, one-time per sprint):**
@@ -427,7 +446,7 @@ git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
 **Every Doc spawn prompt** MUST begin with an explicit CWD directive pointing at
 `..\dev-setup-doc`. Doc commits + pushes after every fact-check. At sprint wrap,
 the Coordinator opens ONE fold PR from `squad/doc-history-sprint-<N>` into
-`develop`. Target: 1 fold PR per sprint (down from 2 in Sprint S).
+`develop`. Target: 1 fold PR per sprint (down from 2 in Sprint 10).
 
 ### Jiminy auto-dispatch after >= 3-agent batches and at session-end (#290)
 

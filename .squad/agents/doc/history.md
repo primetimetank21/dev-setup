@@ -4,7 +4,7 @@
 
 ## 2026-05-16 -- Hired
 
-Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl flagged in the Sprint Q retro. First fact-check assignment pending.
+Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl flagged in the Sprint 8-hotfix (formerly Sprint Q) retro. First fact-check assignment pending.
 
 ## Learnings
 
@@ -17,7 +17,7 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - **Auto-spawn trigger candidate for the squad:** spawn Doc on any PR that modifies `.squad/routing.md` to catch cross-file routing inconsistencies
 - Verdict: PROCEED. 13/14 claims PASS, 1 WARN (fixed in commit 2fa65e9 before merge)
 
-### 2026-05-16 -- Second verification: Sprint R batch fact-check (PRs #265-#269)
+### 2026-05-16 -- Second verification: Sprint 9 (formerly Sprint R) batch fact-check (PRs #265-#269)
 - 5-PR batch review: verified diffs against issue ACs, checked CI logs, investigated E2E failures to root cause
 - `set -euo pipefail` + bare glob expansion is a reliable failure pattern in bash: `ls "${target}.bak."*` exits non-zero when no files match, killing the script. Fix: `|| newest=''` on the assignment. Found in #269 uninstall.sh.
 - Windows CI runners have `core.autocrlf` active by default in fresh git repos. Byte-level tests (WriteAllBytes with non-ASCII) must set `git config core.autocrlf false` before staging or the bytes may be processed differently. Found in #267 X-1 failure.
@@ -27,7 +27,7 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - Recommended merge order: #266, #265, #268, #267 (after fix), #269 (after fix)
 - **Auto-spawn trigger candidates:** Doc on any PR touching uninstall scripts (set -e compatibility); Doc on any batch with 2+ PRs modifying the same test file (group-name collision); Doc on any multi-PR sprint adding to CHANGELOG [Unreleased] (predictable conflict)
 
-### 2026-05-16 -- Third verification: Sprint S batch fact-check (PRs #274-#279)
+### 2026-05-16 -- Third verification: Sprint 10 (formerly Sprint S) batch fact-check (PRs #274-#279)
 
 - 6-PR batch review across docs, .gitattributes, ASCII encoding, uninstall
   hooksPath, logging consolidation, squad-cli warning sentinels.
@@ -74,7 +74,7 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
   the pin to a real npm version. Verdict: BLOCK.
 - Always run `npm view "<pkg>@<version>" version` when a PR switches install mechanism
   to npm AND carries over an old version pin. Version semantics differ across registries.
-- Group letter DD: confirmed correct via Doc's own Sprint S history ("BB/CC intentionally
+- Group letter DD: confirmed correct via Doc's own Sprint 10 history ("BB/CC intentionally
   omitted for #275/#279"). Task prompt's claim "latest on develop is CC" was inaccurate;
   actual is AA. DD does not collide.
 - copilot.ps1 fallback: structural safety is acceptable; Write-Ok after fallback is

@@ -1,6 +1,6 @@
-# Sprint R Retro -- 2026-05-16
+# Sprint 9 (formerly Sprint R) Retro -- 2026-05-16
 
-Sprint R tackled 5 high-priority hygiene and coverage issues from the go:yes backlog.
+Sprint 9 tackled 5 high-priority hygiene and coverage issues from the go:yes backlog.
 All 5 PRs merged after Doc's batch fact-check identified and caught 2 real bugs before
 merge (autocrlf in #267, pipefail in #269). Follow-up #271 filed for uninstall hooksPath gap.
 
@@ -121,7 +121,7 @@ Doc reviewed all 5 PRs and provided detailed cross-platform validation. Key verd
 
 ## Reflection
 
-Sprint R was a test of scalability under parallel work. Five agents, five PRs, zero worktree
+Sprint 9 was a test of scalability under parallel work. Five agents, five PRs, zero worktree
 conflicts, and a new batch-check role caught 2 critical bugs before they hit develop.
 The Group X collision and CHANGELOG conflicts were friction points that are entirely
 preventable with a bit more coordination upfront. But the fact that both were resolved
@@ -134,4 +134,4 @@ a P0 six months later when someone runs uninstall for the first time. Doc's veri
 killed that before it could happen.
 
 **Board status:** CLEAN. All 5 sprint branches deleted. develop = 607051a (PR #270 merge).
-1 follow-up filed (#271). Ready for Sprint S.
+1 follow-up filed (#271). Ready for Sprint 10 (formerly Sprint S).

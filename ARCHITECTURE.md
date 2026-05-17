@@ -1,7 +1,7 @@
 # Architecture: dev-setup
 
 > **Owner:** Mickey (Lead) — Issue #3  
-> **Last updated:** 2026-05-19 (Sprint T refresh — closes #229)
+> **Last updated:** 2026-05-19 (Sprint 11 (formerly Sprint T) refresh — closes #229)
 
 ---
 
@@ -315,7 +315,7 @@ All workflows live in [`.github/workflows/`](./.github/workflows). Owned by Chip
 | Job | Runner | Purpose |
 |-----|--------|---------|
 | `validate-linux` | `ubuntu-latest` | Run `setup.sh`, assert zsh/uv/nvm/node/gh, idempotency re-run, alias unit + parity tests |
-| `validate-macos` | `macos-latest` | Same shape as `validate-linux` + tool-version pin tests (added Sprint S) |
+| `validate-macos` | `macos-latest` | Same shape as `validate-linux` + tool-version pin tests (added Sprint 10 (formerly Sprint S)) |
 | `lint-shell-scripts` | `ubuntu-latest` | shellcheck across `setup.sh`, `scripts/linux/**`, `config/dotfiles/.aliases` |
 | `lint-powershell` | `ubuntu-latest` (pwsh) | PSScriptAnalyzer across `setup.ps1` + `scripts/windows/setup.ps1` |
 | `validate-powershell` | `windows-latest` | `Remove-CustomItem` regression + git-hooks tests under PS 7 |
@@ -378,8 +378,8 @@ Permanent cross-agent decisions live in `.squad/decisions/*.md` (e.g., `doc-and-
 |------|-------|----------|
 | `setup.sh` (root) | Mickey | #3 |
 | `setup.ps1` (root) | Mickey | #3 |
-| `.tool-versions` | Mickey | Sprint S |
-| `scripts/lib/` | Mickey | Sprint S |
+| `.tool-versions` | Mickey | Sprint 10 |
+| `scripts/lib/` | Mickey | Sprint 10 |
 | `scripts/linux/setup.sh` | Donald | #1 |
 | `scripts/linux/lib/log.sh` | Donald | — |
 | `scripts/linux/uninstall.sh` | Donald | — |

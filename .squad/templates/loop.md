@@ -88,7 +88,7 @@ Example: "Be concise. Use bullet points. Flag blockers clearly."
 2. If absent: this is the first Doc spawn of the sprint -> create the worktree now (`git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>`) OR defer to `Sprint Kickoff` ceremony if the kickoff was skipped.
 3. Doc's spawn prompt MUST begin with: "Your working directory is `<absolute path to ..\dev-setup-doc>`. `Set-Location` there BEFORE reading any files. All your `.squad/agents/doc/history.md` writes commit + push to `squad/doc-history-sprint-<N>`, never to develop."
 
-**Why:** Doc runs as a `general-purpose` subagent and inherits the Coordinator's CWD by default. Without an explicit CWD override, Doc's writes land as `M` on `develop` in the primary worktree and require a per-fact-check fold PR (Sprint S anti-pattern: #281 + #283). The dedicated worktree isolates Doc's edits to a single sprint branch with ONE fold PR at sprint wrap.
+**Why:** Doc runs as a `general-purpose` subagent and inherits the Coordinator's CWD by default. Without an explicit CWD override, Doc's writes land as `M` on `develop` in the primary worktree and require a per-fact-check fold PR (Sprint 10 (formerly Sprint S) anti-pattern: #281 + #283). The dedicated worktree isolates Doc's edits to a single sprint branch with ONE fold PR at sprint wrap.
 
 ### Gate compliance check
 

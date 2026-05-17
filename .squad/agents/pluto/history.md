@@ -270,7 +270,7 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 
 ---
 
-## 2026-05-16 -- Sprint S Issue #271 revise: fix(uninstall) core.hooksPath scope mismatch
+## 2026-05-16 -- Sprint 10 (formerly Sprint S) Issue #271 revise: fix(uninstall) core.hooksPath scope mismatch
 
 **Branch:** `squad/271-uninstall-hookspath`
 **PR:** #277 (revised after Windows E2E failure)
@@ -338,7 +338,7 @@ fire on the wrong exit codes, printing [OK] when the key was absent.
 - **Cleanup:** automatic inline trim after each backup write. No cron required.
 - **Timestamp format:** `YYYYMMDD-HHmmss` -- sortable, human-readable, filesystem-safe, identical on both platforms.
 
-## 2026-05-16 -- Sprint R: HooksPath Documentation and .bak Rotation Fixes
+## 2026-05-16 -- Sprint 9 (formerly Sprint R): HooksPath Documentation and .bak Rotation Fixes
 
 **PRs:** #266 (docs(contributing): document automatic hooks + branch-from-develop)
          #269 (feat(dotfiles): timestamp .bak backups with N-keep retention)
@@ -389,7 +389,7 @@ Key learnings:
 
 ### Notes on Batch Fact-Check
 
-Doc's verification identified 2 real bugs in Sprint R PRs before merge:
+Doc's verification identified 2 real bugs in Sprint 9 PRs before merge:
 1. #267 X-1 autocrlf failure -- caught and fixed by Chip (rebase)
 2. #269 uninstall.sh pipefail failure -- caught and fixed pre-merge (this work)
 
@@ -407,7 +407,7 @@ What I did:
 - Added explicit .gitattributes rules for *.ps1, *.psm1, and *.psd1 files with text eol=crlf
 - Rationale: PowerShell tooling on Windows expects CRLF. When core.autocrlf=true (standard on Windows runners),
   git normalizes files to LF by default. Setting explicit eol=crlf eliminates this platform divergence and ensures
-  consistent CRLF checkout on all platforms, preventing autocrlf surprises (relates to Sprint R #267 autocrlf lesson).
+  consistent CRLF checkout on all platforms, preventing autocrlf surprises (relates to Sprint 9 #267 autocrlf lesson).
 - Updated CHANGELOG.md [Unreleased] > Changed section
 - Verified rule with git check-attr: all *.ps1 files now report eol: crlf
 
@@ -425,7 +425,7 @@ Key learnings:
 
 ---
 
-## 2026-05-17 -- Sprint T Issue #233: docs(hooks) PSScriptAnalyzer advisory-only intent
+## 2026-05-17 -- Sprint 11 (formerly Sprint T) Issue #233: docs(hooks) PSScriptAnalyzer advisory-only intent
 
 **Branch:** `squad/233-pssa-advisory-docs`
 **PR:** (pending push)
