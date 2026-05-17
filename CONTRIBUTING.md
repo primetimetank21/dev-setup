@@ -256,6 +256,152 @@ Or list all active worktrees with `git worktree list`.
 
 ---
 
+## Test Harness Pattern
+
+Bash test files in `tests/*.sh` follow a **tally-based harness convention**: each assertion
+increments a `PASS` or `FAIL` counter, the script prints a results line, and the script
+exits non-zero only if `FAIL > 0`. **This is intentional** -- a single failed assertion must
+not abort the rest of the suite, because contributors need to see every failure in one run.
+
+### `set -uo pipefail` vs `set -euo pipefail`
+
+The non-obvious gotcha: most bash test files use `set -uo pipefail` -- **`-e` is
+intentionally OFF**.
+
+| Flag | Behavior |
+|------|----------|
+| `-e` (errexit) | Abort the script on the first command that returns non-zero. |
+| `-u` (nounset) | Error on reference to an unset variable. |
+| `-o pipefail`  | A pipeline returns the first non-zero exit code in the chain. |
+
+If `-e` were on, a single failing assertion (e.g., `grep -q PATTERN file` returning 1
+because the pattern was absent) would kill the script before `fail()` could even
+increment the counter. The remaining tests would never run. The tally model relies on
+each assertion completing AND being counted, regardless of outcome.
+
+**When `-euo pipefail` IS acceptable:** when every potentially-failing command is
+wrapped in `if ...; then ... fi` or `cmd || handler`, `-e` does not fire on that
+command. Three files in the suite (`test_nvm_bootstrap.sh`, `test_precommit_hygiene.sh`,
+`test_shared_logging.sh`) use `-euo` because every assertion is `if grep -q ...; then
+pass; else fail; fi` shaped. Both styles are valid; prefer `-uo` when the test body
+calls subprocesses or scripts that may legitimately exit non-zero outside an `if`.
+
+**Rule of thumb:** if you add a new bash test that calls a script directly (e.g.,
+`bash setup.sh` as part of the test), use `set -uo pipefail` and let the tally
+counters be the source of truth for PASS/FAIL.
+
+### Failure tally pattern
+
+Every bash test file establishes counters at the top and exits based on the tally:
+
+```bash
+#!/usr/bin/env bash
+set -uo pipefail
+
+PASS=0
+FAIL=0
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+RESET='\033[0m'
+
+pass() { echo -e "${GREEN}PASS${RESET}: $1"; PASS=$((PASS + 1)); }
+fail() { echo -e "${RED}FAIL${RESET}: $1"; FAIL=$((FAIL + 1)); }
+
+# ...assertions invoke pass "..." or fail "..."...
+
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
+if [ "$FAIL" -gt 0 ]; then
+    exit 1
+fi
+exit 0
+```
+
+Notes:
+
+- Counter names vary by file (`PASS`/`FAIL` in older tests, `passed`/`failed` in
+  newer ones). Either is fine; pick one and use it consistently within a file.
+- The non-zero exit at the end is what CI sees. Without it, a tally of `5 passed,
+  3 failed` would still report success to CI.
+- Color escapes are conventional but optional. Tests must stay ASCII-only
+  (the `RED`/`GREEN`/`RESET` strings themselves are ASCII -- only the rendered
+  output is colored).
+
+### Helper conventions
+
+Most test files define `pass()` and `fail()` as one-liners (see snippet above).
+Files that test against a complex fixture (e.g., `test_idempotency.sh`) wrap
+common assertions in helpers prefixed with `assert_`:
+
+| Helper | Used in | What it checks |
+|--------|---------|----------------|
+| `assert_command_exists "<cmd>" "<msg>"` | `test_idempotency.sh` | `command -v` resolves the binary; tallies pass/fail with the supplied message. |
+| `assert_file_exists "<path>" "<msg>"` | `test_idempotency.sh` | `[[ -f $path ]]`; tallies pass/fail. |
+| `assert_dir_exists "<path>" "<msg>"` | `test_idempotency.sh` | `[[ -d $path ]]`; tallies pass/fail. |
+| `assert_no_duplicate_lines "<file>" "<pattern>" "<msg>"` | `test_idempotency.sh` | `grep -c <pattern> <file>` returns <= 1. |
+| `assert_idempotent_tool_script "<script>" "<name>"` | `test_idempotency.sh` | Runs the script a second time; expects exit 0 plus an "already installed / configured / skipping" marker. |
+
+These helpers are file-local -- there is no shared `tests/helpers.sh` yet. If a new
+helper is reused across two or more test files, factor it into a shared library
+under `tests/lib/` (matches the `scripts/linux/lib/` + `scripts/windows/lib/`
+source-of-truth pattern; see ARCHITECTURE.md).
+
+### Minimal skeleton
+
+Copy this into a new `tests/test_<thing>.sh` and adapt:
+
+```bash
+#!/usr/bin/env bash
+# tests/test_<thing>.sh -- <one-line description>
+#
+# Usage (from repo root):
+#   bash tests/test_<thing>.sh
+#
+# Exit codes:
+#   0 -- all assertions passed
+#   1 -- one or more assertions failed
+
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+PASS=0
+FAIL=0
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+RESET='\033[0m'
+
+pass() { echo -e "${GREEN}PASS${RESET}: $1"; PASS=$((PASS + 1)); }
+fail() { echo -e "${RED}FAIL${RESET}: $1"; FAIL=$((FAIL + 1)); }
+
+# Example assertion
+if [ -f "${REPO_ROOT}/setup.sh" ]; then
+    pass "setup.sh exists at repo root"
+else
+    fail "setup.sh is missing at repo root"
+fi
+
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
+if [ "$FAIL" -gt 0 ]; then
+    exit 1
+fi
+exit 0
+```
+
+### Scope
+
+This convention covers **bash** test files (`tests/*.sh`). PowerShell tests
+(`tests/*.ps1`) use a different harness (`Test-Scenario` blocks in
+`test_windows_setup.ps1`, see Group Letter Assignment below) and are out of scope
+for this section.
+
+For the broader rationale around test isolation and second-run safety, see
+`tests/README.md` (idempotency suite overview).
+
+---
+
 ## Group Letter Assignment (parallel test work)
 
 Behavioral tests in `tests/test_windows_setup.ps1` are organized by alphabetic groups
