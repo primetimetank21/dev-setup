@@ -1192,7 +1192,7 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group S: GitHub auth step (Issue #191)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-$authScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'auth.ps1'
+$authScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'auth.ps1'
 
 . $authScript
 
