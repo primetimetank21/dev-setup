@@ -63,3 +63,27 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
   propagation in #277), 1 interaction risk flagged (#277+#278 function rename).
 - Recommended merge order: #274, #275, #276, #278, #277 (after fix), #279.
 - Report written to .squad/decisions/inbox/doc-sprint-s-batch-fact-check.md.
+
+### 2026-05-17 -- Fourth verification: PR #282 (squad/255-tool-version-pins, Goofy)
+
+- Single-PR deep-dive: 13 files, +600/-78, version-pin enforcement across 6 install scripts.
+- **BLOCKER found:** `@githubnext/github-copilot-cli@0.0.339` does not exist on npm.
+  Confirmed via `npm view "@githubnext/github-copilot-cli@0.0.339" version` returning E404.
+  Package only publishes 0.1.0 through 0.1.36. The old version was valid for the prior
+  install mechanism (gh extension / direct download); switching to npm requires updating
+  the pin to a real npm version. Verdict: BLOCK.
+- Always run `npm view "<pkg>@<version>" version` when a PR switches install mechanism
+  to npm AND carries over an old version pin. Version semantics differ across registries.
+- Group letter DD: confirmed correct via Doc's own Sprint S history ("BB/CC intentionally
+  omitted for #275/#279"). Task prompt's claim "latest on develop is CC" was inaccurate;
+  actual is AA. DD does not collide.
+- copilot.ps1 fallback: structural safety is acceptable; Write-Ok after fallback is
+  misleading (logs success even when pinned version was not installed). P2 recommendation.
+- gh 2.92.0 URL resolves (302 to release assets). gh.sh arch handling covers arm64.
+- read-tool-version.sh and Read-ToolVersion.ps1: both parse .tool-versions correctly,
+  no whitespace bugs.
+- T6-T9 and DD-1 to DD-5 test logic all correct and non-duplicative.
+- CHANGELOG conflict with #279: single ### Fixed union merge, mechanical resolution.
+- Verdict: BLOCK (P0). Required fix: update copilot-cli pin to a real npm version.
+  Everything else in the PR is clean.
+- Report written to .squad/decisions/inbox/doc-pr-282-fact-check.md.
