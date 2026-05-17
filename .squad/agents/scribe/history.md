@@ -127,3 +127,14 @@ Compressed; older session logs kept as short bullets.
 - **Before/after (bytes):** mickey 80823 -> 12076 (+ archive 57671); goofy 39857 -> 13923 (+ archive 24057); chip 36943 -> 12470 (+ archive 19911); pluto 29712 -> 14792; donald 28539 -> 12712; jiminy 28051 -> 8630; ralph 28464 -> 9503; scribe 20511 -> 11831 (this entry included). All 9 agent histories now under 15 KB; doc was already 10169 (untouched).
 - **Forward fix from PR #323 bug (atomic drain):** confirmed for next inbox fold cycle -- git add -- decisions.md AND git rm -- .squad/decisions/inbox/*.md MUST land in the SAME commit so drain is atomic with merge. Surfaced by Jiminy Sprint 12 session-end audit.
 - **Lesson candidate (history-compression):** the WHAT-to-preserve heuristic that worked here: (a) Key Details / Core Context / Learnings preamble verbatim; (b) most recent sprint(s) verbatim; (c) older sessions as date + outcome + PR/issue ref bullets; (d) skill triggers and recurring-incident patterns kept literal even when compressed. Not yet formalized as a skill -- second application will tell if it generalizes.
+
+## 2026-05-17 Sprint 13 Wave 1 Fold
+
+- **Scope:** drained 3 inbox drops into per-topic decisions files AND re-compressed .squad/agents/jiminy/history.md back under the 15 KB charter gate.
+- **Drops drained (3/3):**
+  - mickey-w1-2026-05-17-issues-325-326.md (1404 B) -> appended to .squad/decisions/mickey-architecture-entry-point.md (broadened to ARCH+README accuracy fixes; 2710 -> 4207 B).
+  - jiminy-w1-2026-05-17-issue-317-skill.md (1663 B) -> appended to .squad/decisions/doc-and-jiminy-automation.md (hygiene-automation theme; 12115 -> 14152 B).
+  - scribe-w1-2026-05-17-history-archival.md (2137 B) -> NEW .squad/decisions/scribe-history-compression.md (3242 B; will be referenced by future folds and as skill candidate).
+- **Atomic-drain forward-fix (from PR #323 bug):** verified -- the 3 source drops are removed from main-checkout inbox in the SAME PR as the per-topic appends. Inbox files are gitignored, so the removal lives on the filesystem rather than in the git index; documented in the new forward decision drop.
+- **jiminy/history.md re-compress (Option A):** 22548 -> 13078 B. Older Sprint 12 verbose audit blocks reduced to one-line bullets; Sprint 13 Wave 1 entries (Jiminy's own + post-batch audit) preserved verbatim per spec; recurring-incident references (worktree-isolation, ASCII gap, atomic-drain, CP1252, autocrlf, AllScope) preserved literal. Target was <13312 B (13 KB) with 2 KB headroom; achieved 13078 B (234 B headroom).
+- **Lesson (2nd application of compression heuristic):** the same WHAT-to-preserve heuristic from the Sprint 13 sweep generalized cleanly to a single-file re-compress after rebase regression. One more application would justify formalizing .squad/skills/history-compression/SKILL.md.

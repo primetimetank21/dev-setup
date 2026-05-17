@@ -65,3 +65,24 @@ The router (`setup.sh`) needs to be stable — it's what people bookmark or put 
 ### Why no package manager abstraction layer?
 
 Over-engineering. We support two platforms (apt/brew for Linux+macOS, winget for Windows). A package-manager abstraction adds complexity with no current payoff. If a third package manager is needed, add it directly in the relevant tool script.
+
+---
+
+## 2026-05-17 Sprint 13 Wave 1 -- ARCH and README accuracy fixes (#325, #326)
+
+**By:** Mickey (Lead). **PR:** #330 against `develop`.
+
+Two narrow doc-accuracy fixes shipped together:
+
+- `ARCHITECTURE.md`: corrected stale `scripts/windows/auth.ps1` references (file-structure tree near line 54 and ownership map near line 505) to `scripts/windows/tools/auth.ps1`. Reflects the PR #297 move into `tools/`. Closes #325.
+- `README.md`: "three hooks are active" became "four hooks are active" and added a `prepare-commit-msg` subsection between `commit-msg` and `pre-push`. Reflects PR #212 (Sprint 8-hotfix). Closes #326.
+- `CHANGELOG.md`: two entries under `[Unreleased] / Fixed`.
+
+**Related prior PRs:** #297 (auth.ps1 move into `tools/`), #212 (prepare-commit-msg hook).
+
+**Lessons captured:**
+
+- Batching two narrow related doc fixes (same domain, same review surface) into one PR keeps reviewer load minimal and CHANGELOG noise low. This is the 2nd time the pattern has been useful (Sprint 12 also batched two doc fixes); flagged as skill candidate if it recurs again next sprint.
+- Out-of-scope observations recorded in `history.md` during a prior PR (here: Mickey's #306 entry) were the exact source of these two follow-up issues. Cheap follow-up filing beats scope creep.
+
+**Scope note:** This topic file is broadened in practice from "Architecture Entry Point" to "ARCH and README accuracy" -- subsequent doc-accuracy fixes to the entry-point / file-structure surface should land here.
