@@ -189,3 +189,19 @@ Initial setup complete.
   with the "cost per wave, not per PR" rule from Sprint 12 EOS: this
   sprint had fewer concurrent waves still open at close, so the
   surface area shrank accordingly. No new tooling needed.
+
+## 2026-05-17 -- Sprint 14 EOS
+
+Final state at Sprint 14 wrap (0.9.4 shipped):
+- Local: develop @ 11ee060, main @ 008f166
+- Remote: origin/develop, origin/main only
+- Tags: 0.9.4 (latest); 13 total tags
+- Open issues: 0
+- Open PRs: 0
+- Worktrees: 1 (main checkout)
+
+Actions taken:
+- Deleted stale `origin/release/0.9.4` (PR #352 CHANGELOG fold merged, branch served purpose post-release)
+
+Sprint 14 delivered: 15 PRs merged, 6 decision drops, 2 skill graduations, 1 retro (PR #354).
+Post-EOS: develop + main synchronized at 0.9.4 tag. Working tree clean. Verdict: CLEAN.
