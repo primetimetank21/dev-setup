@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `.squad/skills/pwsh-lastexitcode/SKILL.md`: documents the `$LASTEXITCODE` propagation gotcha across pwsh `&` script-call boundaries; canonical fix is `$global:LASTEXITCODE = 0` after expected-failure commands (closes #288, surfaced by #277)
+- CONTRIBUTING.md "PowerShell Exit Code Discipline" section referencing the new skill
+
 ## [0.9.0] - 2026-05-17
 
 ### Added

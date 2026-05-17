@@ -894,3 +894,38 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
   confirmed they work in practice -- Group letter SOP held through Z, AA, BB, CC, DD,
   T6-T11 reservations; CHANGELOG strategy held through 4 separate `[Unreleased]`
   conflict resolutions; Ralph develop-commit ban was honored throughout.
+## Sprint T -- pwsh-lastexitcode Skill Authored (2026-05-17, PR for #288)
+
+- **Scope:** Closes #288. Skill-only PR -- no script behavior changes.
+- **Branch:** `squad/288-pwsh-lastexitcode` (forked from `develop` @ `ce53853`,
+  immediately post-0.9.0).
+- **Output (3 files):**
+  1. `.squad/skills/pwsh-lastexitcode/SKILL.md` -- documents the
+     `0`-propagates-across-pwsh-`&`-boundary anti-pattern,
+     why `try/catch` and `Continue = 'Stop'` do **not** catch
+     native non-zero exits, the canonical `0 = 0` reset
+     (and the local-vs-global scope trap), a detection checklist, and a
+     full call-site audit of `scripts/windows/` + `.github/workflows/`.
+  2. `CONTRIBUTING.md` -- new "PowerShell Exit Code Discipline" section
+     directly after "Tool Version Pin Enforcement". Mirrors the
+     #282 structure: problem statement, canonical sites bullet list,
+     one-paragraph fix, link to skill, link to discovery PR #277.
+  3. `CHANGELOG.md` -- two entries under `[Unreleased]`/Added (skill +
+     CONTRIBUTING section).
+- **Audit findings:** 3 workflow `&` script-call boundaries (e2e-install.yml
+  lines 350, 432, 475); only line 475 had a known leak, fixed by PR #277.
+  Inside `scripts/windows/`, found 1 mitigated site (uninstall.ps1:117 +
+  reset at 125) and 5 unmitigated-but-currently-benign sites: setup.ps1:38
+  (`git rev-parse` outside a repo) and four `gh auth status` / `gh api`
+  calls in auth.ps1. Flagged for follow-up issue but **scope-locked** out of
+  this PR per Coordinator dispatch.
+- **Key design choice:** kept the SKILL.md "Known sites" table descriptive
+  rather than prescriptive -- the audit lists what's there and what's at
+  risk, but the actual hardening is deferred to a follow-up issue routed
+  to Goofy. This keeps the documentation PR atomic and reviewable.
+- **Decision note:** `.squad/decisions/inbox/mickey-pwsh-lastexitcode-decision.md`
+  (local-only, inbox is gitignored).
+- **Outcome:** #288 closed. Skill catalog now has tool-version-pin (#255 origin)
+  + pwsh-lastexitcode (#277 origin). Pattern established: every bug that
+  recurs across a class of similar sites gets a SKILL.md so the next agent
+  spots it in review instead of re-discovering it in CI.

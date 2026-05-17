@@ -327,3 +327,36 @@ Homebrew does not publish versioned formulae for tools like `gh`. On macOS, acce
 the latest brew version, compare against the pin, and log a WARN if they differ.
 macOS is a secondary target; version drift is tolerated with visibility.
 
+---
+
+## PowerShell Exit Code Discipline
+
+`$LASTEXITCODE` leaks across PowerShell `&` script-call boundaries. When a
+Windows script ends with an *expected-failure* native command (e.g.,
+`git config --unset-all <key>` exiting `5` because the key was never set), the
+caller -- including the GitHub Actions `pwsh` step wrapper -- sees the non-zero
+code and fails the step even though the script logically succeeded.
+
+### Canonical expected-failure sites
+
+- `git config --unset` / `--unset-all <key>` (exits `5` when key absent)
+- `git rev-parse --git-dir` outside a git repo (exits `128`)
+- `gh auth status` when not authenticated (exits `1`)
+- `gh api <path>` for a missing resource (exits `1` on 404)
+- `npm uninstall -g <pkg>` for an uninstalled package (exits `1`)
+- `winget uninstall <id>` for a missing package (non-zero)
+
+### Fix
+
+After every expected-failure native command, read `$LASTEXITCODE`, classify
+the cases you intend to swallow, then reset with **`$global:LASTEXITCODE = 0`**
+(the local `$LASTEXITCODE = 0` shadows but does not clear the automatic
+variable). Optionally pair with `2>$null` or `2>&1 | Out-Null` to silence
+stderr noise. The trailing reset is load-bearing for any script invoked from
+a workflow `shell: pwsh` step via `& .\path\to\script.ps1` -- without it the
+GH Actions wrapper fails the step on the next inspection of `$LASTEXITCODE`.
+
+See `.squad/skills/pwsh-lastexitcode/SKILL.md` for the full pattern, a
+detection checklist, and the call-site audit. The discovery PR is #277
+(`fix(uninstall): unset core.hooksPath`); the skill closes #288.
+
