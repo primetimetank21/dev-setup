@@ -1114,3 +1114,31 @@ needed for this design-pass PR until merge.
 - **Issue #306 body updated mid-sweep** to use "Sprint 12" (was "Sprint U") plus
   a new acceptance criterion referencing the new naming. Stays consistent when
   Sprint 12 picks it up.
+
+
+## 2026-05-17 -- Sprint 12 PR #314: ARCHITECTURE.md Script Conventions rewrite (#309)
+
+- **Closed #309** by rewriting the `Script Conventions` section in ARCHITECTURE.md.
+  Old section pointed contributors at `copy from setup.sh` / `copy from setup.ps1` --
+  obsolete since the Sprint 8/10 lib/ refactors. New section names the actual files
+  (`scripts/linux/lib/log.sh`, `scripts/windows/lib/logging.ps1`, `scripts/windows/lib/path.ps1`,
+  and the cross-platform `scripts/lib/Read-ToolVersion.ps1` / `read-tool-version.sh` pair)
+  with one-line copy-paste loading patterns for both bash `source` and PowerShell dot-source.
+- **Key asymmetry documented:** `setup.sh` runs each `tools/*.sh` via `bash <script>`
+  (subshell, no inherited scope, so tools must re-source `lib/log.sh`), but `setup.ps1`
+  `dot-sources` each `tools/*.ps1` (parent scope, tool functions like `Install-Nvm`
+  live there and are invoked by name from `Main`). This is real, intentional, and
+  was implicit in the code -- now explicit in the doc.
+- **Version-pin pattern made canonical.** The bash side captures stdout from
+  `sh scripts/lib/read-tool-version.sh <tool>`; the PS side dot-sources
+  `Read-ToolVersion.ps1` then calls `Get-ToolVersion -Name <tool>`. nvm.sh
+  and nvm.ps1 cited as reference implementations.
+- **Verification:** read all five lib files + both setup orchestrators + both nvm
+  tool scripts before writing any examples. Every code block in the new section
+  is grounded in actual repo source, not assumed.
+- **Out-of-scope hold:** did not touch `Dependency Order` (that's #310, Sprint 12
+  Wave 2). Single-section edit, clean diff.
+- **ASCII-clean diff:** removed the pre-existing em-dash from the old `Sourcing`
+  row; all new content is plain ASCII. (ARCHITECTURE.md has pre-existing non-ASCII
+  bytes elsewhere; the pre-commit hook only guards `*.ps1`, so this is fine,
+  but I avoided introducing any new ones in my edit.)
