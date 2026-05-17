@@ -4,7 +4,7 @@
 #
 # Covers:
 #   Check 1: Branch ancestry (squad/* must descend from develop)
-#   Check 2: ASCII-only on staged *.ps1 files
+#   Check 2: ASCII-only on staged *.ps1, *.md, *.sh files
 #   Check 3: Rogue path check under .squad/
 #   Check 4: Staged inbox file check
 #   Check 5: Protected branch refuse (develop/main/master)
@@ -101,10 +101,10 @@ else
 fi
 
 # ===========================================================================
-# Check 2 Tests: ASCII-only on staged .ps1 files
+# Check 2 Tests: ASCII-only on staged .ps1 / .md / .sh files
 # ===========================================================================
 echo ""
-echo "=== Check 2: ASCII-only .ps1 ==="
+echo "=== Check 2: ASCII-only .ps1 / .md / .sh ==="
 
 # Test 2a: FAIL - .ps1 with non-ASCII
 T2A_DIR="${TMPDIR_BASE}/t2a"
@@ -131,16 +131,52 @@ else
   fail "T2b: .ps1 with ASCII-only passes"
 fi
 
-# Test 2c: PASS - non-.ps1 file with non-ASCII is allowed
+# Test 2c: FAIL - .md with non-ASCII (em-dash) is now rejected (#322 part B)
 T2C_DIR="${TMPDIR_BASE}/t2c"
 setup_test_repo "$T2C_DIR"
-git checkout -q -b pluto/non-ps1
+git checkout -q -b pluto/md-nonascii
 printf 'hello \xe2\x80\x94 world\n' > notes.md
 git add notes.md
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T2c: non-.ps1 with non-ASCII is allowed"
+  fail "T2c: .md with non-ASCII bytes should fail"
 else
-  fail "T2c: non-.ps1 with non-ASCII is allowed"
+  pass "T2c: .md with non-ASCII bytes fails"
+fi
+
+# Test 2d: FAIL - .sh with non-ASCII (em-dash) is rejected (#322 part B)
+T2D_DIR="${TMPDIR_BASE}/t2d"
+setup_test_repo "$T2D_DIR"
+git checkout -q -b pluto/sh-nonascii
+printf 'echo "hello \xe2\x80\x94 world"\n' > script.sh
+git add script.sh
+if sh "$HOOK" >/dev/null 2>&1; then
+  fail "T2d: .sh with non-ASCII bytes should fail"
+else
+  pass "T2d: .sh with non-ASCII bytes fails"
+fi
+
+# Test 2e: PASS - non-scanned extension (.txt) with non-ASCII is allowed
+T2E_DIR="${TMPDIR_BASE}/t2e"
+setup_test_repo "$T2E_DIR"
+git checkout -q -b pluto/txt-nonascii
+printf 'hello \xe2\x80\x94 world\n' > notes.txt
+git add notes.txt
+if sh "$HOOK" >/dev/null 2>&1; then
+  pass "T2e: non-scanned extension (.txt) with non-ASCII is allowed"
+else
+  fail "T2e: non-scanned extension (.txt) with non-ASCII is allowed"
+fi
+
+# Test 2f: PASS - .md with ASCII-only passes
+T2F_DIR="${TMPDIR_BASE}/t2f"
+setup_test_repo "$T2F_DIR"
+git checkout -q -b pluto/md-ascii
+echo 'hello -- world' > notes.md
+git add notes.md
+if sh "$HOOK" >/dev/null 2>&1; then
+  pass "T2f: .md with ASCII-only passes"
+else
+  fail "T2f: .md with ASCII-only passes"
 fi
 
 # ===========================================================================

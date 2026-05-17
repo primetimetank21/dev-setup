@@ -2,7 +2,7 @@
 # pre-commit hook: hygiene checks + shellcheck
 # Checks (ordered fastest-first):
 #   1. Branch ancestry (squad/* must descend from develop)
-#   2. ASCII-only on staged *.ps1 files
+#   2. ASCII-only on staged *.ps1, *.md, *.sh files
 #   3. Rogue path check under .squad/
 #   4. Staged inbox file check (.squad/decisions/inbox/ should be gitignored)
 #   5. Refuse commits directly on develop/main/master
@@ -34,12 +34,17 @@ case "$CURRENT_BRANCH" in
 esac
 
 # ---------------------------------------------------------------------------
-# Check 2: ASCII-only on staged *.ps1 files
+# Check 2: ASCII-only on staged *.ps1, *.md, *.sh files
+#
+# Scanned extensions:
+#   .ps1 -- PS 5.1 on Windows uses CP1252; non-ASCII breaks string literals
+#   .md  -- docs are the dominant source of em-dash / smart-quote leakage
+#   .sh  -- shell scripts; em-dashes from copy-paste can break here-docs / strings
 # ---------------------------------------------------------------------------
-PS1_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ps1$' || true)
-if [ -n "$PS1_STAGED" ]; then
+ASCII_STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ps1|md|sh)$' || true)
+if [ -n "$ASCII_STAGED" ]; then
   ASCII_FAIL=0
-  for file in $PS1_STAGED; do
+  for file in $ASCII_STAGED; do
     # Use staged content (not working tree) via git show
     # grep -P with hex range works in git-bash (ships GNU grep with PCRE)
     # Do NOT set LC_ALL=C with -P (breaks on git-bash). Default UTF-8 locale is fine.
@@ -47,9 +52,11 @@ if [ -n "$PS1_STAGED" ]; then
     if [ -n "$NON_ASCII" ]; then
       if [ "$ASCII_FAIL" -eq 0 ]; then
         echo ""
-        echo "ERROR: Non-ASCII bytes detected in staged PowerShell file(s)."
+        echo "ERROR: Non-ASCII bytes detected in staged file(s)."
+        echo "  Scanned extensions: .ps1 (PowerShell), .md (Markdown), .sh (shell)."
         echo "  PS 5.1 on Windows uses CP1252 -- non-ASCII bytes (em dashes, smart quotes)"
-        echo "  break string literals at byte 0x94. Use ASCII equivalents."
+        echo "  break string literals at byte 0x94. Markdown / shell sources should also"
+        echo "  stay ASCII-clean to keep grep / sed / diff portable across locales."
         echo ""
       fi
       echo "  $file:"
@@ -61,7 +68,9 @@ if [ -n "$PS1_STAGED" ]; then
   if [ "$ASCII_FAIL" -ne 0 ]; then
     echo "  Fix: replace non-ASCII characters with ASCII equivalents."
     echo "    em dash (U+2014) -> --"
+    echo "    en dash (U+2013) -> -"
     echo "    smart quotes -> straight quotes"
+    echo "    ellipsis (U+2026) -> ..."
     echo ""
     exit 1
   fi
