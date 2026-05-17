@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- squad: Sprint 13 retrospective at .squad/retros/2026-05-17-sprint-13-retro.md
 
 ### Changed
 
@@ -20,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - squad: skill formalizing the worktree-remove-FIRST PR merge pattern; documents the gh CLI quirk and proven 5-of-5 workaround (#317)
+- `.squad/retros/2026-05-17-sprint-13-retro.md`: Sprint 13 retrospective (#339; folded retroactively into 0.9.3 -- PR merged after tag; see `.squad/decisions/changelog-retro-placement.md`)
 
 ### Changed
 
