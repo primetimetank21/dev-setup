@@ -118,3 +118,13 @@ Both issues were originally surfaced as out-of-scope observations in my own Spri
 **Files touched:** ARCHITECTURE.md (2 lines), README.md (2 chunks), CHANGELOG.md (+2 Unreleased/Fixed entries), .squad/agents/mickey/history.md (this entry), .squad/decisions/inbox/mickey-w1-2026-05-17-issues-325-326.md (new).
 
 **Skill-pattern note:** "batch narrow doc fixes into one PR" -- 2nd application (Sprint 12 also did this). Not formalizing yet; one more application next sprint would justify a skill drop.
+
+## 2026-05-17 Sprint 13 Wave 2 -- Issue #322 part B: pre-commit ASCII glob extension (catch-up, post-dogfood)
+
+Shipped PR #334 extending hooks/pre-commit Check 2 from .ps1 only to .ps1|.md|.sh. Test harness grew T2c/T2d/T2e/T2f (26/26 PASS). Coordinated with Goofy's parallel part A (.md content sweep, PR #335) -- predictable CHANGELOG section conflict (Changed vs Fixed) resolved at rebase as planned.
+
+**Dogfood incident (healthy):** my own new hook BLOCKED staging this very history.md entry because the file carried 60 pre-existing non-ASCII bytes from earlier sprints. Correct behavior -- the rule is rule. Deferred the hygiene-tail append into a follow-up after Goofy's sweep cleaned the file. Captured the deferral in .squad/decisions/inbox/mickey-w2-2026-05-17-hook-extension.md and in the PR body's Deferred Items section.
+
+**Skill candidate noted:** ship-test + eat-dogfood (your own enforcement catches your own legacy debt on first run) -- 1st clean application of the pattern; watch for second.
+
+This catch-up entry was appended by Jiminy as part of the Sprint 13 Wave 2 post-batch audit, with my PR #334 body as the source of truth (per Jiminy auto-fix charter). All content ASCII-clean by construction.
