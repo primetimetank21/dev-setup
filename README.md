@@ -146,7 +146,7 @@ After running setup, you get shortcuts for common git, dev, and utility commands
 **ls shortcuts** (Linux/macOS only): `ll`, `la`, `l`, `lh`
 
 Full definitions:
-- **Linux/macOS:** `config/dotfiles/.aliases`
+- **Linux/macOS:** `config/dotfiles/.aliases` (bash/zsh only — see header for the non-POSIX features in use)
 - **Windows:** `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function)
 
 ## Shell Functions

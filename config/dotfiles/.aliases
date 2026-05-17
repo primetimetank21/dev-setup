@@ -1,7 +1,39 @@
 # ~/.aliases
 #
-# Shell aliases for common developer workflows.
-# Sourced by ~/.zshrc or ~/.bashrc — see config/dotfiles/.zshrc.template.
+# Shell aliases and helper functions for common developer workflows.
+#
+# ============================================================================
+# Shell compatibility: bash/zsh only -- NOT POSIX
+# ============================================================================
+#
+# This file is intended for bash and zsh. It is NOT POSIX-compatible
+# (sh / dash / ash). Do not source it from /bin/sh -- the non-POSIX
+# features below will fail to parse or misbehave.
+#
+# Non-POSIX features intentionally used in this file:
+#
+#   [[ ... ]]              -- extended test command (bash/zsh, not POSIX)
+#   [[ ... =~ ... ]]       -- regex match operator (bash/zsh)
+#   local <var>            -- function-local variables (bash/ksh/zsh)
+#   $BASH_VERSION          -- shell-detection variable used by `sb` alias
+#   $ZSH_VERSION           -- shell-detection variable used by `sz` alias
+#   alias -- -='cd -'      -- `alias --` long-option terminator (bash/zsh)
+#
+# Note: function definitions use the POSIX `name() { ... }` form, but the
+# bodies use `local` (non-POSIX), so the file as a whole is bash/zsh-only.
+#
+# If you need POSIX compatibility, do NOT source this file from /bin/sh.
+# Maintain a separate POSIX-only rc file for sh/dash/ash environments.
+#
+# ============================================================================
+# Loading pattern
+# ============================================================================
+#
+# Sourced from ~/.bashrc and ~/.zshrc. The dotfile installer
+# (config/dotfiles/install.sh) wires this in for new shells; existing shells
+# pick it up on next launch or via the `reload` / `sb` / `sz` aliases.
+# See README.md "Shell Aliases" for the cross-platform picture and the
+# Windows-side equivalent in scripts/windows/tools/profile.ps1.
 #
 # Categories:
 #   - Navigation
