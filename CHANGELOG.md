@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Sprint naming convention reverted from letters back to numbers: Q -> Sprint 8-hotfix, R -> Sprint 9, S -> Sprint 10, T -> Sprint 11; next = Sprint 12. Tier 3 full sweep across 21 files (~170 refs). Retro files renamed with `git mv`. First-occurrence `(formerly Sprint X)` aliases added for grep continuity. CONTRIBUTING.md "Sprint Naming Convention" section updated with mapping table and aliasing convention.
 
+### Removed
+- Legacy GitHub labels `priority: high`, `priority: medium`, `priority: low` (with spaces) deleted; canonical taxonomy is now `priority:p0..p3` (closes #254)
+
 ## [0.9.1] - 2026-05-17 -- Sprint 11 (formerly Sprint T): Architecture refresh and tools hardening
 
 ### Fixed
