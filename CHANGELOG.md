@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 16 skill drift watchlist audit at `.squad/decisions/pluto-skill-drift-2026-05-17.md`. (#367)
+
 ### Changed
 
 ### Fixed
