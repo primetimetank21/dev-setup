@@ -254,6 +254,10 @@ git worktree remove /workspaces/dev-setup-56
 
 Or list all active worktrees with `git worktree list`.
 
+### Merging Squad PRs from worktrees
+
+When merging a Squad PR that was developed in a worktree, follow the worktree-remove-FIRST pattern (remove the worktree and delete the local branch BEFORE `gh pr merge --delete-branch`). See `.squad/skills/worktree-remove-first/SKILL.md` for the five-step sequence and the gh CLI quirk it sidesteps.
+
 ---
 
 ## Test Harness Pattern
