@@ -267,3 +267,39 @@ Initial setup complete.
   - main, develop, release/* (per charter: never touch release branches)
 - **Verdict:** CLEAN. 5 stale sprint branches removed. Working tree verified
   clean. Ready for next session.
+
+## Sprint S EOS Cleanup -- 2026-05-17
+
+- **Context:** Sprint S wrapped. Jiminy retro (PR #283) and Scribe retro
+  (PR #284) merged. Coordinator handed off to Ralph for final branch reaping
+  per EOS sequence (Jiminy -> Scribe -> Ralph -> session complete).
+- **Trigger:** End-of-Sprint-S session-wrap; develop @ `8103195` (post-#284
+  merge), working tree clean.
+- **PR verification:** Re-verified all 6 candidate branches via
+  `gh pr list --state merged --head <branch>`. All 6 confirmed MERGED:
+  * squad/223-logging-consolidation -> PR #278 (merged 2026-05-17T00:24:54Z)
+  * squad/231-ps1-gitattributes -> PR #275 (merged 2026-05-17T00:19:19Z)
+  * squad/234-ps1-ascii-encoding -> PR #276 (merged 2026-05-17T00:19:28Z)
+  * squad/255-squad-cli-warning -> PR #279 (merged 2026-05-17T01:34:44Z)
+  * squad/255-tool-version-pins -> PR #282 (merged 2026-05-17T01:26:01Z)
+  * squad/271-uninstall-hookspath -> PR #277 (merged 2026-05-17T00:51:50Z)
+- **Cleanup actions:**
+  - Deleted all 6 remote squad/* branches via single
+    `git push origin --delete ...` call
+  - Ran `git fetch --prune` to drop stale tracking refs
+  - Local branches: only `develop` (current) + `main` -- no squad/* survived
+    (Scribe's was auto-cleaned by `gh pr merge --delete-branch` on #284)
+  - Worktrees: 1 primary worktree, no `..\dev-setup-*` strays
+- **Refused / anomalies:** None. All 6 candidate branches had merged PRs;
+  zero force-deletes required.
+- **History-fold:** This entry committed on `squad/ralph-sprint-s-eos`
+  branch + PR opened (charter ban on direct develop commits, per #274).
+  Coordinator will review and merge.
+- **Final repo state:**
+  - develop: `8103195` (working tree clean)
+  - Local branches: develop, main, squad/ralph-sprint-s-eos (this PR)
+  - Remote branches: develop, main, origin/squad/ralph-sprint-s-eos (this PR)
+  - Worktrees: 1 (primary)
+  - Open PRs: 1 (this history-fold)
+- **Verdict:** CLEAN. 6 stale Sprint-S branches reaped. Sprint S backlog
+  complete.
