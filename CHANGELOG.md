@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Sprint 16 skill drift watchlist audit at `.squad/decisions/pluto-skill-drift-2026-05-17.md`. (#367)
+- New `.copilot/skills/ascii-docs-about-non-ascii/SKILL.md` formalizing the "self-documenting non-ASCII" discipline (medium confidence, 2 observations across Sprint 14 #340 and Sprint 15 #356/#359). (#362)
 
 ### Changed
 
