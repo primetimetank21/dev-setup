@@ -26,3 +26,40 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - Verdicts: #265 PROCEED, #266 PROCEED (follow-up issue for hooksPath uninstall gap), #267 REVISE (fix X-1 + rename Group X to Y), #268 PROCEED, #269 REVISE (fix ls glob in uninstall.sh)
 - Recommended merge order: #266, #265, #268, #267 (after fix), #269 (after fix)
 - **Auto-spawn trigger candidates:** Doc on any PR touching uninstall scripts (set -e compatibility); Doc on any batch with 2+ PRs modifying the same test file (group-name collision); Doc on any multi-PR sprint adding to CHANGELOG [Unreleased] (predictable conflict)
+
+### 2026-05-16 -- Third verification: Sprint S batch fact-check (PRs #274-#279)
+
+- 6-PR batch review across docs, .gitattributes, ASCII encoding, uninstall
+  hooksPath, logging consolidation, squad-cli warning sentinels.
+- **$LASTEXITCODE leaks through .ps1 script boundaries in GitHub Actions pwsh
+  steps.** Pattern: `& .\script.ps1` in a pwsh step leaves $LASTEXITCODE set
+  to whatever the last native command inside the script returned. The runner
+  template appends `if ((Test-Path variable:\LASTEXITCODE)) { exit $LASTEXITCODE }`,
+  propagating the value as the step exit code. Mitigation: add
+  `$global:LASTEXITCODE = 0` after any native-command block whose exit code
+  is already handled. Found in #277 Windows E2E failure.
+- **git config scope mismatch.** setup.ps1 and setup.sh use `git config
+  core.hooksPath hooks` (no scope flag, defaults to --local). PR #277 uninstall
+  scripts used `--global`, targeting a config file the key was never written to.
+  git exits non-zero; key in local .git/config is never unset. On Windows CI
+  this kills the step via the $LASTEXITCODE propagation above. On Linux the
+  || true hides it but the unset is a no-op. Fix: remove --global from both
+  uninstall scripts.
+- **Inter-PR function rename collision.** When one PR renames a function (#278:
+  ok -> log_ok in uninstall.sh) and a concurrent PR adds a new call site using
+  the old name (#277: ok "core.hooksPath unset"), neither PR sees the orphan.
+  Pattern: any time a function-rename PR is open, check all sibling PRs that
+  touch the same file for old-name call sites. Auto-spawn Doc trigger: 2+ PRs
+  modifying the same shell script in the same sprint.
+- **CHANGELOG anchor conflicts.** In 6-PR sprints with ### Changed and ### Fixed
+  sections, two pairs of PRs landed at the same insertion point: #275+#278
+  (both appended to end of ### Changed) and #277+#279 (both prepended to start
+  of ### Fixed). The union-and-rebase strategy from #274 SOP resolves cleanly.
+- Group letter SOP fully followed: Z (Goofy/#276) and AA (Pluto/#277) used
+  correctly. BB (#275) and CC (#279) correctly omitted (no test_windows_setup.ps1
+  changes warranted for those scopes).
+- Verdicts: #274 PASS, #275 PASS, #276 PASS, #277 REVISE P1 (3-4 line fix,
+  small), #278 PASS, #279 PASS. 1 real bug caught (scope mismatch + $LASTEXITCODE
+  propagation in #277), 1 interaction risk flagged (#277+#278 function rename).
+- Recommended merge order: #274, #275, #276, #278, #277 (after fix), #279.
+- Report written to .squad/decisions/inbox/doc-sprint-s-batch-fact-check.md.
