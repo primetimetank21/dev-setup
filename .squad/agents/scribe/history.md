@@ -104,3 +104,23 @@ Appended team updates to:
   - goofy/history.md: PR #268 (winget exit assertion, Assert-LastExit pattern, Group X)
   - pluto/history.md: PRs #266 (hooksPath docs) + #269 (.bak rotation, pipefail fix)
   - ralph/history.md: already written by Ralph, folded into drain PR (no direct develop commit)
+
+### 2026-05-17 -- Session drain: Sprint S retro + agent histories fold
+- Created `.squad/retros/2026-05-17-sprint-s-retro.md`: full Sprint S recap covering
+  10 PRs (#274-#283), Doc batch fact-check verdicts, version-pin anti-pattern resolution,
+  $LASTEXITCODE / YAML quoting / function-rename collision learnings, and action items
+  for Sprint T.
+- Folded Jiminy's modified `.squad/agents/jiminy/history.md` (Sprint S end-of-sprint
+  audit entry that he could not direct-commit per pre-commit Check 5) into the drain PR.
+- Backfilled Mickey Sprint S entry in `.squad/agents/mickey/history.md` for PR #274
+  (Sprint R retro action items: Ralph develop-commit ban, Group letter SOP, CHANGELOG
+  conflict strategy). Mickey shipped #274 without writing his own history entry; Jiminy
+  flagged the gap in his end-of-sprint audit.
+- Drained 2 inbox decisions locally: `doc-sprint-s-batch-fact-check.md` and
+  `doc-pr-282-fact-check.md`. Both already folded into `doc/history.md` via PRs #281
+  and #283; deletion is non-tracked (inbox is gitignored).
+- Skipped Ralph history.md write: Ralph has not been dispatched for Sprint S EOS yet;
+  six stale remote `squad/*` branches survive post-merge. Recommended Coordinator
+  dispatch Ralph after this PR merges.
+- Logged session locally to `.squad/log/2026-05-17-sprint-s-retro-fold.md`
+  (gitignored, local-only).
