@@ -46,11 +46,11 @@ How to decide who handles what for the dev-setup project.
 
 ## Rules
 
-1. **Eager by default** — spawn all agents who could usefully start work, including anticipatory work.
+1. **Eager by default** -- spawn all agents who could usefully start work, including anticipatory work.
 2. **Scribe always runs** after substantial work, always `mode: "background"`. Never blocks.
-3. **Quick facts → coordinator answers directly.** No agent spawn for "what tools get installed?"
-4. **Cross-platform tasks** — Donald owns bash side, Goofy owns PowerShell side. Both can run in parallel.
-5. **"Team, ..." → fan-out.** Mickey + Donald + Goofy + Pluto in parallel as `mode: "background"`.
+3. **Quick facts -> coordinator answers directly.** No agent spawn for "what tools get installed?"
+4. **Cross-platform tasks** -- Donald owns bash side, Goofy owns PowerShell side. Both can run in parallel.
+5. **"Team, ..." -> fan-out.** Mickey + Donald + Goofy + Pluto in parallel as `mode: "background"`.
 6. **Test alongside build.** When Donald or Goofy write a script, spawn Chip to write test cases simultaneously.
 7. **Mickey reviews before merge.** All work goes through Mickey for final review.
 8. **Jiminy auto-runs** before coordinator returns control to user, after multi-agent batches (3+ spawns), and at session-end. Manual trigger: "Jiminy, check" / "Jiminy, audit". Reports clean state in one line, dirty state with fix-offer.

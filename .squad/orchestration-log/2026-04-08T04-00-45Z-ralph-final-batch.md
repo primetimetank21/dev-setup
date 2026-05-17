@@ -7,13 +7,13 @@
 ## Summary
 
 Closed 3 issues:
-- Issue #55 (Agent Timeout Policy) — closed with PR #60 ✅
-- Issue #56 (SQUAD_WORKTREES config) — closed with PR #58 ✅
-- Issue #57 (Remove ps.tar.gz) — closed with PR #59 ✅
+- Issue #55 (Agent Timeout Policy) -- closed with PR #60 [x]
+- Issue #56 (SQUAD_WORKTREES config) -- closed with PR #58 [x]
+- Issue #57 (Remove ps.tar.gz) -- closed with PR #59 [x]
 
 Merged 2 final PRs into develop:
-- PR #60 (enforce_admins decision documentation) ✅
-- PR #62 (History summary for sprint 5) ✅
+- PR #60 (enforce_admins decision documentation) [x]
+- PR #62 (History summary for sprint 5) [x]
 
 ## Merge Pattern
 
@@ -26,4 +26,4 @@ Issue #54 (enforce_admins=true) remains open pending manual owner action.
 
 ## Status
 
-✅ COMPLETE — Sprint 5 closure complete
+[x] COMPLETE -- Sprint 5 closure complete

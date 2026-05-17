@@ -2,7 +2,7 @@
 
 **By:** Pluto (Config Engineer)
 **Date:** 2026-04-07
-**Issue:** #11 — [Config] Dotfile templates
+**Issue:** #11 -- [Config] Dotfile templates
 
 ---
 
@@ -18,7 +18,7 @@ the repo.
 tokens). If symlinked, editing `$HOME/.gitconfig` would corrupt the repo template.
 
 **Trade-off:** Changes to the repo template won't auto-propagate to existing
-installs. Acceptable — the install script's idempotency check handles
+installs. Acceptable -- the install script's idempotency check handles
 re-installs safely with backups.
 
 ---
@@ -47,7 +47,7 @@ that a regex approach is readable and safe.
 ### 4. .gitconfig backup on overwrite (not skip)
 
 **Decision:** When `$HOME/.gitconfig` already exists and differs from the
-template, **back it up** (`.bak`) and overwrite it — rather than skipping.
+template, **back it up** (`.bak`) and overwrite it -- rather than skipping.
 
 **Why:** In Codespaces/Dev Containers, an existing `.gitconfig` may have been
 auto-generated with wrong defaults. The template is the source of truth; the

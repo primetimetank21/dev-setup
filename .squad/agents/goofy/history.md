@@ -1,7 +1,7 @@
 # Project Context
 
 - **Owner:** Earl Tankard, Jr., Ph.D.
-- **Project:** dev-setup — A replicable setup script system for Dev Containers and Codespaces
+- **Project:** dev-setup -- A replicable setup script system for Dev Containers and Codespaces
 - **Stack:** Bash, Zsh, PowerShell, shell scripting, cross-platform tooling
 - **Created:** 2026-04-07T03:05:10Z
 
@@ -11,23 +11,23 @@
 - Target environments: GitHub Codespaces, Dev Containers, fresh machines
 - Tools to install: zsh, uv, nvm, gh CLI, GitHub Copilot CLI, and user shortcuts
 - Dotfiles and shell configs are managed as templates
-- Scripts must be idempotent — safe to run multiple times
+- Scripts must be idempotent -- safe to run multiple times
 
 ## Core Context
 
-**Sprints 1–8 Summary (2026-04-07 to 2026-05-04):**
+**Sprints 1-8 Summary (2026-04-07 to 2026-05-04):**
 
 Implemented Windows PowerShell setup, utility alias framework, and architectural refactors:
 
-- **Sprints 1–4:** Root setup.ps1 OS detection, scripts/windows/setup.ps1 core setup, 5 Install-* functions (Git, Uv, Nvm, GhCli, CopilotCli), utility aliases (ta, tt, tls, tks, gpl, ggsls), Remove-Item guards for PS 5.1 AllScope conflicts
+- **Sprints 1-4:** Root setup.ps1 OS detection, scripts/windows/setup.ps1 core setup, 5 Install-* functions (Git, Uv, Nvm, GhCli, CopilotCli), utility aliases (ta, tt, tls, tks, gpl, ggsls), Remove-Item guards for PS 5.1 AllScope conflicts
 - **Sprint 5:** PS 5.1 source-level guards (`Test-Path Variable:IsWindows`), vim PATH refresh after winget, empty catch block pattern (Write-Verbose), UTF-8 em-dash removal
 - **Sprint 6:** curl.exe / wget.exe alias bypass, ep alias for profile editor, Remove-Item guard on profile ops
 - **Sprint 7:** Git hooks implementation, PS variable guard regressions fixed (reverted to PSVersion pattern)
 - **Sprint 8 (Gap Audit):** Refactored monolithic setup.ps1 (451 lines) into 9 per-tool files under tools/ (git, uv, nvm, gh, vim, psmux, copilot, squad-cli, profile); orchestrator reduced to 76 lines; highest-leverage refactor
 
 **Key Patterns Established:**
-- Always use `$PSScriptRoot` (not `$MyInvocation.MyCommand.Path` — null in hosted contexts)
-- PSVersion-based guards (ONLY safe for PS 5.1 strict mode): `$PSVersionTable.PSVersion.Major -ge 6 -and $IsVariable` — RHS never evaluated on PS 5.x
+- Always use `$PSScriptRoot` (not `$MyInvocation.MyCommand.Path` -- null in hosted contexts)
+- PSVersion-based guards (ONLY safe for PS 5.1 strict mode): `$PSVersionTable.PSVersion.Major -ge 6 -and $IsVariable` -- RHS never evaluated on PS 5.x
 - AllScope alias override: Must `Remove-Item -Force Alias:\name` before `Set-Alias -Force` (all 11 PS 5.1 conflicts: rm, gc, gl, gcm, gcb, gp, grb, grs, ni, h, ep)
 - Strip+re-inject for config blocks: Never skip if sentinel present (breaks incremental updates); always strip old + inject fresh
 - Empty catch blocks: Use `Write-Verbose` (satisfies PSScriptAnalyzer PS3109 requirement; provides debug logging without breaking idempotency)
@@ -35,10 +35,10 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 - Dot-source tool files in orchestrator: `. "$PSScriptRoot\tools\*.ps1"` with relative paths works correctly via `powershell -File`
 
 **Key Files:**
-- `scripts/windows/setup.ps1` — 76-line orchestrator (was 451)
-- `scripts/windows/tools/*.ps1` — 9 per-tool files (install functions + Write-PowerShellProfile)
-- `tests/test_windows_setup.ps1` — 61 tests, 11 groups (A–L)
-- `.squad/agents/goofy/history.md` → split off highest-leverage learnings to this Core Context
+- `scripts/windows/setup.ps1` -- 76-line orchestrator (was 451)
+- `scripts/windows/tools/*.ps1` -- 9 per-tool files (install functions + Write-PowerShellProfile)
+- `tests/test_windows_setup.ps1` -- 61 tests, 11 groups (A-L)
+- `.squad/agents/goofy/history.md` -> split off highest-leverage learnings to this Core Context
 
 **Tech Decisions:**
 - winget as sole Windows package manager (covers all required tools)
@@ -50,14 +50,14 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
-- CP1252 encoding trap: Em dash U+2014 encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252; PS 5.1 treats as string terminator — always use ASCII hyphen in literals
+- CP1252 encoding trap: Em dash U+2014 encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252; PS 5.1 treats as string terminator -- always use ASCII hyphen in literals
 - Invoke-Expression for function loading: Load at Group scope before Test-Scenario; `& ([scriptblock]::Create(...))` creates child scope where functions vanish
 - PSScriptAnalyzer PS3109: Empty catch blocks forbidden; Write-Verbose satisfies requirement
 - PSUseSingularNouns: PowerShell cmdlets/functions MUST use singular nouns (Install-GitHook not Install-GitHooks)
-- When refactoring variable names, grep tests for old names — static-analysis tests break silently
-- Set-Alias -Force insufficient for AllScope aliases — must Remove-Item first
+- When refactoring variable names, grep tests for old names -- static-analysis tests break silently
+- Set-Alias -Force insufficient for AllScope aliases -- must Remove-Item first
 - Registry SetEnvironmentVariable for PATH persists across terminal sessions: `[System.Environment]::SetEnvironmentVariable('PATH', ..., 'User')`
 - Em dash fix pattern (PR #198): When PS 5.1 CI fails with TerminatorExpectedAtEndOfString, scan ALL .ps1 files on the branch for non-ASCII (bytes > 0x7F). Replace em dashes and other non-ASCII with ASCII equivalents in both comments and string literals. Use a byte-level scan (not just grep) to catch multi-byte UTF-8 sequences.
 
@@ -236,3 +236,13 @@ test) is potentially reusable beyond this issue. Did NOT formalize as
 enough to confirm. Will lift to a skill the next time we defer a premature
 helper for the same reason (e.g., a future "shared CLI auth helper" or "shared
 PATH-refresh helper" deferral). At that point the pattern earns `low` confidence.
+
+## 2026-05-17 Sprint 13 Wave 2 -- Issue #322 part A: ASCII sweep all .md files
+
+- Scope: 163 .md files scanned; 124 edited; 2,501 non-ASCII chars replaced.
+- Outside fenced code blocks: 0 remaining (verified). Inside fences: ~1,686 preserved intentionally (tree diagrams, raw-byte tables, code samples that need literal glyphs).
+- Tool: scripts/lib/ascii-sweep.py -- preserves ``` and ~~~ fences; maps em/en dashes, smart quotes, arrows, math ops, box-drawing (U+2500..U+257F), status emoji, and circled digits to ASCII. Rerunnable + idempotent.
+- Biggest offenders: .squad/decisions-archive.md (359), .github/agents/squad.agent.md (315), .squad/templates/squad.agent.md (293), .squad/agents/mickey/history-archive.md (177).
+- Intentional preservation: code fences (per repo policy). Checkmarks U+2705 -> [x], crosses U+274C -> [ ] across team.md and status tables to preserve task-list semantics.
+- Coordinated with Mickey (parallel worktree, hooks/pre-commit patch -- Issue #322 part B). No overlap; only CHANGELOG.md is a predicted rebase conflict (Changed vs Fixed sections).
+- Lessons: fence-aware sweep is essential -- naive global replace would mangle ARCHITECTURE.md tree diagrams. Script generalizable -> candidate skill if applied a second time.

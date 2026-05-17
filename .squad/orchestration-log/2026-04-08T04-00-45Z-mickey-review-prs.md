@@ -7,11 +7,11 @@
 ## Summary
 
 Reviewed all 5 PRs queued for sprint 5 merge:
-- PR #58 (SQUAD_WORKTREES config) — LGTM ✅
-- PR #59 (ps.tar.gz removal) — LGTM ✅
-- PR #60 (enforce_admins decision doc) — LGTM ✅
-- PR #61 (CI improvements) — LGTM ✅
-- PR #62 (history update) — LGTM ✅
+- PR #58 (SQUAD_WORKTREES config) -- LGTM [x]
+- PR #59 (ps.tar.gz removal) -- LGTM [x]
+- PR #60 (enforce_admins decision doc) -- LGTM [x]
+- PR #61 (CI improvements) -- LGTM [x]
+- PR #62 (history update) -- LGTM [x]
 
 ## Outcome
 
@@ -20,4 +20,4 @@ All PRs approved and ready for merge.
 
 ## Status
 
-✅ COMPLETE — All reviews published
+[x] COMPLETE -- All reviews published

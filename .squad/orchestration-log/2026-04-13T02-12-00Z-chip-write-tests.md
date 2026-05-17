@@ -17,8 +17,8 @@ Wrote comprehensive Windows PowerShell setup test suite covering Groups A-D (15 
 
 ## Technical Issues Resolved
 
-1. **Unicode encoding** — Properly configured UTF-8 encoding for script output
-2. **Where-Object .Count** — Fixed array counting logic in PSAvoidUsingEmptyCatchBlock detection
+1. **Unicode encoding** -- Properly configured UTF-8 encoding for script output
+2. **Where-Object .Count** -- Fixed array counting logic in PSAvoidUsingEmptyCatchBlock detection
 
 ## Deliverable
 

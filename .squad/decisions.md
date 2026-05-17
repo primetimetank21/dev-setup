@@ -7,15 +7,15 @@ at the 2026-05-17 fold; live file exceeded 50KB hard gate.)
 ## [2026-05-14] Decision: Issue #197 Implementation Plan (PS 5.1 Compatibility Fix)
 
 **Date:** 2026-05-14  
-**Issue:** #197 — PS 5.1 compatibility — psmux install fails + aliases broken  
+**Issue:** #197 -- PS 5.1 compatibility -- psmux install fails + aliases broken  
 **Triage Owner:** Mickey (Lead)  
 **Implementation Owner:** Goofy  
-**Status:** ✅ Plan complete, implementation in progress
+**Status:** [x] Plan complete, implementation in progress
 
 ### Root Cause Summary
 
 1. **psmux Installation Fails:** `winget install --id psmux` uses invalid package ID (related to issue #179)
-2. **Aliases Not Applied:** PowerShell 5.1 built-in AllScope aliases (gcm, gcb, gc, gl, gp, ni, rm, h, grb, grs, ep) cannot be overridden with `Set-Alias` alone — require explicit pre-removal with `Remove-Item -Force Alias:\<name>` first
+2. **Aliases Not Applied:** PowerShell 5.1 built-in AllScope aliases (gcm, gcb, gc, gl, gp, ni, rm, h, grb, grs, ep) cannot be overridden with `Set-Alias` alone -- require explicit pre-removal with `Remove-Item -Force Alias:\<name>` first
 3. **Profile Write Suspected:** May be silent errors in `Write-PowerShellProfile` function during directory creation or content write
 
 ### Implementation Strategy
@@ -29,13 +29,13 @@ at the 2026-05-17 fold; live file exceeded 50KB hard gate.)
 
 ### Affected Files
 
-- `scripts/windows/tools/profile.ps1` — Alias guards, profile write diagnostics
-- `scripts/windows/tools/psmux.ps1` — Skip logic with warning
-- `tests/test_windows_setup.ps1` — New test groups N, O, P
+- `scripts/windows/tools/profile.ps1` -- Alias guards, profile write diagnostics
+- `scripts/windows/tools/psmux.ps1` -- Skip logic with warning
+- `tests/test_windows_setup.ps1` -- New test groups N, O, P
 
 ### PR Strategy
 
-**Single PR:** `squad/197-ps51-compat-fix` → `develop`
+**Single PR:** `squad/197-ps51-compat-fix` -> `develop`
 - All fixes tightly coupled (psmux unblocks script, alias + diagnostics solve user issue, tests validate both)
 - Branch ready for implementation
 
@@ -85,8 +85,8 @@ PS 5.1 (and earlier) uses a different alias scoping mechanism than PS 6+. The Al
 
 ### Affected Files
 
-- `scripts/windows/tools/profile.ps1` — Already has removal pattern for known conflicts
-- `scripts/windows/tools/psmux.ps1` — Installation failure (issue #179)
+- `scripts/windows/tools/profile.ps1` -- Already has removal pattern for known conflicts
+- `scripts/windows/tools/psmux.ps1` -- Installation failure (issue #179)
 
 ### Fix Pattern
 
@@ -97,12 +97,12 @@ Set-Alias -Name <name> -Value <custom-function> -Scope Global -Force
 ```
 
 **Status:** Implementation tracked in issue #197, test coverage in progress (groups N, O, P)
-## [2026-05-14] Decision: PS 5.1 Compatibility Implementation — Issue #197
+## [2026-05-14] Decision: PS 5.1 Compatibility Implementation -- Issue #197
 
 **Author:** Goofy (Cross-Platform Dev)
 **Date:** 2026-05-14
 **Issue:** #197
-**PR:** #198 (squad/197-ps51-compat-fix → develop)
+**PR:** #198 (squad/197-ps51-compat-fix -> develop)
 
 ### Decisions Made
 
@@ -111,7 +111,7 @@ Set-Alias -Name <name> -Value <custom-function> -Scope Global -Force
 **Decision:** Replace broken `winget install --id psmux` with a `[WARN]` skip pattern.
 
 **Rationale:**
-- `psmux` is not a valid winget package ID — this has been broken since #179 and affects every Windows setup, not just PS 5.1.
+- `psmux` is not a valid winget package ID -- this has been broken since #179 and affects every Windows setup, not just PS 5.1.
 - Failing hard on an unknown winget ID aborts the entire setup script, blocking users from getting any other tools installed.
 - Option D (skip-with-warning) unblocks setup immediately. Options A/B/C (find correct package ID, Scoop, direct install) are follow-up work.
 - Idempotency is preserved: `Get-Command psmux -ErrorAction SilentlyContinue` guard remains at the top of `Install-Psmux`.
@@ -129,9 +129,9 @@ Write-Warn "Skipping psmux install — continuing setup."
 
 **Rationale:**
 - The AllScope `Remove-Item -Force Alias:\<name>` guards were already in place for all 11 PS 5.1 conflicting aliases (PR #195). No alias logic needed to change.
-- The root cause of "aliases not working" on Earl's PS 5.1 machine is unknown — could be profile not written, profile directory creation failing silently, or execution policy blocking load.
+- The root cause of "aliases not working" on Earl's PS 5.1 machine is unknown -- could be profile not written, profile directory creation failing silently, or execution policy blocking load.
 - Diagnostics at each step (dir path, dir exists, file path, file exists + size, exec policy) will reveal the actual failure point when Earl re-runs setup.
-- `try/catch` + `continue` per path is the correct pattern under `$ErrorActionPreference = 'Stop'` — prevents one path failure from aborting the entire function.
+- `try/catch` + `continue` per path is the correct pattern under `$ErrorActionPreference = 'Stop'` -- prevents one path failure from aborting the entire function.
 
 #### 3. Single PR (not split)
 
@@ -142,8 +142,8 @@ Write-Warn "Skipping psmux install — continuing setup."
 ### What Was NOT Changed
 
 - AllScope `Remove-Item` guards: already complete from PR #195, no changes needed.
-- No changes to test files in this PR — Chip owns Groups N, O, P.
-- No changes to CI workflow — the `validate-ps51` job already runs; Chip will add the profile write step per Mickey's plan.
+- No changes to test files in this PR -- Chip owns Groups N, O, P.
+- No changes to CI workflow -- the `validate-ps51` job already runs; Chip will add the profile write step per Mickey's plan.
 
 ### References
 
@@ -177,9 +177,9 @@ This applies to:
 - Any other source content
 
 #### Specific replacements:
-- Em dash (`—`) → ` - ` (space-hyphen-space)
-- Smart quotes → straight quotes
-- Any other non-ASCII → closest ASCII equivalent or removal
+- Em dash (`--`) -> ` - ` (space-hyphen-space)
+- Smart quotes -> straight quotes
+- Any other non-ASCII -> closest ASCII equivalent or removal
 
 ### Rationale
 
@@ -226,7 +226,7 @@ The validate-ps51 CI job runs `tests/test_windows_setup.ps1` directly via `power
 
 **Author:** Chip (Tester)
 **Date:** 2026-05-14
-**Issue:** #197 — PS 5.1 compatibility: psmux install fails + aliases broken
+**Issue:** #197 -- PS 5.1 compatibility: psmux install fails + aliases broken
 **Branch:** `squad/197-ps51-compat-fix`
 
 ### Decisions Made
@@ -234,7 +234,7 @@ The validate-ps51 CI job runs `tests/test_windows_setup.ps1` directly via `power
 #### 1. CP1252 string-literal encoding rule
 **Decision:** Never use Unicode dashes or other non-ASCII characters in test string literals.
 
-**Why:** PS 5.1 reads UTF-8 files without BOM using the system default encoding (Windows-1252). The em dash `—` (U+2014) encodes as UTF-8 bytes `E2 80 94`. Byte `0x94` is the RIGHT DOUBLE QUOTATION MARK in CP1252, which the PS 5.1 parser treats as a string terminator. This causes a cascade of parse errors, making every subsequent test fail silently.
+**Why:** PS 5.1 reads UTF-8 files without BOM using the system default encoding (Windows-1252). The em dash `--` (U+2014) encodes as UTF-8 bytes `E2 80 94`. Byte `0x94` is the RIGHT DOUBLE QUOTATION MARK in CP1252, which the PS 5.1 parser treats as a string terminator. This causes a cascade of parse errors, making every subsequent test fail silently.
 
 **Rule:** Use plain ASCII hyphen `-` wherever a dash is needed in test string literals, `Write-Skip` messages, and test names.
 
@@ -262,27 +262,27 @@ Invoke-Expression $psmuxToolContent
 
 ### Open Questions
 
-None — all decisions made with full confidence.
+None -- all decisions made with full confidence.
 
 ---
 
-## [2026-05-14] Decision: PR #198 Review — PS 5.1 Compat Fix
+## [2026-05-14] Decision: PR #198 Review -- PS 5.1 Compat Fix
 
 **PR:** #198
 **Issue:** #197
 **Reviewer:** Mickey (Lead)
 **Date:** 2026-05-14
-**Verdict:** ✅ APPROVED
+**Verdict:** [x] APPROVED
 
 ### What Was Reviewed
 
-- `scripts/windows/tools/psmux.ps1` — skip-with-warning for broken winget ID (#179)
-- `scripts/windows/tools/profile.ps1` — verbose diagnostics for PS 5.1 debugging
-- Em dash (U+2014) removal from both files — fixes CP1252 parsing crash on PS 5.1
+- `scripts/windows/tools/psmux.ps1` -- skip-with-warning for broken winget ID (#179)
+- `scripts/windows/tools/profile.ps1` -- verbose diagnostics for PS 5.1 debugging
+- Em dash (U+2014) removal from both files -- fixes CP1252 parsing crash on PS 5.1
 
 ### Assessment
 
-1. **Correctness:** psmux skip is the right call — no valid winget ID exists. Profile diagnostics cover all failure points (dir creation, file write, post-write validation, execution policy).
+1. **Correctness:** psmux skip is the right call -- no valid winget ID exists. Profile diagnostics cover all failure points (dir creation, file write, post-write validation, execution policy).
 2. **Quality:** Code is clean, try/catch blocks are well-scoped with `continue` for graceful degradation. Idempotency preserved.
 3. **No regressions:** All changes are Windows-only PowerShell. No impact on Linux/macOS paths.
 4. **Em dash fix:** Both files verified clean of non-ASCII characters via automated scan.
@@ -318,13 +318,13 @@ Root cause: UTF-8 em dash (U+2014) ends with byte 0x94, which CP1252 treats as a
 
 ### Outcome
 
-✓ Skill authored at `.squad/skills/ps51-ascii-safety/SKILL.md`  
-✓ Committed and pushed to squad/197-ps51-compat-fix  
-✓ Will land in develop when PR #200 merges  
+[x] Skill authored at `.squad/skills/ps51-ascii-safety/SKILL.md`  
+[x] Committed and pushed to squad/197-ps51-compat-fix  
+[x] Will land in develop when PR #200 merges  
 
 ---
 
-## # Decision: Gitconfig editor — literal value + override comment
+## # Decision: Gitconfig editor -- literal value + override comment
 
 **Issue:** #184  
 **Agent:** Pluto (Config Engineer)  
@@ -332,16 +332,16 @@ Root cause: UTF-8 em dash (U+2014) ends with byte 0x94, which CP1252 treats as a
 
 ### Context
 
-`config/dotfiles/.gitconfig.template` had `editor = ${EDITOR:-vim}` in `[core]`. Git does not invoke a shell when reading its config — this string was used literally as the editor command, which fails on every machine.
+`config/dotfiles/.gitconfig.template` had `editor = ${EDITOR:-vim}` in `[core]`. Git does not invoke a shell when reading its config -- this string was used literally as the editor command, which fails on every machine.
 
 ### Options Considered
 
-- **Option A:** Replace with `editor = vim` — simple literal, works everywhere.
+- **Option A:** Replace with `editor = vim` -- simple literal, works everywhere.
 - **Option B:** Replace with `editor = vim` AND add a comment showing how to override.
 
 ### Decision
 
-**Option B** — literal `vim` default with an inline comment: `# Override with: git config --global core.editor <your-editor>`.
+**Option B** -- literal `vim` default with an inline comment: `# Override with: git config --global core.editor <your-editor>`.
 
 ### Rationale
 
@@ -355,13 +355,13 @@ Template updated. README table updated to match. No other gitconfig shell-expans
 
 ---
 
-## # Decision: PR #200 — Merge Gate Review
+## # Decision: PR #200 -- Merge Gate Review
 
 **Date:** 2026-05-16
 **Author:** Mickey (Lead)
 **PR:** [#200](https://github.com/primetimetank21/dev-setup/pull/200)
 **Branch:** `squad/197-ps51-compat-fix`
-**Verdict:** ✅ APPROVED
+**Verdict:** [x] APPROVED
 
 ### Summary
 
@@ -380,11 +380,11 @@ PR #200 is the companion test coverage + ASCII safety skill for Issue #197 (PS 5
 ### CI Status
 
 All 5 checks green:
-- Lint PowerShell Scripts ✓
-- Lint Shell Scripts ✓
-- Validate Linux Setup ✓
-- Validate PowerShell 5.1 Compatibility ✓ (1m45s — the new step ran successfully)
-- Validate PowerShell Functionality ✓
+- Lint PowerShell Scripts [x]
+- Lint Shell Scripts [x]
+- Validate Linux Setup [x]
+- Validate PowerShell 5.1 Compatibility [x] (1m45s -- the new step ran successfully)
+- Validate PowerShell Functionality [x]
 
 ### Merge Instructions
 
@@ -587,7 +587,7 @@ One tool per line. Blank lines and # comments allowed.
 
 ## 2026-05-16 entries
 
-### 2026-05-16T07:50:00Z: Jiminy hired — Squad Hygiene Auditor
+### 2026-05-16T07:50:00Z: Jiminy hired -- Squad Hygiene Auditor
 **By:** Earl Tankard (via Copilot coordinator)
 **What:** Added new squad member Jiminy (Disney Classic universe) in the role of "Squad Hygiene Auditor" - a reviewer-gate role for squad OPERATIONS (not code). Charter pins model to claude-opus-4.6 (premium). Auto-runs before coordinator returns control to user, after multi-agent batches (3+ spawns), and at session-end. Manual trigger: "Jiminy, check" / "Jiminy, audit".
 **Scope of audit:** (1) Squad state hygiene (untracked .squad/ files, rogue paths, undrained decisions inbox, uncommitted history.md edits); (2) Git hygiene (working tree clean, stale squad/* branches, branch ancestry from develop, local/origin sync); (3) Process hygiene (PR labels, issue priorities, no squash merges, Conventional Commits format); (4) Memory hygiene (history append, decisions inbox usage, Scribe fired after each batch).
@@ -597,12 +597,12 @@ One tool per line. Blank lines and # comments allowed.
 **Files updated:** .squad/casting/registry.json (added hygiene-auditor entry), .squad/casting/history.json (addendum), .squad/team.md (roster row), .squad/routing.md (routing entry + auto-run rule #8)
 
 ### 2026-05-16T07:30:00Z: Verifier batch spawn hygiene
-**By:** Earl Tankard (via Copilot coordinator → Donald cleanup)
+**By:** Earl Tankard (via Copilot coordinator -> Donald cleanup)
 **What:** Verifier agents (any agent doing read-only verification of audit findings) MUST write their evidence to ONE of these three locations only:
-1. .squad/agents/{name}/history.md — append learnings under "## Learnings"
-2. .squad/decisions/inbox/{name}-{slug}.md — for team-relevant decisions
-3. .squad/orchestration-log/{ISO8601-UTC}-{batch-name}.md — for batch evidence with citations (preferred for citation-heavy verification reports)
-Verifiers MUST NOT create files at .squad/agents/{name}/VERIFICATION_REPORT.md, .squad/verification-report.md, or any other random path. Spawn prompts for verifier-style batches MUST specify the target location explicitly. Coordinator MUST spawn Scribe IMMEDIATELY after any verifier batch — never delay to a downstream filing step.
+1. .squad/agents/{name}/history.md -- append learnings under "## Learnings"
+2. .squad/decisions/inbox/{name}-{slug}.md -- for team-relevant decisions
+3. .squad/orchestration-log/{ISO8601-UTC}-{batch-name}.md -- for batch evidence with citations (preferred for citation-heavy verification reports)
+Verifiers MUST NOT create files at .squad/agents/{name}/VERIFICATION_REPORT.md, .squad/verification-report.md, or any other random path. Spawn prompts for verifier-style batches MUST specify the target location explicitly. Coordinator MUST spawn Scribe IMMEDIATELY after any verifier batch -- never delay to a downstream filing step.
 **Why:** Incident 2026-05-16. 3 rogue verification reports landed on develop uncommitted because (a) verifiers picked random paths and (b) coordinator delayed Scribe.
 
 ---
@@ -861,7 +861,7 @@ the obsolete inbox file as part of this fold; full audit text lives in jiminy/hi
 
 **Style/format decisions:**
 - ASCII arrow chain (`->`) instead of Mermaid: the existing Linux Dep Order is plain ASCII (with U+2192 arrows), and no Mermaid is used anywhere in ARCHITECTURE.md. Brief style pref was "Mermaid preferred IF Linux side has Mermaid, else fall back to ASCII." Fell back to ASCII.
-- Used `->` (two ASCII bytes) instead of `→` (U+2192) for new content: brief gotcha called for "ASCII ONLY." The pre-commit hook only enforces ASCII on `*.ps1` files in practice, but the defensive choice for the new section makes the content portable to any consumer (some downstream tooling or AI agents may CP1252-decode). Existing Linux line with `→` left untouched (out of scope).
+- Used `->` (two ASCII bytes) instead of `->` (U+2192) for new content: brief gotcha called for "ASCII ONLY." The pre-commit hook only enforces ASCII on `*.ps1` files in practice, but the defensive choice for the new section makes the content portable to any consumer (some downstream tooling or AI agents may CP1252-decode). Existing Linux line with `->` left untouched (out of scope).
 - Table format chosen over a flat bullet list: 12 steps with three columns (function name, source module, Linux mirror) is dense enough that a table is the more readable form.
 
 **Out of scope but worth a follow-up issue:** File Structure tree at ARCHITECTURE.md:54 still lists `auth.ps1` at the `scripts/windows/` root level. PR #297 moved it into `tools/`. The new Dep Order section explicitly cross-references the move so readers are not misled, but the tree itself is stale. Recommend a separate narrow PR to refresh the windows/ subtree in the File Structure section -- not folded here to keep this PR scope tight.

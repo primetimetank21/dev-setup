@@ -6,7 +6,7 @@ This directory configures the development environment for opening this repo in a
 
 ## What Is a Dev Container?
 
-A Dev Container is a fully configured, reproducible development environment defined in code. When you open this repo in VS Code with the Dev Containers extension (or in GitHub Codespaces), the container spins up automatically with all tools, extensions, and shell configuration pre-installed — no manual setup required.
+A Dev Container is a fully configured, reproducible development environment defined in code. When you open this repo in VS Code with the Dev Containers extension (or in GitHub Codespaces), the container spins up automatically with all tools, extensions, and shell configuration pre-installed -- no manual setup required.
 
 ---
 
@@ -17,14 +17,14 @@ A Dev Container is a fully configured, reproducible development environment defi
 1. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 2. Clone this repo
 3. Open the repo folder in VS Code
-4. When prompted, click **"Reopen in Container"** — or run the command palette command: `Dev Containers: Reopen in Container`
+4. When prompted, click **"Reopen in Container"** -- or run the command palette command: `Dev Containers: Reopen in Container`
 
 VS Code will build the container and run `postCreateCommand` automatically.
 
 ### GitHub Codespaces
 
 1. Navigate to the repo on GitHub
-2. Click the green **Code** button → **Codespaces** tab → **Create codespace on develop**
+2. Click the green **Code** button -> **Codespaces** tab -> **Create codespace on develop**
 3. The Codespace will start, build the container, and run `postCreateCommand` automatically
 
 ---
@@ -47,7 +47,7 @@ bash setup.sh
 - Sets up **dotfiles** and shell configuration
 - Applies **shortcuts** and aliases
 
-The script is idempotent — safe to run multiple times without side effects.
+The script is idempotent -- safe to run multiple times without side effects.
 
 ---
 
@@ -99,7 +99,7 @@ These settings apply automatically inside the container:
 To customize for your own use without affecting the team config:
 
 - **VS Code user settings:** Use your VS Code profile / user settings (these layer on top of the container settings)
-- **Dotfiles:** GitHub Codespaces supports [personal dotfiles repos](https://docs.github.com/en/codespaces/setting-your-user-preferences/personalizing-github-codespaces-for-your-account#dotfiles) — link yours in your Codespaces settings
+- **Dotfiles:** GitHub Codespaces supports [personal dotfiles repos](https://docs.github.com/en/codespaces/setting-your-user-preferences/personalizing-github-codespaces-for-your-account#dotfiles) -- link yours in your Codespaces settings
 - **Additional tools:** Add steps to `scripts/linux/setup.sh` or create a personal `~/.local/bin` script that runs after setup
 
 ---
@@ -116,7 +116,7 @@ Microsoft's official Ubuntu-based devcontainer base image. Includes common devel
 
 ## Required Codespace Secrets
 
-Set these in GitHub → Settings → Codespaces → Secrets:
+Set these in GitHub -> Settings -> Codespaces -> Secrets:
 
 | Secret | Description | Default |
 |--------|-------------|---------|

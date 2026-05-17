@@ -22,7 +22,7 @@ On-demand reference for Squad's casting system. Loaded during Init Mode or when 
 | DC Universe | 18 | large, action, ensemble | justice, duality, powers, mythology |
 | Futurama | 12 | medium, sci-fi, comedy | future, robots, space, absurdity |
 
-**Total: 15 universes** — capacity range 6–25.
+**Total: 15 universes** -- capacity range 6-25.
 
 ## Selection Algorithm
 
@@ -34,12 +34,12 @@ score = size_fit + shape_fit + resonance_fit + LRU
 
 | Factor | Description |
 |---|---|
-| `size_fit` | How well the universe capacity matches the team size. Prefer universes where capacity ≥ agent_count with minimal waste. |
+| `size_fit` | How well the universe capacity matches the team size. Prefer universes where capacity >= agent_count with minimal waste. |
 | `shape_fit` | Match universe shape tags against the assignment shape derived from the project description. |
 | `resonance_fit` | Match universe resonance signals against session and repo context signals. |
-| `LRU` | Least-recently-used bonus — prefer universes not used in recent assignments (from `history.json`). |
+| `LRU` | Least-recently-used bonus -- prefer universes not used in recent assignments (from `history.json`). |
 
-Same inputs → same choice (unless LRU changes between assignments).
+Same inputs -> same choice (unless LRU changes between assignments).
 
 ## Casting State File Schemas
 

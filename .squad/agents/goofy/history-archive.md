@@ -7,7 +7,7 @@ Archived from history.md on 2026-05-17 per Sprint 13 #319. See history.md for ac
 # Project Context
 
 - **Owner:** Earl Tankard, Jr., Ph.D.
-- **Project:** dev-setup — A replicable setup script system for Dev Containers and Codespaces
+- **Project:** dev-setup -- A replicable setup script system for Dev Containers and Codespaces
 - **Stack:** Bash, Zsh, PowerShell, shell scripting, cross-platform tooling
 - **Created:** 2026-04-07T03:05:10Z
 
@@ -17,23 +17,23 @@ Archived from history.md on 2026-05-17 per Sprint 13 #319. See history.md for ac
 - Target environments: GitHub Codespaces, Dev Containers, fresh machines
 - Tools to install: zsh, uv, nvm, gh CLI, GitHub Copilot CLI, and user shortcuts
 - Dotfiles and shell configs are managed as templates
-- Scripts must be idempotent — safe to run multiple times
+- Scripts must be idempotent -- safe to run multiple times
 
 ## Core Context
 
-**Sprints 1–8 Summary (2026-04-07 to 2026-05-04):**
+**Sprints 1-8 Summary (2026-04-07 to 2026-05-04):**
 
 Implemented Windows PowerShell setup, utility alias framework, and architectural refactors:
 
-- **Sprints 1–4:** Root setup.ps1 OS detection, scripts/windows/setup.ps1 core setup, 5 Install-* functions (Git, Uv, Nvm, GhCli, CopilotCli), utility aliases (ta, tt, tls, tks, gpl, ggsls), Remove-Item guards for PS 5.1 AllScope conflicts
+- **Sprints 1-4:** Root setup.ps1 OS detection, scripts/windows/setup.ps1 core setup, 5 Install-* functions (Git, Uv, Nvm, GhCli, CopilotCli), utility aliases (ta, tt, tls, tks, gpl, ggsls), Remove-Item guards for PS 5.1 AllScope conflicts
 - **Sprint 5:** PS 5.1 source-level guards (`Test-Path Variable:IsWindows`), vim PATH refresh after winget, empty catch block pattern (Write-Verbose), UTF-8 em-dash removal
 - **Sprint 6:** curl.exe / wget.exe alias bypass, ep alias for profile editor, Remove-Item guard on profile ops
 - **Sprint 7:** Git hooks implementation, PS variable guard regressions fixed (reverted to PSVersion pattern)
 - **Sprint 8 (Gap Audit):** Refactored monolithic setup.ps1 (451 lines) into 9 per-tool files under tools/ (git, uv, nvm, gh, vim, psmux, copilot, squad-cli, profile); orchestrator reduced to 76 lines; highest-leverage refactor
 
 **Key Patterns Established:**
-- Always use `$PSScriptRoot` (not `$MyInvocation.MyCommand.Path` — null in hosted contexts)
-- PSVersion-based guards (ONLY safe for PS 5.1 strict mode): `$PSVersionTable.PSVersion.Major -ge 6 -and $IsVariable` — RHS never evaluated on PS 5.x
+- Always use `$PSScriptRoot` (not `$MyInvocation.MyCommand.Path` -- null in hosted contexts)
+- PSVersion-based guards (ONLY safe for PS 5.1 strict mode): `$PSVersionTable.PSVersion.Major -ge 6 -and $IsVariable` -- RHS never evaluated on PS 5.x
 - AllScope alias override: Must `Remove-Item -Force Alias:\name` before `Set-Alias -Force` (all 11 PS 5.1 conflicts: rm, gc, gl, gcm, gcb, gp, grb, grs, ni, h, ep)
 - Strip+re-inject for config blocks: Never skip if sentinel present (breaks incremental updates); always strip old + inject fresh
 - Empty catch blocks: Use `Write-Verbose` (satisfies PSScriptAnalyzer PS3109 requirement; provides debug logging without breaking idempotency)
@@ -41,10 +41,10 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 - Dot-source tool files in orchestrator: `. "$PSScriptRoot\tools\*.ps1"` with relative paths works correctly via `powershell -File`
 
 **Key Files:**
-- `scripts/windows/setup.ps1` — 76-line orchestrator (was 451)
-- `scripts/windows/tools/*.ps1` — 9 per-tool files (install functions + Write-PowerShellProfile)
-- `tests/test_windows_setup.ps1` — 61 tests, 11 groups (A–L)
-- `.squad/agents/goofy/history.md` → split off highest-leverage learnings to this Core Context
+- `scripts/windows/setup.ps1` -- 76-line orchestrator (was 451)
+- `scripts/windows/tools/*.ps1` -- 9 per-tool files (install functions + Write-PowerShellProfile)
+- `tests/test_windows_setup.ps1` -- 61 tests, 11 groups (A-L)
+- `.squad/agents/goofy/history.md` -> split off highest-leverage learnings to this Core Context
 
 **Tech Decisions:**
 - winget as sole Windows package manager (covers all required tools)
@@ -56,14 +56,14 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
-- CP1252 encoding trap: Em dash U+2014 encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252; PS 5.1 treats as string terminator — always use ASCII hyphen in literals
+- CP1252 encoding trap: Em dash U+2014 encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252; PS 5.1 treats as string terminator -- always use ASCII hyphen in literals
 - Invoke-Expression for function loading: Load at Group scope before Test-Scenario; `& ([scriptblock]::Create(...))` creates child scope where functions vanish
 - PSScriptAnalyzer PS3109: Empty catch blocks forbidden; Write-Verbose satisfies requirement
 - PSUseSingularNouns: PowerShell cmdlets/functions MUST use singular nouns (Install-GitHook not Install-GitHooks)
-- When refactoring variable names, grep tests for old names — static-analysis tests break silently
-- Set-Alias -Force insufficient for AllScope aliases — must Remove-Item first
+- When refactoring variable names, grep tests for old names -- static-analysis tests break silently
+- Set-Alias -Force insufficient for AllScope aliases -- must Remove-Item first
 - Registry SetEnvironmentVariable for PATH persists across terminal sessions: `[System.Environment]::SetEnvironmentVariable('PATH', ..., 'User')`
 - Em dash fix pattern (PR #198): When PS 5.1 CI fails with TerminatorExpectedAtEndOfString, scan ALL .ps1 files on the branch for non-ASCII (bytes > 0x7F). Replace em dashes and other non-ASCII with ASCII equivalents in both comments and string literals. Use a byte-level scan (not just grep) to catch multi-byte UTF-8 sequences.
 
@@ -74,21 +74,21 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 ## [2026-05-16T01:30:00Z] Issue #197 & #198: Em-Dash Fix & ASCII-Only Enforcement
 
 **Branch:** `squad/184-gitconfig-editor-fix` (PR #198)  
-**Status:** ✅ COMPLETE — CI green
+**Status:** [x] COMPLETE -- CI green
 
 Fixed CP1252 encoding violations causing PS 5.1 parse errors on PR #198:
 
 **Files Modified:**
-- `scripts/windows/tools/profile.ps1` — 2 em dashes → ` - `
-- `scripts/windows/tools/psmux.ps1` — 2 em dashes → ` - `
+- `scripts/windows/tools/profile.ps1` -- 2 em dashes -> ` - `
+- `scripts/windows/tools/psmux.ps1` -- 2 em dashes -> ` - `
 
 **Total:** 4 em dashes replaced with ASCII equivalents
 
 **Outcome:** CI checks went green after fix. Formalized ASCII-only rule in decisions.md via Goofy decision (goofy-em-dash-fix.md, goofy-ps51-impl.md).
 
 **Key Decisions Captured:**
-1. All `.ps1` files MUST be ASCII-only (U+0000–U+007F)
-2. Psmux unavailable via winget #179 → skip-with-warning pattern implemented
+1. All `.ps1` files MUST be ASCII-only (U+0000-U+007F)
+2. Psmux unavailable via winget #179 -> skip-with-warning pattern implemented
 3. Profile.ps1 diagnostics added (dir path, file exists, exec policy checks) to surface real failure cause on Earl's PS 5.1 machine
 
 ---
@@ -154,12 +154,12 @@ any exit-code check.
 ---
 
 
-**Status:** ✅ APPROVED, MERGED to develop
+**Status:** [x] APPROVED, MERGED to develop
 
 Refactored monolithic `scripts/windows/setup.ps1` (451 lines) into per-tool modular structure under `scripts/windows/tools/`, mirroring Linux `scripts/linux/tools/` pattern.
 
 **Orchestrator Changes:**
-- Reduced from 451 lines → 76 lines
+- Reduced from 451 lines -> 76 lines
 - Dot-sources each tool file: `. "$PSScriptRoot\tools\git.ps1"`
 - Maintains same Main flow, Install-GitHook call
 
@@ -167,22 +167,22 @@ Refactored monolithic `scripts/windows/setup.ps1` (451 lines) into per-tool modu
 - git.ps1, uv.ps1, nvm.ps1, gh.ps1, vim.ps1, psmux.ps1, copilot.ps1, squad-cli.ps1, profile.ps1
 
 **Test Updates (Chip):**
-- Updated Group K (K-1 to K-5): AST parser target → `tools/profile.ps1`
+- Updated Group K (K-1 to K-5): AST parser target -> `tools/profile.ps1`
 - 61/61 tests pass, 5/5 CI green
 
 **Key Learning:** When splitting PowerShell scripts sourced by AST-parsing tests, update test file references to new per-tool file paths. Dot-sourcing with relative paths works correctly when orchestrator invoked via `powershell -File`.
 
 ---
 
-## [2026-04-19] Issue #144: Sentinel Fix — Strip+Re-inject Pattern (PR #145)
+## [2026-04-19] Issue #144: Sentinel Fix -- Strip+Re-inject Pattern (PR #145)
 
-**Status:** ✅ APPROVED, MERGED to develop
+**Status:** [x] APPROVED, MERGED to develop
 
 Implemented strip+re-inject for Write-PowerShellProfile, replacing old "skip if sentinel" logic that prevented incremental profile updates.
 
 **Implementation:**
 - Regex: `(?s)\r?\n<BEGIN>.*?<END>\r?\n?` handles both LF and CRLF
-- No `return` after sentinel check — strips old block, falls through to inject fresh
+- No `return` after sentinel check -- strips old block, falls through to inject fresh
 - `Write-Info "Updating PowerShell profile shortcuts..."` shown on update (not first install)
 
 **Test Coverage (Group J):**
@@ -197,17 +197,17 @@ Implemented strip+re-inject for Write-PowerShellProfile, replacing old "skip if 
 
 ## [2026-04-18] Issue #132: Regression Fixes from PR #130 (PR #133)
 
-**Status:** ✅ MERGED to develop
+**Status:** [x] MERGED to develop
 
 Fixed three regressions introduced by PR #130:
 
-1. **PSScriptAnalyzer PS3109:** Function `Install-GitHooks` → `Install-GitHook` (singular noun requirement)
+1. **PSScriptAnalyzer PS3109:** Function `Install-GitHooks` -> `Install-GitHook` (singular noun requirement)
 2. **PSScriptAnalyzer:** Removed unused variable `$gitDir`
 3. **PS 5.1 Runtime Crash:** Reverted broken `Test-Path Variable:*` guards back to PSVersion-based pattern
 
 **Root Cause:** PR #130 replaced approved PSVersion guards with `Test-Path Variable:*` pattern. Under strict mode on PS 5.1, strict mode validates all variables at parse time; even with short-circuit `-and`, throws `VariableIsUndefined` before execution.
 
-**Correct Pattern:** `$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows` — RHS never evaluated on PS 5.x.
+**Correct Pattern:** `$PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows` -- RHS never evaluated on PS 5.x.
 
 **Key Learning:** PSVersion-based short-circuit checks are ONLY safe pattern for PS 5.1 strict mode.
 
@@ -267,14 +267,14 @@ Fixed three regressions introduced by PR #130:
 - Coordinator can prioritize F-1 (path bug in PR #218), F-4 (error handling), F-2 (encoding consistency) for next sprint
 
 ## [2026-05-17] Verification of Audit Findings (Read-Only Deep Dive)
-- **Status:** COMPLETED — 5/5 findings verified; V-1 confirmed P0 bug, V-7 & V-11 & V-15 confirmed P2 refactoring gaps, V-13 confirmed P1 error handling gap
+- **Status:** COMPLETED -- 5/5 findings verified; V-1 confirmed P0 bug, V-7 & V-11 & V-15 confirmed P2 refactoring gaps, V-13 confirmed P1 error handling gap
 - **Method:** Systematic file inspection + citations to exact locations; compared against ps51-runtime-file-encoding skill
 - **Report:** .squad/agents/goofy/VERIFICATION_REPORT.md (13KB, detailed analysis per finding)
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
 
 ### Retro Action: PR Template with Hygiene Checklist (2026-05-17)
 - **Retro:** 2026-05-16 hygiene retro, action item `retro-pr-template`
-- **Context:** Recurring sprint hygiene gaps — agents forget to update history.md, drain decisions inbox, capture skills, verify ASCII-only compliance in PS files. Root cause: No visible checklist at PR authoring time. Goofy owned this action item as closure on #215 miss (forgot to update history.md when Chip merged PR #215 tool-versions feature).
+- **Context:** Recurring sprint hygiene gaps -- agents forget to update history.md, drain decisions inbox, capture skills, verify ASCII-only compliance in PS files. Root cause: No visible checklist at PR authoring time. Goofy owned this action item as closure on #215 miss (forgot to update history.md when Chip merged PR #215 tool-versions feature).
 - **Solution:** Created `.github/pull_request_template.md` with 8-item hygiene checklist:
   1. Updated `.squad/agents/{name}/history.md` with Learnings entry
   2. Decisions inbox drained (or N/A)
@@ -285,7 +285,7 @@ Fixed three regressions introduced by PR #130:
   7. Branch forked from develop (prevents `squad/*` ancestry bleed)
   8. No rogue files outside canonical `.squad/` paths
 - **Design:** HTML-comment-wrapped guidance in template prevents render clutter in PR body but remains visible in editor. Combined with Jiminy's CI gate (separate PR), provides both human-readable confirmation AND automated enforcement.
-- **Key Pattern:** Hygiene checklist goes BEFORE first PR body is authored (visible during composition), creates friction against skipping items. This is why appending to history.md in this very commit proves the pattern works — if Goofy had skipped it, the template itself would fail its own checklist.
+- **Key Pattern:** Hygiene checklist goes BEFORE first PR body is authored (visible during composition), creates friction against skipping items. This is why appending to history.md in this very commit proves the pattern works -- if Goofy had skipped it, the template itself would fail its own checklist.
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
 
 ## Learnings -- Issue #221 (nvm.ps1 lib path off-by-one)

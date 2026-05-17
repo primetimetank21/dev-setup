@@ -12,7 +12,7 @@ tools:
 
 ## Context
 
-Many developers use GitHub through an Enterprise Managed User (EMU) account at work while maintaining a personal GitHub account for open-source contributions. AI agents spawned by Squad inherit the shell's default `gh` authentication — which is usually the EMU account. This causes failures when agents try to push to personal repos, create PRs on forks, or interact with resources outside the enterprise org.
+Many developers use GitHub through an Enterprise Managed User (EMU) account at work while maintaining a personal GitHub account for open-source contributions. AI agents spawned by Squad inherit the shell's default `gh` authentication -- which is usually the EMU account. This causes failures when agents try to push to personal repos, create PRs on forks, or interact with resources outside the enterprise org.
 
 This skill teaches agents how to detect the active identity, switch contexts safely, and avoid mixing credentials across operations.
 
@@ -27,8 +27,8 @@ gh auth status
 ```
 
 Look for:
-- `Logged in to github.com as USERNAME` — the active account
-- `Token scopes: ...` — what permissions are available
+- `Logged in to github.com as USERNAME` -- the active account
+- `Token scopes: ...` -- what permissions are available
 - Multiple accounts will show separate entries
 
 ### Extract a Specific Account's Token
@@ -122,7 +122,7 @@ alias ghe='gh'
 
 ## Examples
 
-### ✓ Correct: Agent pushes blog post to personal GitHub Pages
+### [x] Correct: Agent pushes blog post to personal GitHub Pages
 
 ```powershell
 # Agent needs to push to personaluser.github.io (personal repo)
@@ -136,7 +136,7 @@ git push origin main
 git remote set-url origin https://github.com/personaluser/personaluser.github.io.git
 ```
 
-### ✓ Correct: Agent creates a PR from personal fork to upstream
+### [x] Correct: Agent creates a PR from personal fork to upstream
 
 ```powershell
 # Fork: personaluser/squad, Upstream: bradygaster/squad
@@ -150,7 +150,7 @@ gh pr create --repo bradygaster/squad --head personaluser:contrib/fix-docs `
   --body "Fixes #123"
 ```
 
-### ✗ Incorrect: Blindly pushing with wrong account
+### [ ] Incorrect: Blindly pushing with wrong account
 
 ```bash
 # BAD: Agent assumes default gh auth works for personal repos
@@ -162,7 +162,7 @@ git push https://personaluser:ghp_xxxxxxxxxxxx@github.com/personaluser/repo.git 
 # SECURITY RISK: Token exposed in command history and process list
 ```
 
-### ✓ Correct: Check before you push
+### [x] Correct: Check before you push
 
 ```bash
 # Always verify which account has access before operations
@@ -174,10 +174,10 @@ git push https://personaluser:$token@github.com/personaluser/repo.git main
 
 ## Anti-Patterns
 
-- ❌ **Hardcoding tokens** in scripts, environment variables, or committed files. Use `gh auth token --user` to extract at runtime.
-- ❌ **Assuming the default `gh` auth works** for all repos. EMU accounts can't access personal repos and vice versa.
-- ❌ **Switching `gh auth login`** globally mid-session. This changes the default for ALL processes and can break parallel agents.
-- ❌ **Storing personal tokens in `.env`** or `.squad/` files. These get committed by Scribe. Use `gh`'s credential store.
-- ❌ **Ignoring token cleanup** after inline HTTPS pushes. Always reset the remote URL to avoid persisting tokens.
-- ❌ **Using `gh auth switch`** in multi-agent sessions. One agent switching affects all others sharing the shell.
-- ❌ **Mixing EMU and personal operations** in the same git clone. Use separate clones or explicit remote URLs per operation.
+- [ ] **Hardcoding tokens** in scripts, environment variables, or committed files. Use `gh auth token --user` to extract at runtime.
+- [ ] **Assuming the default `gh` auth works** for all repos. EMU accounts can't access personal repos and vice versa.
+- [ ] **Switching `gh auth login`** globally mid-session. This changes the default for ALL processes and can break parallel agents.
+- [ ] **Storing personal tokens in `.env`** or `.squad/` files. These get committed by Scribe. Use `gh`'s credential store.
+- [ ] **Ignoring token cleanup** after inline HTTPS pushes. Always reset the remote URL to avoid persisting tokens.
+- [ ] **Using `gh auth switch`** in multi-agent sessions. One agent switching affects all others sharing the shell.
+- [ ] **Mixing EMU and personal operations** in the same git clone. Use separate clones or explicit remote URLs per operation.

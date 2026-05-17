@@ -1,4 +1,4 @@
-# Session: GitHub Issues Created — 2026-04-07
+# Session: GitHub Issues Created -- 2026-04-07
 
 **Timestamp:** 2026-04-07T03:30:00Z
 **Agent:** Mickey (Lead)
@@ -48,7 +48,7 @@ Squad labels created in GitHub: squad, squad:mickey, squad:donald, squad:goofy, 
 
 **User directive (Earl Tankard, Jr., Ph.D.):** Always commit and push at the end of every session. Scribe must enforce `git push` after the final commit in all future sessions.
 
-**Scribe charter updated:** Step 5 (Commit AND push) now explicitly requires `git push origin main` after every commit — this is a standing directive.
+**Scribe charter updated:** Step 5 (Commit AND push) now explicitly requires `git push origin main` after every commit -- this is a standing directive.
 
 ## Squad Updates
 

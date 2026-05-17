@@ -13,8 +13,8 @@ Squad uses a three-branch model. **All feature work starts from `dev`, not `main
 | Branch | Purpose | Publishes |
 |--------|---------|-----------|
 | `main` | Released, tagged, in-npm code only | `npm publish` on tag |
-| `dev` | Integration branch — all feature work lands here | `npm publish --tag preview` on merge |
-| `insiders` | Early-access channel — synced from dev | `npm publish --tag insiders` on sync |
+| `dev` | Integration branch -- all feature work lands here | `npm publish --tag preview` on merge |
+| `insiders` | Early-access channel -- synced from dev | `npm publish --tag insiders` on sync |
 
 ## Branch Naming Convention
 
@@ -67,8 +67,8 @@ When the coordinator routes multiple issues simultaneously (e.g., "fix bugs X, Y
 
 | Scenario | Strategy |
 |----------|----------|
-| Single issue | Standard workflow above — no worktree needed |
-| 2+ simultaneous issues in same repo | Worktrees — one per issue |
+| Single issue | Standard workflow above -- no worktree needed |
+| 2+ simultaneous issues in same repo | Worktrees -- one per issue |
 | Work spanning multiple repos | Separate clones as siblings (see Multi-Repo below) |
 
 ### Setup
@@ -113,7 +113,7 @@ All PRs target `dev` independently. Agents never interfere with each other's fil
 The `.squad/` directory exists in each worktree as a copy. This is safe because:
 - `.gitattributes` declares `merge=union` on append-only files (history.md, decisions.md, logs)
 - Each agent appends to its own section; union merge reconciles on PR merge to dev
-- **Rule:** Never rewrite or reorder `.squad/` files in a worktree — append only
+- **Rule:** Never rewrite or reorder `.squad/` files in a worktree -- append only
 
 ### Cleanup After Merge
 
@@ -176,7 +176,7 @@ cd ../squad-pr && npm link squad-sdk
 cd ../squad-sdk && pip install -e .
 ```
 
-**Important:** Remove local links before committing. `npm link` and `go replace` are dev-only — CI must use published packages or PR-specific refs.
+**Important:** Remove local links before committing. `npm link` and `go replace` are dev-only -- CI must use published packages or PR-specific refs.
 
 ### Worktrees + Multi-Repo
 
@@ -189,16 +189,16 @@ These compose naturally. You can have:
 
 ## Anti-Patterns
 
-- ❌ Branching from main (branch from dev)
-- ❌ PR targeting main directly (target dev)
-- ❌ Non-conforming branch names (must be squad/{number}-{slug})
-- ❌ Committing directly to main or dev (use PRs)
-- ❌ Switching branches in the main clone while worktrees are active (use worktrees instead)
-- ❌ Using worktrees for cross-repo work (use separate clones)
-- ❌ Leaving stale worktrees after PR merge (clean up immediately)
+- [ ] Branching from main (branch from dev)
+- [ ] PR targeting main directly (target dev)
+- [ ] Non-conforming branch names (must be squad/{number}-{slug})
+- [ ] Committing directly to main or dev (use PRs)
+- [ ] Switching branches in the main clone while worktrees are active (use worktrees instead)
+- [ ] Using worktrees for cross-repo work (use separate clones)
+- [ ] Leaving stale worktrees after PR merge (clean up immediately)
 
 ## Promotion Pipeline
 
-- dev → insiders: Automated sync on green build
-- dev → main: Manual merge when ready for stable release, then tag
+- dev -> insiders: Automated sync on green build
+- dev -> main: Manual merge when ready for stable release, then tag
 - Hotfixes: Branch from main as `hotfix/{slug}`, PR to dev, cherry-pick to main if urgent
