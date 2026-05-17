@@ -1001,3 +1001,53 @@ enforcement IS the audit signal. Rationale documented in the decision doc.
 **Hygiene tail:** decision record IS the decision (no separate
 `decisions/inbox/` drop). History entry done. No further Scribe action
 needed for this design-pass PR until merge.
+
+## Sprint T -- ARCHITECTURE.md refresh (2026-05-19, PR for #229)
+
+- **Scope:** Closes #229. Synchronization edit only -- no script behavior changes.
+- **Branch:** `squad/229-architecture-refresh` (forked from `develop` @ `23d48a7`).
+- **Output (3 files, +178/-36):**
+  1. `ARCHITECTURE.md` -- refreshed file tree to match current repo state
+     (added `scripts/lib/`, `scripts/linux/lib/`, `scripts/windows/lib/`,
+     `scripts/{linux,windows}/uninstall.*`, `scripts/windows/auth.ps1`,
+     `dotfiles.ps1` (10 modules not 9), `.tool-versions`,
+     `.gitattributes`); refreshed workflows list (3 new: `e2e-install.yml`,
+     `squad-history-check.yml`, `squad-label-enforce.yml`); refreshed
+     hooks list to include `prepare-commit-msg`; refreshed tests list
+     (4 new: `test_alias_parity`, `test_nvm_bootstrap`,
+     `test_precommit_hygiene`, `test_shared_logging`, `test_tool_versions`);
+     refreshed `.squad/` subtree (agents/skills/decisions/retros/templates).
+     Added new sections: **Tool Version Pinning**, **Git Hooks** (one-line
+     per hook), **CI Workflows** (per-job tables for `validate.yml` +
+     `e2e-install.yml` + squad automation), **Squad Roster**
+     (core engineering 5 + role-based 4). Updated Team Ownership Map
+     with the new paths.
+  2. `CHANGELOG.md` -- one `[Unreleased]`/`### Changed` entry per
+     dispatch wording.
+  3. `.squad/agents/mickey/history.md` -- this entry.
+- **Sections most heavily edited:** File Structure tree (full rewrite of
+  block), Team Ownership Map (added 6 paths), and three brand-new sections
+  (Tool Version Pinning, Git Hooks, CI Workflows, Squad Roster) inserted
+  between Idempotency Guarantee and Team Ownership Map.
+- **Drift NOT fixed (out of scope):**
+  - `Script Conventions` table still says "copy from setup.sh / setup.ps1"
+    for log helpers; the truth is now `scripts/{linux,windows}/lib/`. Did
+    not edit -- this is convention prose, not a structure claim, and changing
+    it would border on prescriptive rewrite (dispatch said descriptive only).
+    Filing as candidate follow-up but not blocking.
+  - `Dependency Order` block only documents the Linux installer chain. The
+    Windows orchestrator has its own implicit order (git, uv, nvm, gh, vim,
+    psmux, copilot, squad-cli, dotfiles, profile, auth). Out of scope for
+    a sync refresh; the original section was Linux-only and accurate.
+  - No "How agents flow" section was created -- the new `Squad Roster`
+    plus `.squad/` tree + cross-link to `.squad/decisions/doc-and-jiminy-automation.md`
+    cover this without introducing a new narrative section that doesn't
+    already exist in the file.
+- **Hygiene:** No decision inbox drop (mechanical sync edit, no design
+  call). No skill extraction needed.
+- **Outcome:** AC checklist closed: tree shows per-tool layout (10 not 9 --
+  AC said 9 from #195 wording but the repo has 10 incl. `dotfiles.ps1`;
+  used reality); workflows section names all 8 files; hooks section lists
+  all 4 with one-line roles; Squad section names Doc + Jiminy + Scribe +
+  Ralph plus Mickey/Donald/Goofy/Chip/Pluto; no stale "single setup.ps1
+  file" or "manual hooks install" references remain.
