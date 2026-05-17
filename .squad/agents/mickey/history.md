@@ -1207,3 +1207,11 @@ Each change was grounded by reading the cited file:
 - CHANGELOG.md (+1 entry under Unreleased / Changed)
 
 **Commit:** `docs(mickey): refresh README.md for Sprints 8-12 changes (closes #306)`
+
+## 2026-05-17 — 0.9.2 release cut (Sprint 12 wrap)
+
+Cut 0.9.2 from elease/0.9.2 (based on develop @ 5e0fb53). Folded [Unreleased] -> [0.9.2] - 2026-05-17 in CHANGELOG.md, harvested Ralph's pending Sprint 12 EOS hygiene tail (.squad/agents/ralph/history.md, ~50 lines) from main checkout into this worktree, and appended this closure entry. Sprint 12 ships 9 issues closed across 10 PRs in a 3-wave doc-quality sweep (Wave 1: foundational docs #237/#310/#309/#236; Wave 2: decisions/retros + Tier 3 sprint naming sweep; Wave 3: README refresh #306). Three releases this session: 0.9.0 (Sprint 9+10 hygiene/tool-pin), 0.9.1 (Sprint 11 architecture refresh), 0.9.2 (Sprint 12 doc-quality). Followed identical release flow each time: release branch from develop -> PR to develop (CHANGELOG fold) -> coordinator merges that, opens develop -> main with REGULAR merge (not squash) -> tags bare X.Y.Z on main -> `gh release create --target main`.
+
+**Worktree-isolation lesson learned:** My own #310 PR earlier this sprint violated the CWD-pin discipline and triggered cross-worktree write contamination, which surfaced in Jiminy's audit and forced remediation. By Wave 3 #306 I corrected the protocol: Set-Location -LiteralPath + path-mismatch guard at the top of every powershell tool call, plus full absolute path prefixes on every file write. That discipline carried through this 0.9.2 release cut clean -- no main-checkout drift, no stray edits outside the release worktree. The lesson is now codified in Sprint 12 retro and the CWD-pin block is part of every Mickey dispatch brief going forward.
+
+**Job ends here:** Coordinator merges this release/0.9.2 -> develop PR, then opens develop -> main with regular merge, tags  .9.2, and runs gh release create --target main. I do not touch main or tag anything.
