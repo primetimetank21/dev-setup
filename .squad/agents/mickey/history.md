@@ -929,3 +929,75 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
   + pwsh-lastexitcode (#277 origin). Pattern established: every bug that
   recurs across a class of similar sites gets a SKILL.md so the next agent
   spots it in review instead of re-discovering it in CI.
+
+
+## 2026-05-19 -- Sprint T design pass: PR for #289 + #290 (Doc worktree pattern + Jiminy auto-dispatch)
+
+**Issues closed:** #289 (Doc subagent worktree pattern), #290 (auto-enforce Jiminy post-batch dispatch).
+**PR:** opened as a single PR per Coordinator's dispatch reasoning -- both issues
+touch the same surface (`.squad/templates/loop.md`, `.squad/templates/ceremonies.md`,
+and the Doc/Jiminy charters), and both are about operational SOPs that are
+currently manual and should be either automated or enforced by checklist.
+Resolving them in a single design pass avoids template churn and ensures
+the chosen patterns are coherent.
+
+**Rationale for ONE PR (not two):**
+- Same files modified. Splitting would create artificial seams in `loop.md`
+  and `ceremonies.md` where the two SOPs share a "Squad Operational Gates"
+  section.
+- The decision document is a single coherent record (Options A-D for Doc,
+  Options A-D for Jiminy, both Consequences sections). Splitting forces
+  duplicated context.
+- Sprint T verification for both issues happens at the same dispatch
+  trigger (first multi-agent batch of Sprint T), so the AC checklists are
+  intertwined.
+
+**Decisions:**
+- **#289 -> Option B (dedicated worktree).** `..\dev-setup-doc` worktree on
+  `squad/doc-history-sprint-<N>` branch, created at sprint kickoff. Doc's
+  spawn prompt MUST begin with an explicit CWD directive. ONE fold PR per
+  sprint at sprint wrap (down from 2 in Sprint S: #281 + #283). Option A
+  rejected because Doc cannot safely switch branches in the primary worktree
+  without disrupting sibling agents.
+- **#290 -> Option A (loop.md + ceremonies.md checklist).** Two-source
+  enforcement at zero infrastructure cost. Charter `Triggers` table already
+  named the moments; the amendment is to make it cross-reference the new
+  template surfaces so the SOP is loud at three surfaces instead of one.
+  Options B (GH Action) + C (pre-push hook) + D (runtime reminder) rejected
+  per the issue's own analysis.
+
+**Files modified (8):**
+1. `.squad/decisions/doc-and-jiminy-automation.md` (new) -- canonical decision record.
+2. `.squad/templates/loop.md` -- "Squad Operational Gates" section (3 gates).
+3. `.squad/templates/ceremonies.md` -- `Sprint Kickoff` + `Sprint Wrap` ceremonies.
+4. `.squad/agents/doc/charter.md` -- "Where Doc writes history.md" section + amended `Git Rules`.
+5. `.squad/agents/jiminy/charter.md` -- `Triggers` table cross-references new templates.
+6. `CONTRIBUTING.md` -- "Squad Operational Gates (Coordinator dispatch)" section.
+7. `CHANGELOG.md` -- `[Unreleased]` `### Changed` entry.
+8. `.squad/agents/mickey/history.md` -- this entry.
+
+**Skill extraction candidate:** the workflow of "amend three template surfaces
+in coordination + write decision record + cross-link" is now a repeatable
+pattern (Jiminy dispatch SOP from #280 followed the same shape, and #289/#290
+follow it again). Suggest a future `.squad/skills/squad-template-amendment/SKILL.md`
+that captures: which surfaces to amend together, how to cross-link via the
+decision doc, and the "three-surface enforcement" check. Filing as a separate
+follow-up rather than authoring inline -- separate scope.
+
+**Test changes:** none. Considered a `tests/test_squad_sops.sh` grep test
+verifying SOP phrase presence in the templates, rejected because the SOPs
+are purely human-facing (Coordinator behavior, not script behavior) and
+phrase-pinning tests turn template edits into test churn. The triple-surface
+enforcement IS the audit signal. Rationale documented in the decision doc.
+
+**Sprint T verification (pre-conditions for Coordinator):**
+1. `git worktree list` should show `..\dev-setup-doc` on
+   `squad/doc-history-sprint-T` before the first Doc spawn. If absent,
+   create it.
+2. First >= 3-agent batch of Sprint T MUST end with a Jiminy run before
+   results return to user.
+3. Sprint T wrap MUST open one fold PR (or zero if Doc never ran).
+
+**Hygiene tail:** decision record IS the decision (no separate
+`decisions/inbox/` drop). History entry done. No further Scribe action
+needed for this design-pass PR until merge.

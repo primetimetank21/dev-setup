@@ -360,3 +360,53 @@ See `.squad/skills/pwsh-lastexitcode/SKILL.md` for the full pattern, a
 detection checklist, and the call-site audit. The discovery PR is #277
 (`fix(uninstall): unset core.hooksPath`); the skill closes #288.
 
+---
+
+## Squad Operational Gates (Coordinator dispatch)
+
+Two operational SOPs govern Coordinator-side spawn behavior. Both are codified at
+three independent surfaces (charter + `.squad/templates/loop.md` + `.squad/templates/ceremonies.md`)
+so a single forgotten checkpoint doesn't silently break the SOP. Source decision:
+`.squad/decisions/doc-and-jiminy-automation.md` (closes #289, #290).
+
+### Doc subagent runs in a dedicated worktree (#289)
+
+Doc (Fact Checker) is a `general-purpose` subagent that inherits the Coordinator's
+CWD by default. To prevent his `.squad/agents/doc/history.md` writes from landing
+as `M` on `develop` in the primary worktree (Sprint S anti-pattern: required PRs
+#281 + #283), Doc runs in a dedicated per-sprint worktree.
+
+**Sprint kickoff (Coordinator, one-time per sprint):**
+
+```bash
+git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
+```
+
+**Every Doc spawn prompt** MUST begin with an explicit CWD directive pointing at
+`..\dev-setup-doc`. Doc commits + pushes after every fact-check. At sprint wrap,
+the Coordinator opens ONE fold PR from `squad/doc-history-sprint-<N>` into
+`develop`. Target: 1 fold PR per sprint (down from 2 in Sprint S).
+
+### Jiminy auto-dispatch after >= 3-agent batches and at session-end (#290)
+
+The Jiminy dispatch SOP from PR #280 (Coordinator MUST invoke Jiminy after every
+3+ agent batch and at session-end) is now enforced at three surfaces:
+
+1. `.squad/agents/jiminy/charter.md` -> `Triggers` table (canonical).
+2. `.squad/templates/loop.md` -> "Squad Operational Gates" (Gate 1 post-batch, Gate 2 session-end).
+3. `.squad/templates/ceremonies.md` -> `Sprint Wrap` ceremony, step 1.
+
+**Trigger condition (Gate 1):** 3 or more agent spawns in a single Coordinator
+turn, counted excluding Scribe (which runs silently in background by design).
+**Action:** Spawn Jiminy BEFORE returning results to the user. Wait for
+`Jiminy clear` or resolve the dirty report.
+
+**Trigger condition (Gate 2):** user signals session-end OR work queue empties
+after a full sprint. **Action:** Jiminy full sweep; BLOCKS session close on dirty
+state. Ralph runs after Jiminy for stale-branch cleanup.
+
+If you (Coordinator or human contributor) ever notice a >= 3-agent batch landed
+without a Jiminy run, that is a Sprint Retro action item, not a one-off
+self-correction. File a `retro-action` issue.
+
+
