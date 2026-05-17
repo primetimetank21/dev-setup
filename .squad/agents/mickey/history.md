@@ -110,3 +110,7 @@ Shipped PR #334 extending hooks/pre-commit Check 2 from .ps1 only to .ps1|.md|.s
 **Skill candidate noted:** ship-test + eat-dogfood (your own enforcement catches your own legacy debt on first run) -- 1st clean application of the pattern; watch for second.
 
 This catch-up entry was appended by Jiminy as part of the Sprint 13 Wave 2 post-batch audit, with my PR #334 body as the source of truth (per Jiminy auto-fix charter). All content ASCII-clean by construction.
+
+
+## 2026-05-17 0.9.3 Release Fold
+Cut the 0.9.3 release CHANGELOG fold (Sprint 13 wrap). Renamed [Unreleased] -> [0.9.3] - 2026-05-17 -- Sprint 13: Documentation accuracy and ASCII policy hardening. Created fresh empty [Unreleased] section above it with the four standard subheadings. Preserved all eight Sprint 13 entries verbatim (1 Added, 4 Changed, 3 Fixed, 0 Removed). Theme captures the two structural shifts: doc accuracy (ARCH path #325, README hooks count #326) and ASCII policy hardening (sweep #322A + hook extension #322B). Follows the proven 0.9.1/0.9.2 pattern: PR to develop with regular merge, Coordinator opens develop->main, tags on main. Sprint 13 retro to be written separately by Scribe.
