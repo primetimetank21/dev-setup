@@ -161,3 +161,41 @@ at 3 bytes each remain; those are out of scope -- hook does not scan
 `.yml`).
 
 Decision drop: `.squad/decisions/sync-workflow-followups-2026-05-17.md`
+
+---
+
+## Sprint 16 W1 -- Issue #367: Skill drift watchlist audit
+
+**Branch:** `squad/367-skill-drift-audit`
+**PR:** #368
+**Status:** Complete.
+
+### What I did
+
+Audited 30 .copilot/skills/ + 0 .squad/skills/ for confidence freshness,
+application counts, and graduation candidates. Extracted per-skill metadata
+via git log timestamps and grep scanning of .squad/agents/*/history.md.
+
+**Findings:**
+- 0 skills eligible for low->medium promotion
+- 0 skills eligible for medium->high promotion
+- 27 skills with zero observed applications (monitoring phase)
+- 3 skills with unknown/inconsistent confidence frontmatter (cli-wiring,
+  model-selection, personal-squad, nap)
+
+**Methodology:** Extracted skill name (folder), confidence (frontmatter
+field), last update (git log -1 --format=%ai), and mention count (grep
+across agent history). Applied drift thresholds: low->medium if 3+
+applications, medium->high if 5+ applications, stale if >90 days old +
+0 mentions, never-applied if 0 mentions anywhere.
+
+All 30 skills updated 2026-05-17 (fresh worktree) with high confidence
+(22 high, 2 medium, 3 low, 3 unknown). Most skills not yet deployed in
+active agent workflows; report recommends continued monitoring as history
+accumulates.
+
+Audit feeds issue #366 (graduation audit) for executing actual promotions
+once thresholds met.
+
+Decision drop: `.squad/decisions/pluto-skill-drift-2026-05-17.md`
+Inbox memo: `.squad/decisions/inbox/pluto-367-skill-drift.md`
