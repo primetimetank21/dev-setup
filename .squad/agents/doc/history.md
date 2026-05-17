@@ -153,3 +153,13 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - Audit file: .squad/decisions/doc-readme-audit-2026-05-17.md (14770 bytes,
   0 non-ASCII). Inbox mirror: .squad/decisions/inbox/doc-readme-audit-2026-05-17.md
   (gitignored, not committed).
+
+### 2026-05-17 -- Sprint 15 #356 ASCII sweep fact-check + ship
+
+- **Scope:** Sweep 33 tracked .md files for legacy non-ASCII characters (em-dashes, smart quotes, box-drawing) pre-dating the #334 ASCII hook expansion.
+- **Files cleaned:** 30 .copilot/skills/*.md + ARCHITECTURE.md + tests/README.md + .github/agents/squad.agent.md. Total: ~1,250 non-ASCII bytes removed.
+- **Methodology:** ascii-sweep.py tool + hand-conversion for fenced code blocks (tool preserves fences by design).
+- **Fence handling pattern:** Box-drawing (|---|`--) -> ASCII (+--|`--), em-dash (--) -> --, smart quotes -> straight quotes, ellipsis -> ....
+- **PR shipped:** #358. Branch: squad/356-md-ascii-sweep off develop @ caf5c64.
+- **Verification:** Pre-commit hook passes; `git grep "[^\\x00-\\x7F]"` returns 0 matches on tracked .md files.
+- **Learnings:** Worktree setup requires explicit CWD tracking in multi-worktree environments; file I/O via PowerShell [System.IO] can appear to succeed but not persist (use Python pathlib or direct git commands for reliability). UTF-8 byte counting (where multi-byte chars count as N bytes) differs from Unicode character counting -- use Python's `ord(ch) > 127` for accurate non-ASCII detection.
