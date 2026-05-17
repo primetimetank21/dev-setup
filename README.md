@@ -79,54 +79,55 @@ After running setup, complete these steps to activate your tools:
 
 ```
 dev-setup/
-├── setup.sh                  — Entry point for Linux / macOS / WSL
-├── setup.ps1                 — Entry point for Windows (PowerShell)
-├── ARCHITECTURE.md           — Technical architecture and team ownership map
-├── CHANGELOG.md              — Release history (Keep a Changelog format)
-├── CONTRIBUTING.md           — Contribution guide
-├── scripts/
-│   ├── lib/
-│   │   ├── read-tool-version.sh  — POSIX sh: reads pinned version from .tool-versions
-│   │   └── Read-ToolVersion.ps1  — PowerShell: Get-ToolVersion function
-│   ├── linux/
-│   │   ├── setup.sh          — Core Linux/macOS installer (orchestrates tool scripts)
-│   │   └── tools/            — Individual tool install scripts
-│   │       ├── auth.sh       — GitHub CLI authentication (interactive)
-│   │       ├── copilot-cli.sh
-│   │       ├── gh.sh
-│   │       ├── nvm.sh
-│   │       ├── squad-cli.sh  — squad-cli (npm)
-│   │       ├── uv.sh
-│   │       └── zsh.sh
-│   └── windows/
-│       ├── setup.ps1         — Orchestrator (dot-sources tools/ scripts)
-│       ├── uninstall.ps1     — Idempotent reverse of the installer
-│       └── tools/            — Per-tool install scripts
-│           ├── auth.ps1      — GitHub CLI authentication (interactive)
-│           ├── copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
-│           ├── profile.ps1, psmux.ps1, squad-cli.ps1
-│           ├── uv.ps1, vim.ps1
-│           └── (11 files total)
-├── config/
-│   └── dotfiles/             — Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
-│       └── install.sh        — Dotfile installer
-├── hooks/
-│   ├── commit-msg            — Enforce Conventional Commits
-│   ├── pre-commit            — Shellcheck on staged .sh files
-│   └── pre-push             — Block pushes to main; advisory linting
-├── tests/                    — Validation tests (bash + PowerShell)
-│   ├── test_aliases.sh
-│   ├── test_git_hooks.ps1
-│   ├── test_idempotency.sh
-│   ├── test_remove_custom_item.ps1
-│   └── test_windows_setup.ps1
-├── .devcontainer/            — Dev Container / Codespace configuration
-├── .github/workflows/        — CI validation and squad automation
-└── .squad/                   — Squad coordination (committed; not installed onto end-user machines)
-    ├── agents/                 — per-agent charter.md + history.md
-    ├── decisions.md            — append-only decision log; older entries fold to decisions-archive.md
-    ├── retros/                 — sprint retrospectives (committed; pre-commit allow-listed)
-    └── ...                     — see ARCHITECTURE.md for the full breakdown
++-- setup.sh                  -- Entry point for Linux / macOS / WSL
++-- setup.ps1                 -- Entry point for Windows (PowerShell)
++-- ARCHITECTURE.md           -- Technical architecture and team ownership map
++-- CHANGELOG.md              -- Release history (Keep a Changelog format)
++-- CONTRIBUTING.md           -- Contribution guide
++-- scripts/
+|   +-- lib/
+|   |   +-- read-tool-version.sh  -- POSIX sh: reads pinned version from .tool-versions
+|   |   +-- Read-ToolVersion.ps1  -- PowerShell: Get-ToolVersion function
+|   |   \-- ascii-sweep.py        -- Sweep .md files for non-ASCII; preserves fenced code blocks (#322A)
+|   +-- linux/
+|   |   +-- setup.sh          -- Core Linux/macOS installer (orchestrates tool scripts)
+|   |   \-- tools/            -- Individual tool install scripts
+|   |       +-- auth.sh       -- GitHub CLI authentication (interactive)
+|   |       +-- copilot-cli.sh
+|   |       +-- gh.sh
+|   |       +-- nvm.sh
+|   |       +-- squad-cli.sh  -- squad-cli (npm)
+|   |       +-- uv.sh
+|   |       \-- zsh.sh
+|   \-- windows/
+|       +-- setup.ps1         -- Orchestrator (dot-sources tools/ scripts)
+|       +-- uninstall.ps1     -- Idempotent reverse of the installer
+|       \-- tools/            -- Per-tool install scripts
+|           +-- auth.ps1      -- GitHub CLI authentication (interactive)
+|           +-- copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
+|           +-- profile.ps1, psmux.ps1, squad-cli.ps1
+|           +-- uv.ps1, vim.ps1
+|           \-- (11 files total)
++-- config/
+|   \-- dotfiles/             -- Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
+|       \-- install.sh        -- Dotfile installer
++-- hooks/
+|   +-- commit-msg            -- Enforce Conventional Commits
+|   +-- pre-commit            -- 6-check hygiene gate (branch ancestry + ASCII on .ps1/.md/.sh + .squad/ allow-list + inbox guard + branch refusal + shellcheck); see Git Hooks below
+|   \-- pre-push             -- Block pushes to main; advisory linting
++-- tests/                    -- Validation tests (bash + PowerShell)
+|   +-- test_aliases.sh
+|   +-- test_git_hooks.ps1
+|   +-- test_idempotency.sh
+|   +-- test_remove_custom_item.ps1
+|   \-- test_windows_setup.ps1
++-- .devcontainer/            -- Dev Container / Codespace configuration
++-- .github/workflows/        -- CI validation and squad automation
+\-- .squad/                   -- Squad coordination (committed; not installed onto end-user machines)
+    +-- agents/                 -- per-agent charter.md + history.md
+    +-- decisions.md            -- append-only decision log; older entries fold to decisions-archive.md
+    +-- retros/                 -- sprint retrospectives (committed; pre-commit allow-listed)
+    \-- ...                     -- see ARCHITECTURE.md for the full breakdown
 ```
 
 Root entry points (`setup.sh`, `setup.ps1`) are thin routers -- they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
@@ -193,7 +194,14 @@ No manual copying needed. After running setup, four hooks are active:
 
 ### `pre-commit`
 
-Runs shellcheck on staged `.sh` files. Blocks commit if shellcheck fails. Silently skips if shellcheck not installed.
+Six ordered hygiene checks (fastest-first); the commit is blocked if any check fails:
+
+1. **Branch ancestry** -- `squad/*` (and per-agent `mickey/*`, `goofy/*`, etc.) branches must descend from `develop`. Catches accidental forks-of-forks.
+2. **ASCII-only content** on staged `.ps1`, `.md`, and `.sh` files. PS 5.1 on Windows uses CP1252, so non-ASCII bytes (em dashes, smart quotes, curly apostrophes) break string literals; Markdown and shell sources should also stay ASCII-clean for portable `grep`/`sed`/`diff`. If a `.md` file trips this check, run `python scripts/lib/ascii-sweep.py --dry-run` to preview fixes, then drop `--dry-run` to apply (see below). The sweep preserves fenced code blocks verbatim, so any non-ASCII inside ``` ... ``` must be cleaned by hand. Scope extended from `.ps1` only to `.ps1 + .md + .sh` in Sprint 13 (#322B / PR #334).
+3. **Rogue path check** under `.squad/` -- only paths in the hook's allow-list (e.g. `.squad/agents/*/charter.md`, `.squad/decisions/*.md`, `.squad/retros/*.md`) may be staged.
+4. **Staged inbox guard** -- rejects anything staged under `.squad/decisions/inbox/` (that directory is gitignored; staged content there indicates a `git add -f` accident).
+5. **Refuse direct commits on `develop` / `main` / `master`** -- create a feature branch first.
+6. **Shellcheck** on staged `.sh` files. Silently skipped if `shellcheck` is not installed.
 
 ### `commit-msg`
 
@@ -216,6 +224,17 @@ Rewrites git's auto-generated merge/revert commit messages into Conventional Com
 3. **Runs PSScriptAnalyzer** on changed `.ps1` files -- advisory, never blocks (requires `pwsh` + PSScriptAnalyzer module; silently skipped if absent).
 
 Use `--no-verify` to bypass hooks in emergencies.
+
+### ASCII sweep helper (`scripts/lib/ascii-sweep.py`)
+
+Auto-replaces common non-ASCII characters in repo source files -- em/en dashes, smart quotes, ellipsis, arrows, box-drawing glyphs, status emoji -- with ASCII equivalents. The usual trigger is `pre-commit` Check 2 rejecting a commit because a Markdown file picked up Unicode punctuation from a paste.
+
+```bash
+python scripts/lib/ascii-sweep.py --dry-run   # preview replacements
+python scripts/lib/ascii-sweep.py             # apply in-place
+```
+
+**When NOT to use it:** the sweep deliberately preserves fenced code blocks (``` ... ```) verbatim, so it will not touch non-ASCII inside code fences. The `pre-commit` ASCII check does NOT respect fence boundaries -- if your non-ASCII bytes are inside a code fence (e.g. a file-tree drawn with box-drawing glyphs), the sweep will report them as "remaining" and you must hand-convert. Added in Sprint 13 (#322A / PR #335).
 
 ---
 
