@@ -489,3 +489,61 @@ must return the version number (not an error) before the pin is committed.
 The version `0.0.339` was never verifiable -- it was copied from curl installer internal
 state without checking whether it corresponded to a real npm package version.
 Add this check to `.squad/skills/tool-version-pin/SKILL.md` validation steps.
+
+
+---
+
+## [2026-05-18] Sprint T -- Issue #230: Move auth.ps1 under tools/ (Wave 1)
+
+**Branch:** `squad/230-auth-to-tools`
+**Status:** PR open
+
+### Background
+
+After PR #195's per-tool refactor, `scripts/windows/auth.ps1` was the lone
+top-level installer left at `scripts/windows/`. Issue #230 (P2 chore) called
+for relocating it under `tools/` to match the established layout.
+
+### What I did
+
+- `git mv scripts/windows/auth.ps1 scripts/windows/tools/auth.ps1` (git
+  reports 96% similarity, rename history preserved).
+- Updated the dot-source path inside `auth.ps1` from
+  `\lib\logging.ps1` to `\..\lib\logging.ps1`
+  to match the pattern used by every other `tools/*.ps1` script. Also
+  updated the file's header comment to reflect the new path. No logic
+  changes; `Invoke-GhAuth` body is byte-identical.
+- `scripts/windows/setup.ps1` line 34: updated dot-source from
+  `\auth.ps1` to `\tools\auth.ps1`.
+- `tests/test_windows_setup.ps1` line 1195 (Group S setup): added
+  `tools` segment to `Join-Path` chain.
+- CHANGELOG.md: added an `[Unreleased]` `### Changed` entry.
+
+### Files I did NOT touch
+
+- **ARCHITECTURE.md** -- no auth.ps1 reference present anyway, and Mickey
+  owns the file in concurrent worktree #229. Confirmed clean grep.
+- **CHANGELOG.md line 76** -- historical entry under 0.8.0 ("Windows
+  GitHub auth step via scripts/windows/auth.ps1 (closes #191)") is a
+  historically accurate description of the original add and must remain
+  pinned to the path at the time. New `[Unreleased]` entry documents
+  the move.
+- **auth.ps1 function body** -- the four `& gh ...` `0`
+  read-without-reset sites flagged in the pwsh-lastexitcode SKILL are
+  out of scope for this issue. Wave 2 (#292) handles that hardening.
+
+### Verification
+
+- `Test-Path scripts/windows/tools/auth.ps1` -> True
+- `Test-Path scripts/windows/auth.ps1` -> False
+- PowerShell parser: all three modified files parse cleanly
+- Dot-source from new location succeeds; `Invoke-GhAuth` function defined
+- Full `tests/test_windows_setup.ps1` run: Group S 3/3 PASS; 114 total
+  PASS, 8 baseline FAIL (Group O alias / live Copilot) -- identical to
+  `develop` baseline, unrelated to this change
+
+### Wave 2 queued
+
+- **#292** -- harden the 4 `0` sites in `auth.ps1` plus
+  any in `setup.ps1` (per pwsh-lastexitcode SKILL). Next task.
+

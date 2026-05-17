@@ -1,4 +1,4 @@
-# scripts/windows/auth.ps1 - GitHub authentication check and prompt
+# scripts/windows/tools/auth.ps1 - GitHub authentication check and prompt
 #
 # Called by: scripts/windows/setup.ps1 (after gh CLI is installed)
 # Owner:     Goofy (#2)
@@ -13,7 +13,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-. "$PSScriptRoot\lib\logging.ps1"
+. "$PSScriptRoot\..\lib\logging.ps1"
 
 function Invoke-GhAuth {
     # Guard: gh CLI must be available
