@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- README refreshed: pre-commit 6-check description (F1), ascii-sweep.py docs (F2), file-tree hand-converted to ASCII (F3), file-tree updated (F4), pre-commit one-liner expanded (F5) (#342)
 
 ### Fixed
 
