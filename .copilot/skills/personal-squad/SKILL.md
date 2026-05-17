@@ -1,4 +1,4 @@
-# Personal Squad — Skill Document
+# Personal Squad -- Skill Document
 
 ## What is a Personal Squad?
 
@@ -9,12 +9,12 @@ A personal squad is a user-level collection of AI agents that travel with you ac
 ```
 ~/.config/squad/personal-squad/    # Linux/macOS
 %APPDATA%/squad/personal-squad/    # Windows
-├── agents/
-│   ├── {agent-name}/
-│   │   ├── charter.md
-│   │   └── history.md
-│   └── ...
-└── config.json                    # Optional: personal squad config
+|---- agents/
+|   |---- {agent-name}/
+|   |   |---- charter.md
+|   |   `---- history.md
+|   `---- ...
+`---- config.json                    # Optional: personal squad config
 ```
 
 ## How It Works
@@ -26,11 +26,11 @@ A personal squad is a user-level collection of AI agents that travel with you ac
 
 ## Commands
 
-- `squad personal init` — Bootstrap a personal squad directory
-- `squad personal list` — List your personal agents
-- `squad personal add {name} --role {role}` — Add a personal agent
-- `squad personal remove {name}` — Remove a personal agent
-- `squad cast` — Show the current session cast (project + personal)
+- `squad personal init` -- Bootstrap a personal squad directory
+- `squad personal list` -- List your personal agents
+- `squad personal add {name} --role {role}` -- Add a personal agent
+- `squad personal remove {name}` -- Remove a personal agent
+- `squad cast` -- Show the current session cast (project + personal)
 
 ## Ghost Protocol
 
@@ -53,5 +53,5 @@ Optional `config.json` in the personal squad directory:
 
 ## Environment Variables
 
-- `SQUAD_NO_PERSONAL` — Set to any value to disable personal squad discovery
-- `SQUAD_PERSONAL_DIR` — Override the default personal squad directory path
+- `SQUAD_NO_PERSONAL` -- Set to any value to disable personal squad discovery
+- `SQUAD_PERSONAL_DIR` -- Override the default personal squad directory path

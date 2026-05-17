@@ -12,8 +12,8 @@ Squad uses a two-branch model. **All feature work branches from `develop`, never
 
 | Branch | Purpose | Rules |
 |--------|---------|-------|
-| `main` | Stable, released code only | NEVER push or PR directly — only receives merges from `develop` |
-| `develop` | Integration branch — all feature work lands here | ALWAYS the base for feature PRs |
+| `main` | Stable, released code only | NEVER push or PR directly -- only receives merges from `develop` |
+| `develop` | Integration branch -- all feature work lands here | ALWAYS the base for feature PRs |
 
 ## Branch Naming Convention
 
@@ -50,11 +50,11 @@ Examples:
    gh pr ready
    ```
 
-6. **Merge gates — BOTH must pass before merging:**
-   - ✅ Mickey has approved the PR
-   - ✅ CI checks are green
+6. **Merge gates -- BOTH must pass before merging:**
+   - [x] Mickey has approved the PR
+   - [x] CI checks are green
 
-7. **After merge to develop — delete the branch immediately:**
+7. **After merge to develop -- delete the branch immediately:**
    ```bash
    git checkout develop
    git pull origin develop
@@ -70,8 +70,8 @@ When the coordinator routes multiple issues simultaneously (e.g., "fix bugs X, Y
 
 | Scenario | Strategy |
 |----------|----------|
-| Single issue | Standard workflow above — no worktree needed |
-| 2+ simultaneous issues in same repo | Worktrees — one per issue |
+| Single issue | Standard workflow above -- no worktree needed |
+| 2+ simultaneous issues in same repo | Worktrees -- one per issue |
 | Work spanning multiple repos | Separate clones as siblings (see Multi-Repo below) |
 
 ### Setup
@@ -82,7 +82,7 @@ From the main clone (must be on develop or any branch):
 # Ensure develop is current
 git fetch origin develop
 
-# Create a worktree per issue — siblings to the main clone
+# Create a worktree per issue -- siblings to the main clone
 git worktree add ../squad-195 -b squad/195-fix-stamp-bug origin/develop
 git worktree add ../squad-193 -b squad/193-refactor-loader origin/develop
 ```
@@ -101,7 +101,7 @@ Each agent operates inside its worktree exactly like the single-issue workflow:
 ```bash
 cd ../squad-195
 
-# Work normally — commits, tests, pushes
+# Work normally -- commits, tests, pushes
 git add -A && git commit -m "fix: stamp bug (#195)"
 git push -u origin squad/195-fix-stamp-bug
 
@@ -116,7 +116,7 @@ All PRs target `develop` independently. Agents never interfere with each other's
 The `.squad/` directory exists in each worktree as a copy. This is safe because:
 - `.gitattributes` declares `merge=union` on append-only files (history.md, decisions.md, logs)
 - Each agent appends to its own section; union merge reconciles on PR merge to develop
-- **Rule:** Never rewrite or reorder `.squad/` files in a worktree — append only
+- **Rule:** Never rewrite or reorder `.squad/` files in a worktree -- append only
 
 ### Cleanup After Merge
 
@@ -179,7 +179,7 @@ cd ../squad-pr && npm link squad-sdk
 cd ../squad-sdk && uv pip install -e .
 ```
 
-**Important:** Remove local links before committing. `npm link` and `go replace` are dev-only — CI must use published packages or PR-specific refs.
+**Important:** Remove local links before committing. `npm link` and `go replace` are dev-only -- CI must use published packages or PR-specific refs.
 
 ### Worktrees + Multi-Repo
 
@@ -192,16 +192,16 @@ These compose naturally. You can have:
 
 ## Anti-Patterns
 
-- ❌ Branching from main (always branch from develop)
-- ❌ PR targeting main directly (always target develop)
-- ❌ Pushing directly to main or develop (use PRs)
-- ❌ Non-conforming branch names (must be squad/{number}-{slug})
-- ❌ Merging without Mickey's approval
-- ❌ Merging without green CI
-- ❌ Leaving branches around after merge (delete immediately)
-- ❌ Deleting main or develop (never)
-- ❌ Switching branches in the main clone while worktrees are active (use worktrees instead)
-- ❌ Using worktrees for cross-repo work (use separate clones)
+- [ ] Branching from main (always branch from develop)
+- [ ] PR targeting main directly (always target develop)
+- [ ] Pushing directly to main or develop (use PRs)
+- [ ] Non-conforming branch names (must be squad/{number}-{slug})
+- [ ] Merging without Mickey's approval
+- [ ] Merging without green CI
+- [ ] Leaving branches around after merge (delete immediately)
+- [ ] Deleting main or develop (never)
+- [ ] Switching branches in the main clone while worktrees are active (use worktrees instead)
+- [ ] Using worktrees for cross-repo work (use separate clones)
 
 ## Branch Protection
 
@@ -219,5 +219,5 @@ Branch protection on `develop` now enforces this at the GitHub level.
 
 ## Promotion Pipeline
 
-- develop → main: Mickey approves + CI green → merge, then tag for release
+- develop -> main: Mickey approves + CI green -> merge, then tag for release
 - Hotfixes: Branch from develop as `hotfix/{slug}`, PR back to develop, then promote to main
