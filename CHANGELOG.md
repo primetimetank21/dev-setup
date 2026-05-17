@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.9.2] - 2026-05-17
+
+### Added
 - `tests/test_windows_setup.ps1` Group FF (FF-1 through FF-10): idempotency + restore coverage for `scripts/windows/uninstall.ps1` -- 5 static-source checks (managed dotfile list, newest-wins backup selection, Move-Item -Force usage; Linux uninstall.sh parity) + 5 functional checks (newest timestamped .bak.* wins, legacy .bak fallback, second-run idempotency on dotfiles, profile-block removal preserves surrounding content, second-run idempotency on profile). Functional tests run uninstall.ps1 in a child powershell process with USERPROFILE/HOMEDRIVE/HOMEPATH redirected to a tmp HOME so the script's `$HOME` resolves to throwaway state, and pin CWD to a tmp git repo so `git config --unset-all core.hooksPath` cannot affect the user's real config (closes #238)
 - CONTRIBUTING.md `Test Harness Pattern` section: documents the `set -uo` (intentionally NOT `set -euo`) convention for bash tests; failure tally pattern, helper conventions, minimal skeleton (closes #237)
 

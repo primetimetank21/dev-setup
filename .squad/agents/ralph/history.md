@@ -445,3 +445,83 @@ Initial setup complete.
   insurance against silent ghost refs.
 - **No new EOS rules to codify.** Pattern is stable: audit -> prune ->
   history append -> PR. No skill extraction this round.
+
+## 2026-05-17 -- Sprint 12 EOS sweep (Earl, post-retro merge)
+
+- **Trigger:** Earl's EOS protocol after Sprint 12 wrap (3 waves, 10 PRs, 9
+  issues closed). Retro fold landed as PR #327 (`5e0fb53`) just before
+  dispatch. Coordinator had already drained 4 Wave-2 inbox drops inline
+  post-Jiminy-audit; board reported clean entering this sweep.
+- **Pre-sweep state:**
+  - develop @ `5e0fb53`, main @ `724c62c` (still 0.9.1, untouched)
+  - Working tree clean, 1 worktree (primary only)
+  - Inbox empty, no rogue body files, no temp/backup rogues
+- **Pruned (Step 1) -- 5 stale `origin/squad/*` tracking refs:**
+  - `origin/squad/237-test-harness-pattern`
+  - `origin/squad/306-readme-refresh`
+  - `origin/squad/310-arch-windows-dep-order`
+  - `origin/squad/scribe-sprint-12-retro` (Jiminy listed 4 -- this was the
+    5th, branch reaped when PR #327 squash-merged minutes earlier; local
+    tracking ref hadn't caught up yet)
+  - `origin/squad/scribe-sprint-12-wave-2-fold`
+- **Already clean (Steps 2-5) -- Jiminy session-end audit was thorough:**
+  - Local `squad/*` branches: 0 (Coordinator's worktree-remove-first dance
+    held discipline across all 3 waves)
+  - Remote `squad/*` branches via `gh api .../branches --paginate`: 0
+    (confirmed -- only `develop` and `main` on the remote)
+  - Filesystem `dev-setup-*` orphan dirs at parent: 0
+  - `.squad/decisions/inbox/`: empty
+  - Rogue `issue_body*.md` at repo root: 0 (`gh issue create -F` + `Remove-Item`
+    pattern held)
+  - Rogue `*.tmp`, `*.bak`, `.DS_Store`, `Thumbs.db`: 0
+- **Step 6 -- `git gc --auto`:** exit 0, no output. Heuristics did not
+  trigger a pack -- expected, since the worktree-local strategy keeps
+  most churn off the primary checkout's loose-object pile. 10 PRs of
+  merge activity did not accumulate enough loose objects to cross the
+  auto-gc threshold.
+- **Final repo state:**
+  - develop: `5e0fb53` (clean)
+  - main: `724c62c` (0.9.1, untouched)
+  - Local branches: develop, main
+  - Remote branches (post-prune): origin/develop, origin/main, origin/HEAD
+  - Worktrees: 1 (primary)
+  - Open PRs: 0
+- **Sprint 12 EOS verdict:** CLEAN. 5 stale tracking refs pruned, 0 actual
+  orphans (no branches, no worktrees, no fs dirs, no rogue files). Jiminy's
+  session-end audit handled everything except the local-tracking-ref
+  catchup, which is the canonical Ralph job. Sweep complete.
+- **EOS pattern note:** 3rd consecutive EOS (Sprint 11 wrap -> 0.9.1
+  release -> Sprint 12 wrap) with zero orphan branches and zero worktree
+  stragglers. The Sprint 11-era hypothesis ("the team has internalized
+  cleanup-on-merge OR `gh pr merge --delete-branch` reliability improved")
+  now has a 3rd data point in its favor. One more cycle and the
+  `gh --delete-branch` quirk (issue #300) is effectively obsolete for
+  this repo's workflow.
+- **Multi-wave/multi-PR scaling note (new):** This is the first EOS
+  following a 3-wave / 10-PR sprint. The cleanup load did NOT scale
+  linearly with PR count -- the entire sweep produced 5 stale tracking
+  refs (1 per active wave/release + the retro), not 10. Worktree-local
+  strategy + Scribe's per-wave fold pattern keeps the EOS surface area
+  bounded regardless of sprint size. Worth remembering when sizing
+  future sprints: cleanup cost is per-wave, not per-PR.
+
+### Learnings (Ralph)
+
+- **Local tracking refs always lag a fresh merge.** When `gh pr merge`
+  deletes the remote branch, the local `origin/squad/*` ref persists
+  until the next `git fetch --prune` (or explicit `git remote prune`).
+  Jiminy's session-end audit ran before PR #327 merged, so it counted
+  4 refs; by the time Ralph dispatched, it was 5. Not a bug in Jiminy's
+  count -- a timing artifact. Future EOS dispatches after a fresh
+  merge should expect +1 ref vs. the prior audit.
+- **`git gc --auto` on a worktree-local-strategy repo rarely triggers.**
+  3rd consecutive EOS where `git gc --auto` no-ops. The primary checkout
+  stays lean because feature work happens in dedicated worktrees that
+  share the object DB but don't keep their loose objects "live" the way
+  a single-checkout workflow would. Safe to keep running it as cheap
+  insurance, but don't expect it to do anything on this repo.
+- **`gh api ... --jq` quoting is brittle in PowerShell.** First attempt
+  with embedded backslash-escaped quotes failed at the jq parser. The
+  reliable pattern is: `--jq '.[].name'` (no embedded quotes), then
+  filter the result list in PowerShell with `Where-Object { $_ -like
+  'squad/*' }`. Saves a round-trip when the quote dance fails.
