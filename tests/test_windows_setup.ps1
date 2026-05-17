@@ -1192,7 +1192,7 @@ Write-Host "`n========================================================" -Foregro
 Write-Host " Group S: GitHub auth step (Issue #191)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
-$authScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'auth.ps1'
+$authScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'auth.ps1'
 
 . $authScript
 
@@ -1880,6 +1880,93 @@ Test-Scenario "DD-5: .tool-versions contains squad-cli and gh pins" {
     if ($content -notmatch 'gh\s+[0-9]+\.[0-9]+\.[0-9]+') {
         throw ".tool-versions does not contain a gh version pin"
     }
+}
+
+# ---------------------------------------------------------------------------
+# Group EE: $LASTEXITCODE reset mitigation (Issue #292)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group EE: LASTEXITCODE reset mitigation (#292)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "EE-1: auth.ps1 resets LASTEXITCODE after first gh auth status block" {
+    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\auth.ps1')
+    $found = $false
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match '& gh auth status' -and -not $found) {
+            # Search forward for the reset before the next significant block
+            for ($j = $i + 1; $j -lt [Math]::Min($i + 8, $lines.Count); $j++) {
+                if ($lines[$j] -match '\$global:LASTEXITCODE\s*=\s*0') { $found = $true; break }
+            }
+            break
+        }
+    }
+    if (-not $found) { throw "No LASTEXITCODE reset found after first gh auth status call" }
+}
+
+Test-Scenario "EE-2: auth.ps1 resets LASTEXITCODE after first gh api user block" {
+    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\auth.ps1')
+    $found = $false
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match '& gh api user' -and -not $found) {
+            for ($j = $i + 1; $j -lt [Math]::Min($i + 8, $lines.Count); $j++) {
+                if ($lines[$j] -match '\$global:LASTEXITCODE\s*=\s*0') { $found = $true; break }
+            }
+            break
+        }
+    }
+    if (-not $found) { throw "No LASTEXITCODE reset found after first gh api user call" }
+}
+
+Test-Scenario "EE-3: auth.ps1 resets LASTEXITCODE after second gh auth status block" {
+    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\auth.ps1')
+    $hitCount = 0
+    $found = $false
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match '& gh auth status') {
+            $hitCount++
+            if ($hitCount -eq 2) {
+                for ($j = $i + 1; $j -lt [Math]::Min($i + 8, $lines.Count); $j++) {
+                    if ($lines[$j] -match '\$global:LASTEXITCODE\s*=\s*0') { $found = $true; break }
+                }
+                break
+            }
+        }
+    }
+    if (-not $found) { throw "No LASTEXITCODE reset found after second gh auth status call" }
+}
+
+Test-Scenario "EE-4: auth.ps1 resets LASTEXITCODE after second gh api user block" {
+    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\auth.ps1')
+    $hitCount = 0
+    $found = $false
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match '& gh api user') {
+            $hitCount++
+            if ($hitCount -eq 2) {
+                for ($j = $i + 1; $j -lt [Math]::Min($i + 8, $lines.Count); $j++) {
+                    if ($lines[$j] -match '\$global:LASTEXITCODE\s*=\s*0') { $found = $true; break }
+                }
+                break
+            }
+        }
+    }
+    if (-not $found) { throw "No LASTEXITCODE reset found after second gh api user call" }
+}
+
+Test-Scenario "EE-5: setup.ps1 resets LASTEXITCODE after git rev-parse in Install-GitHook" {
+    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1')
+    $found = $false
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match '& git rev-parse') {
+            for ($j = $i + 1; $j -lt [Math]::Min($i + 12, $lines.Count); $j++) {
+                if ($lines[$j] -match '\$global:LASTEXITCODE\s*=\s*0') { $found = $true; break }
+            }
+            break
+        }
+    }
+    if (-not $found) { throw "No LASTEXITCODE reset found after git rev-parse in Install-GitHook" }
 }
 
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 
 ## 2026-05-16 -- Hired
 
-Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl flagged in the Sprint Q retro. First fact-check assignment pending.
+Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl flagged in the Sprint 8-hotfix (formerly Sprint Q) retro. First fact-check assignment pending.
 
 ## Learnings
 
@@ -17,7 +17,7 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - **Auto-spawn trigger candidate for the squad:** spawn Doc on any PR that modifies `.squad/routing.md` to catch cross-file routing inconsistencies
 - Verdict: PROCEED. 13/14 claims PASS, 1 WARN (fixed in commit 2fa65e9 before merge)
 
-### 2026-05-16 -- Second verification: Sprint R batch fact-check (PRs #265-#269)
+### 2026-05-16 -- Second verification: Sprint 9 (formerly Sprint R) batch fact-check (PRs #265-#269)
 - 5-PR batch review: verified diffs against issue ACs, checked CI logs, investigated E2E failures to root cause
 - `set -euo pipefail` + bare glob expansion is a reliable failure pattern in bash: `ls "${target}.bak."*` exits non-zero when no files match, killing the script. Fix: `|| newest=''` on the assignment. Found in #269 uninstall.sh.
 - Windows CI runners have `core.autocrlf` active by default in fresh git repos. Byte-level tests (WriteAllBytes with non-ASCII) must set `git config core.autocrlf false` before staging or the bytes may be processed differently. Found in #267 X-1 failure.
@@ -27,7 +27,7 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - Recommended merge order: #266, #265, #268, #267 (after fix), #269 (after fix)
 - **Auto-spawn trigger candidates:** Doc on any PR touching uninstall scripts (set -e compatibility); Doc on any batch with 2+ PRs modifying the same test file (group-name collision); Doc on any multi-PR sprint adding to CHANGELOG [Unreleased] (predictable conflict)
 
-### 2026-05-16 -- Third verification: Sprint S batch fact-check (PRs #274-#279)
+### 2026-05-16 -- Third verification: Sprint 10 (formerly Sprint S) batch fact-check (PRs #274-#279)
 
 - 6-PR batch review across docs, .gitattributes, ASCII encoding, uninstall
   hooksPath, logging consolidation, squad-cli warning sentinels.
@@ -74,7 +74,7 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
   the pin to a real npm version. Verdict: BLOCK.
 - Always run `npm view "<pkg>@<version>" version` when a PR switches install mechanism
   to npm AND carries over an old version pin. Version semantics differ across registries.
-- Group letter DD: confirmed correct via Doc's own Sprint S history ("BB/CC intentionally
+- Group letter DD: confirmed correct via Doc's own Sprint 10 history ("BB/CC intentionally
   omitted for #275/#279"). Task prompt's claim "latest on develop is CC" was inaccurate;
   actual is AA. DD does not collide.
 - copilot.ps1 fallback: structural safety is acceptable; Write-Ok after fallback is
@@ -87,3 +87,19 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - Verdict: BLOCK (P0). Required fix: update copilot-cli pin to a real npm version.
   Everything else in the PR is clean.
 - Report written to .squad/decisions/inbox/doc-pr-282-fact-check.md.
+
+### 2026-05-20 -- Fifth verification: PR #308 sprint rename sweep fact-check
+
+- **Scope:** Full 9-lane audit of Mickey's Tier 3 sprint-naming rename sweep (21 files, ~170 refs).
+- **Lanes checked:**
+  - (A) Mapping consistency: All Q→8-hotfix, R→9, S→10, T→11 replacements verified correct. No cross-mappings.
+  - (B) Alias convention: `(formerly Sprint X)` format correct on all first-per-file occurrences. Subsequent uses correctly omit alias.
+  - (C) Filename renames: All 4 retro files renamed correctly. H1 headers include `(formerly Sprint X)` alias.
+  - (D) Orphan check: Zero orphan `Sprint [QRST]` refs. All grep matches are legitimate aliases or mapping tables.
+  - (E) Historical narrative: Sprint 8-hotfix retro line 3 preserves chronology ("P0 emergency batch fixed AFTER Sprint 8 wrap"). Scribe history unchanged in meaning. CHANGELOG narratives factually intact.
+  - (F) CHANGELOG version headers: 0.9.1 (Sprint 11) ✓, 0.9.0 (Sprint 9 + Sprint 10) ✓. 0.8.0 was missing `(formerly Sprint Q)` alias — fixed.
+  - (G) CONTRIBUTING Sprint Naming Convention: mapping table present + correct, Sprint 12 explicit, aliasing convention documented, hotfix-suffix rule preserved.
+  - (H) Issue #306: No stray "Sprint U" in body. Uses "Sprint 12" throughout. Acceptance criterion #8 references new naming.
+  - (I) Mickey's history entry: Date (2026-05-20), branch (`chore/sprint-naming-convention`), file count (21), mapping table, and Sprint 11 naming all correct.
+- **Fixes applied:** 1 minor — CHANGELOG 0.8.0 header: added `(formerly Sprint Q)` for consistency with 0.9.0 and 0.9.1 headers.
+- **Verdict:** Doc minor fixes pushed (1 issue). Confidence: Verified.

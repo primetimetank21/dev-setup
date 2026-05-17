@@ -99,6 +99,32 @@ Rationale: Verification-heavy work -- tracing claims, running counter-hypotheses
 - Always branch from `develop` before any commit: `git checkout -b squad/{slug}`
 - Never commit directly to `develop` or `main`
 - Standard squad branch naming: `squad/{slug}`
+- **Sprint-scoped history.md branch:** All `.squad/agents/doc/history.md` edits commit + push to `squad/doc-history-sprint-<N>` from the `..\dev-setup-doc` worktree (see "Where Doc writes history.md" below). NEVER commit history.md edits to a per-fact-check squad branch -- one fold PR per sprint, not one per fact-check.
+
+## Where Doc writes history.md
+
+> Source: `.squad/decisions/doc-and-jiminy-automation.md` (closes #289).
+
+Doc runs as a `general-purpose` subagent and inherits the Coordinator's CWD by default. Without an explicit CWD override, every `.squad/agents/doc/history.md` write lands as `M` on `develop` in the Coordinator's primary worktree, which is illegal (no agent commits directly to develop). The fix is a per-sprint dedicated worktree.
+
+**Sprint kickoff (one-time per sprint, owned by Coordinator):**
+
+```
+git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
+```
+
+**Every Doc spawn prompt (owned by Coordinator):** MUST begin with an explicit CWD directive pointing at `..\dev-setup-doc`. Doc's first action in every fact-check is to `Set-Location` (or `cd`) into that worktree before reading any files.
+
+**Every fact-check tail (owned by Doc):**
+
+1. Append the verification entry to `.squad/agents/doc/history.md` from inside the doc worktree.
+2. `git add .squad/agents/doc/history.md`
+3. `git commit -m "docs(doc): fact-check log for <artifact>"` (Conventional Commits; the commit-msg hook enforces format)
+4. `git push origin squad/doc-history-sprint-<N>`
+
+**Sprint wrap (owned by Coordinator, see `ceremonies.md` -> Sprint Wrap):** Open ONE fold PR from `squad/doc-history-sprint-<N>` into `develop`. Mickey reviews + approves. One fold PR per sprint, not per fact-check.
+
+**If the kickoff worktree is missing:** Doc reports the gap and stops. The Coordinator MUST create the worktree before re-spawning. Falling back to "write to develop in the primary worktree" is the Sprint 10 (formerly Sprint S) anti-pattern and is no longer permitted.
 
 ## Collaboration
 
@@ -109,6 +135,6 @@ Rationale: Verification-heavy work -- tracing claims, running counter-hypotheses
 
 ## Charter version
 
-v1 -- created 2026-05-16 by Mickey (Lead) per Earl's request after Sprint Q retro.
+v1 -- created 2026-05-16 by Mickey (Lead) per Earl's request after Sprint 8-hotfix (formerly Sprint Q) retro.
 
 Addresses the verifier/validator gap Earl flagged: "having to double/triple check this often is tiring :/".

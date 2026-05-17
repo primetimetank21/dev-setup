@@ -31,7 +31,7 @@ function Test-WingetAvailable {
 . "$PSScriptRoot\tools\squad-cli.ps1"
 . "$PSScriptRoot\tools\dotfiles.ps1"
 . "$PSScriptRoot\tools\profile.ps1"
-. "$PSScriptRoot\auth.ps1"
+. "$PSScriptRoot\tools\auth.ps1"
 
 function Install-GitHook {
     Write-Info "Configuring git hooks..."
@@ -42,6 +42,7 @@ function Install-GitHook {
     } else {
         Write-Warn "Not inside a git repo - skipping hooks config"
     }
+    $global:LASTEXITCODE = 0
 }
 
 function Main {

@@ -1,7 +1,7 @@
-# Sprint S Retro -- 2026-05-17
+# Sprint 10 (formerly Sprint S) Retro -- 2026-05-17
 
-Sprint S folded the Sprint R action items into the codebase and tackled the
-HYGIENE backlog that Sprint Q bumped to P0/P1. Ten PRs (#274-#283) merged.
+Sprint 10 folded the Sprint 9 (formerly Sprint R) action items into the codebase and tackled the
+HYGIENE backlog that Sprint 8-hotfix (formerly Sprint Q) bumped to P0/P1. Ten PRs (#274-#283) merged.
 Doc's batch fact-check caught 2 real bugs pre-merge (the `--global` /
 `$LASTEXITCODE` interaction in #277 and a wrong-npm-package pin in #282), and
 the version-pin anti-pattern that produced the original #255 squad-cli warning
@@ -11,14 +11,14 @@ was codified into a new skill.
 
 | PR  | Owner       | One-liner                                                                                       |
 |-----|-------------|-------------------------------------------------------------------------------------------------|
-| #274 | Mickey     | Sprint R retro action items: Ralph develop-commit ban, Group letter SOP, CHANGELOG strategy doc |
+| #274 | Mickey     | Sprint 9 retro action items: Ralph develop-commit ban, Group letter SOP, CHANGELOG strategy doc |
 | #275 | Pluto      | `.gitattributes` CRLF rule for `*.ps1` / `*.psm1` / `*.psd1` (closes #231)                      |
 | #276 | Goofy      | `-Encoding ASCII` migration across `scripts/windows/**.ps1` + Group Z tests (closes #234)       |
 | #277 | Pluto      | `uninstall` core.hooksPath fix: drop `--global`, reset `$LASTEXITCODE`, use `log_ok` (closes #271) |
 | #278 | Donald     | Logging consolidation in `setup.sh` + `uninstall.sh` -- `log_ok` helper (closes #223)           |
 | #279 | Chip       | #255 squad-cli persistence-warning regression sentinel + YAML single-quote escape fix; Group T10/T11 |
 | #280 | Jiminy     | `.gitignore *.tgz` + Coordinator-must-invoke-Jiminy SOP after every 3+ agent batch              |
-| #281 | Coordinator | Doc history fold #1 -- Sprint S 6-PR batch fact-check entry into `doc/history.md`              |
+| #281 | Coordinator | Doc history fold #1 -- Sprint 10 6-PR batch fact-check entry into `doc/history.md`              |
 | #282 | Goofy      | Tool-version pin sweep: squad-cli 0.9.4, copilot-cli 1.0.48, gh 2.92.0 + `tool-version-pin` skill |
 | #283 | Coordinator | Doc history fold #2 -- PR #282 fact-check entry into `doc/history.md`                          |
 
@@ -38,8 +38,8 @@ was codified into a new skill.
   Version Pin Enforcement" section. `.tool-versions` is now actually honored
   by both Linux and Windows installers via `scripts/lib/read-tool-version.sh`
   + `Read-ToolVersion.ps1`.
-- **Sprint R action items shipped as a single docs-only PR.** PR #274 cleared
-  three Sprint R retro items (Ralph develop-commit ban, Group letter SOP,
+- **Sprint 9 action items shipped as a single docs-only PR.** PR #274 cleared
+  three Sprint 9 retro items (Ralph develop-commit ban, Group letter SOP,
   CHANGELOG conflict strategy) in 42 LOC. Retro -> action -> code loop closed
   in one sprint.
 - **Jiminy auto-trigger gap closed mid-sprint.** Earl flagged that Coordinator
@@ -81,7 +81,7 @@ was codified into a new skill.
   `tests/test_windows_setup.ps1` (X, Y, Z, AA, ...) AND
   `tests/test_precommit_hygiene.sh` (T1, T2, ...).
 - **Jiminy dispatch was manual.** Coordinator forgot to invoke Jiminy after
-  the first 3-agent batch (Pluto/Goofy/Donald early in Sprint S), leaving
+  the first 3-agent batch (Pluto/Goofy/Donald early in Sprint 10), leaving
   dirty develop. The SOP added in #280 fixes this going forward, but the
   trigger is still operator-enforced rather than auto.
 - **Doc subagent worktree pattern is high-friction.** Doc runs as a
@@ -163,8 +163,8 @@ Recommended merge order honored: #274, #275, #276, #278, #277 (post-fix),
   is now a standing pattern; Coordinator should auto-spawn Doc on any PR
   matching: tool pins, install scripts, `set -euo pipefail` shell, or
   cross-platform parity changes.
-- **Test-group letters need sprint-plan-time reservation.** Sprint R had a
-  Group X collision; Sprint S had a Group T collision. The #274 SOP
+- **Test-group letters need sprint-plan-time reservation.** Sprint 9 had a
+  Group X collision; Sprint 10 had a Group T collision. The #274 SOP
   reserves at PR-open time, which is too late when 2+ agents are in flight
   simultaneously. Coordinator must reserve at spawn time.
 - **Coordinator dispatch SOPs need auto-enforcement.** The Jiminy "invoke
@@ -172,7 +172,7 @@ Recommended merge order honored: #274, #275, #276, #278, #277 (post-fix),
   exists (#280); next step is either a checklist gate in the spawn skill
   or a process-level reminder.
 
-## Action Items (Sprint T)
+## Action Items (Sprint 11 (formerly Sprint T))
 
 - **[Coordinator] Pre-assign test-group letters at sprint plan time.** Both
   `tests/test_windows_setup.ps1` (Groups A..ZZ) and
@@ -192,7 +192,7 @@ Recommended merge order honored: #274, #275, #276, #278, #277 (post-fix),
   start so all his writes accumulate on one branch and fold in a single PR.
   Two PRs per sprint (#281 + #283) is unsustainable as Doc's review
   cadence grows.
-- **[Ralph] EOS sweep for Sprint S.** Six stale remote `squad/*` branches
+- **[Ralph] EOS sweep for Sprint 10.** Six stale remote `squad/*` branches
   survive post-merge (per Jiminy's end-of-sprint audit in
   `jiminy/history.md`): `223-logging-consolidation`, `231-ps1-gitattributes`,
   `234-ps1-ascii-encoding`, `255-squad-cli-warning`, `255-tool-version-pins`,
@@ -212,7 +212,7 @@ Recommended merge order honored: #274, #275, #276, #278, #277 (post-fix),
 - **Agents dispatched:** 9 -- Mickey (#274), Pluto (#275 + #277), Goofy
   (#276 + #282), Donald (#278), Chip (#279), Jiminy (#280), Coordinator
   (#281 + #283), Doc (batch fact-check on #274-#279, deep-dive on #282).
-- **Lines changed (develop @ Sprint R wrap -> develop @ 6e8995a):**
+- **Lines changed (develop @ Sprint 9 wrap -> develop @ 6e8995a):**
   28 files changed, 1,165 insertions, 126 deletions.
 - **Real bugs caught pre-merge by Doc:** 2 (#277 scope/`$LASTEXITCODE`
   combo; #282 nonexistent npm package).
@@ -224,14 +224,14 @@ Recommended merge order honored: #274, #275, #276, #278, #277 (post-fix),
 - **Decisions inbox drained:** 2 (`doc-sprint-s-batch-fact-check.md`,
   `doc-pr-282-fact-check.md`) -- both already folded into
   `doc/history.md` via #281 + #283.
-- **History.md fold PRs:** 2 (#281 Doc Sprint S batch; #283 Doc PR #282
+- **History.md fold PRs:** 2 (#281 Doc Sprint 10 batch; #283 Doc PR #282
   deep-dive). Scribe drain PR (this one) folds Jiminy + Mickey backfill.
 - **Stale branches awaiting EOS sweep:** 6 remote `squad/*` (per Jiminy
   end-of-sprint audit) + 2 Doc-fold branches + this retro branch.
 
 ## Reflection
 
-Sprint S was the first sprint where the squad's quality gates -- Doc's
+Sprint 10 was the first sprint where the squad's quality gates -- Doc's
 batch fact-check, Jiminy's hygiene audits, the pre-commit hooks, the
 Group-letter SOP, the CHANGELOG strategy -- all ran simultaneously across
 ten PRs. The gates held. Two real bugs caught pre-merge, zero post-merge
@@ -248,10 +248,30 @@ not need to rediscover the lesson.
 
 The friction points -- inter-PR function-rename collision, test-group
 letter collision, Doc worktree dirty state -- are all coordination
-problems, not technical ones. They are addressable in Sprint T's spawn
+problems, not technical ones. They are addressable in Sprint 11's spawn
 checklist without code changes.
 
 **Board status:** develop @ `6e8995a`, working tree clean except this
 retro branch. 10 PRs merged, 2 inbox files drained, 1 retro authored, 2
 agent history.md files brought up to date. Ready for Ralph's EOS sweep
-and Sprint T.
+and Sprint 11.
+
+## Action Items Closed (post-0.9.0)
+
+Following the 0.9.0 release, Sprint 10 retro action items were closed in a mini-batch:
+
+| Action item | Resolution |
+|---|---|
+| Author `pwsh-lastexitcode` skill | PR #291 (closes #288) -- skill + CONTRIBUTING section + audit of `scripts/windows/` |
+| Decide Doc subagent worktree pattern | PR #293 (closes #289) -- Option B: dedicated `..\dev-setup-doc` worktree on per-sprint `squad/doc-history-sprint-<N>` branch |
+| Auto-enforce Jiminy post-batch dispatch | PR #293 (closes #290) -- Option A: 3-surface checklist (charter + loop.md + ceremonies.md) |
+
+### Spillover into Sprint 11
+
+- **Issue #292** -- 5 unmitigated `$LASTEXITCODE` sites in `scripts/windows/setup.ps1` + `auth.ps1` (surfaced by #291 audit; assigned to Goofy, P2)
+- All other action items closed.
+
+### Verification
+- [ ] Sprint 11's first multi-agent batch will exercise the new Jiminy auto-dispatch gate
+- [ ] Sprint 11's first Doc fact-check will exercise the new dedicated-worktree pattern
+- [ ] Issue #292 will be picked up in Sprint 11 triage

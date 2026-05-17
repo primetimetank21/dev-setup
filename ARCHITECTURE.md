@@ -1,7 +1,7 @@
 # Architecture: dev-setup
 
 > **Owner:** Mickey (Lead) — Issue #3  
-> **Last updated:** 2026-04-07
+> **Last updated:** 2026-05-19 (Sprint 11 (formerly Sprint T) refresh — closes #229)
 
 ---
 
@@ -21,36 +21,52 @@ Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk aw
 
 ```
 dev-setup/
-├── setup.sh                        # Entry point — Unix (Linux / macOS / WSL)
-├── setup.ps1                       # Entry point — Windows (PowerShell)
+├── setup.sh                        # Entry point — Unix (Linux / macOS / WSL); thin router
+├── setup.ps1                       # Entry point — Windows (PowerShell); thin router
+├── .tool-versions                  # asdf-style pinned versions (node, nvm, uv, gh, copilot-cli, squad-cli)
+├── .gitattributes                  # eol=lf for *.sh / *.md / *.yml; eol=crlf for *.ps1 / *.psm1 / *.psd1 (#231)
 ├── ARCHITECTURE.md                 # This file
 ├── CHANGELOG.md                    # Keep-a-Changelog format
 ├── CONTRIBUTING.md                 # Contribution guide
 ├── README.md                       # Project overview and quick start
 │
 ├── scripts/
+│   ├── lib/                        # Cross-platform shared libraries (PS + sh)
+│   │   ├── Read-ToolVersion.ps1   # Get-ToolVersion -Name X — reads pin from .tool-versions
+│   │   └── read-tool-version.sh   # Same contract for POSIX shells (prints version to stdout)
+│   │
 │   ├── linux/
-│   │   ├── setup.sh               # Core Linux/macOS/WSL installer (Donald)
-│   │   └── tools/                  # Individual tool scripts, run by core
+│   │   ├── setup.sh               # Core Linux/macOS/WSL installer (Donald) — runs tools in order
+│   │   ├── uninstall.sh           # Idempotent reverse of the installer
+│   │   ├── lib/
+│   │   │   └── log.sh             # Shared log_info / log_ok / log_warn / log_error helpers
+│   │   └── tools/                  # Per-tool installers (sourced by core in dependency order)
 │   │       ├── auth.sh            # GitHub CLI authentication (interactive)
-│   │       ├── copilot-cli.sh     # Install GitHub Copilot CLI
-│   │       ├── gh.sh             # Install GitHub CLI
-│   │       ├── nvm.sh            # Install nvm + Node LTS
-│   │       ├── squad-cli.sh      # Install squad-cli (npm)
-│   │       ├── uv.sh             # Install uv Python package manager
-│   │       └── zsh.sh            # Install zsh + set as default shell
+│   │       ├── copilot-cli.sh     # Install GitHub Copilot CLI (pin from .tool-versions)
+│   │       ├── gh.sh              # Install GitHub CLI (pin from .tool-versions)
+│   │       ├── nvm.sh             # Install nvm + Node (pin from .tool-versions)
+│   │       ├── squad-cli.sh       # Install squad-cli (npm; pin from .tool-versions)
+│   │       ├── uv.sh              # Install uv Python package manager (pin from .tool-versions)
+│   │       └── zsh.sh             # Install zsh + set as default shell
+│   │
 │   └── windows/
-│       ├── setup.ps1              # Orchestrator — dot-sources tool scripts below
-│       └── tools/                  # Per-tool install scripts (PR #195 split)
-│           ├── copilot.ps1        # GitHub Copilot CLI
-│           ├── gh.ps1            # GitHub CLI
-│           ├── git.ps1           # Git configuration
-│           ├── nvm.ps1           # nvm + Node LTS
-│           ├── profile.ps1       # PowerShell profile injection
-│           ├── psmux.ps1         # psmux terminal multiplexer
-│           ├── squad-cli.ps1     # squad-cli (npm)
-│           ├── uv.ps1            # uv Python package manager
-│           └── vim.ps1           # Vim editor
+│       ├── setup.ps1              # Orchestrator — dot-sources lib + tool modules below
+│       ├── auth.ps1               # GitHub CLI authentication (interactive)
+│       ├── uninstall.ps1          # Idempotent reverse of the installer
+│       ├── lib/
+│       │   ├── logging.ps1        # Write-Info / Write-Ok / Write-Warn / Write-Err + Assert-LastExit
+│       │   └── path.ps1           # Refresh-SessionPath — re-reads Machine+User PATH from registry
+│       └── tools/                  # Per-tool installers (orchestrator + 10 modules; PR #195 split)
+│           ├── copilot.ps1        # GitHub Copilot CLI (pin from .tool-versions)
+│           ├── dotfiles.ps1       # Apply config/dotfiles/ on Windows
+│           ├── gh.ps1             # GitHub CLI (pin from .tool-versions)
+│           ├── git.ps1            # Git configuration
+│           ├── nvm.ps1            # nvm-windows + Node (pin from .tool-versions)
+│           ├── profile.ps1        # PowerShell profile injection (PS 5.1 + PS 7+ paths)
+│           ├── psmux.ps1          # psmux terminal multiplexer (Windows tmux alias)
+│           ├── squad-cli.ps1      # squad-cli (npm; pin from .tool-versions)
+│           ├── uv.ps1             # uv Python package manager (pin from .tool-versions)
+│           └── vim.ps1            # Vim editor
 │
 ├── config/
 │   └── dotfiles/                   # Dotfile templates (Pluto #8, #10, #11)
@@ -63,17 +79,23 @@ dev-setup/
 │       ├── install.sh             # Dotfile installer script
 │       └── README.md              # Documents each dotfile and install behaviour
 │
-├── hooks/
-│   ├── commit-msg                 # Enforce Conventional Commits format
-│   ├── pre-commit                 # Shellcheck on staged .sh files
-│   └── pre-push                   # Block pushes to main; advisory linting
+├── hooks/                          # Git hooks; auto-wired via `git config core.hooksPath hooks`
+│   ├── pre-commit                 # Branch ancestry + ASCII *.ps1 guard + .squad path allow-list + shellcheck
+│   ├── prepare-commit-msg         # Rewrite auto-merge/revert messages into Conventional Commits form (#212)
+│   ├── commit-msg                 # Enforce Conventional Commits format (hard reject on non-conforming)
+│   └── pre-push                   # Block direct pushes to main; advisory shellcheck + PSScriptAnalyzer
 │
 ├── tests/                          # Validation tests
 │   ├── README.md                  # Test documentation
+│   ├── test_alias_parity.sh       # Linux/Windows alias parity test
 │   ├── test_aliases.sh            # Alias loading tests (bash)
 │   ├── test_git_hooks.ps1         # Git hook tests (PowerShell)
 │   ├── test_idempotency.sh        # Idempotency tests (bash)
+│   ├── test_nvm_bootstrap.sh      # nvm bootstrap tests
+│   ├── test_precommit_hygiene.sh  # pre-commit hygiene checks (ancestry, ASCII, rogue-path)
 │   ├── test_remove_custom_item.ps1 # Custom item removal tests (PowerShell)
+│   ├── test_shared_logging.sh     # scripts/linux/lib/log.sh contract tests
+│   ├── test_tool_versions.sh      # .tool-versions parser + Get-ToolVersion contract tests
 │   └── test_windows_setup.ps1     # Windows setup tests (PowerShell)
 │
 ├── .devcontainer/
@@ -81,14 +103,28 @@ dev-setup/
 │   └── README.md                  # Dev container documentation
 │
 ├── .github/
-│   └── workflows/                  # CI and squad automation (Chip)
-│       ├── squad-heartbeat.yml
-│       ├── squad-issue-assign.yml
-│       ├── squad-triage.yml
-│       ├── sync-squad-labels.yml
-│       └── validate.yml           # Main CI validation
+│   └── workflows/                  # CI + squad automation (Chip) — see "CI Workflows" below
+│       ├── validate.yml           # Main CI validation (6 jobs)
+│       ├── e2e-install.yml        # E2E smoke test on fresh runners (PR + nightly cron + summary)
+│       ├── squad-heartbeat.yml    # Ralph — reacts to issue/PR events to keep the loop alive
+│       ├── squad-history-check.yml # Enforce agent history.md updates on squad:* PRs
+│       ├── squad-issue-assign.yml # Trigger work when squad:{member} label applied
+│       ├── squad-label-enforce.yml # Mutual exclusivity for managed label namespaces
+│       ├── squad-triage.yml       # Triage flow when bare `squad` label applied
+│       └── sync-squad-labels.yml  # Sync label set from .squad/team.md roster
 │
-└── .squad/                         # Internal squad coordination (not shipped)
+└── .squad/                         # Squad coordination (most subdirs are not "shipped" via npm; see CONTRIBUTING.md)
+    ├── agents/                    # charter.md + history.md per agent (see Squad Roster)
+    ├── skills/                    # Reusable SKILL.md library (tool-version-pin, pwsh-lastexitcode, ...)
+    ├── decisions/                 # Canonical permanent decision records (committed)
+    │   └── inbox/                 # Per-agent decision drafts (gitignored)
+    ├── retros/                    # Sprint retrospectives
+    ├── templates/                 # loop.md, ceremonies.md, agent + workflow templates
+    ├── orchestration-log/         # Per-sprint orchestration logs (union-merge)
+    ├── team.md                    # Squad roster definition (drives sync-squad-labels.yml)
+    ├── routing.md                 # Issue → agent routing rules
+    ├── ceremonies.md              # Sprint ceremony cadence
+    └── decisions.md               # Append-only decisions log (union-merge)
 ```
 
 ---
@@ -118,7 +154,7 @@ The **only file a Windows user needs to know about**. It:
 1. Detects the platform via PowerShell's `$IsWindows` / `$IsLinux` / `$IsMacOS`
 2. Delegates to `scripts\windows\setup.ps1`
 
-`scripts\windows\setup.ps1` is a ~75-line orchestrator that dot-sources individual tool scripts from `scripts\windows\tools\` (split from a monolith in PR #195).
+`scripts\windows\setup.ps1` is a small orchestrator that dot-sources shared libraries (`lib\logging.ps1`, `lib\path.ps1`) and per-tool installers from `scripts\windows\tools\` (split from a 451-line monolith in PR #195 into an orchestrator + 10 per-tool modules + a `lib/` of shared helpers).
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File setup.ps1
@@ -242,13 +278,111 @@ This means running `bash setup.sh` on a fully-configured machine is a no-op.
 
 ---
 
+## Tool Version Pinning (`.tool-versions`)
+
+Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) file (asdf-style: `name<space>version`, one per line). Both the Linux and Windows installers read pins through a shared library so the same version is installed across all platforms:
+
+- `scripts/lib/Read-ToolVersion.ps1` — exposes `Get-ToolVersion -Name <toolname>` (PowerShell)
+- `scripts/lib/read-tool-version.sh` — same contract for POSIX shells (prints to stdout)
+
+Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `uv`, `copilot-cli`, `squad-cli`, `gh`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/uv.sh`) call the library at install time so version bumps are a single-file edit. See `.squad/skills/tool-version-pin/SKILL.md` for the pattern.
+
+Companion skill: `.squad/skills/pwsh-lastexitcode/SKILL.md` — the `$LASTEXITCODE = 0` reset pattern required when chaining native commands across pwsh `&` script-call boundaries (CI gating discipline).
+
+---
+
+## Git Hooks
+
+Hooks live in [`hooks/`](./hooks) and are wired automatically by the installers via `git config core.hooksPath hooks` (no manual install step). Four hooks ship today:
+
+| Hook | Role |
+|------|------|
+| `pre-commit` | Branch-ancestry guard (`squad/*` must descend from `develop`), ASCII-only enforcement for staged `*.ps1`, `.squad/` path allow-list (incl. `decisions/*.md`, `retros/*.md`, and `templates/*.template`), refusal to commit on `develop`/`main`/`master`, shellcheck on staged `*.sh` |
+| `prepare-commit-msg` | Rewrites git auto-generated `Merge ...` and `Revert "..."` messages into Conventional Commits form so `commit-msg` accepts them (added in #212) |
+| `commit-msg` | Enforces Conventional Commits format (`type(scope): description`). Hard reject on non-conforming. |
+| `pre-push` | Blocks direct pushes to `main`; runs shellcheck on changed `*.sh` (advisory) and PSScriptAnalyzer on changed `*.ps1` (advisory) |
+
+The pre-commit allow-list is the canonical source of truth for which paths under `.squad/` may be staged. See `hooks/pre-commit` Check 3 for the full table.
+
+---
+
+## CI Workflows
+
+All workflows live in [`.github/workflows/`](./.github/workflows). Owned by Chip.
+
+### `validate.yml` — main CI gate (6 jobs)
+
+| Job | Runner | Purpose |
+|-----|--------|---------|
+| `validate-linux` | `ubuntu-latest` | Run `setup.sh`, assert zsh/uv/nvm/node/gh, idempotency re-run, alias unit + parity tests |
+| `validate-macos` | `macos-latest` | Same shape as `validate-linux` + tool-version pin tests (added Sprint 10 (formerly Sprint S)) |
+| `lint-shell-scripts` | `ubuntu-latest` | shellcheck across `setup.sh`, `scripts/linux/**`, `config/dotfiles/.aliases` |
+| `lint-powershell` | `ubuntu-latest` (pwsh) | PSScriptAnalyzer across `setup.ps1` + `scripts/windows/setup.ps1` |
+| `validate-powershell` | `windows-latest` | `Remove-CustomItem` regression + git-hooks tests under PS 7 |
+| `validate-ps51` | `windows-latest` | Syntax + PSScriptAnalyzer + profile-write + git-hooks tests under **PS 5.1** (Windows stock) |
+
+### `e2e-install.yml` — end-to-end smoke test (4 jobs, PR + nightly cron)
+
+| Job | Runner | Purpose |
+|-----|--------|---------|
+| `e2e-linux` | `ubuntu-latest` | Run `setup.sh` on a fresh runner; assert every tool is reachable from a login shell; `squad --version` regression for `session persistence may fail` warning (#255) |
+| `e2e-macos` | `macos-latest` | Same shape as `e2e-linux` |
+| `e2e-windows` | `windows-latest` | Run `setup.ps1`; PowerShell + winget path |
+| `summary` | `ubuntu-latest` | Aggregates the three platform results (`needs: [...]`, `if: always()`) and fails the workflow if any platform failed (added in #253) |
+
+Initially `continue-on-error: true` per platform job; the `summary` job is the single fail-gate. Triggers: `pull_request`, nightly `cron: 0 4 * * *`, and `workflow_dispatch`.
+
+### Squad automation (Chip + Ralph)
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `squad-heartbeat.yml` | `issues` (closed/labeled), `pull_request` (closed), manual | Ralph — react to completed work / new squad work to keep the loop alive |
+| `squad-history-check.yml` | `pull_request` to `develop`/`main` | Enforce `agents/{name}/history.md` updates when a `squad:*` label is present |
+| `squad-issue-assign.yml` | `issues` (labeled with `squad:{member}`) | Drop the "Assigned to {Member}" instructional comment |
+| `squad-label-enforce.yml` | `issues` (labeled) | Enforce mutual exclusivity for `go:`, `release:`, `type:`, `priority:` namespaces |
+| `squad-triage.yml` | `issues` (labeled `squad`) | Lead-agent triage on bare `squad` label |
+| `sync-squad-labels.yml` | push to `.squad/team.md`, manual | Sync GitHub labels to match the roster |
+
+---
+
+## Squad Roster
+
+The squad lives under [`.squad/agents/`](./.squad/agents) — each agent owns a directory with `charter.md` (identity, boundaries, voice) and `history.md` (append-only work log).
+
+**Core engineering agents (own code / tests / config):**
+
+| Agent | Role | Owns |
+|-------|------|------|
+| Mickey | Lead | Architecture, code review, scope decisions, triage |
+| Donald | Linux/macOS engineer | `scripts/linux/`, POSIX tool installers |
+| Goofy | Windows engineer | `scripts/windows/`, hooks |
+| Chip | Test / CI engineer | `tests/`, `.github/workflows/`, `.devcontainer/` |
+| Pluto | Dotfiles & shell config | `config/dotfiles/` |
+
+**Role-based agents (own process / quality / history):**
+
+| Agent | Role | Trigger |
+|-------|------|---------|
+| Doc | Fact-checker | review/verify/fact-check/audit keywords; writes from a dedicated worktree per sprint (see `.squad/decisions/doc-and-jiminy-automation.md`) |
+| Jiminy | Conscience / auditor | post-batch audit gate after multi-agent batches (≥3 agents); enforced by `.squad/templates/loop.md` and `.squad/templates/ceremonies.md` |
+| Scribe | History & changelog steward | Sprint wrap fold of `history.md` and `CHANGELOG.md` curation |
+| Ralph | Heartbeat | Runs as `squad-heartbeat.yml` workflow on issue/PR events; not a human-facing agent |
+
+Permanent cross-agent decisions live in `.squad/decisions/*.md` (e.g., `doc-and-jiminy-automation.md`, `mickey-architecture-entry-point.md`, `pluto-dotfiles.md`). Drafts land in `.squad/decisions/inbox/` (gitignored) before being promoted.
+
+---
+
 ## Team Ownership Map
 
 | Path | Owner | Issue(s) |
 |------|-------|----------|
 | `setup.sh` (root) | Mickey | #3 |
 | `setup.ps1` (root) | Mickey | #3 |
+| `.tool-versions` | Mickey | Sprint 10 |
+| `scripts/lib/` | Mickey | Sprint 10 |
 | `scripts/linux/setup.sh` | Donald | #1 |
+| `scripts/linux/lib/log.sh` | Donald | — |
+| `scripts/linux/uninstall.sh` | Donald | — |
 | `scripts/linux/tools/auth.sh` | Donald | #9 |
 | `scripts/linux/tools/zsh.sh` | Donald | #4 |
 | `scripts/linux/tools/uv.sh` | Donald | #5 |
@@ -256,12 +390,19 @@ This means running `bash setup.sh` on a fully-configured machine is a no-op.
 | `scripts/linux/tools/gh.sh` | Donald | #7 |
 | `scripts/linux/tools/copilot-cli.sh` | Donald | #7 |
 | `scripts/linux/tools/squad-cli.sh` | Donald | — |
-| `scripts/windows/setup.ps1` | Goofy | #2 |
+| `scripts/windows/setup.ps1` | Goofy | #2, #195 |
+| `scripts/windows/lib/` | Goofy | #195 |
 | `scripts/windows/tools/` | Goofy | #195 |
+| `scripts/windows/auth.ps1` | Goofy | #2 |
+| `scripts/windows/uninstall.ps1` | Goofy | — |
 | `hooks/pre-commit` | Goofy | #138 |
+| `hooks/prepare-commit-msg` | Goofy | #212 |
 | `hooks/commit-msg` | Goofy | #138 |
 | `hooks/pre-push` | Goofy | #138, #147 |
 | `tests/` | Chip | — |
 | `config/dotfiles/` | Pluto | #8, #10, #11 |
 | `.devcontainer/` | Chip | — |
-| `.github/workflows/` | Chip | #12, #13 |
+| `.github/workflows/` | Chip | #12, #13, #253 |
+| `.squad/agents/` | Each agent owns their own directory | — |
+| `.squad/skills/` | Authoring agent (Mickey reviews) | — |
+| `.squad/decisions/` | Mickey (curator) | — |

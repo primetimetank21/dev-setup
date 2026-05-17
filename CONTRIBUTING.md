@@ -177,6 +177,14 @@ Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
 
 The hook auto-detects `pwsh` and the module. If either is absent, the check is silently skipped.
 
+### Why is PSSA advisory in `pre-push`?
+
+PSSA findings warn but never block local pushes. The hook intentionally exits 0 even when PSSA reports issues. Three reasons:
+
+1. **Availability gap.** Not every contributor host has `pwsh` + the PSScriptAnalyzer module installed (e.g., Linux/macOS without PowerShell Core, or Windows boxes without PSGallery network access). Blocking would punish hosts that simply lack the tool.
+2. **Subjective rules.** Many PSSA rules (`PSAvoidUsingWriteHost`, `PSUseSingularNouns`, etc.) are style preferences, not bugs. CI -- not the developer's machine -- is the right gate for those.
+3. **Out of scope to harden.** Making PSSA blocking locally would require pinning a module version and curating a cmdlet allowlist. That work is deferred; if you need strict local linting today, run `Invoke-ScriptAnalyzer` manually before pushing. The inline comment block at the top of the PSSA section in `hooks/pre-push` records this intent so the `|| true` is not "fixed" away.
+
 ---
 
 ## Direct-Push Override Policy
@@ -253,10 +261,63 @@ Or list all active worktrees with `git worktree list`.
 Behavioral tests in `tests/test_windows_setup.ps1` are organized by alphabetic groups
 (Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel agents may extend this
 file in the same sprint, the **coordinator pre-assigns Group letters in each spawn prompt**
-to prevent collisions. Sprint R example: Chip #267 picked "Group X" independently while
+to prevent collisions. Sprint 9 (formerly Sprint R) example: Chip #267 picked "Group X" independently while
 Goofy #268 also picked "Group X" - required a manual rename to Group Y during rebase.
 Going forward, the coordinator's spawn checklist includes Group letter assignment for any
 agent that may add tests to this file.
+
+---
+
+## Sprint Naming Convention
+
+Sprints use **numeric naming** (Sprint 1, Sprint 2, ...).
+
+### Historical mapping (letters -> numbers)
+
+| Old (letter) | New (number) | Reason |
+|---|---|---|
+| Sprint Q | **Sprint 8-hotfix** | P0 emergency batch fixed AFTER Sprint 8 wrap but BEFORE 0.8.0 ship; #249, #251, #252. Shipped inside 0.8.0. |
+| Sprint R | **Sprint 9** | Hygiene backlog sprint, post-0.8.0. |
+| Sprint S | **Sprint 10** | Tool-version pin sweep sprint. |
+| Sprint T | **Sprint 11** | ARCHITECTURE refresh + auth.ps1 move + PSSA advisory + LASTEXITCODE hardening. |
+
+Next sprint = **Sprint 12** (was going to be Sprint U).
+
+### Aliasing convention
+
+First-occurrence-per-file mentions of old names include a `(formerly Sprint X)` parenthetical
+for grep continuity. Subsequent occurrences in the same file use the new numeric name alone.
+This preserves searchability for anyone referencing old PR titles, commit messages, or external
+docs that used the letter names.
+
+### History
+
+- **Sprints 1-7** -- numbered, each shipped its own version (0.1.0 - 0.7.0). CHANGELOG headers
+  used the suffix `-- Sprint N: name`.
+- **Sprint 8** -- gap audit / Windows setup refactor (PR #195 et al). Folded into 0.8.0 alongside Sprint 8-hotfix.
+- **Sprint 8-hotfix (formerly Sprint Q)** -- emergency hotfix batch fixed AFTER Sprint 8 wrap but BEFORE 0.8.0 ship.
+  Three P0 install regressions (#249, #251, #252). Got the letter "Q" because it was an
+  out-of-cadence quality/hotfix interjection.
+- **Sprint 9 (formerly Sprint R), Sprint 10 (formerly Sprint S), Sprint 11 (formerly Sprint T)** --
+  continued the letter scheme instead of switching back to numbers. With only 26 letters in
+  the alphabet and 4 already used in 2 weeks, the letter scheme isn't sustainable.
+  Reverting to numbers (decision: 0.9.1 release wrap, Earl-driven).
+
+### Convention going forward
+
+- Next sprint after Sprint 11 = **Sprint 12** (NOT Sprint U).
+- CHANGELOG release headers MUST include `-- Sprint N: short-name` suffix (matches the 0.1.0-0.7.0 pattern).
+- Retro file naming: `.squad/retros/YYYY-MM-DD-sprint-N-retro.md` (numeric).
+- Retro files renamed to numeric (e.g., `2026-05-16-sprint-8-hotfix-retro.md`).
+- Out-of-cadence hotfix sprints (a la Sprint 8-hotfix) get a `-hotfix` suffix in retro filename:
+  `.squad/retros/YYYY-MM-DD-sprint-N-hotfix-retro.md` -- the version header attribution stays
+  on the numeric parent (e.g., `Sprint 8 + Sprint 8-hotfix`).
+
+### Why this matters
+
+The letter scheme caused real confusion: Sprint 8 silently vanished from CHANGELOG headers
+between 0.7.0 and 0.8.0, and the alphabet runs out. Numbers are unbounded and consistent
+with the established 1-7 history.
 
 ---
 
@@ -326,4 +387,87 @@ pinning is required.
 Homebrew does not publish versioned formulae for tools like `gh`. On macOS, accept
 the latest brew version, compare against the pin, and log a WARN if they differ.
 macOS is a secondary target; version drift is tolerated with visibility.
+
+---
+
+## PowerShell Exit Code Discipline
+
+`$LASTEXITCODE` leaks across PowerShell `&` script-call boundaries. When a
+Windows script ends with an *expected-failure* native command (e.g.,
+`git config --unset-all <key>` exiting `5` because the key was never set), the
+caller -- including the GitHub Actions `pwsh` step wrapper -- sees the non-zero
+code and fails the step even though the script logically succeeded.
+
+### Canonical expected-failure sites
+
+- `git config --unset` / `--unset-all <key>` (exits `5` when key absent)
+- `git rev-parse --git-dir` outside a git repo (exits `128`)
+- `gh auth status` when not authenticated (exits `1`)
+- `gh api <path>` for a missing resource (exits `1` on 404)
+- `npm uninstall -g <pkg>` for an uninstalled package (exits `1`)
+- `winget uninstall <id>` for a missing package (non-zero)
+
+### Fix
+
+After every expected-failure native command, read `$LASTEXITCODE`, classify
+the cases you intend to swallow, then reset with **`$global:LASTEXITCODE = 0`**
+(the local `$LASTEXITCODE = 0` shadows but does not clear the automatic
+variable). Optionally pair with `2>$null` or `2>&1 | Out-Null` to silence
+stderr noise. The trailing reset is load-bearing for any script invoked from
+a workflow `shell: pwsh` step via `& .\path\to\script.ps1` -- without it the
+GH Actions wrapper fails the step on the next inspection of `$LASTEXITCODE`.
+
+See `.squad/skills/pwsh-lastexitcode/SKILL.md` for the full pattern, a
+detection checklist, and the call-site audit. The discovery PR is #277
+(`fix(uninstall): unset core.hooksPath`); the skill closes #288.
+
+---
+
+## Squad Operational Gates (Coordinator dispatch)
+
+Two operational SOPs govern Coordinator-side spawn behavior. Both are codified at
+three independent surfaces (charter + `.squad/templates/loop.md` + `.squad/templates/ceremonies.md`)
+so a single forgotten checkpoint doesn't silently break the SOP. Source decision:
+`.squad/decisions/doc-and-jiminy-automation.md` (closes #289, #290).
+
+### Doc subagent runs in a dedicated worktree (#289)
+
+Doc (Fact Checker) is a `general-purpose` subagent that inherits the Coordinator's
+CWD by default. To prevent his `.squad/agents/doc/history.md` writes from landing
+as `M` on `develop` in the primary worktree (Sprint 10 anti-pattern: required PRs
+#281 + #283), Doc runs in a dedicated per-sprint worktree.
+
+**Sprint kickoff (Coordinator, one-time per sprint):**
+
+```bash
+git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
+```
+
+**Every Doc spawn prompt** MUST begin with an explicit CWD directive pointing at
+`..\dev-setup-doc`. Doc commits + pushes after every fact-check. At sprint wrap,
+the Coordinator opens ONE fold PR from `squad/doc-history-sprint-<N>` into
+`develop`. Target: 1 fold PR per sprint (down from 2 in Sprint 10).
+
+### Jiminy auto-dispatch after >= 3-agent batches and at session-end (#290)
+
+The Jiminy dispatch SOP from PR #280 (Coordinator MUST invoke Jiminy after every
+3+ agent batch and at session-end) is now enforced at three surfaces:
+
+1. `.squad/agents/jiminy/charter.md` -> `Triggers` table (canonical).
+2. `.squad/templates/loop.md` -> "Squad Operational Gates" (Gate 1 post-batch, Gate 2 session-end).
+3. `.squad/templates/ceremonies.md` -> `Sprint Wrap` ceremony, step 1.
+
+**Trigger condition (Gate 1):** 3 or more agent spawns in a single Coordinator
+turn, counted excluding Scribe (which runs silently in background by design).
+**Action:** Spawn Jiminy BEFORE returning results to the user. Wait for
+`Jiminy clear` or resolve the dirty report.
+
+**Trigger condition (Gate 2):** user signals session-end OR work queue empties
+after a full sprint. **Action:** Jiminy full sweep; BLOCKS session close on dirty
+state. Ralph runs after Jiminy for stale-branch cleanup.
+
+If you (Coordinator or human contributor) ever notice a >= 3-agent batch landed
+without a Jiminy run, that is a Sprint Retro action item, not a one-off
+self-correction. File a `retro-action` issue.
+
 

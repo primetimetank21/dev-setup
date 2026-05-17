@@ -1,4 +1,4 @@
-# scripts/windows/auth.ps1 - GitHub authentication check and prompt
+# scripts/windows/tools/auth.ps1 - GitHub authentication check and prompt
 #
 # Called by: scripts/windows/setup.ps1 (after gh CLI is installed)
 # Owner:     Goofy (#2)
@@ -13,7 +13,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-. "$PSScriptRoot\lib\logging.ps1"
+. "$PSScriptRoot\..\lib\logging.ps1"
 
 function Invoke-GhAuth {
     # Guard: gh CLI must be available
@@ -30,6 +30,7 @@ function Invoke-GhAuth {
     } catch {
         # gh auth status failed - not authenticated
     }
+    $global:LASTEXITCODE = 0
     if ($isAuthed) {
         $ghUser = 'authenticated'
         try {
@@ -40,6 +41,7 @@ function Invoke-GhAuth {
         } catch {
             # ignore - fall back to generic message
         }
+        $global:LASTEXITCODE = 0
         Write-Ok "GitHub: already authenticated as @$ghUser"
         return
     }
@@ -75,6 +77,7 @@ function Invoke-GhAuth {
     } catch {
         # auth status failed
     }
+    $global:LASTEXITCODE = 0
     if ($loginOk) {
         $ghUser = 'authenticated'
         try {
@@ -85,6 +88,7 @@ function Invoke-GhAuth {
         } catch {
             # ignore
         }
+        $global:LASTEXITCODE = 0
         Write-Ok "GitHub: authenticated as @$ghUser"
     } else {
         Write-Warn "GitHub auth may not have completed. Run 'gh auth login' manually if needed."

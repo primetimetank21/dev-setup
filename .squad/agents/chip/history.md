@@ -103,7 +103,7 @@ invocation without proper environment.
 - Always capture 2>&1 in already-installed checks so warnings visible in CI
 - The correct npm package is @bradygaster/squad-cli (not @primetimetank21/...)
 
-## [Sprint S -- #279 revise: YAML/bash quoting fix]
+## [Sprint 10 (formerly Sprint S) -- #279 revise: YAML/bash quoting fix]
 
 **Branch:** `squad/255-squad-cli-warning`
 **PR:** #279 (force-push revision)
@@ -423,7 +423,7 @@ Created `.github/workflows/e2e-install.yml` -- full end-to-end install smoke tes
 
 - Windows tool assertions use `pwsh -NoProfile` to test that tools are on the system PATH (not just available via profile functions). This is the correct test -- if a tool only works because the profile adds it to PATH, it will fail for scripts/automation that run without profile. The nvm.ps1 bug (#221) was exactly this class of failure.
 
-## 2026-05-16 -- Sprint R: Hook Behavioral Testing
+## 2026-05-16 -- Sprint 9 (formerly Sprint R): Hook Behavioral Testing
 
 **PR:** #267 (test(hooks): behavioral coverage for pre-commit and pre-push)
 **Branch:** `squad/224-hook-test-coverage`

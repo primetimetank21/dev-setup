@@ -64,7 +64,7 @@ Lead architect; established foundational team process, architecture, and Windows
 - Worktree isolation: batch 3 used separate worktrees per PR. Zero bleed across 3 parallel PRs. CHANGELOG conflicts are expected and trivial to resolve (combine both [Unreleased] entries).
 - commit-msg hook rejects merge commit messages (non-conventional format). Use `--no-verify` for merge commits during conflict resolution. This is fine.
 - Filed #239 e2e install P0 -- Earl emphasized this is the safety net for what really works on fresh machines. Notes: psmux is the Windows tmux with `tmux` alias; squad CLI is verified with `squad --version`, not the npx path; nightly cron approved.
-- 2026-05-16 Hired Doc (Fact Checker) per Earl's request after Sprint Q retro. Universe: Disney Classic. Auto-triggers on review/verify/fact-check/audit keywords. Closes the verifier/validator gap. Hiring pattern: branch from develop, create .squad/agents/{name}/ dir with charter.md + history.md, update registry.json (after last active non-exempt agent, before scribe), update team.md (same position), update routing.md (table row + issue label + new rule + multi-agent scenarios), update CHANGELOG.md [Unreleased], drop decision to .squad/decisions/inbox/mickey-{slug}.md (gitignored, don't stage). Voice considerations: personalize from character source (Seven Dwarfs Doc = methodical, glasses-on, "Let's see now..." -- kind corrections, not snark). Consider squad-hire-agent skill after 2+ hire patterns confirmed -- pattern is now repeatable (Jiminy was first; Doc is second).
+- 2026-05-16 Hired Doc (Fact Checker) per Earl's request after Sprint 8-hotfix (formerly Sprint Q) retro. Universe: Disney Classic. Auto-triggers on review/verify/fact-check/audit keywords. Closes the verifier/validator gap. Hiring pattern: branch from develop, create .squad/agents/{name}/ dir with charter.md + history.md, update registry.json (after last active non-exempt agent, before scribe), update team.md (same position), update routing.md (table row + issue label + new rule + multi-agent scenarios), update CHANGELOG.md [Unreleased], drop decision to .squad/decisions/inbox/mickey-{slug}.md (gitignored, don't stage). Voice considerations: personalize from character source (Seven Dwarfs Doc = methodical, glasses-on, "Let's see now..." -- kind corrections, not snark). Consider squad-hire-agent skill after 2+ hire patterns confirmed -- pattern is now repeatable (Jiminy was first; Doc is second).
 
 ---
 
@@ -837,24 +837,24 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
 
 - **2026-05-16 -- Re-reviewed PR #245 after Goofy revision.** Verdict: APPROVE. All 6 assertion adds confirmed (squad --version on Linux/macOS, squad/psmux/tmux on Windows, in both fresh-shell and post-idempotency phases). Hard-fail enforced, no || true softening. ASCII clean. Goofy history.md updated. Merged via --admin after CI settled.
 
-## Sprint Q Retro Authored -- 2026-05-16
+## Sprint 8-hotfix Retro Authored -- 2026-05-16
 
-- **Scope:** Post-0.8.0 release retro covering Sprint Q P0 batch (#249, #251, #252) and the 9-round Goofy saga on #251.
+- **Scope:** Post-0.8.0 release retro covering Sprint 8-hotfix P0 batch (#249, #251, #252) and the 9-round Goofy saga on #251.
 - **Output:** `.squad/retros/2026-05-16-sprint-q-retro.md`
 - **Key findings:**
   - 8 of 9 rounds on #251 were reactive (patching symptoms surfaced by previous failure), not predictive (upfront failure-mode analysis)
   - Branch ancestry bleed = 3rd occurrence -- needs prominent placement in CONTRIBUTING.md
   - Stale branches keep accumulating despite `--delete-branch` on merge -- Ralph EOS sweep is now standing
-  - No verifier/validator role -- Earl had to double/triple-check claims of "done." Open question for Sprint R kickoff
+  - No verifier/validator role -- Earl had to double/triple-check claims of "done." Open question for Sprint 9 (formerly Sprint R) kickoff
   - HYGIENE backlog underprioritized -- bumped to P0/P1 for next sprint
 - **Action items filed:**
   - [Coordinator] "Two strikes" rule -- failure-mode analysis required before round 3 of any fix
   - [Mickey] Make "branch from develop, never from another squad branch" prominent in CONTRIBUTING.md
-  - [Earl + Coordinator] Decide verifier/validator scope (extend Jiminy / new teammate / process change) before Sprint R
+  - [Earl + Coordinator] Decide verifier/validator scope (extend Jiminy / new teammate / process change) before Sprint 9
   - [Mickey] Bump HYGIENE backlog (#224, #227, #228, branch hygiene automation)
   - [Chip] Track E2E nightly flake rate -- flip `continue-on-error: false` after 2-3 green nightlies (#253)
   - [Mickey] CHANGELOG conflict strategy doc
-- **Outcome:** Sprint Q closed. 0.8.0 shipped. Sprint R agenda has HYGIENE bumped, two-strikes rule, validator scope decision.
+- **Outcome:** Sprint 8-hotfix closed. 0.8.0 shipped. Sprint 9 agenda has HYGIENE bumped, two-strikes rule, validator scope decision.
 
 ## Squad 0.9.4 Upgrade Audit -- 2026-05-16 (PR #262)
 
@@ -867,11 +867,11 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
 - **Decision record:** see `.squad/decisions.md` -> "Squad CLI 0.9.4 Upgrade -- Ship Plan" (executed via PR #262 at 2026-05-16T17:32).
 - **New skill captured:** `.squad/skills/squad-upgrade-hygiene/SKILL.md` so future upgrades follow the same audit pattern instead of rediscovering it.
 
-## Sprint R Retro Action Items -- 2026-05-17 (PR #274)
+## Sprint 9 Retro Action Items -- 2026-05-17 (PR #274)
 
-- **Scope:** Closes #273. Three Sprint R retro action items shipped in one docs-only PR.
+- **Scope:** Closes #273. Three Sprint 9 retro action items shipped in one docs-only PR.
 - **Branch:** `squad/273-retro-action-items` (forked from `develop` at PR #272 wrap).
-- **Output (PR #274 -- `docs(squad): Sprint R retro action items (#273)`, +42/-0, 3 files):**
+- **Output (PR #274 -- `docs(squad): Sprint 9 retro action items (#273)`, +42/-0, 3 files):**
   1. `.squad/agents/ralph/charter.md` -- added "Develop Commit Ban" section. Documents
      that `hooks/pre-commit` Check 5 refuses all direct commits to `develop` / `main` /
      `master` (Ralph included). EOS history entries must use either (a) the short-lived
@@ -881,16 +881,209 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
   2. `CONTRIBUTING.md` -- added "Group Letter Assignment SOP". When multiple agents
      append to `tests/test_windows_setup.ps1` in parallel, Coordinator pre-assigns
      Group letters in the spawn prompt (X for Goofy, Y for Chip, etc.). Prevents the
-     Sprint R Group X collision (#267 vs #268) from recurring.
+     Sprint 9 Group X collision (#267 vs #268) from recurring.
   3. `CONTRIBUTING.md` -- added "CHANGELOG Conflict Strategy" section. Documents the
      mechanical resolution for predictable `[Unreleased]` conflicts when multiple PRs
      land in one sprint: merge order = smaller/clean first, keep unique section headers,
      union both entries on conflict (CHANGELOG is a log, not a de-dup list).
 - **Key design choice:** All three items are policy/documentation, not code. They
-  encode the lessons from Sprint R into the canonical guardrails (charter + CONTRIBUTING)
+  encode the lessons from Sprint 9 into the canonical guardrails (charter + CONTRIBUTING)
   so every future agent reads them as part of the standard pre-spawn checklist.
-- **Outcome:** All three Sprint R retro action items closed. Pattern: retro -> action -> code
-  loop closed in one sprint. Sprint S then exercised the new SOPs (#275-#282) and
+- **Outcome:** All three Sprint 9 retro action items closed. Pattern: retro -> action -> code
+  loop closed in one sprint. Sprint 10 (formerly Sprint S) then exercised the new SOPs (#275-#282) and
   confirmed they work in practice -- Group letter SOP held through Z, AA, BB, CC, DD,
   T6-T11 reservations; CHANGELOG strategy held through 4 separate `[Unreleased]`
   conflict resolutions; Ralph develop-commit ban was honored throughout.
+## Sprint 11 (formerly Sprint T) -- pwsh-lastexitcode Skill Authored (2026-05-17, PR for #288)
+
+- **Scope:** Closes #288. Skill-only PR -- no script behavior changes.
+- **Branch:** `squad/288-pwsh-lastexitcode` (forked from `develop` @ `ce53853`,
+  immediately post-0.9.0).
+- **Output (3 files):**
+  1. `.squad/skills/pwsh-lastexitcode/SKILL.md` -- documents the
+     `0`-propagates-across-pwsh-`&`-boundary anti-pattern,
+     why `try/catch` and `Continue = 'Stop'` do **not** catch
+     native non-zero exits, the canonical `0 = 0` reset
+     (and the local-vs-global scope trap), a detection checklist, and a
+     full call-site audit of `scripts/windows/` + `.github/workflows/`.
+  2. `CONTRIBUTING.md` -- new "PowerShell Exit Code Discipline" section
+     directly after "Tool Version Pin Enforcement". Mirrors the
+     #282 structure: problem statement, canonical sites bullet list,
+     one-paragraph fix, link to skill, link to discovery PR #277.
+  3. `CHANGELOG.md` -- two entries under `[Unreleased]`/Added (skill +
+     CONTRIBUTING section).
+- **Audit findings:** 3 workflow `&` script-call boundaries (e2e-install.yml
+  lines 350, 432, 475); only line 475 had a known leak, fixed by PR #277.
+  Inside `scripts/windows/`, found 1 mitigated site (uninstall.ps1:117 +
+  reset at 125) and 5 unmitigated-but-currently-benign sites: setup.ps1:38
+  (`git rev-parse` outside a repo) and four `gh auth status` / `gh api`
+  calls in auth.ps1. Flagged for follow-up issue but **scope-locked** out of
+  this PR per Coordinator dispatch.
+- **Key design choice:** kept the SKILL.md "Known sites" table descriptive
+  rather than prescriptive -- the audit lists what's there and what's at
+  risk, but the actual hardening is deferred to a follow-up issue routed
+  to Goofy. This keeps the documentation PR atomic and reviewable.
+- **Decision note:** `.squad/decisions/inbox/mickey-pwsh-lastexitcode-decision.md`
+  (local-only, inbox is gitignored).
+- **Outcome:** #288 closed. Skill catalog now has tool-version-pin (#255 origin)
+  + pwsh-lastexitcode (#277 origin). Pattern established: every bug that
+  recurs across a class of similar sites gets a SKILL.md so the next agent
+  spots it in review instead of re-discovering it in CI.
+
+
+## 2026-05-19 -- Sprint 11 design pass: PR for #289 + #290 (Doc worktree pattern + Jiminy auto-dispatch)
+
+**Issues closed:** #289 (Doc subagent worktree pattern), #290 (auto-enforce Jiminy post-batch dispatch).
+**PR:** opened as a single PR per Coordinator's dispatch reasoning -- both issues
+touch the same surface (`.squad/templates/loop.md`, `.squad/templates/ceremonies.md`,
+and the Doc/Jiminy charters), and both are about operational SOPs that are
+currently manual and should be either automated or enforced by checklist.
+Resolving them in a single design pass avoids template churn and ensures
+the chosen patterns are coherent.
+
+**Rationale for ONE PR (not two):**
+- Same files modified. Splitting would create artificial seams in `loop.md`
+  and `ceremonies.md` where the two SOPs share a "Squad Operational Gates"
+  section.
+- The decision document is a single coherent record (Options A-D for Doc,
+  Options A-D for Jiminy, both Consequences sections). Splitting forces
+  duplicated context.
+- Sprint 11 verification for both issues happens at the same dispatch
+  trigger (first multi-agent batch of Sprint 11), so the AC checklists are
+  intertwined.
+
+**Decisions:**
+- **#289 -> Option B (dedicated worktree).** `..\dev-setup-doc` worktree on
+  `squad/doc-history-sprint-<N>` branch, created at sprint kickoff. Doc's
+  spawn prompt MUST begin with an explicit CWD directive. ONE fold PR per
+  sprint at sprint wrap (down from 2 in Sprint 10: #281 + #283). Option A
+  rejected because Doc cannot safely switch branches in the primary worktree
+  without disrupting sibling agents.
+- **#290 -> Option A (loop.md + ceremonies.md checklist).** Two-source
+  enforcement at zero infrastructure cost. Charter `Triggers` table already
+  named the moments; the amendment is to make it cross-reference the new
+  template surfaces so the SOP is loud at three surfaces instead of one.
+  Options B (GH Action) + C (pre-push hook) + D (runtime reminder) rejected
+  per the issue's own analysis.
+
+**Files modified (8):**
+1. `.squad/decisions/doc-and-jiminy-automation.md` (new) -- canonical decision record.
+2. `.squad/templates/loop.md` -- "Squad Operational Gates" section (3 gates).
+3. `.squad/templates/ceremonies.md` -- `Sprint Kickoff` + `Sprint Wrap` ceremonies.
+4. `.squad/agents/doc/charter.md` -- "Where Doc writes history.md" section + amended `Git Rules`.
+5. `.squad/agents/jiminy/charter.md` -- `Triggers` table cross-references new templates.
+6. `CONTRIBUTING.md` -- "Squad Operational Gates (Coordinator dispatch)" section.
+7. `CHANGELOG.md` -- `[Unreleased]` `### Changed` entry.
+8. `.squad/agents/mickey/history.md` -- this entry.
+
+**Skill extraction candidate:** the workflow of "amend three template surfaces
+in coordination + write decision record + cross-link" is now a repeatable
+pattern (Jiminy dispatch SOP from #280 followed the same shape, and #289/#290
+follow it again). Suggest a future `.squad/skills/squad-template-amendment/SKILL.md`
+that captures: which surfaces to amend together, how to cross-link via the
+decision doc, and the "three-surface enforcement" check. Filing as a separate
+follow-up rather than authoring inline -- separate scope.
+
+**Test changes:** none. Considered a `tests/test_squad_sops.sh` grep test
+verifying SOP phrase presence in the templates, rejected because the SOPs
+are purely human-facing (Coordinator behavior, not script behavior) and
+phrase-pinning tests turn template edits into test churn. The triple-surface
+enforcement IS the audit signal. Rationale documented in the decision doc.
+
+**Sprint 11 verification (pre-conditions for Coordinator):**
+1. `git worktree list` should show `..\dev-setup-doc` on
+   `squad/doc-history-sprint-T` before the first Doc spawn. If absent,
+   create it.
+2. First >= 3-agent batch of Sprint 11 MUST end with a Jiminy run before
+   results return to user.
+3. Sprint 11 wrap MUST open one fold PR (or zero if Doc never ran).
+
+**Hygiene tail:** decision record IS the decision (no separate
+`decisions/inbox/` drop). History entry done. No further Scribe action
+needed for this design-pass PR until merge.
+
+## Sprint 11 -- ARCHITECTURE.md refresh (2026-05-19, PR for #229)
+
+- **Scope:** Closes #229. Synchronization edit only -- no script behavior changes.
+- **Branch:** `squad/229-architecture-refresh` (forked from `develop` @ `23d48a7`).
+- **Output (3 files, +178/-36):**
+  1. `ARCHITECTURE.md` -- refreshed file tree to match current repo state
+     (added `scripts/lib/`, `scripts/linux/lib/`, `scripts/windows/lib/`,
+     `scripts/{linux,windows}/uninstall.*`, `scripts/windows/auth.ps1`,
+     `dotfiles.ps1` (10 modules not 9), `.tool-versions`,
+     `.gitattributes`); refreshed workflows list (3 new: `e2e-install.yml`,
+     `squad-history-check.yml`, `squad-label-enforce.yml`); refreshed
+     hooks list to include `prepare-commit-msg`; refreshed tests list
+     (4 new: `test_alias_parity`, `test_nvm_bootstrap`,
+     `test_precommit_hygiene`, `test_shared_logging`, `test_tool_versions`);
+     refreshed `.squad/` subtree (agents/skills/decisions/retros/templates).
+     Added new sections: **Tool Version Pinning**, **Git Hooks** (one-line
+     per hook), **CI Workflows** (per-job tables for `validate.yml` +
+     `e2e-install.yml` + squad automation), **Squad Roster**
+     (core engineering 5 + role-based 4). Updated Team Ownership Map
+     with the new paths.
+  2. `CHANGELOG.md` -- one `[Unreleased]`/`### Changed` entry per
+     dispatch wording.
+  3. `.squad/agents/mickey/history.md` -- this entry.
+- **Sections most heavily edited:** File Structure tree (full rewrite of
+  block), Team Ownership Map (added 6 paths), and three brand-new sections
+  (Tool Version Pinning, Git Hooks, CI Workflows, Squad Roster) inserted
+  between Idempotency Guarantee and Team Ownership Map.
+- **Drift NOT fixed (out of scope):**
+  - `Script Conventions` table still says "copy from setup.sh / setup.ps1"
+    for log helpers; the truth is now `scripts/{linux,windows}/lib/`. Did
+    not edit -- this is convention prose, not a structure claim, and changing
+    it would border on prescriptive rewrite (dispatch said descriptive only).
+    Filing as candidate follow-up but not blocking.
+  - `Dependency Order` block only documents the Linux installer chain. The
+    Windows orchestrator has its own implicit order (git, uv, nvm, gh, vim,
+    psmux, copilot, squad-cli, dotfiles, profile, auth). Out of scope for
+    a sync refresh; the original section was Linux-only and accurate.
+  - No "How agents flow" section was created -- the new `Squad Roster`
+    plus `.squad/` tree + cross-link to `.squad/decisions/doc-and-jiminy-automation.md`
+    cover this without introducing a new narrative section that doesn't
+    already exist in the file.
+- **Hygiene:** No decision inbox drop (mechanical sync edit, no design
+  call). No skill extraction needed.
+- **Outcome:** AC checklist closed: tree shows per-tool layout (10 not 9 --
+  AC said 9 from #195 wording but the repo has 10 incl. `dotfiles.ps1`;
+  used reality); workflows section names all 8 files; hooks section lists
+  all 4 with one-line roles; Squad section names Doc + Jiminy + Scribe +
+  Ralph plus Mickey/Donald/Goofy/Chip/Pluto; no stale "single setup.ps1
+  file" or "manual hooks install" references remain.
+
+## Sprint Rename Sweep -- 2026-05-20 (branch: chore/sprint-naming-convention)
+
+- **Scope:** Tier 3 full sweep reverting sprint naming from letters (Q, R, S, T) to
+  numbers (8-hotfix, 9, 10, 11). Earl-driven decision at 0.9.1 release wrap.
+- **Branch:** `chore/sprint-naming-convention` (on top of Coordinator's `c42d93e`).
+- **Files touched:** 21 files across 6 categories.
+
+| Category | Files | Refs |
+|---|---|---|
+| Retros (renamed with `git mv`) | 4 | ~47 |
+| Agent histories | 8 | ~89 |
+| Agent charters | 3 | ~6 |
+| Decisions | 2 | ~17 |
+| Templates | 2 | ~3 |
+| Root docs (CHANGELOG, CONTRIBUTING, ARCHITECTURE) | 3 | ~23 |
+
+- **Mapping applied:**
+
+| Old | New |
+|---|---|
+| Sprint Q | Sprint 8-hotfix |
+| Sprint R | Sprint 9 |
+| Sprint S | Sprint 10 |
+| Sprint T | Sprint 11 |
+| Sprint U (planned) | Sprint 12 |
+
+- **Aliasing convention:** First-occurrence-per-file mentions of old names get
+  `(formerly Sprint X)` parenthetical for grep continuity. Subsequent occurrences
+  use the new numeric name alone.
+- **Retro files renamed:** `git mv` preserves rename detection.
+- **CONTRIBUTING.md:** Sprint Naming Convention section rewritten with mapping table,
+  aliasing convention, and `Sprint 12 = next` declaration.
+- **Issue #306:** Body updated to use new names + acceptance criterion added.
+- **Outcome:** Zero orphan `Sprint [QRST]` refs outside alias contexts. PR opened
+  targeting `develop`. Doc fact-check pass to follow.

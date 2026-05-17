@@ -307,7 +307,7 @@ Fixed three regressions introduced by PR #130:
 - v6 fix -- v5 90s timeout was 10s too short (installer took ~100s in CI run 25970591039). v5 candidate paths also missed actual install location (registry update proved installer succeeded but none of 5 paths matched). v6 uses Refresh-SessionPath + Get-Command nvm as primary detection (path-agnostic), expanded candidate list (7 dirs including C:\nvm, C:\nvm-windows) as fallback, 180s default timeout, and diagnostic dump on timeout failure.
 - v8 fix -- Earl chose portable download approach. winget install was racy (3 different timings in CI: 24s, 100s, >180s). Replaced Wait-ForNvmInstall with Install-NvmPortable + Set-NvmEnvironment. Downloads nvm-noinstall.zip from GitHub releases, extracts to %USERPROFILE%\nvm (standard nvm-windows portable location). Sets NVM_HOME/NVM_SYMLINK at User scope so subsequent shells work too. Deterministic, no installer race.
 
-## 2026-05-16 -- Sprint R: Winget Exit Code Assertion
+## 2026-05-16 -- Sprint 9 (formerly Sprint R): Winget Exit Code Assertion
 
 **PR:** #268 (fix(scripts/windows): assert winget exit code)
 **Branch:** `squad/226-winget-exit-check`
@@ -347,7 +347,7 @@ Fixed three regressions introduced by PR #130:
 
 ---
 
-## [2026-05-17] Sprint S -- Issue #255: Silent version drift bug (tool-version-pins)
+## [2026-05-17] Sprint 10 (formerly Sprint S) -- Issue #255: Silent version drift bug (tool-version-pins)
 
 **Branch:** `squad/255-tool-version-pins`
 **Status:** PR open -- awaiting CI and Mickey review
@@ -417,7 +417,7 @@ cross-platform."
 - Used tarball for Linux gh install; avoids apt package-suffix guessing across distros.
 - Added winget fallback for copilot.ps1; winget catalog IDs for GitHub.Copilot may use
   a different version scheme than the npm package. Documented in script header + CONTRIBUTING.
-- Group DD chosen for test group (BB/CC pre-assigned to other Sprint S agents).
+- Group DD chosen for test group (BB/CC pre-assigned to other Sprint 10 agents).
 
 ### Constraints documented
 
@@ -427,7 +427,7 @@ cross-platform."
 
 ---
 
-## [2026-05-18] Sprint S Revision -- PR #282: Fix copilot package name + pin (BLOCKER P0)
+## [2026-05-18] Sprint 10 Revision -- PR #282: Fix copilot package name + pin (BLOCKER P0)
 
 **Branch:** `squad/255-tool-version-pins`
 **Status:** Revised -- force-pushed to PR #282
@@ -489,3 +489,110 @@ must return the version number (not an error) before the pin is committed.
 The version `0.0.339` was never verifiable -- it was copied from curl installer internal
 state without checking whether it corresponded to a real npm package version.
 Add this check to `.squad/skills/tool-version-pin/SKILL.md` validation steps.
+
+
+---
+
+## [2026-05-18] Sprint 11 (formerly Sprint T) -- Issue #230: Move auth.ps1 under tools/ (Wave 1)
+
+**Branch:** `squad/230-auth-to-tools`
+**Status:** PR open
+
+### Background
+
+After PR #195's per-tool refactor, `scripts/windows/auth.ps1` was the lone
+top-level installer left at `scripts/windows/`. Issue #230 (P2 chore) called
+for relocating it under `tools/` to match the established layout.
+
+### What I did
+
+- `git mv scripts/windows/auth.ps1 scripts/windows/tools/auth.ps1` (git
+  reports 96% similarity, rename history preserved).
+- Updated the dot-source path inside `auth.ps1` from
+  `\lib\logging.ps1` to `\..\lib\logging.ps1`
+  to match the pattern used by every other `tools/*.ps1` script. Also
+  updated the file's header comment to reflect the new path. No logic
+  changes; `Invoke-GhAuth` body is byte-identical.
+- `scripts/windows/setup.ps1` line 34: updated dot-source from
+  `\auth.ps1` to `\tools\auth.ps1`.
+- `tests/test_windows_setup.ps1` line 1195 (Group S setup): added
+  `tools` segment to `Join-Path` chain.
+- CHANGELOG.md: added an `[Unreleased]` `### Changed` entry.
+
+### Files I did NOT touch
+
+- **ARCHITECTURE.md** -- no auth.ps1 reference present anyway, and Mickey
+  owns the file in concurrent worktree #229. Confirmed clean grep.
+- **CHANGELOG.md line 76** -- historical entry under 0.8.0 ("Windows
+  GitHub auth step via scripts/windows/auth.ps1 (closes #191)") is a
+  historically accurate description of the original add and must remain
+  pinned to the path at the time. New `[Unreleased]` entry documents
+  the move.
+- **auth.ps1 function body** -- the four `& gh ...` `0`
+  read-without-reset sites flagged in the pwsh-lastexitcode SKILL are
+  out of scope for this issue. Wave 2 (#292) handles that hardening.
+
+### Verification
+
+- `Test-Path scripts/windows/tools/auth.ps1` -> True
+- `Test-Path scripts/windows/auth.ps1` -> False
+- PowerShell parser: all three modified files parse cleanly
+- Dot-source from new location succeeds; `Invoke-GhAuth` function defined
+- Full `tests/test_windows_setup.ps1` run: Group S 3/3 PASS; 114 total
+  PASS, 8 baseline FAIL (Group O alias / live Copilot) -- identical to
+  `develop` baseline, unrelated to this change
+
+### Wave 2 queued
+
+- **#292** -- harden the 4 `0` sites in `auth.ps1` plus
+  any in `setup.ps1` (per pwsh-lastexitcode SKILL). Next task.
+
+## [2026-05-19] Sprint 11 -- Issue #292: Harden $LASTEXITCODE at 5 sites (Wave 2)
+
+**Branch:** `squad/292-lastexitcode-hardening`
+**Status:** PR open
+**Predecessor:** Sprint 11 Wave 1 (Issue #230, PR #297 -- moved auth.ps1 to tools/)
+
+### Background
+
+PR #291 (Mickey) created `.squad/skills/pwsh-lastexitcode/SKILL.md` documenting
+5 unmitigated `$LASTEXITCODE` leak sites. Wave 1 (PR #297) moved auth.ps1 under
+`tools/`; this Wave 2 applies the canonical mitigation pattern at all 5 sites.
+
+### What I did
+
+Applied `$global:LASTEXITCODE = 0` reset after each expected-failure native
+command, matching the canonical pattern from `uninstall.ps1:117-125`:
+
+1. `scripts/windows/tools/auth.ps1` -- 4 sites (2x `gh auth status`, 2x `gh api user`)
+2. `scripts/windows/setup.ps1` -- 1 site (`git rev-parse` in `Install-GitHook`)
+
+Added Group EE tests (EE-1 through EE-5) in `tests/test_windows_setup.ps1`:
+static source assertions confirming each site has the reset within proximity
+of the native call.
+
+Updated `.squad/skills/pwsh-lastexitcode/SKILL.md` audit table -- all 5 sites
+now marked as mitigated.
+
+### Files Modified
+
+- `scripts/windows/tools/auth.ps1` -- 4 `$global:LASTEXITCODE = 0` lines added
+- `scripts/windows/setup.ps1` -- 1 `$global:LASTEXITCODE = 0` line added
+- `tests/test_windows_setup.ps1` -- Group EE (5 tests)
+- `.squad/skills/pwsh-lastexitcode/SKILL.md` -- audit table updated
+- `CHANGELOG.md` -- Fixed entry added
+- `.squad/agents/goofy/history.md` -- this entry
+
+### Key Pattern
+
+The canonical mitigation (from SKILL.md and uninstall.ps1):
+```powershell
+& <native-command> ...
+if ($LASTEXITCODE -eq 0) { ... }
+else { ... }
+$global:LASTEXITCODE = 0   # reset after classification
+```
+
+Must use `$global:LASTEXITCODE` (not local `$LASTEXITCODE = 0` which only
+shadows the automatic variable).
+
