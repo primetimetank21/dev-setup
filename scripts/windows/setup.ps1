@@ -42,6 +42,7 @@ function Install-GitHook {
     } else {
         Write-Warn "Not inside a git repo - skipping hooks config"
     }
+    $global:LASTEXITCODE = 0
 }
 
 function Main {

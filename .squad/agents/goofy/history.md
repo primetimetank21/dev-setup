@@ -547,3 +547,52 @@ for relocating it under `tools/` to match the established layout.
 - **#292** -- harden the 4 `0` sites in `auth.ps1` plus
   any in `setup.ps1` (per pwsh-lastexitcode SKILL). Next task.
 
+## [2026-05-19] Sprint T -- Issue #292: Harden $LASTEXITCODE at 5 sites (Wave 2)
+
+**Branch:** `squad/292-lastexitcode-hardening`
+**Status:** PR open
+**Predecessor:** Sprint T Wave 1 (Issue #230, PR #297 -- moved auth.ps1 to tools/)
+
+### Background
+
+PR #291 (Mickey) created `.squad/skills/pwsh-lastexitcode/SKILL.md` documenting
+5 unmitigated `$LASTEXITCODE` leak sites. Wave 1 (PR #297) moved auth.ps1 under
+`tools/`; this Wave 2 applies the canonical mitigation pattern at all 5 sites.
+
+### What I did
+
+Applied `$global:LASTEXITCODE = 0` reset after each expected-failure native
+command, matching the canonical pattern from `uninstall.ps1:117-125`:
+
+1. `scripts/windows/tools/auth.ps1` -- 4 sites (2x `gh auth status`, 2x `gh api user`)
+2. `scripts/windows/setup.ps1` -- 1 site (`git rev-parse` in `Install-GitHook`)
+
+Added Group EE tests (EE-1 through EE-5) in `tests/test_windows_setup.ps1`:
+static source assertions confirming each site has the reset within proximity
+of the native call.
+
+Updated `.squad/skills/pwsh-lastexitcode/SKILL.md` audit table -- all 5 sites
+now marked as mitigated.
+
+### Files Modified
+
+- `scripts/windows/tools/auth.ps1` -- 4 `$global:LASTEXITCODE = 0` lines added
+- `scripts/windows/setup.ps1` -- 1 `$global:LASTEXITCODE = 0` line added
+- `tests/test_windows_setup.ps1` -- Group EE (5 tests)
+- `.squad/skills/pwsh-lastexitcode/SKILL.md` -- audit table updated
+- `CHANGELOG.md` -- Fixed entry added
+- `.squad/agents/goofy/history.md` -- this entry
+
+### Key Pattern
+
+The canonical mitigation (from SKILL.md and uninstall.ps1):
+```powershell
+& <native-command> ...
+if ($LASTEXITCODE -eq 0) { ... }
+else { ... }
+$global:LASTEXITCODE = 0   # reset after classification
+```
+
+Must use `$global:LASTEXITCODE` (not local `$LASTEXITCODE = 0` which only
+shadows the automatic variable).
+

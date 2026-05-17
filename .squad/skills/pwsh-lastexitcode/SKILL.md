@@ -153,11 +153,11 @@ Audit performed against `develop` @ `ce53853` for issue #288.
 | File:Line | Command | Expected non-zero exit | Mitigation status |
 |---|---|---|---|
 | `scripts/windows/uninstall.ps1:117` | `& git config --unset-all core.hooksPath 2>&1 \| Out-Null` | `5` (key unset) or `1` (older git) | **Mitigated** at line 125: `$global:LASTEXITCODE = 0`. Canonical example for this skill. |
-| `scripts/windows/setup.ps1:38` | `& git rev-parse --git-dir 2>$null \| Out-Null` | `128` if not in a git repo | Read by `if ($LASTEXITCODE -eq 0)` on line 39, but `$LASTEXITCODE` is **not reset** on the warn branch. Benign in CI (always in a repo after checkout) but a latent leak for local users running setup outside a repo. **TODO** -- track via follow-up issue. |
-| `scripts/windows/auth.ps1:28` | `& gh auth status 2>&1 \| Out-String` | `1` when not authenticated | Read locally (line 29) but **not reset**. Followed by additional installers in `Main` that issue their own native calls, so the leak is masked in practice. **TODO** -- track via follow-up issue. |
-| `scripts/windows/auth.ps1:36` | `& gh api user --jq '.login' 2>&1 \| Out-String` | `1` on 404 / auth failure | Read locally (line 37) but **not reset**. Same containment as above. |
-| `scripts/windows/auth.ps1:73` | `& gh auth status 2>&1 \| Out-String` (post-login verify) | `1` if login failed | Read locally (line 74) but **not reset**. |
-| `scripts/windows/auth.ps1:81` | `& gh api user --jq '.login' 2>&1 \| Out-String` (post-login verify) | `1` on 404 / auth failure | Read locally (line 82) but **not reset**. |
+| `scripts/windows/setup.ps1:38` | `& git rev-parse --git-dir 2>$null \| Out-Null` | `128` if not in a git repo | **Mitigated** in PR #292: `$global:LASTEXITCODE = 0` after the if/else block in `Install-GitHook`. |
+| `scripts/windows/tools/auth.ps1:28` | `& gh auth status 2>&1 \| Out-String` | `1` when not authenticated | **Mitigated** in PR #292: `$global:LASTEXITCODE = 0` after the try/catch block. |
+| `scripts/windows/tools/auth.ps1:36` | `& gh api user --jq '.login' 2>&1 \| Out-String` | `1` on 404 / auth failure | **Mitigated** in PR #292: `$global:LASTEXITCODE = 0` after the try/catch block. |
+| `scripts/windows/tools/auth.ps1:73` | `& gh auth status 2>&1 \| Out-String` (post-login verify) | `1` if login failed | **Mitigated** in PR #292: `$global:LASTEXITCODE = 0` after the try/catch block. |
+| `scripts/windows/tools/auth.ps1:81` | `& gh api user --jq '.login' 2>&1 \| Out-String` (post-login verify) | `1` on 404 / auth failure | **Mitigated** in PR #292: `$global:LASTEXITCODE = 0` after the try/catch block. |
 
 There are **no** `npm uninstall`, `winget uninstall`, or other listed
 expected-failure call sites currently in `scripts/windows/`. If those are
@@ -165,17 +165,13 @@ added in the future, they must follow the canonical pattern above.
 
 ### Follow-up TODOs (not in scope for #288)
 
-This is a documentation-only PR; the audit surfaced four latent leak sites
-that are benign in CI today but should be hardened defensively:
+All five sites identified below were hardened in PR #292 (closes #292):
 
-- `scripts/windows/setup.ps1:38` -- add `$global:LASTEXITCODE = 0` in the
-  `Install-GitHook` "not in a git repo" warn branch.
-- `scripts/windows/auth.ps1` -- after each of the four `& gh ...` blocks,
-  reset `$global:LASTEXITCODE = 0` once the local conditional has read the
-  value.
-
-Both should be filed as a single follow-up issue (`scripts/windows: harden
-expected-failure call sites against $LASTEXITCODE leak`) and routed to Goofy.
+- `scripts/windows/setup.ps1:38` -- `$global:LASTEXITCODE = 0` added after
+  `Install-GitHook`'s if/else block. **Done.**
+- `scripts/windows/tools/auth.ps1` -- all four `& gh ...` blocks now reset
+  `$global:LASTEXITCODE = 0` after the local conditional reads the value.
+  **Done.**
 
 ## Examples
 
