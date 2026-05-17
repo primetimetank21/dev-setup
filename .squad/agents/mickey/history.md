@@ -1215,3 +1215,19 @@ Cut 0.9.2 from elease/0.9.2 (based on develop @ 5e0fb53). Folded [Unreleased] -
 **Worktree-isolation lesson learned:** My own #310 PR earlier this sprint violated the CWD-pin discipline and triggered cross-worktree write contamination, which surfaced in Jiminy's audit and forced remediation. By Wave 3 #306 I corrected the protocol: Set-Location -LiteralPath + path-mismatch guard at the top of every powershell tool call, plus full absolute path prefixes on every file write. That discipline carried through this 0.9.2 release cut clean -- no main-checkout drift, no stray edits outside the release worktree. The lesson is now codified in Sprint 12 retro and the CWD-pin block is part of every Mickey dispatch brief going forward.
 
 **Job ends here:** Coordinator merges this release/0.9.2 -> develop PR, then opens develop -> main with regular merge, tags  .9.2, and runs gh release create --target main. I do not touch main or tag anything.
+
+
+## 2026-05-17 Sprint 13 Wave 1 (#325, #326)
+
+Shipped two narrow doc fixes batched into one PR on `squad/325-326-doc-fixes` (off develop @ 38e9c79):
+
+- **#325 ARCHITECTURE.md auth.ps1 path:** corrected both stale references (file-structure tree ~L54 and team-ownership map ~L505) from `scripts/windows/auth.ps1` to `scripts/windows/tools/auth.ps1`. Annotated the tree entry with `(moved from top-level in PR #297)` so the move is discoverable. Verified zero remaining `scripts/windows/auth.ps1` matches in the file.
+- **#326 README.md hooks count:** verified `hooks/` directory contents (commit-msg, pre-commit, pre-push, prepare-commit-msg = 4 files) before editing. Changed `three hooks are active` -> `four hooks are active` and inserted a `prepare-commit-msg` subsection between `commit-msg` and `pre-push`, describing the merge/revert subject rewrite behaviour (sourced from the hook's own header comment). PR #212 reference included in CHANGELOG.
+
+Both issues were originally surfaced as out-of-scope observations in my own Sprint 12 Wave 3 #306 history entry -- the filed issues paid off this sprint with a single small PR.
+
+**CWD-pin protocol:** verified pre-edit; every powershell call prefixed by `Set-Location -LiteralPath` + drift guard. All edits used absolute worktree path prefix. Post-commit main-checkout audit clean.
+
+**Files touched:** ARCHITECTURE.md (2 lines), README.md (2 chunks), CHANGELOG.md (+2 Unreleased/Fixed entries), .squad/agents/mickey/history.md (this entry), .squad/decisions/inbox/mickey-w1-2026-05-17-issues-325-326.md (new).
+
+**Skill-pattern note:** "batch narrow doc fixes into one PR" -- 2nd application (Sprint 12 also did this). Not formalizing yet; one more application next sprint would justify a skill drop.
