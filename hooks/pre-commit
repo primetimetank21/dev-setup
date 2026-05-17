@@ -82,6 +82,7 @@ if [ -n "$SQUAD_STAGED" ]; then
       .squad/decisions.md) VALID=1 ;;
       .squad/decisions-archive.md) VALID=1 ;;
       .squad/decisions/inbox/*.md) VALID=1 ;;
+      .squad/decisions/*.md) VALID=1 ;;
       .squad/orchestration-log/*.md) VALID=1 ;;
       .squad/log/*.md) VALID=1 ;;
       .squad/retros/*.md) VALID=1 ;;
@@ -113,6 +114,7 @@ if [ -n "$SQUAD_STAGED" ]; then
     echo "    .squad/agents/{name}/charter.md | history.md | history-archive.md"
     echo "    .squad/decisions.md | .squad/decisions-archive.md"
     echo "    .squad/decisions/inbox/*.md (gitignored -- should not be staged)"
+    echo "    .squad/decisions/*.md (canonical permanent decision records)"
     echo "    .squad/orchestration-log/*.md"
     echo "    .squad/log/*.md"
     echo "    .squad/retros/*.md"

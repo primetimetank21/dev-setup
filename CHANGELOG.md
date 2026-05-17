@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.squad/skills/pwsh-lastexitcode/SKILL.md`: documents the `$LASTEXITCODE` propagation gotcha across pwsh `&` script-call boundaries; canonical fix is `$global:LASTEXITCODE = 0` after expected-failure commands (closes #288, surfaced by #277)
 - CONTRIBUTING.md "PowerShell Exit Code Discipline" section referencing the new skill
 
+### Changed
+- `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint S (closes #289, #290)
+- `.squad/decisions/doc-and-jiminy-automation.md`: decision record for squad operational SOPs
+- `CONTRIBUTING.md` "Squad Operational Gates (Coordinator dispatch)" section -- human-facing summary of the Doc worktree + Jiminy auto-dispatch SOPs codified in this PR
+- `hooks/pre-commit` Source of Truth allow-list extended to include canonical `.squad/decisions/*.md` files (top-level decisions directory, distinct from the gitignored `inbox/` subdir). Required so permanent decision records like `.squad/decisions/doc-and-jiminy-automation.md` are commit-eligible.
+
 ## [0.9.0] - 2026-05-17
 
 ### Added

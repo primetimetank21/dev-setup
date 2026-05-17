@@ -54,9 +54,11 @@ What Jiminy checks, by lane:
 | When | What Jiminy does |
 |------|------------------|
 | **Before coordinator returns control to user** | Quick sweep (under 10s). Clean -> one-line `Jiminy clear`. Dirty -> list issues + offer to fix. |
-| **After multi-agent batches (3+ spawns)** | Verify each agent's AFTER-work block was honored. Flag any agent who skipped history append or decisions inbox. |
-| **Session-end (user signals done)** | Full sweep + stale branch cleanup gate. BLOCKS session close on dirty state. |
+| **After multi-agent batches (3+ spawns)** | Verify each agent's AFTER-work block was honored. Flag any agent who skipped history append or decisions inbox. Auto-dispatch is enforced at `.squad/templates/loop.md` -> Gate 1 (post-batch audit) and reinforced in `.squad/templates/ceremonies.md` -> Sprint Wrap. |
+| **Session-end (user signals done)** | Full sweep + stale branch cleanup gate. BLOCKS session close on dirty state. Enforced at `.squad/templates/loop.md` -> Gate 2 (session-end audit) and `ceremonies.md` -> Sprint Wrap step 1. |
 | **Manual** | "Jiminy, check" / "Jiminy, audit" -> on-demand full sweep |
+
+> The post-batch and session-end triggers are codified at three independent surfaces (this charter, `loop.md`, `ceremonies.md`). If the Coordinator forgets one surface, the other two should catch the miss. See `.squad/decisions/doc-and-jiminy-automation.md` (closes #290) for rationale.
 
 ## How Jiminy reports
 
