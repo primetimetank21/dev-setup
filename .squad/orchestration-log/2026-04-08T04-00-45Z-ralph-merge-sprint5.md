@@ -7,11 +7,11 @@
 ## Summary
 
 Rebased all 5 branches against develop:
-- squad/54-block-direct-pushes ✅
-- squad/56-worktree-config ✅
-- squad/57-remove-binary ✅
-- squad/58-ci-improvements ✅
-- squad/59-history-sprint5 ✅
+- squad/54-block-direct-pushes [x]
+- squad/56-worktree-config [x]
+- squad/57-remove-binary [x]
+- squad/58-ci-improvements [x]
+- squad/59-history-sprint5 [x]
 
 ## Constraints Encountered
 
@@ -24,8 +24,8 @@ Rebased all 5 branches against develop:
 
 ## Outcome
 
-All branches rebased, ready for Mickey approval → admin merge pattern.
+All branches rebased, ready for Mickey approval -> admin merge pattern.
 
 ## Status
 
-✅ REBASE COMPLETE — Merge pattern established
+[x] REBASE COMPLETE -- Merge pattern established

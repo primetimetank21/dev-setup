@@ -7,12 +7,12 @@ description: "My squad work loop"
 
 # Squad Work Loop
 
-> ⚠️ Set `configured: true` in the frontmatter above to activate this loop.
+> ! Set `configured: true` in the frontmatter above to activate this loop.
 > Run with: `squad loop`
 
 ## What to do each cycle
 
-Describe what your squad should do every time the loop wakes up. Be specific —
+Describe what your squad should do every time the loop wakes up. Be specific --
 the more context you give, the better your squad performs.
 
 Examples:

@@ -131,3 +131,19 @@ Verification artifacts to capture in the Sprint 11 retro:
 - Count of Doc fold PRs (target: <= 1).
 - Whether Jiminy was auto-dispatched at every >= 3-agent batch (target: 100%).
 - Whether the kickoff `git worktree add` happened (target: yes; if no, Coordinator self-flags as missed step).
+
+---
+
+## 2026-05-17 Sprint 13 Wave 1 -- formalize worktree-remove-FIRST as a Squad skill (#317)
+
+**By:** Jiminy (Hygiene Auditor). **PR:** #331 against `develop`.
+
+**What shipped:** Created `.squad/skills/worktree-remove-first/SKILL.md` codifying the five-step PR-merge sequence proven 5-of-5 in Sprint 12 Wave 2 (PRs #320, #321, #323, #324, #327, plus release PR #328 with `--merge`). Front matter declares `confidence: high` and `source: earned (issue #317)`. Added a one-paragraph pointer to the new skill under `CONTRIBUTING.md` "Parallel Agent Work" so the merge tail is discoverable next to the worktree-spawn head. `CHANGELOG [Unreleased]` -> `### Added` notes the skill addition.
+
+**Why now:** The pattern reproduced deterministically across Sprint 12 Wave 2 merges after issue #300 was closed prematurely as "no longer reproducible". Sprint 12 evidence reframed the root cause as the worktree-owns-branch precondition (gh's local pre-flight aborts the remote-delete step when a worktree owns the branch), not a gh upstream regression. The fix is procedural and can be locked in as a skill rather than waiting on tooling. Codifying now prevents the 100% failure mode from re-surfacing under any future coordinator who skips the sequence.
+
+**Where it lives -- new skill vs extending `worktree-isolation/`:** The existing `worktree-isolation` skill covers the agent-dispatch race condition (spawn-time concern); this new skill covers the PR-merge tail (teardown-time concern). Separate skills keep each one tightly scoped and independently citeable; the new skill's `References` section cross-links back to `worktree-isolation` and to issue #300.
+
+**Out of scope:** No code changes (hooks, scripts). Pre-commit hook `.md` ASCII-scan gap (#322) remains open and is not in this PR's scope.
+
+**Topic-file scope note:** This file is the home for Squad hygiene-automation decisions (Doc worktree pattern, Jiminy dispatch SOP, and now the worktree-remove-FIRST merge skill). Future merge-flow / dispatch-flow decisions should land here.

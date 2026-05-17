@@ -22,8 +22,8 @@ git status --short .squad/ | grep "^??" | grep -v "templates/"
 ```
 
 **Validation:** Compare each rogue file against:
-1. `.squad/templates/{same-name}` — if identical, delete the root copy
-2. The canonical subdirectory location (e.g., `.squad/casting/policy.json` vs `.squad/casting-policy.json`) — if the canonical is newer/richer, delete the root copy
+1. `.squad/templates/{same-name}` -- if identical, delete the root copy
+2. The canonical subdirectory location (e.g., `.squad/casting/policy.json` vs `.squad/casting-policy.json`) -- if the canonical is newer/richer, delete the root copy
 
 **Fix:** Delete all rogue files before committing. The pre-commit hook's allow-list will reject them anyway.
 
@@ -58,7 +58,7 @@ git diff --stat -- .copilot/skills/
 
 ---
 
-## 4. Workflow Diffs — Are They Pure Upstream?
+## 4. Workflow Diffs -- Are They Pure Upstream?
 
 For modified workflows, check `git diff` for:
 - Removed project-specific customizations (secrets, custom labels, branch names)
@@ -71,9 +71,9 @@ If diffs are pure upstream improvements (bugfixes, new features), ship. If they 
 ## Checklist
 
 - [ ] Delete rogue `.squad/` root files
-- [ ] Verify `.copilot/skills/` overwrites — revert if customized
-- [ ] Audit new workflows — delete those targeting non-existent branches
-- [ ] Diff modified workflows — confirm no lost customizations
+- [ ] Verify `.copilot/skills/` overwrites -- revert if customized
+- [ ] Audit new workflows -- delete those targeting non-existent branches
+- [ ] Diff modified workflows -- confirm no lost customizations
 - [ ] Check `squad.agent.md` for new spawn requirements
 - [ ] Run pre-commit hook to validate
 - [ ] Commit in logical groups (governance, workflows, skills separately)

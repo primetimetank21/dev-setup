@@ -1,7 +1,7 @@
 # Project Context
 
 - **Owner:** Earl Tankard, Jr., Ph.D.
-- **Project:** dev-setup — A replicable setup script system for Dev Containers and Codespaces
+- **Project:** dev-setup -- A replicable setup script system for Dev Containers and Codespaces
 - **Stack:** Bash, Zsh, PowerShell, shell scripting, cross-platform tooling
 - **Created:** 2026-04-07T03:05:10Z
 
@@ -11,11 +11,11 @@
 - Target environments: GitHub Codespaces, Dev Containers, fresh machines
 - Tools to install: zsh, uv, nvm, gh CLI, GitHub Copilot CLI, and user shortcuts
 - Dotfiles and shell configs are managed as templates
-- Scripts must be idempotent — safe to run multiple times
+- Scripts must be idempotent -- safe to run multiple times
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
@@ -25,176 +25,33 @@
 - The coordinator creates worktrees at `{repo-parent}/{repo-name}-{issue-number}` so each agent gets a fully isolated working tree.
 - This prevents the Sprint 4 race condition where Chip-issue-43 checked out a branch while Chip-issue-41 was mid-commit on the same working tree.
 - `SQUAD_WORKTREES=1` is now set by default in `.devcontainer/devcontainer.json` `remoteEnv`.
-- Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md § "Parallel Agent Work"`.
+- Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md Sec. "Parallel Agent Work"`.
 - PR: https://github.com/primetimetank21/dev-setup/pull/58
 
 ### Gitconfig templates do not support shell expansion (Issue #184)
 
-- Git reads `.gitconfig` values as literal strings — `${EDITOR:-vim}` is NOT expanded by the shell, it becomes the literal editor command, which fails.
+- Git reads `.gitconfig` values as literal strings -- `${EDITOR:-vim}` is NOT expanded by the shell, it becomes the literal editor command, which fails.
 - For any tool-config template that is NOT processed by a shell at apply time, always use literal values.
 - Pattern: use a sensible literal default + a comment showing how to override (e.g., `# Override with: git config --global core.editor <your-editor>`).
 - The dotfiles `install.sh` does `sed` substitution for `YOUR_NAME`/`YOUR_EMAIL` placeholders, but does NOT expand arbitrary shell variables in the gitconfig template.
 
-## Work Log
+> Compressed 2026-05-17 per #319 (Option A: older entries summarized in-place; no archive file).
 
-### 2026-04-07 — Issue #10: Dev Container and Codespace post-create setup
+## Work Log (pre-2026-05-16 summary)
 
-**Branch:** `squad/10-devcontainer`
-**PR:** https://github.com/primetimetank21/dev-setup/pull/21
-**Status:** PR open, pending review
+Compressed; older sessions kept as short bullets to preserve audit trail.
 
-**What I did:**
-- Created `.devcontainer/devcontainer.json` using `mcr.microsoft.com/devcontainers/base:ubuntu`
-- `postCreateCommand` set to `bash setup.sh` — routes to `scripts/linux/setup.sh` on Linux
-- Pre-installed 10 VS Code extensions: Copilot, Copilot Chat, ShellCheck, shell-format, bash-ide, PowerShell, EditorConfig, GitLens, PR GitHub, GitHub Actions
-- Default terminal set to zsh (installed by setup.sh)
-- Devcontainer features: git and github-cli (gh available before postCreate so Copilot CLI install works)
-- `DEBIAN_FRONTEND=noninteractive` set in both `containerEnv` and `remoteEnv` to suppress apt prompts
-- Created `.devcontainer/README.md` with full documentation: how to open in VS Code and Codespaces, what postCreate does, extensions table, settings table, customization guide
+- **2026-04-07 -- Issue #10** Dev Container + Codespace post-create setup. Devcontainer.json, postCreateCommand, CRLF guard precursor.
+- **2026-04-07 -- Issue #11** Dotfile templates: `.gitconfig`, `.npmrc`, `.editorconfig` under `config/dotfiles/`. Decision: templates with shell-expansion limitation (see Learnings).
+- **2026-04-07 -- Issue #8** Shell aliases first cut; design decisions on POSIX vs bash/zsh-only (later formalized in #236).
+- **2026-04-08 -- Issue #56** Worktree isolation for parallel agent work -- pattern that became standard SOP (see Learnings).
+- **2026-04-07 -- Issue #108** PowerShell alias parity first cut; PR #115 merged 2026-04-19 (closes #108).
+- **2026-04-12 -- Issue #64** Append managed block to existing .zshrc/.bashrc with sentinel markers (`# --- dev-setup managed block ---`).
+- **Sprint 6** PowerShell aliases completion (#108 follow-up); AllScope alias guards established.
 
-**Key decisions:**
-- Used `github-cli` as a devcontainer feature (not just relying on setup.sh) so `gh` is available during postCreate for Copilot CLI install
-- `editor.rulers: [100]` matches the project's 100-char line width convention
-- `shellcheck.run: "onType"` for immediate feedback on shell scripts
-## 2026-04-07 — Issue #11: Dotfile Templates
-
-**Branch:** `squad/11-dotfile-templates`  
-**PR:** targets `dev`
-
-### What I shipped
-
-Created `config/dotfiles/` with:
-
-- `.gitconfig.template` — git defaults with `YOUR_NAME`/`YOUR_EMAIL` placeholders,
-  sensible `core`, `pull`, `push`, `merge`, `fetch`, `diff` settings, and common
-  aliases (`co`, `br`, `st`, `lg`, `undo`, `unstage`).
-- `.editorconfig` — universal editor config: 2-space indent, LF, UTF-8, final
-  newline; exceptions for Markdown (trailing whitespace), Makefiles (tabs),
-  PowerShell (4 spaces), Python (4 spaces).
-- `.npmrc.template` — `save-exact`, `fund=false`, `audit=false`, `loglevel=warn`,
-  commented auth token stubs with instructions.
-- `install.sh` — idempotent Bash installer with `--dry-run` support. Copies
-  `.gitconfig` and `.npmrc` (user-editable), symlinks `.editorconfig`.
-  Backs up existing `.gitconfig` before overwriting. Substitutes
-  `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` / `GIT_AUTHOR_SIGNING_KEY` via `sed`.
-- `README.md` — full documentation of each file, env vars, idempotency, and
-  how to add new dotfiles.
-
-### Key decisions
-
-- Copy `.gitconfig`/`.npmrc`, symlink `.editorconfig` — machine-specific vs shared
-- Use `sed` not `envsubst` (not universally available)
-- Back up existing `.gitconfig` rather than skipping (Codespaces may have stale auto-generated config)
-- No `.zshrc` here — that belongs to issue #8
-
-### Decision record
-
-`.squad/decisions/inbox/pluto-dotfiles.md`
-## Session: 2026-04-07 — Issue #8 Shell Aliases
-
-**Branch:** `squad/8-shell-aliases`
-**PR:** #22 — [Config] Shell shortcuts and aliases
-**Status:** PR open, base `develop`
-
-### What was done
-- Created `config/dotfiles/.aliases` with aliases grouped by category: navigation, ls, git, gh CLI, docker (optional), utility, and dev shortcuts
-- Created `config/dotfiles/.zshrc.template` — a minimal template for `$HOME/.zshrc` that sets up PATH for `uv` and `nvm`, and sources `~/.aliases`
-- Created `config/dotfiles/install.sh` by porting from `squad/11-dotfile-templates` and extending it to:
-  - Symlink `.aliases` → `$HOME/.aliases`
-  - Copy `.zshrc.template` → `$HOME/.zshrc` only if no `.zshrc` exists (never overwrites)
-
-### Design decisions
-- `.aliases` is symlinked (not copied) so repo updates propagate instantly
-- `.zshrc.template` is copied only on first install — it's the user's file to own
-- Docker aliases are marked as optional in comments
-- No hardcoded paths — all use `$HOME`, `$NVM_DIR`
+Lessons preserved verbatim in Learnings section above (worktree isolation pattern, gitconfig template shell-expansion limitation).
 
 ---
-
-## 2026-04-12 — Issue #64: Append Managed Block to Existing .zshrc/.bashrc
-
-**Branch:** `squad/64-dotfiles-append-managed-block`
-**PR:** #65 (open, targeting `develop`)
-**Status:** Ready for review
-
-**What I did:**
-- Replaced the "skip .zshrc if it exists" behavior with an append-managed-block strategy
-- Added `append_managed_block()` helper to `config/dotfiles/install.sh` — uses a marker comment for idempotency
-- `.zshrc` block: sets PATH for `$HOME/.local/bin`, inits nvm, sources `.aliases`
-- `.bashrc` block: sets PATH for `$HOME/.local/bin`, sources `.aliases` (nvm init omitted — nvm installer handles it)
-- Fresh-install (no `.zshrc`) path unchanged — still copies the template
-- `--dry-run` support wired into the new helper
-
-**Key decisions:**
-- Marker: `# --- dev-setup managed block` — simple `grep -qF` check before every append
-- `.bashrc` block is intentionally shorter than `.zshrc` — nvm appends its own init to `.bashrc` during install
-- Only append to `.bashrc` if it already exists — no template for `.bashrc`
-
-**Decision record:** `.squad/decisions/inbox/pluto-dotfiles-managed-block.md`
-
----
-
-## 2026-04-08 — Issue #56: Worktree Isolation for Parallel Agent Work
-
-**Branch:** `squad/56-worktree-isolation`  
-**PR:** #58 (open, targeting `develop`)  
-**Status:** Ready for review
-
-**What I did:**
-1. Added `SQUAD_WORKTREES=1` to `.devcontainer/devcontainer.json` in `remoteEnv` (always-on for Codespaces)
-2. Created skill documentation: `.squad/skills/worktree-isolation/SKILL.md`
-3. Updated `CONTRIBUTING.md` with § "Parallel Agent Work" section
-
-**Why:** Sprint 4 revealed a critical race condition: Chip-issue-43 ran `git checkout squad/43` while Chip-issue-41 was mid-commit on the shared working tree, resulting in wrong content on wrong branches. PR #51 had to be closed.
-
-**Root cause:** A single git working tree can only have one branch checked out at a time. It is not safe to share between concurrent agents.
-
-**Solution:** With `SQUAD_WORKTREES=1`, the coordinator creates isolated worktrees at `{repo-parent}/{repo-name}-{issue-number}` before handing control to each agent. Branch operations inside one worktree are completely invisible to all others.
-
-**Scope:**
-- **Parallel runs:** SQUAD_WORKTREES=1 required (multiple agents on different issues concurrently)
-- **Sequential runs:** Not needed — no race condition possible with single agent
-
-**Mid-task incident:** A race condition struck while committing history.md — the commit landed on the wrong branch. Cherry-picked it back to maintain consistency.
-
-**Decision documented:** Merged to squad/decisions.md
-
-**Part of Sprint 5 Round 1:** Coordinated parallel work with Mickey (issue #54) and Donald (issue #57). All agents worked concurrently on separate branches without conflicts.
-
----
-
-## 2026-04-07 — Issue #108: PowerShell Alias Parity
-
-**Branch:** `squad/108-powershell-alias-parity`
-**PR:** #115 → `develop` (merged)
-**Status:** ✅ Complete
-
-**What I did:**
-- Fixed `gs` alias: updated `Get-GitStatus` body from `git status` to `git status -sb`
-- Added 14 new git aliases: `gaa`, `gcm`, `gcb`, `gco`, `gd`, `gds`, `ggsp`, `gp`, `gpf`, `gpl`, `grb`, `grbi`, `grs`, `grss`
-- Added 5 GitHub CLI aliases: `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
-- Added 8 dev shortcut aliases: `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
-- Added 3 utility aliases: `myip`, `pb`, `h`
-- Organized new aliases under `# -- GitHub CLI shortcuts`, `# -- Dev shortcuts`, `# -- Utility` section headers
-- Added test group F (6 tests) to `tests/test_windows_setup.ps1`
-- Used `Remove-Item -Force Alias:\<name>` guards for all built-in alias conflicts (`gc`, `gl`, `gp`, `grb`, `grs`, `ni`, `h`)
-
-**Key decisions:**
-- Shell-only aliases (navigation, ls, tmux, docker, reload) skipped — no PS parity needed
-- All functions use `function Name { cmd $args }` pattern for PS 5.1 strict mode compat
-- Decision record: `.squad/decisions/inbox/pluto-108-alias-parity.md`
-
-### 2026-04-19 — PR #115 Merged; Issue #108 Closed
-
-PR #115 merged to `develop`. Mickey reviewed and approved — all 30 aliases correct, CI green (4/4), PS 5.x safe, test group F (6 tests) passing. Issue #108 closed manually (GitHub doesn't auto-close on develop merges).
-
-## Sprint 6: PowerShell Aliases (Issue #108)
-
-**PR:** #115  
-**Date:** 2026-04-18  
-
-Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for reserved names, $args passthrough on all functions, inline comments, and PS 5.x strict-mode compatibility. High craft level. Issue closed.
-
 
 ## Learnings
 
@@ -257,173 +114,12 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 
 ---
 
-## 2026-05-16 -- Issue #227: Timestamp .bak backups (both platforms)
+## Sprint 9-10 entries (summary)
 
-**Branch:** `squad/227-bak-rotation`
-**PR:** (pending)
-**Status:** PR open, targeting `develop`
-
-### What I did
-
-- Added `backup_file()` to `config/dotfiles/install.sh`:
-  - Creates `<target>.bak.YYYYMMDD-HHMMSS` on each backup
-
----
-
-## 2026-05-16 -- Sprint 10 (formerly Sprint S) Issue #271 revise: fix(uninstall) core.hooksPath scope mismatch
-
-**Branch:** `squad/271-uninstall-hookspath`
-**PR:** #277 (revised after Windows E2E failure)
-**Status:** Force-pushed; CI re-triggered
-
-### Root cause
-
-setup.ps1 / setup.sh write `core.hooksPath` with no scope flag (defaults to
-`--local`, writing to `.git/config`). The original PR #277 uninstall calls used
-`--global`, targeting `%USERPROFILE%\.gitconfig` where the key was never written.
-Git exited non-zero; the GH Actions pwsh runner template propagates
-`$LASTEXITCODE` as the step exit code, killing the Windows E2E job.
-On Linux, `|| true` hid the error but the local key was never actually unset
-(silent functional bug).
-
-A secondary logic inversion in uninstall.ps1 caused the if/else branches to
-fire on the wrong exit codes, printing [OK] when the key was absent.
-
-### What I changed
-
-- `scripts/windows/uninstall.ps1`: dropped `--global`; flipped if/else so
-  exit-0 is OK, exit-1/5 is SKIP, other is WARN; added `$global:LASTEXITCODE = 0`
-  to prevent residual non-zero from propagating through the GH Actions runner
-  template; added `Write-Warn` helper function.
-- `scripts/linux/uninstall.sh`: dropped `--global`; changed `ok` to `log_ok`
-  (interop with PR #278 logging consolidation that renamed the function).
-- `tests/test_windows_setup.ps1`:
-  - Resolved conflict with Group Z tests (from develop #234) -- kept both.
-  - AA-3 rewritten to test local-scope unset via a temp git init repo instead
-    of `GIT_CONFIG_GLOBAL` override, matching the actual fix (no `--global`).
-  - Fixed AA-1/AA-2 error message strings to drop the `--global` reference.
-
-### Key lessons
-
-- Always match the scope flag in uninstall to whatever scope the install used.
-  When setup.* uses no flag (local default), uninstall must also use no flag.
-- `$global:LASTEXITCODE = 0` at the end of a pwsh uninstall script is a
-  mandatory safety reset when the script runs git commands; the GH Actions
-  runner template will propagate any non-zero residual as the step exit code.
-- `|| true` on Linux hides errors but does not fix them; always confirm the
-  actual command succeeded by checking scope alignment.
-  - Trims all but the N most recent (default N=5, override `DOTFILE_BACKUP_KEEP`)
-  - Replaces the old `cp "$dest" "${dest}.bak"` one-shot pattern in `install_copy`
-    and the `cp "$link" "${link}.bak"` pattern in `install_symlink`
-- Added `Backup-File` function to `scripts/windows/tools/dotfiles.ps1`:
-  - Same timestamp format (`yyyyMMdd-HHmmss`), same N-keep trim
-  - Reads `$env:DOTFILE_BACKUP_KEEP` for override
-  - Replaces the "back up only if no .bak exists yet" guard
-- Updated `scripts/linux/uninstall.sh` `restore_backup()`:
-  - Picks newest `.bak.*` (last known good before most recent install)
-  - Falls back to legacy `.bak` for backward compat
-- Updated `scripts/windows/uninstall.ps1` `Restore-DotfileBackup`:
-  - Same strategy: newest `.bak.*` first, then legacy `.bak`
-  - Updated "foundAny" probe to check `.bak.*` glob too
-- Updated `tests/test_windows_setup.ps1`:
-  - Q-3 now asserts `.bak.*` (timestamped) pattern, not `.bak`
-  - Added Q-4: 3-run acceptance test -- 3 distinct timestamped backups verified
-- CHANGELOG.md [Unreleased] > Changed: appended entry
-- Decision file: `.squad/decisions/inbox/pluto-227-bak-rotation.md`
-
-### Key decisions
-
-- **Restore strategy:** newest backup = state before last install. Oldest = original-original (still accessible manually, kept by N=5 default). Decision file: `pluto-227-bak-rotation.md`.
-- **Default N=5:** env var override `DOTFILE_BACKUP_KEEP` on both platforms.
-- **Cleanup:** automatic inline trim after each backup write. No cron required.
-- **Timestamp format:** `YYYYMMDD-HHmmss` -- sortable, human-readable, filesystem-safe, identical on both platforms.
-
-## 2026-05-16 -- Sprint 9 (formerly Sprint R): HooksPath Documentation and .bak Rotation Fixes
-
-**PRs:** #266 (docs(contributing): document automatic hooks + branch-from-develop)
-         #269 (feat(dotfiles): timestamp .bak backups with N-keep retention)
-**Branches:** `squad/228-hookspath-docs` and `squad/227-bak-rotation`
-**Status:** MERGED to develop
-
-### PR #266 -- HooksPath Documentation
-
-What I did:
-- Updated CONTRIBUTING.md to replace stale "install hooks manually" section with
-  "Git Hooks / configured automatically" table showing core.hooksPath pattern
-- Added section verifying hooks are auto-configured on clone (no manual steps needed)
-- Added "Branch from develop" validation note to CONTRIBUTING.md to reinforce branch ancestry rule
-- README already had comprehensive Git Hooks section (lines 178+) -- verified and confirmed
-- CHANGELOG updated under [Unreleased] > Changed
-
-Key learnings:
-- Uninstall gap: scripts/linux/uninstall.sh and scripts/windows/uninstall.ps1 do NOT
-  run 'git config --unset core.hooksPath'. After uninstall, hooksPath still points to
-  hooks/ in detached repo. This is a correctness gap (filed as #271 follow-up).
-  Documentation is accurate but incomplete -- resolve #271 to make uninstall reversible.
-
-### PR #269 -- .bak Rotation and Pipefail Fix
-
-What I did:
-- Added timestamped backup pattern to both scripts/linux/uninstall.sh and
-  scripts/windows/uninstall.ps1 (timestamp format: YYYYMMDD-HHMMSS)
-- Updated restore_backup() to pick newest .bak.* file (most recent install state)
-- Fixed critical bug in scripts/linux/uninstall.sh restore_backup():
-  - Problem: 'set -euo pipefail' in uninstall.sh. When no .bak.* files exist,
-    'ls -t ${target}.bak.* 2>/dev/null' expands to literal string, ls exits 2,
-    and pipefail kills the script (this broke E2E uninstall on fresh runners)
-  - Fix: Added '|| newest=""' to the assignment to catch ls failure without dying
-  - This is a classic shell gotcha: glob that fails to expand under strict mode
-- Updated test Q-4 to verify 3 distinct timestamped backups from successive runs
-- CHANGELOG updated [Unreleased] > Added
-
-Key learnings:
-- Shell pipefail gotcha: Any pipeline component that exits non-zero kills the script
-  under 'set -euo pipefail'. Globs that fail to expand are a common trap.
-  Solution: Add '|| fallback' to handle the failure gracefully.
-- Cross-platform consistency: Both Linux and Windows now use identical timestamp
-  format (YYYYMMDD-HHMMSS, sortable, filesystem-safe). Backup strategy matches on both.
-- Defensive restoration: newest backup should restore the install state before the
-  most recent run. Oldest backups accumulate (up to N=5) for manual recovery.
-- Doc's batch fact-check caught the pipefail bug BEFORE merge. This prevented a
-  post-merge P0 fix and validated the batch-check role as high-ROI.
-
-### Notes on Batch Fact-Check
-
-Doc's verification identified 2 real bugs in Sprint 9 PRs before merge:
-1. #267 X-1 autocrlf failure -- caught and fixed by Chip (rebase)
-2. #269 uninstall.sh pipefail failure -- caught and fixed pre-merge (this work)
-
-This prevents post-merge firefighting and validates batch-check as a standing pattern.
-Recommend spawning Doc on any shell-heavy or multi-platform PR in future sprints.
-
-### PR #275 -- PowerShell .gitattributes CRLF Rule (#231)
-
-**Date:** 2026-05-16  
-**Issue:** #231 -- chore(.gitattributes): add explicit line-ending rule for *.ps1  
-**Branch:** squad/231-ps1-gitattributes  
-**Status:** OPEN (awaiting review)
-
-What I did:
-- Added explicit .gitattributes rules for *.ps1, *.psm1, and *.psd1 files with text eol=crlf
-- Rationale: PowerShell tooling on Windows expects CRLF. When core.autocrlf=true (standard on Windows runners),
-  git normalizes files to LF by default. Setting explicit eol=crlf eliminates this platform divergence and ensures
-  consistent CRLF checkout on all platforms, preventing autocrlf surprises (relates to Sprint 9 #267 autocrlf lesson).
-- Updated CHANGELOG.md [Unreleased] > Changed section
-- Verified rule with git check-attr: all *.ps1 files now report eol: crlf
-
-Decision made:
-- Scoped to PowerShell files (.ps1/.psm1/.psd1) only, not shell scripts (.sh/.bash)
-- Reason: Shell scripts already have explicit eol=lf rules and are consistent. PowerShell files were missing
-  an explicit rule and were normalizing to the global default (LF), which is wrong for Windows tooling.
-- Shell scripts scope can be addressed in a follow-up if cross-platform shell portability becomes a concern.
-
-Key learnings:
-- Git .gitattributes explicit rules are the cleanest way to override autocrlf behavior consistently across platforms.
-- eol=crlf ensures the working tree always has CRLF on checkout, regardless of core.autocrlf setting.
-- This is especially important for Windows-specific tooling like PowerShell, which expects CRLF.
-
-
----
+- **2026-05-16 -- Issue #227: Timestamp .bak backups (both platforms).** Replaced single `.bak` with timestamped pattern (`.bak.YYYYMMDD-HHMMSS`); newest-wins restore via `Get-ChildItem | Sort-Object LastWriteTime -Descending` / `ls -t`. Legacy `.bak` fallback preserved for backward compat.
+- **2026-05-16 -- Sprint 10 PR for #271: Uninstall core.hooksPath scope mismatch.** Install set `core.hooksPath` at `--global` scope; uninstall tried to unset at `--local` -> orphan. Fix: scope parity (both `--global`). Root cause: scope inheritance trap in git config. Tests confirm idempotent uninstall.
+- **2026-05-16 -- Sprint 9 PRs #266 + #269: HooksPath docs + .bak rotation + pipefail fix.** PR #266: README + CONTRIBUTING explain hooksPath model. PR #269: .bak rotation (timestamped) + pipefail fix in uninstall.sh (was masking failures in pipeline chain). Doc batch fact-check caught real bugs pre-merge (autocrlf in #267, pipefail in #269).
+- **2026-05-17 -- PR #275: PowerShell .gitattributes CRLF rule (#231).** Added `*.ps1 text eol=crlf` to .gitattributes -- PS 5.1 strict-mode parser is sensitive to LF endings in certain script forms. Symmetric with `*.sh text eol=lf` rule.
 
 ## 2026-05-17 -- Sprint 11 (formerly Sprint T) Issue #233: docs(hooks) PSScriptAnalyzer advisory-only intent
 

@@ -15,6 +15,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.9.3] - 2026-05-17 -- Sprint 13: Documentation accuracy and ASCII policy hardening
+
+### Added
+- squad: skill formalizing the worktree-remove-FIRST PR merge pattern; documents the gh CLI quirk and proven 5-of-5 workaround (#317)
+
+### Changed
+
+- docs: ASCII-sweep all repo Markdown files (em-dash, arrows, smart quotes, box-drawing) per repo policy (#322 part A)
+- squad: compress 8 over-gate agent history.md files per Scribe HARD GATE (#319)
+- squad: fold Sprint 13 Wave 1 hygiene drops into per-topic decisions and re-compress jiminy/history.md back under 15KB gate
+- squad: fold Sprint 13 Wave 2 hygiene drops into per-topic decisions and re-compress 4 over-gate agent history.md files
+
+### Fixed
+- docs(architecture): correct stale top-level path for auth.ps1; reflects post-PR #297 move to tools/ (#325)
+- docs(readme): correct active git hooks count from three to four; lists prepare-commit-msg post-PR #212 (#326)
+- hooks(pre-commit): extend non-ASCII scan to include .md and .sh files (was .ps1 only, allowing 134 non-ASCII hits to land in ARCHITECTURE.md) (#322 part B)
+
+### Removed
+
 ## [0.9.2] - 2026-05-17
 
 ### Added

@@ -16,20 +16,20 @@
 
 | Issue | Title | PR | Status |
 |-------|-------|----|---------| 
-| #54 | Block Direct Pushes to develop | — | Pending manual enforce_admins=true |
-| #55 | Agent Timeout Policy | #60 | ✅ Merged |
-| #56 | SQUAD_WORKTREES Config | #58 | ✅ Merged |
-| #57 | Remove ps.tar.gz | #59 | ✅ Merged |
+| #54 | Block Direct Pushes to develop | -- | Pending manual enforce_admins=true |
+| #55 | Agent Timeout Policy | #60 | [x] Merged |
+| #56 | SQUAD_WORKTREES Config | #58 | [x] Merged |
+| #57 | Remove ps.tar.gz | #59 | [x] Merged |
 
 ### PRs Merged (5 total)
 
 | PR | Title | Status |
 |----|-------|--------|
-| #58 | SQUAD_WORKTREES=1 in devcontainer.json | ✅ Merged to develop |
-| #59 | Remove ps.tar.gz binary artifact | ✅ Merged to develop |
-| #60 | Document enforce_admins decision | ✅ Merged to develop |
-| #61 | CI improvements | ✅ Merged to develop |
-| #62 | Sprint 5 history summary | ✅ Merged to develop |
+| #58 | SQUAD_WORKTREES=1 in devcontainer.json | [x] Merged to develop |
+| #59 | Remove ps.tar.gz binary artifact | [x] Merged to develop |
+| #60 | Document enforce_admins decision | [x] Merged to develop |
+| #61 | CI improvements | [x] Merged to develop |
+| #62 | Sprint 5 history summary | [x] Merged to develop |
 
 ## Key Decisions Established
 
@@ -56,7 +56,7 @@
 1. Agent opens PR on branch
 2. Mickey reviews and approves
 3. Ralph executes `gh pr merge --admin` (or PR author if single-issue agent)
-4. No direct pushes to develop; always PR → review → admin merge
+4. No direct pushes to develop; always PR -> review -> admin merge
 
 **Status:** Established as standard. All sprint 5 PRs merged with this pattern.
 
@@ -66,5 +66,5 @@ All orchestration logs written to `.squad/orchestration-log/` for team memory.
 
 ## Next Steps
 
-- **Issue #54 follow-up:** Earl (owner) to manually enable `enforce_admins=true` in Settings → Branches if preferred. If not, current state is acceptable per documented decision.
+- **Issue #54 follow-up:** Earl (owner) to manually enable `enforce_admins=true` in Settings -> Branches if preferred. If not, current state is acceptable per documented decision.
 - **Regular agent work:** Resume standard squad operations with `--admin` merge pattern

@@ -12,7 +12,7 @@
 | **Facilitator** | lead |
 | **Participants** | all-relevant |
 | **Time budget** | focused |
-| **Enabled** | ✅ yes |
+| **Enabled** | [x] yes |
 
 **Agenda:**
 1. Review the task and requirements
@@ -32,7 +32,7 @@
 | **Facilitator** | lead |
 | **Participants** | all-involved |
 | **Time budget** | focused |
-| **Enabled** | ✅ yes |
+| **Enabled** | [x] yes |
 
 **Agenda:**
 1. What happened? (facts only)
@@ -51,6 +51,6 @@
 | **Condition** | any open PR |
 | **Facilitator** | lead |
 | **Participants** | author + reviewer |
-| **Enabled** | ✅ yes |
+| **Enabled** | [x] yes |
 
 **CI-Green Policy**: No PR may be merged unless all CI checks are green. If CI fails, the PR author must fix the failures before requesting re-review.

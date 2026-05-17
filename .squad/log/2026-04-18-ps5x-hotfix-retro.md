@@ -1,4 +1,4 @@
-# Session Log: PS 5.x Hotfix & Retro — 2026-04-18
+# Session Log: PS 5.x Hotfix & Retro -- 2026-04-18
 
 **Date:** 2026-04-18  
 **Session Type:** Hotfix + Triage + Retro  
@@ -10,13 +10,13 @@
 ## What Was Fixed
 
 ### Bug #1: `$MyInvocation.MyCommand.Path` in Hosted Contexts
-**File:** `setup.ps1` — `Get-Platform` function  
+**File:** `setup.ps1` -- `Get-Platform` function  
 **Issue:** Variable returns `$null` when script is dot-sourced or hosted; breaks under `Set-StrictMode`.  
 **Fix:** Replaced with `$PSScriptRoot` (available PS 3+).  
 **Agent:** Goofy  
 
 ### Bug #2: PS 6+ Auto-Variables (`$IsLinux`/`$IsMacOS`/`$IsWindows`) Undefined on PS 5.x
-**File:** `setup.ps1` — `Get-Platform` function  
+**File:** `setup.ps1` -- `Get-Platform` function  
 **Issue:** Variables don't exist on Windows PowerShell 5.x; strict mode hard-fails on undefined refs.  
 **Fix:** Added version-guarded short-circuit: `($PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux) -or ...`  
 **Agent:** Goofy  
@@ -26,8 +26,8 @@
 
 ## Issues Created
 
-- **#107** — Install vim on Windows via winget (assign: Goofy, P2)
-- **#108** — Add `.aliases` to Windows PowerShell profile (assign: Pluto/Goofy, P2)
+- **#107** -- Install vim on Windows via winget (assign: Goofy, P2)
+- **#108** -- Add `.aliases` to Windows PowerShell profile (assign: Pluto/Goofy, P2)
 
 Both require Sprint 6 planning inclusion.
 

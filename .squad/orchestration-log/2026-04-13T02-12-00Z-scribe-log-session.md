@@ -10,12 +10,12 @@ Logged session wrap-up, merged decisions from inbox (if any), and committed .squ
 
 ## Tasks Executed
 
-1. ✅ Session wrap-up log written to `.squad/log/{timestamp}-session-wrap.md`
-2. ✅ Decision inbox merged (was empty, no action required)
-3. ✅ Cross-agent history updates added to chip/history.md and goofy/history.md
-4. ✅ Orchestration logs created for all 9 agents
-5. ✅ Git commit prepared with `docs(squad): {summary}` message
-6. ✅ Changes pushed to develop
+1. [x] Session wrap-up log written to `.squad/log/{timestamp}-session-wrap.md`
+2. [x] Decision inbox merged (was empty, no action required)
+3. [x] Cross-agent history updates added to chip/history.md and goofy/history.md
+4. [x] Orchestration logs created for all 9 agents
+5. [x] Git commit prepared with `docs(squad): {summary}` message
+6. [x] Changes pushed to develop
 
 ## Session Context
 

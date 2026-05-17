@@ -1,6 +1,6 @@
-# Issue Lifecycle — Repo Connection & PR Flow
+# Issue Lifecycle -- Repo Connection & PR Flow
 
-Reference for connecting Squad to a repository and managing the issue→branch→PR→merge lifecycle.
+Reference for connecting Squad to a repository and managing the issue->branch->PR->merge lifecycle.
 
 ## Repo Connection Format
 
@@ -41,12 +41,12 @@ Each platform tracks issue lifecycle differently. Squad normalizes these into a 
 | Closed | `state: closed` | `done` |
 
 **Issue labels used by Squad:**
-- `squad` — Issue is in Squad backlog
-- `squad:{member}` — Assigned to specific agent
-- `squad:untriaged` — Needs triage
-- `go:needs-research` — Needs investigation before implementation
-- `priority:p{N}` — Priority level (0=critical, 1=high, 2=medium, 3=low)
-- `next-up` — Queued for next agent pickup
+- `squad` -- Issue is in Squad backlog
+- `squad:{member}` -- Assigned to specific agent
+- `squad:untriaged` -- Needs triage
+- `go:needs-research` -- Needs investigation before implementation
+- `priority:p{N}` -- Priority level (0=critical, 1=high, 2=medium, 3=low)
+- `next-up` -- Queued for next agent pickup
 
 **Branch naming convention:**
 ```
@@ -67,8 +67,8 @@ Example: `squad/42-fix-login-validation`
 | Closed | `done` |
 
 **Work item tags used by Squad:**
-- `squad` — Work item is in Squad backlog
-- `squad:{member}` — Assigned to specific agent
+- `squad` -- Work item is in Squad backlog
+- `squad:{member}` -- Assigned to specific agent
 
 **Branch naming convention:**
 ```
@@ -87,14 +87,14 @@ Planner does not have native Git integration. Squad uses Planner for task tracki
 | In Progress, PR opened | `needsReview` |
 | Completed | `done` |
 
-**Planner→Git workflow:**
+**Planner->Git workflow:**
 1. Task created in Planner bucket
 2. Agent reads task from Planner
 3. Agent creates branch in GitHub/ADO repo
 4. Agent opens PR referencing Planner task ID in description
 5. Agent marks task as "Completed" when PR merges
 
-## Issue → Branch → PR → Merge Lifecycle
+## Issue -> Branch -> PR -> Merge Lifecycle
 
 ### 1. Issue Assignment (Triage)
 
@@ -218,9 +218,9 @@ Working as {member} ({role})
 ### 5. PR Review & Updates
 
 **Review states:**
-- **Approved** → `readyToMerge`
-- **Changes requested** → `changesRequested`
-- **CI failure** → `ciFailure`
+- **Approved** -> `readyToMerge`
+- **Changes requested** -> `changesRequested`
+- **CI failure** -> `ciFailure`
 
 **When changes are requested:**
 1. Agent addresses feedback
@@ -267,7 +267,7 @@ az repos pr update --id {pr-id} --status completed --delete-source-branch true
 1. Issue automatically closes (if "Closes #{number}" is in PR description)
 2. Feature branch is deleted
 3. Squad board state transitions to `done`
-4. Worktree cleanup (if worktree was used — #525)
+4. Worktree cleanup (if worktree was used -- #525)
 
 ### 7. Cleanup
 
@@ -326,7 +326,7 @@ Ralph (the work monitor) continuously checks issue and PR state:
 
 1. **Triage:** Detects untriaged issues, assigns `squad:{member}` labels
 2. **Spawn:** Launches agents for assigned issues
-3. **Monitor:** Tracks PR state transitions (needsReview → changesRequested → readyToMerge)
+3. **Monitor:** Tracks PR state transitions (needsReview -> changesRequested -> readyToMerge)
 4. **Merge:** Automatically merges approved PRs
 5. **Cleanup:** Marks issues as done when PRs merge
 
@@ -394,19 +394,19 @@ All PRs reviewed → All PRs merged → Epic closed
 
 ## Anti-Patterns
 
-- ❌ Creating branches without linking to an issue
-- ❌ Committing without issue reference in message
-- ❌ Opening PRs without "Closes #{number}" in description
-- ❌ Merging PRs before CI passes
-- ❌ Leaving feature branches undeleted after merge
-- ❌ Using `checkout -b` when parallel agents are active (causes working directory conflicts)
-- ❌ Manually transitioning issue states — let the platform and Squad automation handle it
-- ❌ Skipping the branch naming convention — breaks Ralph's tracking logic
+- [ ] Creating branches without linking to an issue
+- [ ] Committing without issue reference in message
+- [ ] Opening PRs without "Closes #{number}" in description
+- [ ] Merging PRs before CI passes
+- [ ] Leaving feature branches undeleted after merge
+- [ ] Using `checkout -b` when parallel agents are active (causes working directory conflicts)
+- [ ] Manually transitioning issue states -- let the platform and Squad automation handle it
+- [ ] Skipping the branch naming convention -- breaks Ralph's tracking logic
 
 ## Migration Notes
 
-**v0.8.x → v0.9.x (Worktree Support):**
-- `checkout -b` → `git worktree add` for parallel agents
+**v0.8.x -> v0.9.x (Worktree Support):**
+- `checkout -b` -> `git worktree add` for parallel agents
 - Worktree cleanup added to post-merge flow
 - `TEAM_ROOT` passing to agents to support worktree-aware state resolution
 

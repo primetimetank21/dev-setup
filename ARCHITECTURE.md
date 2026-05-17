@@ -1,7 +1,7 @@
 # Architecture: dev-setup
 
-> **Owner:** Mickey (Lead) — Issue #3  
-> **Last updated:** 2026-05-19 (Sprint 11 (formerly Sprint T) refresh — closes #229)
+> **Owner:** Mickey (Lead) -- Issue #3  
+> **Last updated:** 2026-05-19 (Sprint 11 (formerly Sprint T) refresh -- closes #229)
 
 ---
 
@@ -13,7 +13,7 @@
 - Dev Containers
 - Fresh Linux, macOS, or Windows machines
 
-Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk away. Every tool this project installs is safe to re-install — the scripts check first and skip if already present.
+Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk away. Every tool this project installs is safe to re-install -- the scripts check first and skip if already present.
 
 ---
 
@@ -50,13 +50,13 @@ dev-setup/
 │   │       └── zsh.sh             # Install zsh + set as default shell
 │   │
 │   └── windows/
-│       ├── setup.ps1              # Orchestrator — dot-sources lib + tool modules below
-│       ├── auth.ps1               # GitHub CLI authentication (interactive)
+│       ├── setup.ps1              # Orchestrator -- dot-sources lib + tool modules below
 │       ├── uninstall.ps1          # Idempotent reverse of the installer
 │       ├── lib/
 │       │   ├── logging.ps1        # Write-Info / Write-Ok / Write-Warn / Write-Err + Assert-LastExit
-│       │   └── path.ps1           # Refresh-SessionPath — re-reads Machine+User PATH from registry
+│       │   └── path.ps1           # Refresh-SessionPath -- re-reads Machine+User PATH from registry
 │       └── tools/                  # Per-tool installers (orchestrator + 10 modules; PR #195 split)
+│           ├── auth.ps1           # GitHub CLI authentication (interactive; moved from top-level in PR #297)
 │           ├── copilot.ps1        # GitHub Copilot CLI (pin from .tool-versions)
 │           ├── dotfiles.ps1       # Apply config/dotfiles/ on Windows
 │           ├── gh.ps1             # GitHub CLI (pin from .tool-versions)
@@ -313,7 +313,7 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 ## How to Add a New Platform
 
 1. Create a directory under `scripts/<platform>/`
-2. Create a `setup.sh` (or `setup.ps1`) in that directory — this is the platform's core installer
+2. Create a `setup.sh` (or `setup.ps1`) in that directory -- this is the platform's core installer
 3. Add a detection branch in the root `setup.sh` and/or `setup.ps1`
 4. Document the platform in this file
 
@@ -391,12 +391,12 @@ This means running `bash setup.sh` on a fully-configured machine is a no-op.
 
 Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) file (asdf-style: `name<space>version`, one per line). Both the Linux and Windows installers read pins through a shared library so the same version is installed across all platforms:
 
-- `scripts/lib/Read-ToolVersion.ps1` — exposes `Get-ToolVersion -Name <toolname>` (PowerShell)
-- `scripts/lib/read-tool-version.sh` — same contract for POSIX shells (prints to stdout)
+- `scripts/lib/Read-ToolVersion.ps1` -- exposes `Get-ToolVersion -Name <toolname>` (PowerShell)
+- `scripts/lib/read-tool-version.sh` -- same contract for POSIX shells (prints to stdout)
 
 Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `uv`, `copilot-cli`, `squad-cli`, `gh`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/uv.sh`) call the library at install time so version bumps are a single-file edit. See `.squad/skills/tool-version-pin/SKILL.md` for the pattern.
 
-Companion skill: `.squad/skills/pwsh-lastexitcode/SKILL.md` — the `$LASTEXITCODE = 0` reset pattern required when chaining native commands across pwsh `&` script-call boundaries (CI gating discipline).
+Companion skill: `.squad/skills/pwsh-lastexitcode/SKILL.md` -- the `$LASTEXITCODE = 0` reset pattern required when chaining native commands across pwsh `&` script-call boundaries (CI gating discipline).
 
 ---
 
@@ -419,7 +419,7 @@ The pre-commit allow-list is the canonical source of truth for which paths under
 
 All workflows live in [`.github/workflows/`](./.github/workflows). Owned by Chip.
 
-### `validate.yml` — main CI gate (6 jobs)
+### `validate.yml` -- main CI gate (6 jobs)
 
 | Job | Runner | Purpose |
 |-----|--------|---------|
@@ -430,7 +430,7 @@ All workflows live in [`.github/workflows/`](./.github/workflows). Owned by Chip
 | `validate-powershell` | `windows-latest` | `Remove-CustomItem` regression + git-hooks tests under PS 7 |
 | `validate-ps51` | `windows-latest` | Syntax + PSScriptAnalyzer + profile-write + git-hooks tests under **PS 5.1** (Windows stock) |
 
-### `e2e-install.yml` — end-to-end smoke test (4 jobs, PR + nightly cron)
+### `e2e-install.yml` -- end-to-end smoke test (4 jobs, PR + nightly cron)
 
 | Job | Runner | Purpose |
 |-----|--------|---------|
@@ -445,7 +445,7 @@ Initially `continue-on-error: true` per platform job; the `summary` job is the s
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `squad-heartbeat.yml` | `issues` (closed/labeled), `pull_request` (closed), manual | Ralph — react to completed work / new squad work to keep the loop alive |
+| `squad-heartbeat.yml` | `issues` (closed/labeled), `pull_request` (closed), manual | Ralph -- react to completed work / new squad work to keep the loop alive |
 | `squad-history-check.yml` | `pull_request` to `develop`/`main` | Enforce `agents/{name}/history.md` updates when a `squad:*` label is present |
 | `squad-issue-assign.yml` | `issues` (labeled with `squad:{member}`) | Drop the "Assigned to {Member}" instructional comment |
 | `squad-label-enforce.yml` | `issues` (labeled) | Enforce mutual exclusivity for `go:`, `release:`, `type:`, `priority:` namespaces |
@@ -456,7 +456,7 @@ Initially `continue-on-error: true` per platform job; the `summary` job is the s
 
 ## Squad Roster
 
-The squad lives under [`.squad/agents/`](./.squad/agents) — each agent owns a directory with `charter.md` (identity, boundaries, voice) and `history.md` (append-only work log).
+The squad lives under [`.squad/agents/`](./.squad/agents) -- each agent owns a directory with `charter.md` (identity, boundaries, voice) and `history.md` (append-only work log).
 
 **Core engineering agents (own code / tests / config):**
 
@@ -473,7 +473,7 @@ The squad lives under [`.squad/agents/`](./.squad/agents) — each agent owns a 
 | Agent | Role | Trigger |
 |-------|------|---------|
 | Doc | Fact-checker | review/verify/fact-check/audit keywords; writes from a dedicated worktree per sprint (see `.squad/decisions/doc-and-jiminy-automation.md`) |
-| Jiminy | Conscience / auditor | post-batch audit gate after multi-agent batches (≥3 agents); enforced by `.squad/templates/loop.md` and `.squad/templates/ceremonies.md` |
+| Jiminy | Conscience / auditor | post-batch audit gate after multi-agent batches (>=3 agents); enforced by `.squad/templates/loop.md` and `.squad/templates/ceremonies.md` |
 | Scribe | History & changelog steward | Sprint wrap fold of `history.md` and `CHANGELOG.md` curation |
 | Ralph | Heartbeat | Runs as `squad-heartbeat.yml` workflow on issue/PR events; not a human-facing agent |
 
@@ -490,28 +490,28 @@ Permanent cross-agent decisions live in `.squad/decisions/*.md` (e.g., `doc-and-
 | `.tool-versions` | Mickey | Sprint 10 |
 | `scripts/lib/` | Mickey | Sprint 10 |
 | `scripts/linux/setup.sh` | Donald | #1 |
-| `scripts/linux/lib/log.sh` | Donald | — |
-| `scripts/linux/uninstall.sh` | Donald | — |
+| `scripts/linux/lib/log.sh` | Donald | -- |
+| `scripts/linux/uninstall.sh` | Donald | -- |
 | `scripts/linux/tools/auth.sh` | Donald | #9 |
 | `scripts/linux/tools/zsh.sh` | Donald | #4 |
 | `scripts/linux/tools/uv.sh` | Donald | #5 |
 | `scripts/linux/tools/nvm.sh` | Donald | #6 |
 | `scripts/linux/tools/gh.sh` | Donald | #7 |
 | `scripts/linux/tools/copilot-cli.sh` | Donald | #7 |
-| `scripts/linux/tools/squad-cli.sh` | Donald | — |
+| `scripts/linux/tools/squad-cli.sh` | Donald | -- |
 | `scripts/windows/setup.ps1` | Goofy | #2, #195 |
 | `scripts/windows/lib/` | Goofy | #195 |
 | `scripts/windows/tools/` | Goofy | #195 |
-| `scripts/windows/auth.ps1` | Goofy | #2 |
-| `scripts/windows/uninstall.ps1` | Goofy | — |
+| `scripts/windows/tools/auth.ps1` | Goofy | #2 |
+| `scripts/windows/uninstall.ps1` | Goofy | -- |
 | `hooks/pre-commit` | Goofy | #138 |
 | `hooks/prepare-commit-msg` | Goofy | #212 |
 | `hooks/commit-msg` | Goofy | #138 |
 | `hooks/pre-push` | Goofy | #138, #147 |
-| `tests/` | Chip | — |
+| `tests/` | Chip | -- |
 | `config/dotfiles/` | Pluto | #8, #10, #11 |
-| `.devcontainer/` | Chip | — |
+| `.devcontainer/` | Chip | -- |
 | `.github/workflows/` | Chip | #12, #13, #253 |
-| `.squad/agents/` | Each agent owns their own directory | — |
-| `.squad/skills/` | Authoring agent (Mickey reviews) | — |
-| `.squad/decisions/` | Mickey (curator) | — |
+| `.squad/agents/` | Each agent owns their own directory | -- |
+| `.squad/skills/` | Authoring agent (Mickey reviews) | -- |
+| `.squad/decisions/` | Mickey (curator) | -- |

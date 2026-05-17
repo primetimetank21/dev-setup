@@ -5,11 +5,11 @@
 
 ---
 
-## Sprint 5 Status: ✅ OFFICIALLY CLOSED
+## Sprint 5 Status: [x] OFFICIALLY CLOSED
 
 **What:** Sprint 5 retrospective facilitated and documented. All 4 issues resolved. All 5 PRs merged. Process improvements from Sprint 4 (worktree isolation, timeout policy, enforce_admins) all shipped.
 
-**Duration:** Sprint 5 (2026-04-04 → 2026-04-08)  
+**Duration:** Sprint 5 (2026-04-04 -> 2026-04-08)  
 **Board State:** Clear (0 open Sprint 5 issues)
 
 ---
@@ -21,13 +21,13 @@
 **Output:** `.squad/log/2026-04-08-retro-sprint5.md` (131 lines, comprehensive)
 
 Covered:
-- ✅ Sprint summary (4/4 issues, 5/5 PRs, all closed)
-- ✅ What went well (3 sections: retro loop closed, parallel coordination, mature decision-making)
-- ✅ What didn't go well (3 sections: API wall, race condition, mid-sprint pivots)
-- ✅ Root cause analysis (4 items)
-- ✅ 6 Action items for Sprint 6 (prioritized P1/P2/P3)
-- ✅ Metrics (100% closure rate, 0 new CI failures, 1 pre-existing red job)
-- ✅ Key takeaway (process sprint delivered; honest gap identified)
+- [x] Sprint summary (4/4 issues, 5/5 PRs, all closed)
+- [x] What went well (3 sections: retro loop closed, parallel coordination, mature decision-making)
+- [x] What didn't go well (3 sections: API wall, race condition, mid-sprint pivots)
+- [x] Root cause analysis (4 items)
+- [x] 6 Action items for Sprint 6 (prioritized P1/P2/P3)
+- [x] Metrics (100% closure rate, 0 new CI failures, 1 pre-existing red job)
+- [x] Key takeaway (process sprint delivered; honest gap identified)
 
 ### 2. Action Items Queued for Sprint 6
 
@@ -40,16 +40,16 @@ Covered:
 | 3 | Dry-run timeout policy | Ralph/Mickey | P3 |
 | 4 | Frame issues as problems | Mickey | P2 |
 | 5 | Sequence chicken-and-egg tasks | Mickey/Ralph | P3 |
-| 6 | **Promote develop → main** | Mickey/Earl | **P1** |
+| 6 | **Promote develop -> main** | Mickey/Earl | **P1** |
 
 ### 3. Scribe Work Completed
 
 | Task | Status | Details |
 |------|--------|---------|
-| Orchestration log written | ✅ | 2026-04-08T04-31-00Z timestamp, full context |
-| Decision inbox merged | ✅ | 6 items appended to decisions.md |
-| Inbox files deleted | ✅ | /decisions/inbox/ now empty |
-| Session log written | ✅ | This file |
+| Orchestration log written | [x] | 2026-04-08T04-31-00Z timestamp, full context |
+| Decision inbox merged | [x] | 6 items appended to decisions.md |
+| Inbox files deleted | [x] | /decisions/inbox/ now empty |
+| Session log written | [x] | This file |
 
 ---
 
@@ -57,12 +57,12 @@ Covered:
 
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Issues closed | 4/4 | 4 | ✅ 100% |
-| PRs merged | 5/5 | 5 | ✅ 100% |
-| Process improvements shipped | 3/3 | 3 | ✅ 100% |
-| New CI failures | 0 | 0 | ✅ |
-| Race conditions | 1 | ≤1 | ✅ (resolved) |
-| Sprint 4 retro items addressed | 3/3 | 3 | ✅ 100% |
+| Issues closed | 4/4 | 4 | [x] 100% |
+| PRs merged | 5/5 | 5 | [x] 100% |
+| Process improvements shipped | 3/3 | 3 | [x] 100% |
+| New CI failures | 0 | 0 | [x] |
+| Race conditions | 1 | <=1 | [x] (resolved) |
+| Sprint 4 retro items addressed | 3/3 | 3 | [x] 100% |
 
 ---
 
@@ -73,7 +73,7 @@ Covered:
 The 6 action items should be triaged into Sprint 6 work:
 
 **P1 (Blocker):**
-- Promote develop → main (requires Mickey + Earl sign-off; depends on stability assessment)
+- Promote develop -> main (requires Mickey + Earl sign-off; depends on stability assessment)
 
 **P2 (Core Sprint Work):**
 - Consult decisions.md during sprint planning (process improvement)
@@ -98,4 +98,4 @@ The 6 action items should be triaged into Sprint 6 work:
 
 ---
 
-**Scribe Status:** Ready to commit and push. Sprint 5 retro complete — 6 action items queued for Sprint 6.
+**Scribe Status:** Ready to commit and push. Sprint 5 retro complete -- 6 action items queued for Sprint 6.

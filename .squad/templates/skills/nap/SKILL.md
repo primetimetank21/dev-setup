@@ -1,6 +1,6 @@
 # Skill: nap
 
-> Context hygiene — compress, prune, archive .squad/ state
+> Context hygiene -- compress, prune, archive .squad/ state
 
 ## What It Does
 
@@ -21,4 +21,4 @@ archiving stale decisions, and cleaning orphaned inbox files.
 
 ## Confidence
 
-medium — Confirmed by team vote (4-1) and initial implementation
+medium -- Confirmed by team vote (4-1) and initial implementation

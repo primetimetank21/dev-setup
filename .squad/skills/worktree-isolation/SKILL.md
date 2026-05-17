@@ -12,7 +12,7 @@ Each issue being worked on by a Squad agent gets its own `git worktree`. Agents 
 
 ## Why
 
-When multiple agents share a single working tree, any agent can run `git checkout <branch>` at any moment — even while another agent has uncommitted changes or is mid-commit on a different branch. In Sprint 4, Chip-issue-43 checked out `squad/43` while Chip-issue-41 was committing to a different branch. Wrong content ended up on the wrong branch; PR #51 was closed.
+When multiple agents share a single working tree, any agent can run `git checkout <branch>` at any moment -- even while another agent has uncommitted changes or is mid-commit on a different branch. In Sprint 4, Chip-issue-43 checked out `squad/43` while Chip-issue-41 was committing to a different branch. Wrong content ended up on the wrong branch; PR #51 was closed.
 
 This is a race condition at the filesystem level. The only safe fix is full working tree isolation.
 
@@ -77,11 +77,11 @@ git worktree prune
 
 ## When not needed
 
-- Single-agent runs (sequential, one issue at a time) — no race condition possible.
-- Read-only agents (explorers, reviewers) — no branch checkouts.
+- Single-agent runs (sequential, one issue at a time) -- no race condition possible.
+- Read-only agents (explorers, reviewers) -- no branch checkouts.
 
 ## References
 
 - Sprint 4 incident: PR #51 closed due to branch checkout race between Chip-issue-41 and Chip-issue-43.
 - `git worktree` docs: `man git-worktree`
-- CONTRIBUTING.md § "Parallel Agent Work"
+- CONTRIBUTING.md Sec. "Parallel Agent Work"

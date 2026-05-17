@@ -1,4 +1,4 @@
-# Raw Agent Output — Appendix Format
+# Raw Agent Output -- Appendix Format
 
 > This template defines the format for the `## APPENDIX: RAW AGENT OUTPUTS` section
 > in any multi-agent artifact.
