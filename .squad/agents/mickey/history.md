@@ -1087,3 +1087,131 @@ needed for this design-pass PR until merge.
 - **Issue #306:** Body updated to use new names + acceptance criterion added.
 - **Outcome:** Zero orphan `Sprint [QRST]` refs outside alias contexts. PR opened
   targeting `develop`. Doc fact-check pass to follow.
+
+## 2026-05-17 -- PR #308 merged (sprint rename sweep + Sprint 12 backlog)
+
+- **PR #308 merged** at 05:24 UTC after Doc fact-check verdict "Verified" on a 9-lane
+  audit (mapping consistency / alias convention / filename renames / orphan check /
+  historical narrative / CHANGELOG headers / CONTRIBUTING section / issue #306 body /
+  this history entry). Final stats: 21 files, 297+/189-.
+- **Doc caught one consistency miss:** the CHANGELOG `[0.8.0]` header lacked the
+  `(formerly Sprint Q)` alias that `[0.9.0]` and `[0.9.1]` both carried. Fixed in
+  Doc commit `56c3c1f` folded into PR #308 before merge. Single-line addition,
+  no narrative change.
+- **First-occurrence aliasing is now muscle memory.** Applied across CHANGELOG
+  version headers, retro H1s, agent history entries, and CONTRIBUTING narrative.
+  The pattern: `Sprint N (formerly Sprint X)` on the FIRST mention per file, then
+  `Sprint N` alone for the rest. Mapping tables are exempt. This will be the
+  convention going forward for any historical reference.
+- **Sprint 12 backlog enumerated.** 7 inherited P3 issues + 2 new (#309, #310 --
+  ARCHITECTURE Script Conventions rewrite and Windows Dependency Order chain,
+  both flagged out-of-scope during PR #298 review). Mickey load: 5 of 9 tickets
+  (#235, #254, #306, #309, #310). Coordinator flagged the imbalance to Earl;
+  rebalance vs accept-docs-heavy-sprint deferred to Sprint 12 kickoff.
+- **Label gotcha for future reference:** `area:scripts` does not exist. Only six
+  area labels: `ci`, `hooks`, `windows`, `macos`, `linux`, `meta`. Both #309 and
+  #310 got `area:meta`. Run `gh label list --limit 100` before assuming.
+- **Issue #306 body updated mid-sweep** to use "Sprint 12" (was "Sprint U") plus
+  a new acceptance criterion referencing the new naming. Stays consistent when
+  Sprint 12 picks it up.
+
+
+## 2026-05-17 -- Sprint 12 PR #314: ARCHITECTURE.md Script Conventions rewrite (#309)
+
+- **Closed #309** by rewriting the `Script Conventions` section in ARCHITECTURE.md.
+  Old section pointed contributors at `copy from setup.sh` / `copy from setup.ps1` --
+  obsolete since the Sprint 8/10 lib/ refactors. New section names the actual files
+  (`scripts/linux/lib/log.sh`, `scripts/windows/lib/logging.ps1`, `scripts/windows/lib/path.ps1`,
+  and the cross-platform `scripts/lib/Read-ToolVersion.ps1` / `read-tool-version.sh` pair)
+  with one-line copy-paste loading patterns for both bash `source` and PowerShell dot-source.
+- **Key asymmetry documented:** `setup.sh` runs each `tools/*.sh` via `bash <script>`
+  (subshell, no inherited scope, so tools must re-source `lib/log.sh`), but `setup.ps1`
+  `dot-sources` each `tools/*.ps1` (parent scope, tool functions like `Install-Nvm`
+  live there and are invoked by name from `Main`). This is real, intentional, and
+  was implicit in the code -- now explicit in the doc.
+- **Version-pin pattern made canonical.** The bash side captures stdout from
+  `sh scripts/lib/read-tool-version.sh <tool>`; the PS side dot-sources
+  `Read-ToolVersion.ps1` then calls `Get-ToolVersion -Name <tool>`. nvm.sh
+  and nvm.ps1 cited as reference implementations.
+- **Verification:** read all five lib files + both setup orchestrators + both nvm
+  tool scripts before writing any examples. Every code block in the new section
+  is grounded in actual repo source, not assumed.
+- **Out-of-scope hold:** did not touch `Dependency Order` (that's #310, Sprint 12
+  Wave 2). Single-section edit, clean diff.
+- **ASCII-clean diff:** removed the pre-existing em-dash from the old `Sourcing`
+  row; all new content is plain ASCII. (ARCHITECTURE.md has pre-existing non-ASCII
+  bytes elsewhere; the pre-commit hook only guards `*.ps1`, so this is fine,
+  but I avoided introducing any new ones in my edit.)
+## Sprint 12 Wave 2 - PR for #310 (docs(architecture): document Windows orchestrator Dependency Order chain)
+
+**Date:** 2026-05-17
+**Branch:** squad/310-arch-windows-dep-order (worktree at dev-setup-310)
+**Scope:** ARCHITECTURE.md only -- added `### Windows orchestrator chain` subsection under existing `## Dependency Order` H2.
+
+**Verification methodology (per brief):** Read scripts/windows/setup.ps1 directly to determine actual invocation order. DO NOT assume the order -- it has changed across sprints (#195 split, #297 moved auth.ps1). Confirmed Main() function call sequence at scripts/windows/setup.ps1 lines 48-75. Lib load order from lines 16-17.
+
+**Order documented (verbatim from Main() in setup.ps1):**
+1. Install-Git -> 2. Install-Uv -> 3. Install-Nvm -> 4. Install-GhCli -> 5. Invoke-GhAuth -> 6. Install-Vim -> 7. Install-Psmux -> 8. Install-CopilotCli -> 9. Install-SquadCli -> 10. Install-Dotfiles -> 11. Write-PowerShellProfile -> 12. Install-GitHook (inline).
+
+**Style choice:** Linux Dependency Order is ASCII arrow chain (no Mermaid in ARCHITECTURE.md), per style pref fell back to ASCII for new section. Used `->` (two ASCII hyphens) instead of Unicode arrow to honor brief gotcha "ASCII ONLY -- pre-commit hook rejects non-ASCII / em-dashes / smart quotes". (Hook only enforces ASCII on staged `*.ps1` files in practice, but defensive choice for new content; existing Linux `zsh -> uv -> ...` line still uses U+2192 arrows, left untouched per "Linux Dependency Order changes" out-of-scope.)
+
+**Gotcha hit (caught + fixed before commit):** First pass landed three U+2014 em-dashes (likely editor transform of leading `--` in prose). Caught via PowerShell byte scan over the new line range; fixed with a global `[char]0x2014` -> `--` replace. Final byte scan confirms 0 non-ASCII chars in the new section (lines 332-372). The pre-existing box-drawing chars (line 22-100 tree) and the U+2192 arrows in the Linux dep line (327) are untouched and not in scope.
+
+**Out of scope but noted (follow-up issue candidate):** ARCHITECTURE.md File Structure tree (line 54) still shows `auth.ps1` at `scripts/windows/` root, but #297 moved it into `tools/`. The new Windows orchestrator chain section explicitly cross-references the move (#195 split, #297 relocation) so readers won't be misled, but the tree itself is stale. Not fixed in this PR -- narrow scope discipline. Worth filing as a separate refresh issue.
+
+**Conflict-awareness check (per brief):**
+- Goofy #235 (install-guard refactor in scripts/): pre-spawn `git log --oneline -3` showed develop @ 69391b5 with no Goofy merge yet; my edits don't touch setup.ps1 or any tool module. If Goofy's PR lands first and reorders invocations, the table here will need a follow-up -- but my chain reflects current `Main()` truth as of develop@69391b5.
+- Donald #237 (test harness docs in CONTRIBUTING.md): no overlap; I only touched ARCHITECTURE.md + CHANGELOG.md.
+
+**CHANGELOG:** Added single entry at top of `## [Unreleased] -> ### Changed` (above the existing #309 entry).
+
+**Files touched:**
+- ARCHITECTURE.md (+40 lines under `## Dependency Order`)
+- CHANGELOG.md (+1 line under Unreleased / Changed)
+
+**Commit:** `docs(mickey): document Windows orchestrator Dependency Order chain in ARCHITECTURE.md (closes #310)`
+
+
+### 2026-05-17T03:55-04:00 -- Sprint 12 Wave 3 -- README refresh (#306)
+
+**Issue:** #306 -- docs(readme): refresh README.md to reflect Sprints 8-12 changes
+**Branch:** squad/306-readme-refresh (worktree: dev-setup-306)
+**Mode:** SOLO dispatch, Wave 3
+
+**What changed in README.md:**
+1. GitHub Authentication blockquote now names both `scripts/linux/tools/auth.sh` and `scripts/windows/tools/auth.ps1` (PR #297 moved auth.ps1 into per-tool layout; README previously referenced only auth.sh).
+2. Repo Structure tree: Windows `scripts/windows/tools/` listing now includes `auth.ps1` and `dotfiles.ps1`; total file count corrected from 9 to 11 (verified via Get-ChildItem). Also added `uninstall.ps1` to the Windows subtree.
+3. `.tool-versions` Version Pinning section: example block now reflects all 7 pins (added `squad-cli 0.9.4` and `gh 2.92.0`); narrative names this file as the single source of truth including `nvm-windows` and points at the canonical parsers (`read-tool-version.sh` POSIX, `Read-ToolVersion.ps1` PowerShell `Get-ToolVersion`).
+4. `.squad/` tree entry expanded with 4 sub-entries (agents/, decisions.md + fold note, retros/, `...`) and a "see ARCHITECTURE.md" redirect; dropped misleading "(not shipped)" qualifier in favor of "committed; not installed onto end-user machines".
+5. Contributing section: now names the 9-agent roster (5 engineering, 4 process) and adds bullet links to ARCHITECTURE.md / CONTRIBUTING.md / CHANGELOG.md with one-line scope blurbs each. Mentions numeric sprint naming + `(formerly Sprint X)` aliasing convention in the CHANGELOG bullet.
+
+**Verification methodology:**
+Each change was grounded by reading the cited file:
+- `scripts/windows/tools/auth.ps1` (confirmed file exists at per-tool location; matches CHANGELOG #292 move)
+- `.tool-versions` (read full file; 7 pins confirmed)
+- `.squad/team.md` (confirmed 9-member roster; Doc + Jiminy present)
+- `.squad/decisions.md` + `.squad/decisions-archive.md` (workflow + archive file present at 122 KB)
+- `.squad/retros/` (confirmed dir + 5 retro files, pre-commit allow-list per CHANGELOG #189)
+- `CHANGELOG.md` (Sprint 8 through Sprint 11 entries; numeric convention with `(formerly Sprint X)` aliases per Sprint 12 Wave 2)
+- `ARCHITECTURE.md` (cross-ref target; #310 Windows dependency order + #309 Script Conventions sections live)
+- `CONTRIBUTING.md` (cross-ref target; Test Harness Pattern at line 259 per #237, Sprint Naming Convention at line 417, Group Letter Assignment at 405)
+
+**Out-of-scope items observed (filed as follow-ups):**
+- ARCHITECTURE.md still references `scripts/windows/auth.ps1` (top-level) at line 54 of File Structure tree and line 505 of Team Ownership Map -- both should point to `scripts/windows/tools/auth.ps1`. Scope rule (do not touch ARCHITECTURE.md) honored; will file separate issue.
+- README "Git Hooks" section (line 192) claims "three hooks are active" and lists pre-commit/commit-msg/pre-push; `prepare-commit-msg` (PR #212, Sprint 8-hotfix) is missing. Scope: not in the named items list; will file separate issue.
+
+**CWD-pin protocol:** verified pre-edit; every powershell call prefixed by `Set-Location -LiteralPath` + `` guard. All file writes used absolute worktree path prefix. Post-commit main-checkout audit pending.
+
+**Files touched:**
+- README.md (~26 lines changed; 5 surgical edits)
+- CHANGELOG.md (+1 entry under Unreleased / Changed)
+
+**Commit:** `docs(mickey): refresh README.md for Sprints 8-12 changes (closes #306)`
+
+## 2026-05-17 — 0.9.2 release cut (Sprint 12 wrap)
+
+Cut 0.9.2 from elease/0.9.2 (based on develop @ 5e0fb53). Folded [Unreleased] -> [0.9.2] - 2026-05-17 in CHANGELOG.md, harvested Ralph's pending Sprint 12 EOS hygiene tail (.squad/agents/ralph/history.md, ~50 lines) from main checkout into this worktree, and appended this closure entry. Sprint 12 ships 9 issues closed across 10 PRs in a 3-wave doc-quality sweep (Wave 1: foundational docs #237/#310/#309/#236; Wave 2: decisions/retros + Tier 3 sprint naming sweep; Wave 3: README refresh #306). Three releases this session: 0.9.0 (Sprint 9+10 hygiene/tool-pin), 0.9.1 (Sprint 11 architecture refresh), 0.9.2 (Sprint 12 doc-quality). Followed identical release flow each time: release branch from develop -> PR to develop (CHANGELOG fold) -> coordinator merges that, opens develop -> main with REGULAR merge (not squash) -> tags bare X.Y.Z on main -> `gh release create --target main`.
+
+**Worktree-isolation lesson learned:** My own #310 PR earlier this sprint violated the CWD-pin discipline and triggered cross-worktree write contamination, which surfaced in Jiminy's audit and forced remediation. By Wave 3 #306 I corrected the protocol: Set-Location -LiteralPath + path-mismatch guard at the top of every powershell tool call, plus full absolute path prefixes on every file write. That discipline carried through this 0.9.2 release cut clean -- no main-checkout drift, no stray edits outside the release worktree. The lesson is now codified in Sprint 12 retro and the CWD-pin block is part of every Mickey dispatch brief going forward.
+
+**Job ends here:** Coordinator merges this release/0.9.2 -> develop PR, then opens develop -> main with regular merge, tags  .9.2, and runs gh release create --target main. I do not touch main or tag anything.

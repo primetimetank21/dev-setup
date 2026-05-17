@@ -103,3 +103,21 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
   - (I) Mickey's history entry: Date (2026-05-20), branch (`chore/sprint-naming-convention`), file count (21), mapping table, and Sprint 11 naming all correct.
 - **Fixes applied:** 1 minor — CHANGELOG 0.8.0 header: added `(formerly Sprint Q)` for consistency with 0.9.0 and 0.9.1 headers.
 - **Verdict:** Doc minor fixes pushed (1 issue). Confidence: Verified.
+
+### 2026-05-17 -- Pattern note: one-off fact-check WITHOUT a dedicated worktree
+
+- The PR #308 fact-check (above) was the first Doc dispatch deliberately run
+  WITHOUT a dedicated `..\dev-setup-doc` worktree. Per the SOP from PR #293,
+  Doc's default is a dedicated per-sprint worktree on `squad/doc-history-sprint-<N>`.
+- This dispatch was a single-PR fact-check on Mickey's in-flight
+  `chore/sprint-naming-convention` branch with at most a small fixup commit
+  expected. Doc worked directly on Mickey's branch, produced commit `56c3c1f`
+  (1-line CHANGELOG header alias), and stopped. No cumulative history.md write,
+  no cross-sprint state.
+- Decision rule, now in retro `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md`:
+  - **One-off, single-PR fact-check with at most a fixup commit on the same branch** -> NO worktree.
+  - **Cumulative history.md writes spanning multiple PRs in a sprint** -> dedicated worktree per the PR #293 SOP.
+- The deviation worked cleanly this time. The SOP still holds for batch
+  fact-checks (Sprint 9 / Sprint 10 batch reviews) because those produce
+  cumulative `.squad/agents/doc/history.md` entries that benefit from the
+  isolated worktree pattern.

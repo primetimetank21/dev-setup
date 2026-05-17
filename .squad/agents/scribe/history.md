@@ -169,3 +169,171 @@ Appended team updates to:
   no new retro file, no edits to other agents' history.md, no direct
   develop commits (branch `squad/scribe-post-090-retro` from develop @
   `94b696c`).
+
+### 2026-05-17 -- Sprint 11 retro filed (PR #303)
+
+- Filed `.squad/retros/2026-05-17-sprint-11-retro.md` (originally named
+  `2026-05-17-sprint-t-retro.md`) via PR #303 on branch
+  `squad/scribe-sprint-t-retro`. Merged at 04:16 UTC, before the 0.9.1 release cut.
+- This retro covered Sprint 11 proper -- 4 work PRs (#296, #297, #298, #301)
+  closing 4 issues (#229, #230, #233, #292), plus 2 bonus Jiminy audit PRs
+  (#299, #302). First sprint exercising the PR #293 SOPs; all exercisable
+  gates passed clean.
+- The retro filename was renamed via `git mv` in PR #308 minutes later (Tier 3
+  sprint-naming sweep). The H1 picked up the `(formerly Sprint T)` alias.
+
+### 2026-05-17 -- Mini-event retro: 0.9.1 release + sprint naming rename
+
+- Created `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md`.
+  Mini-event retro covering work that landed AFTER PR #303 in the same session:
+  0.9.1 release (PRs #305 + #307, tag, GH release), the Tier 3 sprint-naming
+  sweep (Mickey PR #308 + Doc commit `56c3c1f`), and the Sprint 12 backlog
+  enumeration (2 new issues #309 + #310).
+- Decision: mini-events get their own tighter retro file rather than folding
+  into a session log. Rationale: (a) sprint naming convention is now permanent
+  policy worth surfacing in retro history; (b) the Doc no-worktree decision
+  and the `area:scripts` label gotcha are operational learnings that would get
+  lost in `.squad/log/`. Two-page retro is the right size; full sprint retros
+  remain the larger format.
+- Updated `.squad/agents/mickey/history.md`: appended PR #308 merge outcome,
+  Sprint 12 backlog summary, label gotcha note.
+- Updated `.squad/agents/doc/history.md`: appended pattern note documenting
+  the one-off fact-check NO-worktree decision rule (codified in the retro).
+- Updated `.squad/agents/scribe/history.md` (this entry): logged Sprint 11
+  retro PR #303 plus this mini-event retro.
+- Hard guardrails honored: branch `squad/scribe-0.9.1-rename-retro` from
+  `develop @ c93a54c`, no direct develop commits, ASCII only in new content,
+  conventional commit prefix `docs(scribe):`, PR not merged (left for
+  coordinator review). No inbox drop (no reusable decision worth recording --
+  the policy is already in CONTRIBUTING.md).
+
+## Learnings (Scribe)
+
+- **Mini-event retros work.** When a session ships work that does not belong
+  in a full sprint retro (release cut + meta-cleanup + backlog sweep), a
+  smaller-scope retro file in `.squad/retros/` is the right home. Keep it
+  to ~1-2 pages. Reference but do not rewrite any sprint retro the mini-event
+  follows.
+- **Label-vocab gotcha is worth a one-line entry in any retro that hits it.**
+  Future Scribes filing retros that mention `gh issue create` failures
+  (`area:scripts` not existing, missing `priority:p4`, etc.) should call out
+  the actual label set in the retro so the next session does not repeat the
+  lookup. Six area labels exist: ci, hooks, windows, macos, linux, meta.
+- **Sprint rename sweeps require Scribe to think about retro filenames.** When
+  a Tier 3 rename runs in the same session as a retro PR (this session: #303
+  filed then #308 renamed it), the retro file itself gets `git mv`-ed and the
+  H1 picks up the alias. Not a problem -- just a pattern worth flagging so
+  future Scribes do not double-write or get confused about which filename is
+  canonical.
+- **`(formerly Sprint X)` aliasing on first-occurrence-per-file** is now the
+  team convention for any historical reference. Applied automatically in
+  this retro for `Sprint T` -> `Sprint 11` (the retro H1 itself uses the
+  new name only; old references inside CHANGELOG headers and other retros
+  carry the alias on first mention).
+- **Sprint 12 Wave 1 fold (2026-05-17).** Folded 5-agent batch with 2 inbox
+  decisions, 5 orchestration-log entries, 1 session log, and a Jiminy
+  history-rescue. Patterns earned:
+  - **5-agent batch fold pattern.** When Wave N closes with 4-5 merged PRs +
+    1 audit-only issue close, one Scribe fold PR covers the whole wave.
+    Spawn manifest goes straight from coordinator into individual
+    orchestration-log entries -- one file per agent, ISO 8601 UTC timestamp
+    with colons replaced by dashes (`2026-05-17T06-01-33Z-{agent}-{slug}.md`).
+    Keep each entry small (~1-2 KB) using the template field table.
+  - **Jiminy-history-rescue pattern.** When an agent has violated the
+    develop-commit ban by writing loose to their own `history.md` on develop,
+    Scribe rescues that file in the same fold PR as the inbox drain. Stage
+    `.squad/agents/{agent}/history.md` explicitly with `git add -- <path>` --
+    do NOT broaden the staging glob. Note the rescue in the PR body so the
+    audit trail is clear ("pre-existed in main checkout before this PR --
+    earlier rules violation now resolved"). This is the documented drain SOP.
+  - **Obsolete fold-request handling.** A `history-fold-request` inbox file
+    is OBSOLETE if the target agent self-appended the content directly
+    (rules violation aside, the content is in place). Delete the inbox file
+    without re-merging (would duplicate content). Document the disposition
+    in decisions.md as a "Fold note (Scribe)" subsection on the partner
+    decision entry so the audit trail survives the delete.
+  - **Size-gated 7-day archive cut.** At >= 50 KB, the 7-day rule fires.
+    Find the date boundary (entries dated > N-7 days are KEEP; <= N-7 days
+    are ARCHIVE). Cut on the trailing `---` separator before the first
+    KEEP entry so both files have clean section boundaries. Move content
+    via PowerShell `[System.IO.File]::WriteAllText` with
+    `UTF8Encoding($false)` (no BOM) to preserve existing em-dashes in
+    archive without polluting the rewritten live file. Result this fold:
+    164,339 B -> 44,473 B live, 122,314 B archive.
+  - **History-summarization scope tension.** When a fold's staging scope
+    is restricted (per-task spec) and the 15-KB hard gate fires on agents
+    outside that scope, defer summarization and flag in the health report
+    rather than expanding the staging glob. The hard gate fires next pass;
+    discipline beats sprawl.
+
+### 2026-05-17 -- Sprint 12 Wave 2 fold
+
+- Drained 4 inbox decisions to .squad/decisions.md (appended under new
+  "## 2026-05-17 entries (Sprint 12 Wave 2 fold)" section):
+  - mickey-arch-windows-dep-20260517.md (ARCH Windows Dep Order, closes #310)
+  - donald-test-harness-20260517.md (bash test harness pattern, closes #237)
+  - goofy-install-guard-deferral-20260517.md (Case B closure, abstraction
+    3-site rule, closes #235 as not_planned)
+  - jiminy-wave-2-audit-20260517.md (worktree-isolation remediation, pre-commit
+    ASCII scope gap surfaced as #322)
+- Folded staged history modifications from MAIN checkout (goofy + jiminy) by
+  copying file content into this worktree and staging via explicit git add --.
+  Same content path as a normal commit -- coordinator will clear the M state
+  on main after this PR merges with git checkout -- .squad/agents/{goofy,jiminy}/history.md.
+- Decisions.md gate state: pre-fold 44,473 B -> post-fold 57,253 B. **50 KB
+  hard gate crossed, but NO entries eligible for 7-day archive cut** -- the
+  oldest live entry is dated 2026-05-14 (3 days old). Strict-rule reading: the
+  archive step ran with empty eligibility set. File will remain at ~57 KB until
+  next fold when the 2026-05-14 entries age past the 7-day window.
+- Orchestration log entries written for the 5 wave events (PR #320, PR #321,
+  Goofy #235 Case B close, Jiminy audit, issue #322 filing). Directory is
+  gitignored -- entries are local-only operational logs.
+- Session log: `.squad/sessions/2026-05-17.md` (gitignored, local-only) per
+  dispatch instruction. Note: prior Scribe convention pointed at `.squad/log/`
+  (singular) for session logs -- both are gitignored, both work, dispatch wins.
+  Possible drift between dispatch template and Scribe charter convention worth
+  reconciling in a future pass.
+- CHANGELOG [Unreleased] -> ### Changed: one fold-note entry (Sprint 12
+  Wave 2 fold).
+- Hard guardrails honored: branch squad/scribe-sprint-12-wave-2-fold from
+  develop @ def5e59, no direct develop commits, conventional commit prefix
+  docs(scribe):, explicit-path staging only (no git add .squad/), worktree
+  CWD pinned at every file write (per Jiminy Wave 2 audit remediation).
+- **History gate WARNINGS (>= 15 KB, no archival this fold per #319 scope):**
+  scribe 15.8 KB (this entry pushes past gate), chip 36.9 KB, donald 28.5 KB,
+  goofy 39.9 KB, jiminy 24.3 KB, mickey 75.5 KB, pluto 29.7 KB, ralph 23.9 KB.
+  Eight agents at or above the warn line. Pluto and Doc remain healthy / low.
+  Recommend Coordinator schedule history-archival sweep (issue #319 scope)
+  after Wave 2 settles.
+- Main-checkout post-commit verification: see PR description / summary.
+- **2026-05-17 -- Sprint 12 retrospective + Jiminy session-end audit fold.**
+  Created `.squad/retros/2026-05-17-sprint-12-retro.md` (10268 bytes, ASCII
+  clean -- pre-commit `*.md` scope gap #322 still open so defensive).
+  Retro covers 3 waves, 10 PRs (8 work + 2 Scribe folds), 9 Sprint 12
+  issues closed, scope rebalance (#254 Mickey -> Pluto, #235 Mickey ->
+  Goofy), and 5 follow-ups carried (#317, #319, #322, #325, #326).
+  Harvested Jiminy session-end audit entry from main checkout
+  (`.squad/agents/jiminy/history.md` 24344 -> 28051 bytes) and folded into
+  this branch alongside the retro. CHANGELOG `[Unreleased] ### Changed`
+  appended with retro file reference.
+- **Lesson (own bug, fix forward): atomic inbox drain.** Wave 2 fold (PR
+  #323) merged 4 drop files' CONTENT into decisions.md but did NOT
+  `git rm` the source drop files; Coordinator manually deleted them
+  post-Jiminy audit. Going forward, every Scribe fold MUST stage
+  `git rm -- .squad/decisions/inbox/<file>` in the SAME commit as the
+  `decisions.md` append, so drain is atomic with merge. Per-file
+  staging (not bulk `git rm .squad/decisions/inbox/*.md`) to keep
+  staging discipline intact.
+- **Lesson (own bug, write-path resolution): .NET file APIs use process
+  CWD, not PowerShell `Set-Location`.** When running ASCII-verify via
+  `[System.IO.File]::ReadAllBytes(".\path")`, the relative path
+  resolved against the main checkout (process CWD) not the worktree.
+  Fix: use FULL absolute paths with .NET APIs. PowerShell native
+  cmdlets (`Get-Content -LiteralPath`, `Get-Item`) respect
+  `Set-Location` correctly; .NET static methods do not. This is the
+  same class of failure as Mickey's #310 worktree-isolation violation.
+- **History gate (post-this-entry):** scribe ~17 KB (past 15 KB gate);
+  Mickey 75 KB, goofy 40 KB, chip 37 KB, pluto 30 KB, donald 28 KB,
+  jiminy 28 KB (incl session-end audit entry), ralph 24 KB. Eight
+  agents above gate. Archival sweep (#319) is now Sprint 13 P0 -- run
+  before Sprint 13's first PRs land.

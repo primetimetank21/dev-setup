@@ -7,8 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
 ### Changed
+
+### Fixed
+
+### Removed
+
+## [0.9.2] - 2026-05-17
+
+### Added
+- `tests/test_windows_setup.ps1` Group FF (FF-1 through FF-10): idempotency + restore coverage for `scripts/windows/uninstall.ps1` -- 5 static-source checks (managed dotfile list, newest-wins backup selection, Move-Item -Force usage; Linux uninstall.sh parity) + 5 functional checks (newest timestamped .bak.* wins, legacy .bak fallback, second-run idempotency on dotfiles, profile-block removal preserves surrounding content, second-run idempotency on profile). Functional tests run uninstall.ps1 in a child powershell process with USERPROFILE/HOMEDRIVE/HOMEPATH redirected to a tmp HOME so the script's `$HOME` resolves to throwaway state, and pin CWD to a tmp git repo so `git config --unset-all core.hooksPath` cannot affect the user's real config (closes #238)
+- CONTRIBUTING.md `Test Harness Pattern` section: documents the `set -uo` (intentionally NOT `set -euo`) convention for bash tests; failure tally pattern, helper conventions, minimal skeleton (closes #237)
+
+### Changed
+- README.md: refreshed to reflect Sprints 8-12 changes (auth.ps1 path move, .tool-versions pinning, expanded squad roster, decisions/retros workflow, numeric sprint naming convention, ARCH/CONTRIB cross-references) (closes #306)
+- ARCHITECTURE.md: documented Windows orchestrator dependency order chain; mirrors the Linux Dependency Order section for parallel install flow visibility (closes #310)
+- ARCHITECTURE.md: rewrote `Script Conventions` section to point at `scripts/{linux,windows}/lib/` as source of truth; documents `source` / dot-source loading + `Read-ToolVersion.ps1` parser pattern (closes #309)
 - Sprint naming convention reverted from letters back to numbers: Q -> Sprint 8-hotfix, R -> Sprint 9, S -> Sprint 10, T -> Sprint 11; next = Sprint 12. Tier 3 full sweep across 21 files (~170 refs). Retro files renamed with `git mv`. First-occurrence `(formerly Sprint X)` aliases added for grep continuity. CONTRIBUTING.md "Sprint Naming Convention" section updated with mapping table and aliasing convention.
+- `.aliases`: added header marking the file as bash/zsh-only (not POSIX); documents non-POSIX features in use and intended loading pattern (closes #236)
+- `.squad/decisions.md`: drained 4 Wave 2 inbox drops (mickey #310, donald #237, goofy #235, jiminy audit); folded staged history modifications (goofy, jiminy); archive gate crossed (57 KB >= 50 KB) but no entries eligible for 7-day cut (oldest live entry 2026-05-14, 3 days old) -- (Sprint 12 Wave 2 fold)
+- `.squad/retros/2026-05-17-sprint-12-retro.md`: new Sprint 12 retrospective (3 waves, 10 PRs, 9 issues closed, worktree-isolation + ASCII-scope lessons learned)
+
+### Removed
+- Legacy GitHub labels `priority: high`, `priority: medium`, `priority: low` (with spaces) deleted; canonical taxonomy is now `priority:p0..p3` (closes #254)
 
 ## [0.9.1] - 2026-05-17 -- Sprint 11 (formerly Sprint T): Architecture refresh and tools hardening
 

@@ -446,3 +446,21 @@ both platform branches get the package to maintain the cross-platform parity doc
 
 - **2026-05-16 -- Reviewed PR #244 (Mickey's retroactive tags + 0.8.0 cut).** Verdict: APPROVE (posted as comment since GitHub single-owner repos cannot self-approve; --admin merge used). CHANGELOG cut is clean (empty Unreleased, all entries under 0.8.0, no drops). Spot-checked 3/7 SHAs (0.1.0, 0.5.0, 0.7.0) -- all point at release-shaped merge commits matching Mickey's rationale table. All 7 tags and GitHub releases confirmed present. Commit uses Conventional Commits format with Copilot co-author trailer.
 2026-05-16 -- #223 logging consolidation
+
+### Sprint 12 -- PR #313: Issue #236 docs(.aliases): mark file as bash/zsh-only
+
+- **What:** Added a header to `config/dotfiles/.aliases` stating the file is bash/zsh only (not POSIX), listing non-POSIX features in use (`[[ ]]`, `[[ =~ ]]`, `local`, `$BASH_VERSION` / `$ZSH_VERSION` shell-detection vars, `alias --` long-option terminator), documenting the loading pattern (sourced from ~/.bashrc / ~/.zshrc via `config/dotfiles/install.sh`), and warning `sh`/`dash`/`ash` users away.
+- **Why:** Closes the V-10 follow-up from the 2026-05-04 verification batch -- POSIX-conformance for `.aliases` was rejected then. This issue makes that decision explicit at the top of the file so future audits / contributors do not re-litigate it.
+- **Files:** `config/dotfiles/.aliases` (header), `README.md` (Shell Aliases section adds a "bash/zsh only -- see header" pointer), `CHANGELOG.md` (Unreleased / Changed entry).
+- **Out of scope (held):** Did NOT rewrite any aliases, did NOT add new aliases, did NOT do shellcheck fixes. Pure documentation.
+- **Lesson:** A "do not chase X" decision is easier to defend when the file itself documents the non-X features it relies on. Header doubles as a reviewer cheat-sheet and as a contract with anyone tempted to `sh ~/.aliases`.
+
+
+### Sprint 12 Wave 2 -- PR #N (closes #237): Test harness pattern docs
+- Documented the bash test harness convention in CONTRIBUTING.md as a new `Test Harness Pattern` top-level section. Convention: tests in `tests/*.sh` use `set -uo pipefail` (NOT `-euo`) so individual assertion failures do not abort the suite; PASS/FAIL state is tallied via counters and the script exits non-zero only when `FAIL > 0`. `-euo` is acceptable when every potentially-failing command is wrapped in `if` / `||`.
+- Covered the gotcha for contributors: a well-meaning `-e` addition to a tally suite breaks it silently because the first failing assertion aborts before the tally can finish; CI sees a partial run.
+- Reference files cited: `test_idempotency.sh` (canonical complex suite + `assert_*` helpers), `test_aliases.sh` (mock subcommands), `test_tool_versions.sh` (smallest minimal), `test_precommit_hygiene.sh` + `test_shared_logging.sh` (valid `-euo` use).
+- Provided a copy-paste skeleton for new `tests/test_<thing>.sh` files: `-uo` + `PASS`/`FAIL` counters + `pass()`/`fail()` one-liners + final `if [ "FAIL" -gt 0 ]; then exit 1; fi`.
+- Authored `.squad/skills/test-harness-pattern/SKILL.md` (confidence: medium, domain: testing). Skill captures the rule, the rule of thumb, the counter-naming variance, the path-setup boilerplate, the helper convention, and four anti-patterns (notably the `((PASS++))` exit-code-1 trap under `set -e`).
+- Cross-link: CONTRIBUTING.md's new section sits between Parallel Agent Work and Group Letter Assignment, so the testing sections cluster.
+- Out of scope (per ticket): refactoring tests, adding new tests, changing `set -*` flags in existing files, PowerShell test harness.

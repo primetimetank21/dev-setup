@@ -187,6 +187,70 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 
 ## Script Conventions
 
+Shared helpers live in dedicated `lib/` directories. Tool scripts **load** them rather than redefining or copy-pasting. Source of truth:
+
+| File                                 | Purpose                                                                                  | Loaded by                                    |
+|--------------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------|
+| `scripts/linux/lib/log.sh`           | `log_info`, `log_ok`, `log_warn`, `log_error`                                            | `setup.sh` and every `tools/*.sh`            |
+| `scripts/windows/lib/logging.ps1`    | `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err`, `Assert-LastExit`                   | `setup.ps1` and every `tools/*.ps1`          |
+| `scripts/windows/lib/path.ps1`       | `Refresh-SessionPath` (re-reads Machine + User PATH from the registry into the session) | `setup.ps1` and any tool that mutates PATH   |
+| `scripts/lib/read-tool-version.sh`   | POSIX parser for `.tool-versions` (prints the pinned version to stdout)                  | Any `tools/*.sh` that needs a pinned version |
+| `scripts/lib/Read-ToolVersion.ps1`   | PowerShell `Get-ToolVersion -Name <tool>` (returns the pinned version)                   | Any `tools/*.ps1` that needs a pinned version |
+
+**Rule:** New helpers go in the appropriate `lib/` directory. Do not copy helper definitions into `setup.sh`, `setup.ps1`, or individual tool scripts.
+
+### Loading helpers
+
+**Bash** uses POSIX `source` (`.`). At the top of `setup.sh` or any `tools/*.sh`, after the safety flags:
+
+```bash
+# From scripts/linux/setup.sh (lib is one level down):
+. "$(dirname "${BASH_SOURCE[0]}")/lib/log.sh"
+
+# From scripts/linux/tools/<tool>.sh (lib is one level up):
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
+```
+
+Note that `setup.sh` runs each `tools/*.sh` via `bash <script>` (a subshell), so every tool script must re-source `lib/log.sh` itself; the parent scope is not inherited.
+
+**PowerShell** uses dot-sourcing (`.`). At the top of `setup.ps1` or any `tools/*.ps1`, after `Set-StrictMode` / `$ErrorActionPreference`:
+
+```powershell
+# From scripts/windows/setup.ps1 (lib is alongside):
+. "$PSScriptRoot\lib\logging.ps1"
+. "$PSScriptRoot\lib\path.ps1"
+
+# From scripts/windows/tools/<tool>.ps1 (lib is one level up):
+. "$PSScriptRoot\..\lib\logging.ps1"
+```
+
+`$PSScriptRoot` is the directory of the currently-executing file. Unlike the bash path, `setup.ps1` **dot-sources** each `tools/*.ps1`, so tool functions (`Install-Nvm`, `Install-GhCli`, ...) live in the parent scope and are invoked by name from `Main`. Tool scripts still re-dot-source any `lib/` files they need so they are also runnable standalone.
+
+### Reading pinned versions from `.tool-versions`
+
+`.tool-versions` is the single source of truth for tool versions (see "Tool Version Pinning" below). Tool scripts must read pins via the shared parsers in `scripts/lib/`; they must not hard-code versions.
+
+**Bash:** invoke the POSIX script and capture stdout. From `scripts/linux/tools/<tool>.sh`:
+
+```bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PINNED_NODE="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" nodejs)"
+```
+
+The parser walks up two levels to find the repo root, so the path from `scripts/linux/tools/` is `../../lib/read-tool-version.sh`. It exits non-zero if the tool is missing or `.tool-versions` is not found; `set -euo pipefail` will surface either.
+
+**PowerShell:** dot-source the parser, then call `Get-ToolVersion`. From `scripts/windows/tools/<tool>.ps1`:
+
+```powershell
+$libDir = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'lib'
+. (Join-Path $libDir 'Read-ToolVersion.ps1')
+$pinnedNode = Get-ToolVersion -Name 'nodejs'
+```
+
+Two `Split-Path -Parent` calls climb `tools/ -> windows/ -> scripts/`, then `lib` reaches the shared parser. `Get-ToolVersion` throws on missing tool or missing `.tool-versions`, which surfaces under `$ErrorActionPreference = 'Stop'`.
+
+Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/tools/nvm.ps1`.
+
 ### Bash (`scripts/linux/`)
 
 | Convention | Rule |
@@ -194,8 +258,9 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 | Shebang | `#!/usr/bin/env bash` |
 | Safety flags | `set -euo pipefail` at top of every script |
 | Idempotency | Check `command -v <tool>` before installing; skip if present |
-| Logging | Use `log_info`, `log_ok`, `log_warn`, `log_error` helpers (copy from `setup.sh`) |
-| Sourcing | Scripts in `tools/` are run via `bash <script>` from the core installer, not `source` — keeps each script isolated |
+| Logging | Source `scripts/linux/lib/log.sh`; call `log_info`, `log_ok`, `log_warn`, `log_error` |
+| Version pinning | Read from `.tool-versions` via `sh scripts/lib/read-tool-version.sh <tool>`; never hard-code versions |
+| Sourcing | `setup.sh` runs each `tools/*.sh` via `bash <script>` (subshell); tool scripts re-source `lib/log.sh` themselves |
 | Exit codes | `exit 0` on success or skip, `exit 1` on unrecoverable error |
 
 ### PowerShell (`scripts/windows/`)
@@ -204,8 +269,12 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 |------------|------|
 | Safety | `Set-StrictMode -Version Latest` + `$ErrorActionPreference = 'Stop'` |
 | Idempotency | `Get-Command <tool> -ErrorAction SilentlyContinue` before installing |
-| Logging | Use `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err` helpers (copy from `setup.ps1`) |
-| Install method | Prefer `winget`; fall back to `scoop` or direct download |
+| Logging | Dot-source `scripts/windows/lib/logging.ps1`; call `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err` |
+| Exit-code discipline | After any external install, call `Assert-LastExit -ToolName <name>` (use `-AllowedExitCodes` for cases like winget `ALREADY_INSTALLED`); see `.squad/skills/pwsh-lastexitcode/SKILL.md` |
+| PATH refresh | After an install mutates PATH, dot-source `scripts/windows/lib/path.ps1` and call `Refresh-SessionPath` so `node`, `uv`, `gh`, etc. become callable in the same session |
+| Version pinning | Read from `.tool-versions` via `Get-ToolVersion` (dot-source `scripts/lib/Read-ToolVersion.ps1`); never hard-code versions |
+| Install method | Prefer `winget`; fall back to `scoop` or direct download (see `nvm.ps1` for the portable-zip pattern) |
+| Sourcing | `setup.ps1` dot-sources each `tools/*.ps1`; tool functions live in the parent scope and are invoked by name. Tool scripts re-dot-source their own `lib/` files so they remain runnable standalone. |
 | Profile injection | `Write-PowerShellProfile` writes aliases to **both** PS 5.1 (`Documents\WindowsPowerShell\`) and PS 7+ (`Documents\PowerShell\`) paths; sentinel strip+re-inject makes it idempotent |
 | Alias registration | All `Set-Alias` calls use `-Force -Scope Global` so aliases work in the current session immediately |
 
@@ -259,6 +328,46 @@ zsh → uv → nvm → gh → auth → copilot-cli → squad-cli
 ```
 
 `copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `auth` script handles interactive GitHub CLI authentication (issue #9). `squad-cli` depends on `nvm` (Node/npm).
+
+### Windows orchestrator chain
+
+The Windows orchestrator `scripts/windows/setup.ps1` is a thin router: it dot-sources two shared libraries first (`lib/logging.ps1` -> `lib/path.ps1`), then dot-sources every per-tool module under `scripts/windows/tools/` so their `Install-*` functions are defined. Dot-source order does **not** drive dependencies -- the authoritative install order is the call sequence inside the `Main` function. The chain is fixed at:
+
+```
+git -> uv -> nvm -> gh -> auth -> vim -> psmux -> copilot -> squad-cli -> dotfiles -> profile -> hooks
+```
+
+Mapped to functions and the `tools/*.ps1` module that defines each:
+
+| # | Function called by `Main` | Source module | Mirrors Linux step |
+|---|---------------------------|---------------|--------------------|
+| 1 | `Install-Git`             | `tools/git.ps1`        | (Linux: pre-installed / package manager) |
+| 2 | `Install-Uv`              | `tools/uv.ps1`         | `tools/uv.sh` |
+| 3 | `Install-Nvm`             | `tools/nvm.ps1`        | `tools/nvm.sh` |
+| 4 | `Install-GhCli`           | `tools/gh.ps1`         | `tools/gh.sh` |
+| 5 | `Invoke-GhAuth`           | `tools/auth.ps1`       | `tools/auth.sh` |
+| 6 | `Install-Vim`             | `tools/vim.ps1`        | (Linux: pre-installed / package manager) |
+| 7 | `Install-Psmux`           | `tools/psmux.ps1`      | (Linux: tmux already on PATH) |
+| 8 | `Install-CopilotCli`      | `tools/copilot.ps1`    | `tools/copilot-cli.sh` |
+| 9 | `Install-SquadCli`        | `tools/squad-cli.ps1`  | `tools/squad-cli.sh` |
+| 10 | `Install-Dotfiles`       | `tools/dotfiles.ps1`   | `config/dotfiles/install.sh` (driven from `tools/zsh.sh`) |
+| 11 | `Write-PowerShellProfile`| `tools/profile.ps1`    | (Linux: shell-rc work folded into `tools/zsh.sh`) |
+| 12 | `Install-GitHook`        | inline in `setup.ps1`  | `git config core.hooksPath hooks` (same contract) |
+
+Cross-platform invariants preserved from the Linux chain above:
+
+- `auth` (interactive `gh auth login`) runs after `gh` so the CLI is on PATH when the prompt fires.
+- `copilot` runs after `auth` so the install can detect an authenticated `gh` session.
+- `squad-cli` runs after `nvm` because the install path is `npm i -g @bradygaster/squad-cli` and needs Node on PATH.
+
+Windows-only additions vs. the Linux chain:
+
+- `git` runs **first** -- Windows ships without git, and every downstream step that shells out to `git` (auth, dotfiles, hooks) needs it on PATH.
+- `vim` and `psmux` are explicit `winget` installs because Windows has no equivalent pre-installed editor/multiplexer.
+- `dotfiles` + `profile` are Windows-specific finalizers: the Linux side rolls equivalent shell-rc work into `tools/zsh.sh` plus `config/dotfiles/install.sh`, but Windows needs a discrete PowerShell profile injection step (PS 5.1 + PS 7+ profile paths) after the dotfile templates are applied.
+- `Install-GitHook` is an inline function inside `setup.ps1` (not a separate `tools/*.ps1` module), wired last so `core.hooksPath=hooks` is set only after the working tree is in its final state.
+
+History: the per-tool layout under `scripts/windows/tools/` was introduced in PR #195 (split out from a monolithic `setup.ps1`); `auth.ps1` moved from `scripts/windows/` into `tools/` in PR #297, and the call site in `Main` was updated at the same time. The chain documented above is current as of Sprint 12.
 
 ---
 

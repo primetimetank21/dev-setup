@@ -374,3 +374,154 @@ Initial setup complete.
   - Open PRs: 1 (this history-fold)
 - **Verdict:** CLEAN. 0 straggler branches, 0 worktrees to remove. Sprint 11
   EOS complete.
+
+## Post-0.9.1 Release + Sprint Rename EOS Cleanup -- 2026-05-17
+
+- **Trigger:** Session-end after 0.9.1 release shipped and Sprint naming
+  convention reverted to numbers (Q->8-hotfix, R->9, S->10, T->11, next=12).
+  Coordinator handed off to Ralph as final EOS step after Jiminy audit ran
+  clean. develop @ `e3418ac`, working tree clean.
+- **PR:** #312 (squad/ralph-eos-0.9.1) -- this history-fold
+- **Previous EOS:** PR #304 (Sprint 11 EOS, no stragglers)
+- **Session PRs merged (all confirmed merged + branches reaped):**
+  * PR #305 -- release/0.9.1 -> develop: 0.9.1 release fold
+  * PR #307 -- chore(release): fold [Unreleased] into 0.9.1 CHANGELOG
+    (merge commit 2b3afe1)
+  * PR #308 -- chore/sprint-naming-convention: revert + rename sprints to
+    numbers (merge commit c93a54c)
+  * PR #311 -- docs(scribe): 0.9.1 release + sprint naming rename retro +
+    history updates (squash-merged as e3418ac)
+- **Initial state snapshot:**
+  - Local branches: develop, main (no squad/* branches)
+  - Remote branches: origin/develop, origin/main, origin/HEAD -> origin/develop
+    (no squad/* branches)
+  - Worktrees: 1 (primary at C:\Users\Earl Tankard\Coding\dev-setup)
+  - Open PRs: 0 (clean board)
+  - Inbox: 1 file (jiminy-2026-05-17-post-batch-audit-fold.md) -- gitignored,
+    NOT Ralph's to action (Scribe will fold next dispatch)
+- **Cleanup actions:** None -- state was already clean. `git fetch --prune`
+  ran for hygiene and confirmed zero stale tracking refs.
+- **gh `--delete-branch` quirk (issue #300):** NOT encountered this session.
+  All 4 session PRs cleaned up their head branches cleanly. Post-Sprint-11
+  release pattern (release branch + revert/rename PRs + retro PR) appears
+  to leave nothing sticky -- the squash-merge in PR #311 also reaped its
+  source branch successfully.
+- **Final repo state:**
+  - develop: `e3418ac` (working tree clean before branch creation)
+  - main: `724c62c` (tagged 0.9.1, released)
+  - Local branches: develop, main, squad/ralph-eos-0.9.1 (this PR)
+  - Remote branches: origin/develop, origin/main,
+    origin/squad/ralph-eos-0.9.1 (this PR)
+  - Worktrees: 1 (primary)
+  - Open PRs: 1 (this history-fold)
+- **EOS pattern note:** Sprint 11 -> 0.9.1 release -> rename retro is now
+  the second consecutive EOS where the release+rename cadence produces
+  zero stragglers. The post-Sprint-10 cycle (PR #295) had 2 stragglers
+  to reap; Sprint 11 wrap (PR #304) and this 0.9.1 wrap had zero each.
+  Hypothesis: `gh pr merge --delete-branch` reliability has improved, OR
+  the team has internalized the cleanup-on-merge habit. Worth watching
+  for one more cycle before declaring the quirk obsolete.
+- **Verdict:** CLEAN. 0 straggler branches, 0 worktrees, 0 stale remotes.
+  0.9.1 release session fully reaped. Sprint 12 backlog staged and ready
+  for next dispatch.
+
+### Learnings (Ralph)
+
+- **Post-release + post-rename combo runs clean.** Even with 4 session PRs
+  spanning a release fold, a CHANGELOG cleanup, a naming revert, and a
+  retro, the board ended at zero stragglers. The release branch
+  (`release/0.9.1`) was reaped on merge; the chore/* and squad/* branches
+  same. No special handling needed for the squash-merged retro PR (#311).
+- **Inbox gitignore is the right pattern.** Jiminy's fold-request sitting
+  in `.squad/decisions/inbox/` is gitignored (`.gitignore:4`), so it
+  survives session boundaries without polluting develop. This is the
+  precedent for Ralph too if a future EOS has nothing committable.
+- **Default to PR over inbox fold-request when history.md is the only
+  delta.** Earl's preference (per spawn prompt) is an explicit paper
+  trail per session, and the cost of a tiny PR is low. Inbox path stays
+  reserved for genuinely uncertain situations.
+- **`git fetch --prune` on an already-clean board is a no-op but worth
+  running.** Confirms remote state matches local belief in ~50ms. Cheap
+  insurance against silent ghost refs.
+- **No new EOS rules to codify.** Pattern is stable: audit -> prune ->
+  history append -> PR. No skill extraction this round.
+
+## 2026-05-17 -- Sprint 12 EOS sweep (Earl, post-retro merge)
+
+- **Trigger:** Earl's EOS protocol after Sprint 12 wrap (3 waves, 10 PRs, 9
+  issues closed). Retro fold landed as PR #327 (`5e0fb53`) just before
+  dispatch. Coordinator had already drained 4 Wave-2 inbox drops inline
+  post-Jiminy-audit; board reported clean entering this sweep.
+- **Pre-sweep state:**
+  - develop @ `5e0fb53`, main @ `724c62c` (still 0.9.1, untouched)
+  - Working tree clean, 1 worktree (primary only)
+  - Inbox empty, no rogue body files, no temp/backup rogues
+- **Pruned (Step 1) -- 5 stale `origin/squad/*` tracking refs:**
+  - `origin/squad/237-test-harness-pattern`
+  - `origin/squad/306-readme-refresh`
+  - `origin/squad/310-arch-windows-dep-order`
+  - `origin/squad/scribe-sprint-12-retro` (Jiminy listed 4 -- this was the
+    5th, branch reaped when PR #327 squash-merged minutes earlier; local
+    tracking ref hadn't caught up yet)
+  - `origin/squad/scribe-sprint-12-wave-2-fold`
+- **Already clean (Steps 2-5) -- Jiminy session-end audit was thorough:**
+  - Local `squad/*` branches: 0 (Coordinator's worktree-remove-first dance
+    held discipline across all 3 waves)
+  - Remote `squad/*` branches via `gh api .../branches --paginate`: 0
+    (confirmed -- only `develop` and `main` on the remote)
+  - Filesystem `dev-setup-*` orphan dirs at parent: 0
+  - `.squad/decisions/inbox/`: empty
+  - Rogue `issue_body*.md` at repo root: 0 (`gh issue create -F` + `Remove-Item`
+    pattern held)
+  - Rogue `*.tmp`, `*.bak`, `.DS_Store`, `Thumbs.db`: 0
+- **Step 6 -- `git gc --auto`:** exit 0, no output. Heuristics did not
+  trigger a pack -- expected, since the worktree-local strategy keeps
+  most churn off the primary checkout's loose-object pile. 10 PRs of
+  merge activity did not accumulate enough loose objects to cross the
+  auto-gc threshold.
+- **Final repo state:**
+  - develop: `5e0fb53` (clean)
+  - main: `724c62c` (0.9.1, untouched)
+  - Local branches: develop, main
+  - Remote branches (post-prune): origin/develop, origin/main, origin/HEAD
+  - Worktrees: 1 (primary)
+  - Open PRs: 0
+- **Sprint 12 EOS verdict:** CLEAN. 5 stale tracking refs pruned, 0 actual
+  orphans (no branches, no worktrees, no fs dirs, no rogue files). Jiminy's
+  session-end audit handled everything except the local-tracking-ref
+  catchup, which is the canonical Ralph job. Sweep complete.
+- **EOS pattern note:** 3rd consecutive EOS (Sprint 11 wrap -> 0.9.1
+  release -> Sprint 12 wrap) with zero orphan branches and zero worktree
+  stragglers. The Sprint 11-era hypothesis ("the team has internalized
+  cleanup-on-merge OR `gh pr merge --delete-branch` reliability improved")
+  now has a 3rd data point in its favor. One more cycle and the
+  `gh --delete-branch` quirk (issue #300) is effectively obsolete for
+  this repo's workflow.
+- **Multi-wave/multi-PR scaling note (new):** This is the first EOS
+  following a 3-wave / 10-PR sprint. The cleanup load did NOT scale
+  linearly with PR count -- the entire sweep produced 5 stale tracking
+  refs (1 per active wave/release + the retro), not 10. Worktree-local
+  strategy + Scribe's per-wave fold pattern keeps the EOS surface area
+  bounded regardless of sprint size. Worth remembering when sizing
+  future sprints: cleanup cost is per-wave, not per-PR.
+
+### Learnings (Ralph)
+
+- **Local tracking refs always lag a fresh merge.** When `gh pr merge`
+  deletes the remote branch, the local `origin/squad/*` ref persists
+  until the next `git fetch --prune` (or explicit `git remote prune`).
+  Jiminy's session-end audit ran before PR #327 merged, so it counted
+  4 refs; by the time Ralph dispatched, it was 5. Not a bug in Jiminy's
+  count -- a timing artifact. Future EOS dispatches after a fresh
+  merge should expect +1 ref vs. the prior audit.
+- **`git gc --auto` on a worktree-local-strategy repo rarely triggers.**
+  3rd consecutive EOS where `git gc --auto` no-ops. The primary checkout
+  stays lean because feature work happens in dedicated worktrees that
+  share the object DB but don't keep their loose objects "live" the way
+  a single-checkout workflow would. Safe to keep running it as cheap
+  insurance, but don't expect it to do anything on this repo.
+- **`gh api ... --jq` quoting is brittle in PowerShell.** First attempt
+  with embedded backslash-escaped quotes failed at the jq parser. The
+  reliable pattern is: `--jq '.[].name'` (no embedded quotes), then
+  filter the result list in PowerShell with `Where-Object { $_ -like
+  'squad/*' }`. Saves a round-trip when the quote dance fails.
