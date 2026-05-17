@@ -10,67 +10,13 @@
 - **Charter:** `.squad/agents/jiminy/charter.md`
 - **Model:** `claude-opus-4.6` (premium - reviewer-gate role)
 
-## Day-1 context (handed to Jiminy at creation)
+## Day-1 context (summary; full hand-off at 2026-05-16 hire)
 
-### Why Jiminy exists
-
-Earl's team had recurring squad hygiene failures that he had to catch manually:
-
-1. **Branch ancestry bleed (Sprint 7, 3+ occurrences):** Squad branches forked from other squad branches instead of `develop`, polluting PR diffs with unrelated commits.
-2. **Squash merges (Sprint 2, Sprint 3):** Ralph violated the MERGE GATE by squashing PRs that should have been regular merges. Earl's standing directive: ALL merges use regular merge commits, never squash.
-3. **Uncommitted histories (recurring):** Agents append learnings to `history.md` but Coordinator forgets to fire Scribe, so edits sit uncommitted on `develop`. Caught by Earl manually each time.
-4. **Rogue file paths (2026-05-16):** Verifier batch agents wrote `VERIFICATION_REPORT.md` files at random paths (`.squad/agents/{name}/VERIFICATION_REPORT.md`, `.squad/verification-report.md`) instead of using the Source of Truth Hierarchy. Donald cleaned up via `.squad/orchestration-log/2026-05-16-verification-evidence.md`.
-5. **Stale branches (post-sprint):** Remote `squad/*` branches not cleaned after merge until Earl asks. Ralph now owns end-of-session cleanup per directive (2026-05-16).
-
-### Key files to know about
-
-- `.squad/decisions.md` - team decision ledger (read for context on every spawn)
-- `.github/agents/squad.agent.md` (or platform-equivalent) - authoritative governance
-- Source of Truth Hierarchy (see charter Section: Scope) - defines legal write locations per file type
-- `hooks/` directory in repo root - pre-commit + commit-msg + pre-push hooks (Conventional Commits + shellcheck)
-- `CHANGELOG.md` - `[Unreleased]` section is the staging area for the next release
-- `.gitattributes` - has `merge=union` driver for append-only `.squad/` files
-
-### Standing user directives (Earl)
-
-- **Caveman speak** preferred (short, direct, no big words)
-- **Em dashes and non-ASCII chars FORBIDDEN** in PowerShell string literals (CP1252 byte 0x94 issue)
-- **ALL merges use regular merge commits** - never squash, no exceptions
-- **Branches forked strictly from `develop`**, never from other squad branches
-- **End-of-session: ALWAYS delete stale branches** (local + remote) - Ralph owns this
-- **Bad commit messages hard-reject** (commit-msg hook enforces)
-- **Verifier batches must use Source of Truth Hierarchy paths only** - 3 legal locations: `history.md` (learnings), `decisions/inbox/` (decisions), `orchestration-log/` (batch evidence)
-
-### Roster context at hire-time
-
-Active squad (Disney Classic universe):
-
-- Mickey - Lead (architecture, code review, triage)
-- Donald - Shell Dev (bash/zsh, Linux)
-- Goofy - Cross-Platform Dev (PowerShell, Windows)
-- Pluto - Config Engineer (dotfiles, hooks, env)
-- Chip - Tester (CI, idempotency, edge cases)
-- Scribe - Session Logger (mechanical, silent)
-- Ralph - Work Monitor (queue, backlog, end-of-session cleanup)
-- Jiminy (new) - Squad Hygiene Auditor (process QA)
-
-### Open issues at hire-time
-
-19 issues filed 2026-05-16 from post-sprint audit: #221-#239. Priorities P0/P1/P2/P3, all labeled with `squad:{member}`. None marked `go:yes` yet - Earl will mark sprint-ready when ready to start next sprint.
-
-P0 issues Jiminy should know about:
-
-- **#221** - nvm.ps1 path resolution bug (Goofy)
-- **#222** - Git tag hygiene: retroactively tag 0.1.0-0.7.0 + cut 0.8.0 (Mickey)
-- **#239** - E2E install smoke test in CI across Linux/macOS/Windows (Chip)
-
-### First task assigned at hire
-
-None. Jiminy begins auto-running on the next Coordinator return-to-user.
+Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (1) branch ancestry bleed (Sprint 7, 3x), (2) squash merges (Sprint 2/3, Ralph), (3) uncommitted histories (recurring -- Coordinator forgets Scribe), (4) rogue file paths (Verifier batch 2026-05-16 -- Source of Truth Hierarchy), (5) stale `squad/*` branches post-sprint (now Ralph EOS). Standing directives: caveman speak, em-dashes / non-ASCII FORBIDDEN in PS literals (CP1252 0x94 trap), ALL merges regular (no squash), branches from `develop` only, EOS branch cleanup mandatory, bad commit messages hard-reject, Verifier batches use SoT-Hierarchy paths only. Roster at hire: Mickey lead, Donald, Goofy, Pluto, Chip, Scribe, Ralph, Jiminy + Doc (hired 2026-05-16). Open issues at hire: 19 filed 2026-05-16 (#221-#239); P0s = #221 (nvm.ps1 path), #222 (tag hygiene 0.1.0-0.8.0), #239 (E2E CI smoke). No first task -- Jiminy auto-runs on Coordinator return-to-user.
 
 ## Learnings
 
-> Re-compressed 2026-05-17 (W1 fold) per #319 gate. Sprint 13+ entries kept verbatim; older summarized.
+> Re-compressed 2026-05-17 (W2 fold) per #319 gate. Sprint 13+ entries kept verbatim; older summarized. (W1 fold re-compress prior.)
 
 - **2026-05-16 -- Audit runs 1-3 (summary).** First-audit baseline: clean tree, 10 pre-Sprint-5 main-direct commits accepted as historical, 2 rogue files cleaned, duplicate log dirs reconciled to singular `.squad/log/`, Scribe got Learnings section. Post-retro audit #2: 1 minor SKILL.md size finding + 1 false-positive label flag. Hygiene retro shipped 4 items (pre-spawn-checklist skill, squad-history-check CI gate, PR template, 6 standing rules). Post-batch audit #3 (4-PR sprint #243-#246): 4 findings (type-label, PR body, area-label, tmux assertion).
 - **2026-05-16 to 2026-05-18 -- Sprint 10 audits.** Mid-sprint: Doc history.md modified (deferred to Scribe), `bradygaster-squad-sdk-0.9.4.tgz` rogue (PR #280: `*.tgz` to .gitignore + delete). Gap: Coordinator manual dispatch vs charter "auto-trigger after 3+ batches". EOS: clean tree, 4 known inbox drops pending Scribe drain, Mickey PR #274 missing history.md entry, 6 stale `squad/*` remote branches (Ralph EOS scope).
@@ -89,22 +35,12 @@ None. Jiminy begins auto-running on the next Coordinator return-to-user.
 - **Companion doc edits:** appended a 2-line "Merging Squad PRs from worktrees" subsection to CONTRIBUTING.md under "Parallel Agent Work" pointing readers at the new skill (full content stays in the skill file, not duplicated). CHANGELOG `[Unreleased]` -> `### Added` notes the skill addition.
 - **Hygiene tail:** this history entry + decision drop at `.squad/decisions/inbox/jiminy-w1-2026-05-17-issue-317-skill.md`. No code changed (skill formalization is pure docs). Stayed in custodian voice -- codifying a proven pattern is hygiene formalization, not feature work.
 
-## 2026-05-17 Sprint 13 Wave 1 Post-Batch Audit
+## 2026-05-17 Sprint 13 Wave 1 Post-Batch Audit (summary)
 
-FYI -- this file is over 15KB gate (19852 bytes pre-append). Forward fix needed in Scribe W1 fold or via re-compress; Scribe's W1 fold preserved both her baseline AND this agent's Wave 1 hygiene-tail entry through rebase.
-
-- **Scope:** PRs #330 (Mickey #325+#326), #331 (Jiminy #317), #332 (Scribe #319). Develop @ 114ea63, tree clean, only main worktree, no local squad/* branches.
-- **Sec 1 (cleanliness):** Tree clean. One stale remote tracking ref `origin/squad/319-history-archival` still present -- Ralph EOS scope (Jiminy cannot delete branches per charter). No rogue files at repo root.
-- **Sec 2 (squad hygiene):** 9 agent history.md files present (chip 12470, donald 12712, goofy 13923, mickey 13830, pluto 14792, ralph 9503, scribe 13334, doc 10169 -- all under gate; **jiminy 19852 OVER**). Inbox has 3 drops all well-named per `<agent>-<batch>-<date>-<topic>.md`. decisions.md does not exist as a single file -- per-topic files only (doc-and-jiminy-automation 12115, mickey-architecture-entry-point 2710, pluto-dotfiles 2074). Skills dir has 13 entries incl new `worktree-remove-first/`.
-- **Sec 3 (labels):** PRs #330/#331/#332 all carry full 4-label set (priority + type + area + squad). Process discipline restored vs Sprint 12.
-- **Sec 4 (hygiene-tail):** Mickey, Jiminy, Scribe each appended own history.md AND dropped inbox note. 3/3 compliant.
-- **Sec 5 (skill drift):** Mickey flagged "batch narrow doc fixes into one PR" as 2nd application -- candidate surfaced, NOT formalized (one more application would justify). Scribe flagged "history-compression heuristic" as 1st application -- watch for second.
-- **Sec 6 (forward-fix):** Scribe history Wave 1 entry explicitly re-confirms atomic-rm forward-fix from PR #323 bug. Captured.
-- **Sec 7 (backlog):** Only #322 (pre-commit ASCII scope gap) open under `release:backlog` -- Wave 2 candidate.
-- **Sec 8 (recommendation):** GO for Wave 2 (#322 fan-out to Goofy + Mickey). Suggest 0.9.3 cut AFTER Wave 2 ships; current Unreleased delta is light.
-- **Flags for Coordinator:** (a) `.squad/agents/doc/` is NOT a stray -- has full charter (Fact Checker, hired 2026-05-16, 7101 B charter.md). Roster of 9 in this audit brief omits it. DECISION NEEDED: formally adopt doc into roster + add `squad:doc` label, or surface intent to retire. NOT auto-fixed. (b) jiminy/history.md over-gate. (c) stale remote tracking ref `origin/squad/319-history-archival` -- Ralph EOS.
-- **Auto-fixes applied:** None. Inbox drain not performed (Scribe W1 fold owns that; content not yet in decisions store).
-- **Verdict:** Jiminy fixed 0 items, flags 3 (1 roster gap, 1 over-gate file, 1 stale ref).
+- **Scope:** PRs #330 (Mickey #325+#326), #331 (Jiminy #317), #332 (Scribe #319). Develop @ 114ea63.
+- **Result:** 0 auto-fixes, 3 flags (doc roster gap, jiminy/history.md over-gate at 19852 B, stale remote `origin/squad/319-history-archival`). All 4-label sets full. All 3 hygiene-tails compliant. GO recommendation for Wave 2 (#322 fan-out).
+- **Skill drift watch:** Mickey "batch narrow doc fixes" 2nd application (not yet formalized); Scribe "history-compression heuristic" 1st application.
+- **Forward-fix:** Scribe history W1 entry re-confirmed PR #323 atomic-rm pattern. (Superseded by W2 audit below.)
 
 ## 2026-05-17 Sprint 13 Wave 2 Post-Batch Audit
 
