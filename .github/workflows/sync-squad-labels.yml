@@ -59,13 +59,9 @@ jobs:
 
             core.info(`Found ${members.length} squad members: ${members.map(m => m.name).join(', ')}`);
 
-            // Check if @copilot is on the team
-            const hasCopilot = content.includes('🤖 Coding Agent');
-
             // Define label color palette for squad labels
             const SQUAD_COLOR = '9B8FCC';
             const MEMBER_COLOR = '9B8FCC';
-            const COPILOT_COLOR = '10b981';
 
             // Define go: and release: labels (static)
             const GO_LABELS = [
@@ -93,7 +89,14 @@ jobs:
             const PRIORITY_LABELS = [
               { name: 'priority:p0', color: 'B60205', description: 'Blocking release' },
               { name: 'priority:p1', color: 'D93F0B', description: 'This sprint' },
-              { name: 'priority:p2', color: 'FBCA04', description: 'Next sprint' }
+              { name: 'priority:p2', color: 'FBCA04', description: 'Next sprint' },
+              { name: 'priority:p3', color: 'D4E5F7', description: 'Backlog / icebox' }
+            ];
+
+            const PLATFORM_LABELS = [
+              { name: 'platform:linux',   color: '0052CC', description: 'Linux-specific' },
+              { name: 'platform:macos',   color: '0052CC', description: 'macOS-specific' },
+              { name: 'platform:windows', color: '0052CC', description: 'Windows-specific' }
             ];
 
             function slugify(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
@@ -111,20 +114,12 @@ jobs:
               });
             }
 
-            // Add @copilot label if coding agent is on the team
-            if (hasCopilot) {
-              labels.push({
-                name: 'squad:copilot',
-                color: COPILOT_COLOR,
-                description: 'Assigned to @copilot (Coding Agent) for autonomous work'
-              });
-            }
-
-            // Add go:, release:, type:, and priority: labels
+            // Add go:, release:, type:, priority:, and platform: labels
             labels.push(...GO_LABELS);
             labels.push(...RELEASE_LABELS);
             labels.push(...TYPE_LABELS);
             labels.push(...PRIORITY_LABELS);
+            labels.push(...PLATFORM_LABELS);
 
             // Sync labels (create or update)
             for (const label of labels) {
