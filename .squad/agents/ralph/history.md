@@ -139,3 +139,53 @@ Initial setup complete.
   reliable pattern is: `--jq '.[].name'` (no embedded quotes), then
   filter the result list in PowerShell with `Where-Object { $_ -like
   'squad/*' }`. Saves a round-trip when the quote dance fails.
+
+## Sprint 13 EOS Cleanup (2026-05-17)
+
+- **Trigger:** Post Sprint 13 close. Tag `0.9.3` cut to main
+  (`edc67e2`), develop @ `ea2f5f0` after Jiminy session-end audit.
+  0 open issues, 0 open PRs.
+- **Known remnant (handed off by Jiminy, out of his scope):** live
+  remote branch `origin/squad/319-history-archival` -- its PR #332
+  merged 2026-05-17T09:24:42Z without `--delete-branch`.
+
+### Actions
+
+- `git worktree list` -- only main checkout
+  (`C:\Users\Earl Tankard\Coding\dev-setup`) present. No stray
+  worktrees to remove.
+- `git branch -vv` -- only `develop` (active) and `main` local.
+  No stale `squad/*` or `release/*` locals. Nothing to delete.
+- Remote squad/release sweep -- `git ls-remote --heads origin`
+  returned exactly 1 hit:
+  - `squad/319-history-archival` @ `15e55be` -- PR #332 confirmed
+    MERGED via `gh pr list --state merged --head ... --limit 1`.
+    Deleted via `git push origin --delete`.
+- `git remote prune origin` + `git fetch --all --prune` --
+  idempotent, no further refs reaped (already in sync post-delete).
+- `git gc --auto` -- no-op (4th consecutive EOS; pattern holds).
+  `git count-objects -vH`: 2833 loose / 6.93 MiB, 5 packs /
+  69.22 MiB, 238 prune-packable, 0 garbage.
+
+### Final state
+
+- Remote heads: `develop` (`ea2f5f0`), `main` (`edc67e2`).
+  0 `squad/*` or `release/*` remnants.
+- Local: `develop` (active), `main`. Working tree clean.
+- Worktrees: 1 (main checkout only).
+
+### Learnings (Ralph)
+
+- **Jiminy handoff pattern works.** Jiminy's session-end audit
+  explicitly documented the one ref it couldn't reap
+  (`squad/319-history-archival`) because the merge happened outside
+  his audit window. Ralph picked it up cleanly with a single targeted
+  `--delete` + prune. The previous EOS learning ("local refs lag a
+  fresh merge") generalizes: when a PR merges between Jiminy and Ralph
+  dispatch, Ralph should expect exactly +1 remote ref to reap, not a
+  full sweep. Cheap, predictable handoff.
+- **Sprint 13 cleanup load was the smallest in 4 sprints.** 1 remote
+  branch deleted, 0 local, 0 worktrees, 0 prune output. Consistent
+  with the "cost per wave, not per PR" rule from Sprint 12 EOS: this
+  sprint had fewer concurrent waves still open at close, so the
+  surface area shrank accordingly. No new tooling needed.
