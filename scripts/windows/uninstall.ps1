@@ -97,7 +97,7 @@ function Remove-DevSetupProfileBlock {
         Remove-Item $ProfilePath -Force
         Write-Ok "Removed profile (was only dev-setup block): $ProfilePath"
     } else {
-        Set-Content $ProfilePath $cleaned -NoNewline
+        Set-Content $ProfilePath $cleaned -NoNewline -Encoding ASCII
         Write-Ok "Removed dev-setup block from $ProfilePath"
     }
 }

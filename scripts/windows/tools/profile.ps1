@@ -25,7 +25,7 @@ function Write-PowerShellProfile {
             $raw = Get-Content $profilePath -Raw
             # Strip the managed block (handles both LF and CRLF)
             $raw = $raw -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''
-            Set-Content $profilePath $raw -NoNewline
+            Set-Content $profilePath $raw -NoNewline -Encoding ASCII
         }
     }
 
@@ -291,9 +291,9 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
         # Always prepend a blank line so we don't concatenate onto any existing last line.
         try {
             if (Test-Path $profilePath) {
-                Add-Content -Path $profilePath -Value ""
+                Add-Content -Path $profilePath -Value "" -Encoding ASCII
             }
-            Add-Content -Path $profilePath -Value $profileContent
+            Add-Content -Path $profilePath -Value $profileContent -Encoding ASCII
         } catch {
             Write-Err "Failed to write profile to '$profilePath': $_"
             continue
