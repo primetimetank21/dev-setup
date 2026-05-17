@@ -75,10 +75,6 @@ jobs:
             ];
 
             const RELEASE_LABELS = [
-              { name: 'release:v0.4.0', color: '6B8EB5', description: 'Targeted for v0.4.0' },
-              { name: 'release:v0.5.0', color: '6B8EB5', description: 'Targeted for v0.5.0' },
-              { name: 'release:v0.6.0', color: '8B7DB5', description: 'Targeted for v0.6.0' },
-              { name: 'release:v1.0.0', color: '8B7DB5', description: 'Targeted for v1.0.0' },
               { name: 'release:backlog', color: 'D4E5F7', description: 'Not yet targeted' }
             ];
 
@@ -91,11 +87,8 @@ jobs:
               { name: 'type:epic', color: 'CC4455', description: 'Parent issue that decomposes into sub-issues' }
             ];
 
-            // High-signal labels — these MUST visually dominate all others
-            const SIGNAL_LABELS = [
-              { name: 'bug', color: 'FF0422', description: 'Something isn\'t working' },
-              { name: 'feedback', color: '00E5FF', description: 'User feedback — high signal, needs attention' }
-            ];
+            // High-signal labels removed in #347 -- duplicated GitHub defaults `bug` and
+            // `feedback` were consolidated into type:bug / type:feature respectively.
 
             const PRIORITY_LABELS = [
               { name: 'priority:p0', color: 'B60205', description: 'Blocking release' },
@@ -127,12 +120,11 @@ jobs:
               });
             }
 
-            // Add go:, release:, type:, priority:, and high-signal labels
+            // Add go:, release:, type:, and priority: labels
             labels.push(...GO_LABELS);
             labels.push(...RELEASE_LABELS);
             labels.push(...TYPE_LABELS);
             labels.push(...PRIORITY_LABELS);
-            labels.push(...SIGNAL_LABELS);
 
             // Sync labels (create or update)
             for (const label of labels) {
