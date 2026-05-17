@@ -59,13 +59,9 @@ jobs:
 
             core.info(`Found ${members.length} squad members: ${members.map(m => m.name).join(', ')}`);
 
-            // Check if @copilot is on the team
-            const hasCopilot = content.includes('🤖 Coding Agent');
-
             // Define label color palette for squad labels
             const SQUAD_COLOR = '9B8FCC';
             const MEMBER_COLOR = '9B8FCC';
-            const COPILOT_COLOR = '10b981';
 
             // Define go: and release: labels (static)
             const GO_LABELS = [
@@ -75,10 +71,6 @@ jobs:
             ];
 
             const RELEASE_LABELS = [
-              { name: 'release:v0.4.0', color: '6B8EB5', description: 'Targeted for v0.4.0' },
-              { name: 'release:v0.5.0', color: '6B8EB5', description: 'Targeted for v0.5.0' },
-              { name: 'release:v0.6.0', color: '8B7DB5', description: 'Targeted for v0.6.0' },
-              { name: 'release:v1.0.0', color: '8B7DB5', description: 'Targeted for v1.0.0' },
               { name: 'release:backlog', color: 'D4E5F7', description: 'Not yet targeted' }
             ];
 
@@ -91,16 +83,20 @@ jobs:
               { name: 'type:epic', color: 'CC4455', description: 'Parent issue that decomposes into sub-issues' }
             ];
 
-            // High-signal labels — these MUST visually dominate all others
-            const SIGNAL_LABELS = [
-              { name: 'bug', color: 'FF0422', description: 'Something isn\'t working' },
-              { name: 'feedback', color: '00E5FF', description: 'User feedback — high signal, needs attention' }
-            ];
+            // High-signal labels removed in #347 -- duplicated GitHub defaults `bug` and
+            // `feedback` were consolidated into type:bug / type:feature respectively.
 
             const PRIORITY_LABELS = [
               { name: 'priority:p0', color: 'B60205', description: 'Blocking release' },
               { name: 'priority:p1', color: 'D93F0B', description: 'This sprint' },
-              { name: 'priority:p2', color: 'FBCA04', description: 'Next sprint' }
+              { name: 'priority:p2', color: 'FBCA04', description: 'Next sprint' },
+              { name: 'priority:p3', color: 'D4E5F7', description: 'Backlog / icebox' }
+            ];
+
+            const PLATFORM_LABELS = [
+              { name: 'platform:linux',   color: '0052CC', description: 'Linux-specific' },
+              { name: 'platform:macos',   color: '0052CC', description: 'macOS-specific' },
+              { name: 'platform:windows', color: '0052CC', description: 'Windows-specific' }
             ];
 
             function slugify(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
@@ -118,21 +114,12 @@ jobs:
               });
             }
 
-            // Add @copilot label if coding agent is on the team
-            if (hasCopilot) {
-              labels.push({
-                name: 'squad:copilot',
-                color: COPILOT_COLOR,
-                description: 'Assigned to @copilot (Coding Agent) for autonomous work'
-              });
-            }
-
-            // Add go:, release:, type:, priority:, and high-signal labels
+            // Add go:, release:, type:, priority:, and platform: labels
             labels.push(...GO_LABELS);
             labels.push(...RELEASE_LABELS);
             labels.push(...TYPE_LABELS);
             labels.push(...PRIORITY_LABELS);
-            labels.push(...SIGNAL_LABELS);
+            labels.push(...PLATFORM_LABELS);
 
             // Sync labels (create or update)
             for (const label of labels) {

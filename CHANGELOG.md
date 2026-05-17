@@ -15,10 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.9.4] - 2026-05-17
+
+### Added
+- history-compression skill formalized at confidence: medium -- 4-step heuristic (front-matter verbatim / current-sprint verbatim / older to dated bullets / preserve refs), 13 KB target with 2 KB headroom under the 15360 B hard gate (#340)
+- per-topic inbox routing skill formalized at confidence: medium -- routing decision tree, atomic-rm model, dual-model coexistence with chronological journal (#341)
+
+### Changed
+- README refreshed: pre-commit 6-check description (F1), ascii-sweep.py docs (F2), file-tree hand-converted to ASCII (F3), file-tree updated (F4), pre-commit one-liner expanded (F5) (#342)
+- Label taxonomy slimmed from 45 to 32 labels (drop 8 GitHub-default duplicates, 4 stale release version labels, 1 lonely status label; rename area:linux/macos/windows -> platform:*) (#347)
+- sync-squad-labels.yml: add priority:p3 + platform:* to managed labels, remove dead hasCopilot code (#350)
+
+### Fixed
+
+### Removed
+
 ## [0.9.3] - 2026-05-17 -- Sprint 13: Documentation accuracy and ASCII policy hardening
 
 ### Added
 - squad: skill formalizing the worktree-remove-FIRST PR merge pattern; documents the gh CLI quirk and proven 5-of-5 workaround (#317)
+- `.squad/retros/2026-05-17-sprint-13-retro.md`: Sprint 13 retrospective (#339; folded retroactively into 0.9.3 -- PR merged after tag; see `.squad/decisions/changelog-retro-placement.md`)
 
 ### Changed
 

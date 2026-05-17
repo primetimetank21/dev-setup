@@ -74,43 +74,18 @@ Lead architect; established foundational team process, architecture, and Windows
 
 Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #145, #146 REJECTED, #149 PSScriptAnalyzer pre-push, #138, #160 AllScope, #169, #170, #175/#176); Sprint 8 PS 5.1 compat (PRs #198, #200 merge gate + ASCII-safety skill, batch reviews #202-#210, #222 tag discipline); Sprint 8h/9/10 squad upgrade + retros (0.9.4 audit PR #262 rogue-file bug + git-workflow SKILL overwrite risk, Sprint 8h/9 retros, PR #274, pwsh-lastexitcode skill PR #288, #239 E2E filed). Lessons preserved verbatim in Learnings (CI=true, BOM gotcha, worktree isolation, commit-msg merge bypass, Doc hire pattern).
 
-## Sprint 11-12 entries (summary)
+## Sprint 11-13 entries
 
-- **2026-05-17 -- pwsh-lastexitcode skill (PR for #288).** Authored `.squad/skills/pwsh-lastexitcode/SKILL.md` documenting `\0` propagation anti-pattern across `&` boundaries; added CONTRIBUTING "PowerShell Exit Code Discipline" + audit. 5 unmitigated sites flagged in setup.ps1/auth.ps1 (deferred to Goofy #292).
-- **2026-05-19 -- PR for #289 + #290.** Single PR for Doc subagent worktree pattern (Option B: dedicated `..\dev-setup-doc`) + Jiminy auto-dispatch (Option A: 3-surface checklist). Replaces dual-fold pattern from Sprint 10 (#281+#283).
-- **2026-05-19 -- ARCHITECTURE.md refresh (PR for #229).** Synced file tree (lib/, uninstall.*, auth.ps1, dotfiles.ps1, .tool-versions, .gitattributes); refreshed workflows/hooks/tests; added Tool Version Pinning, Git Hooks, CI Workflows, Squad Roster sections. Held back Linux-only Dep Order (->#310) and Script Conventions (->#309).
-- **2026-05-20 -- Sprint rename Tier 3 sweep (PR #308).** 21 files, 6 categories. Q->8-hotfix, R->9, S->10, T->11, U->12. Aliasing: `Sprint N (formerly Sprint X)` first-occurrence-per-file. Merged after Doc fact-check "Verified". Doc caught CHANGELOG [0.8.0] missing `(formerly Sprint Q)` alias (folded fix). Label gotcha logged: `area:scripts` doesn't exist (6 area labels only).
-- **2026-05-17 -- PR #314 ARCH Script Conventions rewrite (#309).** Replaced obsolete "copy from setup.sh/setup.ps1" advice with explicit named lib files + copy-paste loading patterns. Bash-subshell vs PowerShell-dot-source asymmetry documented. Version-pin pattern canonical (read-tool-version.sh / Get-ToolVersion).
-- **2026-05-17 -- PR #321 Wave 2: Windows orchestrator Dep Order (#310).** Added `### Windows orchestrator chain` under `## Dependency Order`. 12-step chain from setup.ps1 Main(). ASCII `->` arrows. Caught 3 stray U+2014 em-dashes pre-commit. Filed File-Structure-tree-stale follow-up.
-- **2026-05-17 -- PR #324 Wave 3: README refresh (#306).** GitHub auth blockquote names auth.sh + auth.ps1; Repo Structure tree adds auth.ps1/dotfiles.ps1/uninstall.ps1 (count 9->11); .tool-versions example covers 7 pins; .squad/ tree expanded; 9-agent roster named. CWD-pin discipline applied throughout (lesson from #310 violation).
-- **2026-05-17 -- 0.9.2 release cut (Sprint 12 wrap).** Cut from release/0.9.2 (develop @ 5e0fb53). Folded [Unreleased] -> [0.9.2], harvested Ralph EOS tail. Sprint 12: 9 issues, 10 PRs, 3-wave doc-quality sweep. Three releases this session (0.9.0, 0.9.1, 0.9.2) -- identical flow: release branch from develop -> PR to develop (CHANGELOG fold) -> coordinator merges develop->main (REGULAR) -> tag X.Y.Z on main -> `gh release create --target main`. **Worktree-isolation lesson:** my #310 PR violated CWD-pin discipline (Jiminy caught contamination). Wave 3 #306 corrected: `Set-Location -LiteralPath` + path-mismatch guard + absolute path prefixes everywhere. Codified in Sprint 12 retro + Mickey dispatch brief.
+- 2026-05-17: Sprint 11-12 -- PRs #288 (pwsh-lastexitcode skill + CONTRIBUTING), #289/#290 (Doc worktree + Jiminy dispatch, replaces dual-fold), #229 (ARCH refresh: lib/, auth.ps1, .tool-versions), #308 (sprint rename T3: 21 files, Q->8h/R->9/S->10/T->11/U->12), #314 (Script Conventions rewrite), #321 (Windows Dep Order 12-step chain), #324 (README W3: 9->11 tree entries, 9 agents); 0.9.2 cut (9 issues, 10 PRs). CWD-pin lesson: #310 violated, #306 corrected, codified.
+- 2026-05-17: Sprint 13 W1 -- #325/#326 doc fixes (ARCH auth.ps1 path, README hooks count three->four) batched off develop @ 38e9c79. W2 -- #322B pre-commit extended .ps1->.ps1|.md|.sh (26/26 PASS); dogfood incident: new hook blocked history.md staging (60 pre-existing non-ASCII bytes) -- correct behavior, append deferred.
+- 2026-05-17: 0.9.3 release fold -- [Unreleased]->[0.9.3] (8 entries: 1 Added, 4 Changed, 3 Fixed). Scribe PR #339 retro landed post-tag -> Sprint 14 W1 fold.
+- 2026-05-17: Sprint 14 W1 -- #343 CHANGELOG editorial: retroactive fold of Scribe retro (PR #339) into [0.9.3] ### Added; 0.9.3 tag immutable. Codified in `.squad/decisions/changelog-retro-placement.md`: fold post-tag retros, never re-tag, Lead owns call. Pattern: "post-tag retro fold".
+- 2026-05-17: Sprint 14 W1.5 -- #342 README refresh on `squad/342-readme-edit`. **F3-first ordering critical:** 645 non-ASCII bytes in fenced file-tree block (box-drawing U+251C/U+2502/U+2514/U+2500 + U+2014 em-dashes); ascii-sweep.py skips fences by design; pre-commit scans full staged content regardless. Hand-converted to `+--` / `\--` ASCII patterns via PowerShell substitution table. Then F1 (6-check pre-commit table), F2 (ascii-sweep.py docs + --dry-run), F4 (tree entry), F5 (one-liner expanded). README.md: 11015->13039 B. CHANGELOG.md: +1 ### Changed. Every write: `[System.IO.File]` ASCII encoding + byte-scan + CWD-pin re-check.
 
+## 2026-05-17 Sprint 14 wrap -- 0.9.4 release cut
 
-## 2026-05-17 Sprint 13 Wave 1 (#325, #326)
+6 issues shipped: #340 (history-compression skill formalized: confidence medium, 4-step heuristic, 13 KB target / 2 KB headroom / 15360 B hard gate), #341 (per-topic inbox routing skill formalized: confidence medium, routing decision tree, atomic-rm model, dual-model coexistence), #342 (README refresh, 5 Doc audit findings applied -- see W1.5 entry), #343 (CHANGELOG editorial: Sprint 13 retro folded retroactively into [0.9.3] via "post-tag retro fold" pattern), #347 (label taxonomy 45->32: drop 8 GH-default dupes + 4 stale version labels + 1 status label; rename area:* -> platform:*; 84 issues migrated), #350 (sync-squad-labels.yml: priority:p3 + platform:* added, dead hasCopilot code removed).
 
-Shipped two narrow doc fixes batched into one PR on `squad/325-326-doc-fixes` (off develop @ 38e9c79):
+CHANGELOG [Unreleased] folded to [0.9.4] - 2026-05-17 (2 Added, 3 Changed). New empty [Unreleased] boilerplate at top. PR #1: release/0.9.4 -> develop (squash). Decision drop: `.squad/decisions/release-094-2026-05-17.md`. History compressed: Sprint 11-13 + W1.5 to dated bullets per history-compression skill.
 
-- **#325 ARCHITECTURE.md auth.ps1 path:** corrected both stale references (file-structure tree ~L54 and team-ownership map ~L505) from `scripts/windows/auth.ps1` to `scripts/windows/tools/auth.ps1`. Annotated the tree entry with `(moved from top-level in PR #297)` so the move is discoverable. Verified zero remaining `scripts/windows/auth.ps1` matches in the file.
-- **#326 README.md hooks count:** verified `hooks/` directory contents (commit-msg, pre-commit, pre-push, prepare-commit-msg = 4 files) before editing. Changed `three hooks are active` -> `four hooks are active` and inserted a `prepare-commit-msg` subsection between `commit-msg` and `pre-push`, describing the merge/revert subject rewrite behaviour (sourced from the hook's own header comment). PR #212 reference included in CHANGELOG.
-
-Both issues were originally surfaced as out-of-scope observations in my own Sprint 12 Wave 3 #306 history entry -- the filed issues paid off this sprint with a single small PR.
-
-**CWD-pin protocol:** verified pre-edit; every powershell call prefixed by `Set-Location -LiteralPath` + drift guard. All edits used absolute worktree path prefix. Post-commit main-checkout audit clean.
-
-**Files touched:** ARCHITECTURE.md (2 lines), README.md (2 chunks), CHANGELOG.md (+2 Unreleased/Fixed entries), .squad/agents/mickey/history.md (this entry), .squad/decisions/inbox/mickey-w1-2026-05-17-issues-325-326.md (new).
-
-**Skill-pattern note:** "batch narrow doc fixes into one PR" -- 2nd application (Sprint 12 also did this). Not formalizing yet; one more application next sprint would justify a skill drop.
-
-## 2026-05-17 Sprint 13 Wave 2 -- Issue #322 part B: pre-commit ASCII glob extension (catch-up, post-dogfood)
-
-Shipped PR #334 extending hooks/pre-commit Check 2 from .ps1 only to .ps1|.md|.sh. Test harness grew T2c/T2d/T2e/T2f (26/26 PASS). Coordinated with Goofy's parallel part A (.md content sweep, PR #335) -- predictable CHANGELOG section conflict (Changed vs Fixed) resolved at rebase as planned.
-
-**Dogfood incident (healthy):** my own new hook BLOCKED staging this very history.md entry because the file carried 60 pre-existing non-ASCII bytes from earlier sprints. Correct behavior -- the rule is rule. Deferred the hygiene-tail append into a follow-up after Goofy's sweep cleaned the file. Captured the deferral in .squad/decisions/inbox/mickey-w2-2026-05-17-hook-extension.md and in the PR body's Deferred Items section.
-
-**Skill candidate noted:** ship-test + eat-dogfood (your own enforcement catches your own legacy debt on first run) -- 1st clean application of the pattern; watch for second.
-
-This catch-up entry was appended by Jiminy as part of the Sprint 13 Wave 2 post-batch audit, with my PR #334 body as the source of truth (per Jiminy auto-fix charter). All content ASCII-clean by construction.
-
-
-## 2026-05-17 0.9.3 Release Fold
-Cut the 0.9.3 release CHANGELOG fold (Sprint 13 wrap). Renamed [Unreleased] -> [0.9.3] - 2026-05-17 -- Sprint 13: Documentation accuracy and ASCII policy hardening. Created fresh empty [Unreleased] section above it with the four standard subheadings. Preserved all eight Sprint 13 entries verbatim (1 Added, 4 Changed, 3 Fixed, 0 Removed). Theme captures the two structural shifts: doc accuracy (ARCH path #325, README hooks count #326) and ASCII policy hardening (sweep #322A + hook extension #322B). Follows the proven 0.9.1/0.9.2 pattern: PR to develop with regular merge, Coordinator opens develop->main, tags on main. Sprint 13 retro to be written separately by Scribe.
+Coordinator next: develop -> main (regular merge), tag 0.9.4 on main, `gh release create --target main`. Sprint 14 retro: dispatch before release-cut per `.squad/decisions/changelog-retro-placement.md` (fold post-tag retros pattern).

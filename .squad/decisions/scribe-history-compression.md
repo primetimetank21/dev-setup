@@ -77,3 +77,28 @@ Inbox is gitignored (`.gitignore:4: .squad/decisions/inbox/`), so `git rm` canno
 - Target topic files written: `mickey-architecture-entry-point.md`, `doc-and-jiminy-automation.md`, `scribe-history-compression.md` (new)
 
 **Scope boundaries honored:** No other agent histories compressed in W1 fold (jiminy was the only regression). No hooks/scripts/code touched. No consolidated `decisions.md` reintroduced -- per-topic model is current state.
+
+
+## 2026-05-17 Sprint 13 Wave 2 fold outcome (3rd application)
+
+**By:** Scribe (folded from inbox drop `scribe-w2-fold-2026-05-17.md` by Jiminy session-end audit)
+**Issue:** follow-on to #319; 2nd application of atomic-rm forward-fix (PR #323 origin)
+**PR:** #336 (Sprint 13 W2 fold)
+
+**What shipped:**
+
+- Drained 3 Sprint 13 Wave 2 inbox drops into per-topic decisions files:
+  - `scribe-w1-fold-2026-05-17.md` -> appended to this file (3190 -> 5603 B). Continues history-management thread.
+  - `mickey-w2-2026-05-17-hook-extension.md` -> NEW `mickey-hook-policy.md` (2833 B). Mickey-owned hook policy topic.
+  - `goofy-w2-2026-05-17-ascii-sweep.md` -> NEW `goofy-ascii-sweep.md` (2661 B). Seed for future ascii-sweep SKILL.md.
+- Re-compressed 4 over-gate `.squad/agents/*/history.md` files (Option A summarize-in-place): jiminy 18091 -> 13550 B, goofy 15158 -> 10925 B, scribe 15076 -> 15169 B (tight), mickey 15024 -> 12988 B.
+
+**Skill-formalization readiness (3rd application of compression heuristic):**
+
+This Wave 2 fold is the 3rd clean application of the WHAT-to-preserve heuristic from PR #332: (a) front-matter / Core Context / Learnings preamble verbatim; (b) current-sprint entries verbatim per spec; (c) older sessions to dated bullets; (d) skill triggers + recurring-incident patterns preserved literal. Threshold met across 3 distinct contexts (initial sweep, single-file re-compress, multi-file re-compress). **READY** to formalize as `.squad/skills/history-compression/SKILL.md` with `confidence: medium`. Sprint 14 issue candidate.
+
+**Atomic-rm canonical model confirmed (going forward):**
+
+Inbox is gitignored (`.gitignore:4: .squad/decisions/inbox/`), so `git rm` cannot stage tracked deletions. The drain is enforced by **physically removing** the source drop files from the main-checkout inbox in the same wall-clock action as the per-topic append. Validation: `Get-ChildItem .squad/decisions/inbox/` in main checkout must NOT contain the drained files when the fold commit lands. **A future Scribe should not look for `git rm` of inbox files -- physical delete IS the atomic action.** Two clean applications now (PR #333 W1 fold, PR #336 W2 fold) -- model is stable.
+
+**Scope boundaries honored:** No `decisions.md` / `decisions-archive.md` edits (parallel chronological journal). No code/hooks/scripts. No chip/donald/pluto/ralph/doc histories compressed (all under gate).

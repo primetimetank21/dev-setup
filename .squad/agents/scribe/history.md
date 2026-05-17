@@ -47,47 +47,26 @@ Compressed; older session logs kept as short bullets.
 - **`(formerly Sprint X)` aliasing on first-occurrence-per-file** is team convention for historical references. Applied automatically in retros.
 - **Sprint 12 Wave 1 fold (2026-05-17).** Folded 5-agent batch with 2 inbox decisions, 5 orchestration-log entries, 1 session log, 1 Jiminy history-rescue. Lessons earned: 5-agent batch fold pattern (one PR per wave, per-agent orchestration logs ~1-2 KB each with ISO 8601 UTC timestamps); Jiminy-history-rescue pattern (stage explicitly with `git add -- <path>`, do NOT broaden glob, note rescue in PR body); obsolete fold-request handling (delete inbox file without re-merging if content is already in place); size-gated 7-day archive cut (>=50 KB triggers rule, cut on trailing `---` separator, use `[System.IO.File]::WriteAllText` with no-BOM UTF8); history-summarization scope tension (defer when 15-KB hard gate fires outside fold scope -- discipline beats sprawl).
 
-### 2026-05-17 -- Sprint 12 Wave 2 fold (summary)
+### 2026-05-17 -- Sprint 12 W2 fold + retro (summary)
 
-- Drained 4 inbox decisions to `.squad/decisions.md` under "## 2026-05-17 entries (Sprint 12 Wave 2 fold)": mickey-arch-windows-dep (closes #310), donald-test-harness (closes #237), goofy-install-guard-deferral (Case B closure, closes #235 not_planned), jiminy-wave-2-audit (worktree-isolation remediation, surfaces #322).
-- Folded staged history modifications (goofy + jiminy) from MAIN checkout via explicit `git add --`. Coordinator clears M state with `git checkout -- ...` post-merge.
-- decisions.md gate: 44473 -> 57253 B (50 KB hard gate crossed) but 0 entries eligible for 7-day archive cut (oldest live entry was 3 days old; strict-rule reading: archive step ran with empty eligibility set).
-- Orchestration log entries written for 5 wave events (PRs #320/#321, Goofy #235 Case B close, Jiminy audit, #322 filing). Dir gitignored -- local-only.
-- Session log at `.squad/sessions/2026-05-17.md` (dispatch convention vs Scribe charter's `.squad/log/` -- both gitignored; possible drift to reconcile).
-- CHANGELOG [Unreleased] -> Changed: one fold-note entry.
-- Guardrails: branch off develop @ def5e59, no direct commits, conventional `docs(scribe):` prefix, explicit-path staging only, worktree CWD pinned per Jiminy W2 audit remediation.
-- **History gate WARNINGS:** 8 of 9 agents at/above 15 KB warn line (scribe 15.8, chip 36.9, donald 28.5, goofy 39.9, jiminy 24.3, mickey 75.5, pluto 29.7, ralph 23.9). Pluto + Doc healthy. Surfaced #319 (Sprint 13 P0) as archival-sweep follow-up.
-- **2026-05-17 -- Sprint 12 retrospective + Jiminy session-end audit fold.** Created `.squad/retros/2026-05-17-sprint-12-retro.md` (10268 B, ASCII clean). Covers 3 waves, 10 PRs (8 work + 2 Scribe folds), 9 Sprint 12 issues closed, scope rebalances (#254 Mickey->Pluto, #235 Mickey->Goofy), 5 follow-ups carried (#317, #319, #322, #325, #326). Harvested Jiminy session-end audit from main (24344 -> 28051 B) into branch alongside retro. CHANGELOG Changed appended.
-- **Lesson (own bug, fix forward) -- atomic inbox drain.** Wave 2 fold (PR #323) merged 4 drop files' CONTENT to decisions.md but did NOT `git rm` the source drops -- Coordinator manually deleted post-Jiminy audit. Going forward, every Scribe fold MUST stage the source-drop deletion in the SAME commit as the append. Per-file staging discipline preserved (no bulk glob).
-- **Lesson (own bug, write-path resolution) -- .NET file APIs use process CWD, not PowerShell `Set-Location`.** `[System.IO.File]::ReadAllBytes(".\path")` resolved against main checkout (process CWD) not worktree. Fix: ALWAYS use absolute paths with .NET APIs. PS native cmdlets (`Get-Content -LiteralPath`, `Get-Item`) respect `Set-Location`; .NET static methods do not. Same failure class as Mickey #310 worktree-isolation violation.
+- Sprint 12 W2 fold (PR #323): drained 4 inbox decisions for #310/#237/#235/jiminy-audit; decisions.md 44473 -> 57253 B (50 KB gate crossed; 7-day eligibility empty). Surfaced #319 (8 over-gate histories) and #322 (ASCII scope) as Sprint 13 follow-ups.
+- Sprint 12 retro: created .squad/retros/2026-05-17-sprint-12-retro.md (10268 B). Jiminy session-end audit folded alongside (24344 -> 28051 B).
+- **Lesson (atomic inbox drain):** W2 fold merged drop CONTENT but did NOT remove source drops. Every future Scribe fold MUST stage source-drop removal in the SAME commit as the append. Per-file discipline (no bulk glob). Inbox is gitignored -- physical delete IS the atomic action.
+- **Lesson (.NET file APIs use process CWD):** `[System.IO.File]::ReadAllBytes(`.\path`)` resolved against process CWD not `Set-Location`. ALWAYS use absolute paths with .NET APIs. PS native cmdlets respect `Set-Location`; .NET static methods do not. Same class as Mickey #310 worktree-isolation.
 
+## Sprint 13 (compressed -- dogfood of history-compression skill)
 
-## 2026-05-17 Sprint 13 Wave 1 -- History archival sweep (#319)
+- **2026-05-17 Sprint 13 W1 sweep (#319 / PR #332):** 8 over-gate agent history.md compressed under 15 KB HARD GATE. Option B split (mickey/goofy/chip with `-archive.md`) + Option A summarize-in-place (pluto/donald/jiminy/ralph/scribe). All 9 histories under 15 KB post-sweep. 1st application of compression heuristic.
+- **2026-05-17 Sprint 13 W1 fold (PR #333):** drained 3 inbox drops to per-topic files (mickey-architecture-entry-point, doc-and-jiminy-automation, NEW scribe-history-compression). Re-compressed jiminy/history.md 22548 -> 13078 B (rebase regression). 2nd application of compression heuristic + 1st clean application of atomic-rm forward-fix.
+- **2026-05-17 Sprint 13 W2 fold (PR #336):** drained 3 inbox drops (NEW mickey-hook-policy, NEW goofy-ascii-sweep, append to scribe-history-compression). Re-compressed 4 over-gate histories (jiminy/goofy/scribe/mickey) Option A. 3rd application of compression heuristic; 2nd application of atomic-rm forward-fix. Recurring-incident refs preserved verbatim: worktree-isolation, ASCII gap, atomic-drain, CP1252, autocrlf, AllScope, dogfood, abstraction-threshold.
+- **2026-05-17 Sprint 13 retro:** wrote .squad/retros/2026-05-17-sprint-13-retro.md (~12 KB, ~270 lines). Verified vs git log: 5 issues (#317, #319, #322, #325, #326); 9 issue+fold PRs (#330-#336) + 2 release PRs (#337, #338); 0.9.3 tag at edc67e2. 8 lessons captured. Skill candidates flagged: history-compression (threshold MET), per-topic-routing, ascii-sweep-methodology, batch-narrow-doc-fixes, ship-test-eat-dogfood.
 
-- **Scope:** 8 over-gate .squad/agents/*/history.md files compressed under the 15 KB Scribe charter HARD GATE.
-- **Strategy:** Option B (split with history-archive.md) for mickey/goofy/chip (largest). Option A (summarize-in-place) for pluto/donald/jiminy/ralph/scribe. Front matter + last sprint verbatim; older sessions reduced to dated one-line bullets preserving lessons + PR/issue cross-refs.
-- **Before/after (bytes):** mickey 80823 -> 12076 (+ archive 57671); goofy 39857 -> 13923 (+ archive 24057); chip 36943 -> 12470 (+ archive 19911); pluto 29712 -> 14792; donald 28539 -> 12712; jiminy 28051 -> 8630; ralph 28464 -> 9503; scribe 20511 -> 11831 (this entry included). All 9 agent histories now under 15 KB; doc was already 10169 (untouched).
-- **Forward fix from PR #323 bug (atomic drain):** confirmed for next inbox fold cycle -- git add -- decisions.md AND git rm -- .squad/decisions/inbox/*.md MUST land in the SAME commit so drain is atomic with merge. Surfaced by Jiminy Sprint 12 session-end audit.
-- **Lesson candidate (history-compression):** the WHAT-to-preserve heuristic that worked here: (a) Key Details / Core Context / Learnings preamble verbatim; (b) most recent sprint(s) verbatim; (c) older sessions as date + outcome + PR/issue ref bullets; (d) skill triggers and recurring-incident patterns kept literal even when compressed. Not yet formalized as a skill -- second application will tell if it generalizes.
+## 2026-05-17 Sprint 14 Wave 1 -- Skill formalization (#340 + #341)
 
-## 2026-05-17 Sprint 13 Wave 1 Fold
-
-- **Scope:** drained 3 inbox drops into per-topic decisions files AND re-compressed .squad/agents/jiminy/history.md back under the 15 KB charter gate.
-- **Drops drained (3/3):**
-  - mickey-w1-2026-05-17-issues-325-326.md (1404 B) -> appended to .squad/decisions/mickey-architecture-entry-point.md (broadened to ARCH+README accuracy fixes; 2710 -> 4207 B).
-  - jiminy-w1-2026-05-17-issue-317-skill.md (1663 B) -> appended to .squad/decisions/doc-and-jiminy-automation.md (hygiene-automation theme; 12115 -> 14152 B).
-  - scribe-w1-2026-05-17-history-archival.md (2137 B) -> NEW .squad/decisions/scribe-history-compression.md (3242 B; will be referenced by future folds and as skill candidate).
-- **Atomic-drain forward-fix (from PR #323 bug):** verified -- the 3 source drops are removed from main-checkout inbox in the SAME PR as the per-topic appends. Inbox files are gitignored, so the removal lives on the filesystem rather than in the git index; documented in the new forward decision drop.
-- **jiminy/history.md re-compress (Option A):** 22548 -> 13078 B. Older Sprint 12 verbose audit blocks reduced to one-line bullets; Sprint 13 Wave 1 entries (Jiminy's own + post-batch audit) preserved verbatim per spec; recurring-incident references (worktree-isolation, ASCII gap, atomic-drain, CP1252, autocrlf, AllScope) preserved literal. Target was <13312 B (13 KB) with 2 KB headroom; achieved 13078 B (234 B headroom).
-- **Lesson (2nd application of compression heuristic):** the same WHAT-to-preserve heuristic from the Sprint 13 sweep generalized cleanly to a single-file re-compress after rebase regression. One more application would justify formalizing .squad/skills/history-compression/SKILL.md.
-
-## 2026-05-17 Sprint 13 Wave 2 Fold
-
-- **Scope:** drained 3 Sprint 13 W2 inbox drops to per-topic decisions files + re-compressed 4 over-gate agent history.md files back under 15 KB charter gate.
-- **Drops drained (3/3):** scribe-w1-fold-2026-05-17.md (2414 B) -> scribe-history-compression.md (3190 -> 5603 B); mickey-w2-2026-05-17-hook-extension.md (1942 B) -> NEW mickey-hook-policy.md (2833 B); goofy-w2-2026-05-17-ascii-sweep.md (1656 B) -> NEW goofy-ascii-sweep.md (2661 B; ascii-sweep skill seed).
-- **Atomic-drain forward-fix:** 3 source drops physically deleted from main-checkout inbox in same wall-clock action as per-topic appends. Inbox is gitignored (.gitignore:4); `git rm` cannot stage tracked deletions -- **physical delete IS the atomic action**. Future Scribes should not look for `git rm` of inbox files. Codified in scribe-history-compression.md.
-- **Histories re-compressed (4/4) Option A summarize-in-place:** jiminy 18091 -> 13550 (Day-1 hire context + W1 audit condensed; W1+W2 verbatim); goofy 15158 -> 10925 (Sprint 11 #230/#292 + Sprint 12 #235 deferral condensed; W2 #322A verbatim); scribe 15076 -> 13294 pre-tail (Sprint 12 W2 fold + retro+audit-fold condensed; Sprint 13 verbatim); mickey 15024 -> 12988 (Sprint 11/12 + 0.9.2 release condensed; W1+W2 verbatim).
-- **Preserved verbatim across all 4:** worktree-isolation, ASCII gap, atomic-drain, CP1252, autocrlf, AllScope, dogfood, abstraction-threshold incident references.
-- **Compression heuristic 3rd application** (W1 sweep + W1 fold jiminy re-compress + this W2 4-file sweep) -- threshold met; formalize `.squad/skills/history-compression/SKILL.md` next cycle.
-- **Hook validation:** all 4 histories + 3 decisions files = 0 non-ASCII bytes (byte-level scan pre-push). Post-#334 hook (.ps1|.md|.sh ASCII gate) expected to pass.
-- CHANGELOG [Unreleased] -> Changed: one fold-note entry.
+- **Scope:** formalized two Scribe skills at medium confidence per Jiminy Sprint 13 EOS audit. One PR closes both #340 and #341.
+- **Skills shipped:**
+  - `.squad/skills/history-compression/SKILL.md` -- 4-step heuristic (front-matter verbatim, current sprint verbatim, older to dated bullets, preserve skill+incident refs), 13KB compress target with 15360 B hard gate, rebound-problem note. 3 applications cited (PR #319/#332, #333, #336).
+  - `.squad/skills/per-topic-inbox-routing/SKILL.md` -- routing decision tree (append / new / delete-stale), atomic-rm model (inbox gitignored -> physical delete IS the atomic action; NOT `git rm`), dual-model coexistence (per-topic `.squad/decisions/*.md` canonical for inbox drains; `.squad/decisions.md` parallel chronological journal; both coexist). 2 applications cited (PR #333, #336) + forward-fix history from PR #323.
+- **Dogfood:** applied history-compression skill to this very file post-append to stay under 15360 B gate. Sprint 13 verbose entries (W1 sweep + W1 fold + W2 fold + retro) condensed to dated bullets; Sprint 14 W1 (this entry) kept verbatim per spec.
+- **Lesson (skill formalization threshold):** medium confidence at 2-3 applications; high confidence reserved for >=5 applications across distinct contexts. Both skills hit medium this wave.
+- **Atomic-drain forward-fix:** N/A this wave (no inbox drops drained; pure skill formalization).
