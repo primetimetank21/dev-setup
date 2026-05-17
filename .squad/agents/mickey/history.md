@@ -1142,3 +1142,31 @@ needed for this design-pass PR until merge.
   row; all new content is plain ASCII. (ARCHITECTURE.md has pre-existing non-ASCII
   bytes elsewhere; the pre-commit hook only guards `*.ps1`, so this is fine,
   but I avoided introducing any new ones in my edit.)
+## Sprint 12 Wave 2 - PR for #310 (docs(architecture): document Windows orchestrator Dependency Order chain)
+
+**Date:** 2026-05-17
+**Branch:** squad/310-arch-windows-dep-order (worktree at dev-setup-310)
+**Scope:** ARCHITECTURE.md only -- added `### Windows orchestrator chain` subsection under existing `## Dependency Order` H2.
+
+**Verification methodology (per brief):** Read scripts/windows/setup.ps1 directly to determine actual invocation order. DO NOT assume the order -- it has changed across sprints (#195 split, #297 moved auth.ps1). Confirmed Main() function call sequence at scripts/windows/setup.ps1 lines 48-75. Lib load order from lines 16-17.
+
+**Order documented (verbatim from Main() in setup.ps1):**
+1. Install-Git -> 2. Install-Uv -> 3. Install-Nvm -> 4. Install-GhCli -> 5. Invoke-GhAuth -> 6. Install-Vim -> 7. Install-Psmux -> 8. Install-CopilotCli -> 9. Install-SquadCli -> 10. Install-Dotfiles -> 11. Write-PowerShellProfile -> 12. Install-GitHook (inline).
+
+**Style choice:** Linux Dependency Order is ASCII arrow chain (no Mermaid in ARCHITECTURE.md), per style pref fell back to ASCII for new section. Used `->` (two ASCII hyphens) instead of Unicode arrow to honor brief gotcha "ASCII ONLY -- pre-commit hook rejects non-ASCII / em-dashes / smart quotes". (Hook only enforces ASCII on staged `*.ps1` files in practice, but defensive choice for new content; existing Linux `zsh -> uv -> ...` line still uses U+2192 arrows, left untouched per "Linux Dependency Order changes" out-of-scope.)
+
+**Gotcha hit (caught + fixed before commit):** First pass landed three U+2014 em-dashes (likely editor transform of leading `--` in prose). Caught via PowerShell byte scan over the new line range; fixed with a global `[char]0x2014` -> `--` replace. Final byte scan confirms 0 non-ASCII chars in the new section (lines 332-372). The pre-existing box-drawing chars (line 22-100 tree) and the U+2192 arrows in the Linux dep line (327) are untouched and not in scope.
+
+**Out of scope but noted (follow-up issue candidate):** ARCHITECTURE.md File Structure tree (line 54) still shows `auth.ps1` at `scripts/windows/` root, but #297 moved it into `tools/`. The new Windows orchestrator chain section explicitly cross-references the move (#195 split, #297 relocation) so readers won't be misled, but the tree itself is stale. Not fixed in this PR -- narrow scope discipline. Worth filing as a separate refresh issue.
+
+**Conflict-awareness check (per brief):**
+- Goofy #235 (install-guard refactor in scripts/): pre-spawn `git log --oneline -3` showed develop @ 69391b5 with no Goofy merge yet; my edits don't touch setup.ps1 or any tool module. If Goofy's PR lands first and reorders invocations, the table here will need a follow-up -- but my chain reflects current `Main()` truth as of develop@69391b5.
+- Donald #237 (test harness docs in CONTRIBUTING.md): no overlap; I only touched ARCHITECTURE.md + CHANGELOG.md.
+
+**CHANGELOG:** Added single entry at top of `## [Unreleased] -> ### Changed` (above the existing #309 entry).
+
+**Files touched:**
+- ARCHITECTURE.md (+40 lines under `## Dependency Order`)
+- CHANGELOG.md (+1 line under Unreleased / Changed)
+
+**Commit:** `docs(mickey): document Windows orchestrator Dependency Order chain in ARCHITECTURE.md (closes #310)`

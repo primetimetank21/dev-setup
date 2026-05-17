@@ -329,6 +329,46 @@ zsh → uv → nvm → gh → auth → copilot-cli → squad-cli
 
 `copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `auth` script handles interactive GitHub CLI authentication (issue #9). `squad-cli` depends on `nvm` (Node/npm).
 
+### Windows orchestrator chain
+
+The Windows orchestrator `scripts/windows/setup.ps1` is a thin router: it dot-sources two shared libraries first (`lib/logging.ps1` -> `lib/path.ps1`), then dot-sources every per-tool module under `scripts/windows/tools/` so their `Install-*` functions are defined. Dot-source order does **not** drive dependencies -- the authoritative install order is the call sequence inside the `Main` function. The chain is fixed at:
+
+```
+git -> uv -> nvm -> gh -> auth -> vim -> psmux -> copilot -> squad-cli -> dotfiles -> profile -> hooks
+```
+
+Mapped to functions and the `tools/*.ps1` module that defines each:
+
+| # | Function called by `Main` | Source module | Mirrors Linux step |
+|---|---------------------------|---------------|--------------------|
+| 1 | `Install-Git`             | `tools/git.ps1`        | (Linux: pre-installed / package manager) |
+| 2 | `Install-Uv`              | `tools/uv.ps1`         | `tools/uv.sh` |
+| 3 | `Install-Nvm`             | `tools/nvm.ps1`        | `tools/nvm.sh` |
+| 4 | `Install-GhCli`           | `tools/gh.ps1`         | `tools/gh.sh` |
+| 5 | `Invoke-GhAuth`           | `tools/auth.ps1`       | `tools/auth.sh` |
+| 6 | `Install-Vim`             | `tools/vim.ps1`        | (Linux: pre-installed / package manager) |
+| 7 | `Install-Psmux`           | `tools/psmux.ps1`      | (Linux: tmux already on PATH) |
+| 8 | `Install-CopilotCli`      | `tools/copilot.ps1`    | `tools/copilot-cli.sh` |
+| 9 | `Install-SquadCli`        | `tools/squad-cli.ps1`  | `tools/squad-cli.sh` |
+| 10 | `Install-Dotfiles`       | `tools/dotfiles.ps1`   | `config/dotfiles/install.sh` (driven from `tools/zsh.sh`) |
+| 11 | `Write-PowerShellProfile`| `tools/profile.ps1`    | (Linux: shell-rc work folded into `tools/zsh.sh`) |
+| 12 | `Install-GitHook`        | inline in `setup.ps1`  | `git config core.hooksPath hooks` (same contract) |
+
+Cross-platform invariants preserved from the Linux chain above:
+
+- `auth` (interactive `gh auth login`) runs after `gh` so the CLI is on PATH when the prompt fires.
+- `copilot` runs after `auth` so the install can detect an authenticated `gh` session.
+- `squad-cli` runs after `nvm` because the install path is `npm i -g @bradygaster/squad-cli` and needs Node on PATH.
+
+Windows-only additions vs. the Linux chain:
+
+- `git` runs **first** -- Windows ships without git, and every downstream step that shells out to `git` (auth, dotfiles, hooks) needs it on PATH.
+- `vim` and `psmux` are explicit `winget` installs because Windows has no equivalent pre-installed editor/multiplexer.
+- `dotfiles` + `profile` are Windows-specific finalizers: the Linux side rolls equivalent shell-rc work into `tools/zsh.sh` plus `config/dotfiles/install.sh`, but Windows needs a discrete PowerShell profile injection step (PS 5.1 + PS 7+ profile paths) after the dotfile templates are applied.
+- `Install-GitHook` is an inline function inside `setup.ps1` (not a separate `tools/*.ps1` module), wired last so `core.hooksPath=hooks` is set only after the working tree is in its final state.
+
+History: the per-tool layout under `scripts/windows/tools/` was introduced in PR #195 (split out from a monolithic `setup.ps1`); `auth.ps1` moved from `scripts/windows/` into `tools/` in PR #297, and the call site in `Main` was updated at the same time. The chain documented above is current as of Sprint 12.
+
 ---
 
 ## Idempotency Guarantee
