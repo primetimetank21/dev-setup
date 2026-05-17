@@ -125,6 +125,18 @@ Appended team updates to:
 - Logged session locally to `.squad/log/2026-05-17-sprint-s-retro-fold.md`
   (gitignored, local-only).
 
+### 2026-05-17 -- Sprint T retrospective
+
+- Created `.squad/retros/2026-05-17-sprint-t-retro.md`: full Sprint T recap covering
+  6 PRs (#296-#302), first exercise of #293 SOPs (Jiminy gates fired clean both
+  times), sequential Goofy pattern validation, Group EE test addition, and the
+  gh --delete-branch quirk (#300).
+- Sprint T was the first sprint with the post-batch Jiminy audit gate, session-end
+  Jiminy gate, and Doc worktree pattern SOPs in effect. All exercisable gates passed.
+- Action items for Sprint U: #300 fix decision, Mickey's ARCHITECTURE.md follow-ups,
+  continued SOP exercise.
+- Precedent: PR #284 (Sprint S retro).
+
 ### 2026-05-17 -- Post-0.9.0 Action Items Closeout
 - Amended `.squad/retros/2026-05-17-sprint-s-retro.md` in place with a new
   "Action Items Closed (post-0.9.0)" section at the bottom. No new retro
