@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - docs(architecture): correct stale top-level path for auth.ps1; reflects post-PR #297 move to tools/ (#325)
 - docs(readme): correct active git hooks count from three to four; lists prepare-commit-msg post-PR #212 (#326)
+- hooks(pre-commit): extend non-ASCII scan to include .md and .sh files (was .ps1 only, allowing 134 non-ASCII hits to land in ARCHITECTURE.md) (#322 part B)
 
 ### Removed
 
