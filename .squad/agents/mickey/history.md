@@ -89,3 +89,7 @@ Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #1
 CHANGELOG [Unreleased] folded to [0.9.4] - 2026-05-17 (2 Added, 3 Changed). New empty [Unreleased] boilerplate at top. PR #1: release/0.9.4 -> develop (squash). Decision drop: `.squad/decisions/release-094-2026-05-17.md`. History compressed: Sprint 11-13 + W1.5 to dated bullets per history-compression skill.
 
 Coordinator next: develop -> main (regular merge), tag 0.9.4 on main, `gh release create --target main`. Sprint 14 retro: dispatch before release-cut per `.squad/decisions/changelog-retro-placement.md` (fold post-tag retros pattern).
+
+## 2026-05-17 Sprint 16 dispatch
+
+Filed 6 GitHub issues for Sprint 16: #363 (Scribe decisions.md archival), #362/#364 (Pluto ascii-docs/worktree-base-refresh SKILL.md drafts), #367/#366 (Pluto skill drift + graduation audits), #365 (Mickey tag sanity). Proposed wave shape: Wave A (#363, #362, #364, #365 parallel) then Wave B (#367 -> #366 serialized). Decision drop: `.squad/decisions/inbox/mickey-s16-dispatch.md`.
