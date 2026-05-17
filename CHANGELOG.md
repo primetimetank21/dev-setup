@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Sprint 14 retro at .squad/retros/2026-05-17-sprint-14-retro.md
 
 ### Changed
+- history-compression skill: confidence medium -> high (8+ applications in Sprint 14)
+- per-topic-inbox-routing skill: confidence medium -> high (7+ applications in Sprint 14)
 
 ### Fixed
 

@@ -29,15 +29,15 @@ Compressed; older session logs kept as short bullets.
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
 
 
-### Session drains 2026-05-16 to 2026-05-17 (summary)
+### Session drains 2026-05-16 to 2026-05-17 (summary, compressed)
 
-- **2026-05-16 Sprint 8-hotfix wrap.** Drained 3 inbox decisions (mickey-squad-0.9.4-upgrade PR #262, mickey-hire-doc-fact-checker PR #263, doc-pr-263-fact-check). Doc's first-run reflections + Mickey's PR #262 audit reflection appended to respective history.md files. Session log: `.squad/log/2026-05-16-sprint-q-wrap-0.8.0-0.9.4-doc-hire.md`.
-- **2026-05-16 Sprint 9 wrap + retro + agent histories.** Drained 1 inbox (doc-sprint-r-batch-fact-check). Created `.squad/retros/2026-05-16-sprint-r-retro.md`: 5 PRs (#265-#269), follow-up #271 filed, Doc verdicts caught 2 real bugs pre-merge (autocrlf #267, pipefail #269). Appended Sprint 9 entries to chip/goofy/pluto histories.
-- **2026-05-17 Sprint 10 retro + agent histories fold.** Created `.squad/retros/2026-05-17-sprint-s-retro.md` covering 10 PRs (#274-#283). Folded Jiminy's modified history (couldn't direct-commit per pre-commit Check 5). Backfilled Mickey Sprint 10 entry for PR #274 (Mickey shipped without writing -- gap caught by Jiminy). Drained 2 inbox decisions locally (already folded into doc/history.md via PRs #281+#283; inbox gitignored). Skipped Ralph (not dispatched for Sprint 10 EOS yet).
-- **2026-05-17 Sprint 11 retrospective.** Created `.squad/retros/2026-05-17-sprint-t-retro.md` covering 6 PRs (#296-#302). First exercise of #293 SOPs (post-batch Jiminy gate fired clean twice). Sequential Goofy pattern validated. Group EE test addition. `gh --delete-branch` quirk filed as #300. Renamed via `git mv` in PR #308 minutes later.
-- **2026-05-17 Post-0.9.0 Action Items Closeout.** Amended Sprint 10 retro in-place with closures for PR #291 (pwsh-lastexitcode skill + #292 spillover) and PR #293 (Doc worktree Option B + Jiminy auto-dispatch Option A; replaces #281+#283 dual-fold pattern). No new retro file -- 3-PR follow-up too small. CONTRIBUTING.md already updated by #291+#293; CHANGELOG references intact.
-- **2026-05-17 Sprint 11 retro filed (PR #303).** Filed retro covering 4 work PRs (#296/#297/#298/#301) closing 4 issues + 2 bonus Jiminy audit PRs (#299/#302). Merged 04:16 UTC before 0.9.1 cut. Filename `git mv`-renamed via PR #308 Tier 3 sprint-naming sweep minutes later.
-- **2026-05-17 Mini-event retro: 0.9.1 release + sprint naming rename.** Created `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md` covering work after PR #303 in same session (0.9.1 PRs #305+#307, tag, GH release, Tier 3 sweep #308 + Doc commit `56c3c1f`, Sprint 12 backlog #309+#310). Decision: mini-events get tighter retro file rather than session log fold (sprint-naming policy is permanent; operational learnings would get lost in `.squad/log/`).
+- 2026-05-16: Sprint 8-hotfix wrap. Drained inbox decisions: mickey-squad-0.9.4-upgrade (#262), mickey-hire-doc (#263), doc-pr-263-fact-check. Log: `.squad/log/2026-05-16-sprint-q-wrap-0.8.0-0.9.4-doc-hire.md`.
+- 2026-05-16: Sprint 9 wrap. Created retro (5 PRs #265-#269). Doc caught 2 bugs: autocrlf #267, pipefail #269.
+- 2026-05-17: Sprint 10 retro (10 PRs #274-#283). Folded Jiminy history + backfilled Mickey #274.
+- 2026-05-17: Sprint 11 retro (6 PRs #296-#302, gate clean twice, `gh --delete-branch` filed #300).
+- 2026-05-17: Post-0.9.0 closeout (PR #291 pwsh-lastexitcode skill, PR #293 Doc/Jiminy dispatch pattern).
+- 2026-05-17: Sprint 11 retro filed PR #303 (4 issues + 2 Jiminy audits). Renamed via PR #308 minutes later.
+- 2026-05-17: Mini-event retro (0.9.1 release, sprint-naming rename, PR #305+#307+#308 Tier 3, backlog #309+#310).
 
 ## Learnings (Scribe)
 
@@ -70,3 +70,13 @@ Compressed; older session logs kept as short bullets.
 - **Dogfood:** applied history-compression skill to this very file post-append to stay under 15360 B gate. Sprint 13 verbose entries (W1 sweep + W1 fold + W2 fold + retro) condensed to dated bullets; Sprint 14 W1 (this entry) kept verbatim per spec.
 - **Lesson (skill formalization threshold):** medium confidence at 2-3 applications; high confidence reserved for >=5 applications across distinct contexts. Both skills hit medium this wave.
 - **Atomic-drain forward-fix:** N/A this wave (no inbox drops drained; pure skill formalization).
+
+## 2026-05-17 Sprint 14 -- Release 0.9.4
+
+- **Scope:** 6 issues, 7 work PRs + 2 release PRs, 84 GitHub issues migrated (label taxonomy), 0.9.4 shipped.
+- **Ledger:** #340/#341 (Scribe skill formalizations), #342 (Doc+Mickey README audit+edit), #343 (Mickey CHANGELOG editorial), #347 (Pluto label 45->32), #350 (Pluto sync-squad-labels follow-ups), release PRs #352/#353 (Mickey+Coordinator).
+- **Key wins:** 84-issue label migration with triple-verify protocol (252 verification reads, 0 halts). Both history-compression + per-topic-inbox-routing skills cleared >=5 applications, bumped to high confidence. README cleared 645 non-ASCII bytes via hand-conversion (fenced code block bypass). 5 new canonical decision files, inbox empty post-wave-1. Worktree-remove-FIRST pattern held 7-of-7 (lifetime 21-of-21).
+- **Lessons:** GitHub close-keyword parser matches literal `close #N` substring regardless of negation context -- never use in ANY phrasing (broke #342, manually reopened). Pre-commit ASCII scan ignores code fences; pre-existing em-dashes in .yml workflows persist. sync-squad-labels.yml create-only (does not delete orphaned labels). Label taxonomy audit triple-verify model is reusable skill candidate. history-compression rebound persists: every fold followed by hygiene-tails causes rebounce.
+- **Skill graduation:** 4th application of history-compression skill (this sprint: Scribe #345, Mickey #344/#348, Pluto #349, Mickey #352 release fold). 5+ applications lifetime (3 Sprint 13 + 5 Sprint 14) + distinct contexts (Scribe, Mickey, Pluto) -> high confidence. Per-topic-inbox-routing: every agent decision filed this sprint chose canonical routing (5+ applications Sprint 14 alone) -> high confidence.
+- **Fold:** retro written to .squad/retros/2026-05-17-sprint-14-retro.md (~11.5 KB, ~300 lines). Skill confidence bumps documented in both SKILL.md files. CHANGELOG updated. 0 non-ASCII bytes in all commits (excluding pre-existing YAML em-dashes outside pre-commit scope). Release: 0.9.4 tagged at 008f166 (main).
+- **Compression note (5th application this file):** history-compression skill applied post-append (6th application total, 5th this session). Pre-Sprint-14 history.md was 11352 B; post-append crossed 13000 B target (13622 B). Applied compression to session-drains section (lines 32-41 condensed to 7 dated bullets). Post-compression: 11850 B, under 13 KB target. No hard-gate violation.
