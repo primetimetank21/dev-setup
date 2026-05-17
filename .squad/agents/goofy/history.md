@@ -307,7 +307,7 @@ Fixed three regressions introduced by PR #130:
 - v6 fix -- v5 90s timeout was 10s too short (installer took ~100s in CI run 25970591039). v5 candidate paths also missed actual install location (registry update proved installer succeeded but none of 5 paths matched). v6 uses Refresh-SessionPath + Get-Command nvm as primary detection (path-agnostic), expanded candidate list (7 dirs including C:\nvm, C:\nvm-windows) as fallback, 180s default timeout, and diagnostic dump on timeout failure.
 - v8 fix -- Earl chose portable download approach. winget install was racy (3 different timings in CI: 24s, 100s, >180s). Replaced Wait-ForNvmInstall with Install-NvmPortable + Set-NvmEnvironment. Downloads nvm-noinstall.zip from GitHub releases, extracts to %USERPROFILE%\nvm (standard nvm-windows portable location). Sets NVM_HOME/NVM_SYMLINK at User scope so subsequent shells work too. Deterministic, no installer race.
 
-## 2026-05-16 -- Sprint R: Winget Exit Code Assertion
+## 2026-05-16 -- Sprint 9 (formerly Sprint R): Winget Exit Code Assertion
 
 **PR:** #268 (fix(scripts/windows): assert winget exit code)
 **Branch:** `squad/226-winget-exit-check`
@@ -347,7 +347,7 @@ Fixed three regressions introduced by PR #130:
 
 ---
 
-## [2026-05-17] Sprint S -- Issue #255: Silent version drift bug (tool-version-pins)
+## [2026-05-17] Sprint 10 (formerly Sprint S) -- Issue #255: Silent version drift bug (tool-version-pins)
 
 **Branch:** `squad/255-tool-version-pins`
 **Status:** PR open -- awaiting CI and Mickey review
@@ -417,7 +417,7 @@ cross-platform."
 - Used tarball for Linux gh install; avoids apt package-suffix guessing across distros.
 - Added winget fallback for copilot.ps1; winget catalog IDs for GitHub.Copilot may use
   a different version scheme than the npm package. Documented in script header + CONTRIBUTING.
-- Group DD chosen for test group (BB/CC pre-assigned to other Sprint S agents).
+- Group DD chosen for test group (BB/CC pre-assigned to other Sprint 10 agents).
 
 ### Constraints documented
 
@@ -427,7 +427,7 @@ cross-platform."
 
 ---
 
-## [2026-05-18] Sprint S Revision -- PR #282: Fix copilot package name + pin (BLOCKER P0)
+## [2026-05-18] Sprint 10 Revision -- PR #282: Fix copilot package name + pin (BLOCKER P0)
 
 **Branch:** `squad/255-tool-version-pins`
 **Status:** Revised -- force-pushed to PR #282
@@ -493,7 +493,7 @@ Add this check to `.squad/skills/tool-version-pin/SKILL.md` validation steps.
 
 ---
 
-## [2026-05-18] Sprint T -- Issue #230: Move auth.ps1 under tools/ (Wave 1)
+## [2026-05-18] Sprint 11 (formerly Sprint T) -- Issue #230: Move auth.ps1 under tools/ (Wave 1)
 
 **Branch:** `squad/230-auth-to-tools`
 **Status:** PR open
@@ -547,11 +547,11 @@ for relocating it under `tools/` to match the established layout.
 - **#292** -- harden the 4 `0` sites in `auth.ps1` plus
   any in `setup.ps1` (per pwsh-lastexitcode SKILL). Next task.
 
-## [2026-05-19] Sprint T -- Issue #292: Harden $LASTEXITCODE at 5 sites (Wave 2)
+## [2026-05-19] Sprint 11 -- Issue #292: Harden $LASTEXITCODE at 5 sites (Wave 2)
 
 **Branch:** `squad/292-lastexitcode-hardening`
 **Status:** PR open
-**Predecessor:** Sprint T Wave 1 (Issue #230, PR #297 -- moved auth.ps1 to tools/)
+**Predecessor:** Sprint 11 Wave 1 (Issue #230, PR #297 -- moved auth.ps1 to tools/)
 
 ### Background
 

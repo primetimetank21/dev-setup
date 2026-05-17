@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.1] - 2026-05-17
+### Changed
+- Sprint naming convention reverted from letters back to numbers: Q -> Sprint 8-hotfix, R -> Sprint 9, S -> Sprint 10, T -> Sprint 11; next = Sprint 12. Tier 3 full sweep across 21 files (~170 refs). Retro files renamed with `git mv`. First-occurrence `(formerly Sprint X)` aliases added for grep continuity. CONTRIBUTING.md "Sprint Naming Convention" section updated with mapping table and aliasing convention.
+
+## [0.9.1] - 2026-05-17 -- Sprint 11 (formerly Sprint T): Architecture refresh and tools hardening
 
 ### Fixed
 - `scripts/windows/tools/auth.ps1` + `scripts/windows/setup.ps1`: applied `$LASTEXITCODE` reset mitigation at 5 sites; eliminates spurious failure detection when callers check exit codes downstream (closes #292)
@@ -16,19 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.squad/skills/pwsh-lastexitcode/SKILL.md`: documents the `$LASTEXITCODE` propagation gotcha across pwsh `&` script-call boundaries; canonical fix is `$global:LASTEXITCODE = 0` after expected-failure commands (closes #288, surfaced by #277)
 - CONTRIBUTING.md "PowerShell Exit Code Discipline" section referencing the new skill
 - `.squad/decisions/doc-and-jiminy-automation.md`: decision record codifying the post-batch Jiminy audit gate and the Doc subagent worktree pattern (closes #289, #290)
-- `.squad/retros/2026-05-17-sprint-t-retro.md`: Sprint T retrospective - first sprint exercising the #293 SOPs (Jiminy gates fired clean, Doc worktree not triggered); 6 PRs merged, sequential Goofy pattern validated, Group EE static-source tests added
+- `.squad/retros/2026-05-17-sprint-11-retro.md`: Sprint 11 retrospective - first sprint exercising the #293 SOPs (Jiminy gates fired clean, Doc worktree not triggered); 6 PRs merged, sequential Goofy pattern validated, Group EE static-source tests added
 
 ### Changed
 - `scripts/windows/auth.ps1` moved to `scripts/windows/tools/auth.ps1` for consistency with the per-tool layout introduced in #195; all callers updated (closes #230)
-- ARCHITECTURE.md: refreshed file trees + agent/skill rosters + hook + CI layout to reflect Sprint Q-S changes (`prepare-commit-msg`, per-tool Windows layout, `.tool-versions` pin-driven install, Doc + Jiminy agents, `.squad/decisions/`) (closes #229)
+- ARCHITECTURE.md: refreshed file trees + agent/skill rosters + hook + CI layout to reflect Sprint 8-hotfix through Sprint 10 changes (`prepare-commit-msg`, per-tool Windows layout, `.tool-versions` pin-driven install, Doc + Jiminy agents, `.squad/decisions/`) (closes #229)
 - `hooks/pre-push`: documented advisory-only intent of the PSScriptAnalyzer step with an inline comment block at the top of the PSSA section; clarifies that PSSA findings warn but do not block, explains the three reasons (availability gap, subjective rules, out-of-scope hardening), and flags `|| true` as load-bearing (closes #233)
 - `CONTRIBUTING.md` "Why is PSSA advisory in `pre-push`?" subsection under Git Hooks: codifies the advisory model for contributors so the `|| true` in `hooks/pre-push` is not incorrectly "fixed" away (closes #233)
-- `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint S (closes #289, #290)
+- `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint 10 (formerly Sprint S) (closes #289, #290)
 - `CONTRIBUTING.md` "Squad Operational Gates (Coordinator dispatch)" section -- human-facing summary of the Doc worktree + Jiminy auto-dispatch SOPs
 - `hooks/pre-commit` Source of Truth allow-list extended to include canonical `.squad/decisions/*.md` files (top-level decisions directory, distinct from the gitignored `inbox/` subdir). Required so permanent decision records like `.squad/decisions/doc-and-jiminy-automation.md` are commit-eligible.
-- Sprint T end-of-session cleanup: no straggler branches/worktrees
+- Sprint 11 end-of-session cleanup: no straggler branches/worktrees
 
-## [0.9.0] - 2026-05-17
+## [0.9.0] - 2026-05-17 -- Sprint 9 (formerly Sprint R) + Sprint 10: Hygiene backlog and tool-version pin sweep
 
 ### Added
 - `tests/test_nvm_bootstrap.sh` T6-T9: static source checks verifying that squad-cli and copilot-cli scripts read pins from `.tool-versions` and perform version-aware idempotency (closes #255)
@@ -40,12 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.squad/skills/tool-version-pin/SKILL.md`: documents the bare-idempotency anti-pattern and the canonical version-pin solution
 - `.copilot/skills/error-recovery/SKILL.md` -- new generic error-recovery skill
 - `.squad/skills/squad-upgrade-hygiene/SKILL.md` -- reusable checklist for auditing future `squad upgrade` runs
-- Doc (Fact Checker) joins the squad -- new agent addressing the verifier/validator gap from Sprint Q retro. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings (Verified/Unverified/Contradicted/Needs Investigation). Charter: `.squad/agents/doc/charter.md`.
+- Doc (Fact Checker) joins the squad -- new agent addressing the verifier/validator gap from Sprint 8-hotfix retro. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings (Verified/Unverified/Contradicted/Needs Investigation). Charter: `.squad/agents/doc/charter.md`.
 - `.github/workflows/squad-label-enforce.yml` -- enforces mutual exclusivity for `go:`, `release:`, `type:`, `priority:` label groups
 - `.squad/templates/{fact-checker-charter.md, loop.md, squad.agent.md.template}` -- new templates from 0.9.4
 - `hooks/pre-commit` now allows `.squad/templates/*.template` files (squad upgrade ships `squad.agent.md.template`); allow-list extended to permit `.squad/retros/*.md` so session retros can be committed
 - `.squad/agents/ralph/charter.md` "Develop Commit Ban" section -- documents that Ralph (and all agents) cannot commit directly to `develop`/`main`/`master`; EOS history entries flow through short-lived branch+PR or Scribe drain process (closes #273)
-- CONTRIBUTING.md "Group Letter Assignment" section -- coordinator pre-assigns test group letters to prevent parallel-agent collisions; Sprint R example documented (closes #273)
+- CONTRIBUTING.md "Group Letter Assignment" section -- coordinator pre-assigns test group letters to prevent parallel-agent collisions; Sprint 9 example documented (closes #273)
 - CONTRIBUTING.md "CHANGELOG Conflict Strategy" section -- documents mechanical resolution for predictable [Unreleased] conflicts when multiple PRs land in one sprint: merge order, unique headers, union entries (closes #273)
 - CONTRIBUTING.md "Tool Version Pin Enforcement" section -- documents the version-pin workflow and the npm-package validation step (closes #255)
 - `.gitignore` now ignores `*.tgz` tarballs so squad upgrade artifacts cannot accidentally land in commits; Jiminy charter documents the new dispatch SOP
@@ -56,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/windows/tools/profile.ps1` and `scripts/windows/uninstall.ps1`: added `-Encoding ASCII` to all `Set-Content` and `Add-Content` calls. Prevents encoding mismatch between PS 5.1 (UTF-16LE BOM default) and PS 7 (UTF-8 BOM default) (closes #234).
 - `.gitattributes` now pins `*.ps1`, `*.psm1`, and `*.psd1` files to explicit CRLF line endings, eliminating platform divergence when `core.autocrlf` is enabled (closes #231).
 - `setup.sh` and `scripts/linux/uninstall.sh` now source `scripts/linux/lib/log.sh` instead of defining their own logging helpers. Local `log_*` / `ok` / `info` / `skip` definitions removed; all call sites updated to the canonical `log_ok` / `log_info` / `log_warn` / `log_error` names (closes #223).
-- Documentation: README + CONTRIBUTING now document the automatic `core.hooksPath` setup performed by `setup.sh` and `setup.ps1`. Replaced stale "install hooks manually" instruction. Added branch-from-develop validation note per Sprint Q retro (closes #228).
+- Documentation: README + CONTRIBUTING now document the automatic `core.hooksPath` setup performed by `setup.sh` and `setup.ps1`. Replaced stale "install hooks manually" instruction. Added branch-from-develop validation note per Sprint 8-hotfix retro (closes #228).
 - Squad governance upgraded from 0.9.1 to 0.9.4 (dispatch mechanism, `CURRENT_DATETIME` requirement, `name` param in spawn prompts, default models bumped to `claude-sonnet-4.6` / `gpt-5.3-codex`, tier-based agent timeout policy)
 - `.github/workflows/squad-heartbeat.yml` removes noisy cron trigger; Ralph now fires on issue events only
 - `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
@@ -73,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/windows/tools/*.ps1` -- winget install calls now assert `$LASTEXITCODE` and surface failures to `setup.ps1` (closes #226). 7 install sites previously swallowed non-zero exits silently.
 - `.github/workflows/e2e-install.yml` -- bash `-lc` step bodies now use YAML doubled-single-quote escapes for embedded apostrophes; previously, an inner `'session persistence may fail'` could terminate the wrapping single-quoted YAML scalar mid-string.
 
-## [0.8.0] - 2026-05-16
+## [0.8.0] - 2026-05-16 -- Sprint 8 + Sprint 8-hotfix (formerly Sprint Q): Gap audit refactor and install regression P0s
 
 ### Added
 - Pre-commit hygiene checks: ASCII-only enforcement on staged `.ps1` files, rogue `.squad/` path validation, staged inbox file detection, and branch ancestry verification for squad branches (closes #240)

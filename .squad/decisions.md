@@ -3554,8 +3554,8 @@ After merge:
 **Date:** 2026-05-16
 **Author:** Mickey (Lead)
 **Status:** Executed (PR #263 merged at 2026-05-16T18:10)
-**Context:** Sprint Q retro identified a verifier/validator gap.
-Squad 0.9.4 ships a fact-checker template. Earl chose to hire before Sprint R.
+**Context:** Sprint 8-hotfix (formerly Sprint Q) retro identified a verifier/validator gap.
+Squad 0.9.4 ships a fact-checker template. Earl chose to hire before Sprint 9 (formerly Sprint R).
 
 ## Decision
 - Persistent name: Doc (Seven Dwarfs, Disney Classic universe)
@@ -3566,7 +3566,7 @@ Squad 0.9.4 ships a fact-checker template. Earl chose to hire before Sprint R.
 - Voice: methodical, glasses-on, "Let's see now..." energy
 
 ## Rationale
-- Closes the verifier/validator gap from Sprint Q retro
+- Closes the verifier/validator gap from Sprint 8-hotfix retro
 - Trial run before deciding whether to make it a hard gate
 
 ## Files

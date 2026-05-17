@@ -130,10 +130,10 @@ Production data: 0% completion across 6 retros using markdown checklists, 100% a
 **Outputs:**
 
 - `Jiminy clear` at session end.
-- At most ONE fold PR for Doc's sprint history (target: 1 if Doc ran, 0 if not). Sprint S had 2; the new SOP targets 1.
+- At most ONE fold PR for Doc's sprint history (target: 1 if Doc ran, 0 if not). Sprint 10 (formerly Sprint S) had 2; the new SOP targets 1.
 - Stale branches deleted.
 - Decisions inbox drained.
 
 **Why this matters:**
 
-Before this ceremony existed, Sprint S leaked the `bradygaster-squad-sdk-0.9.4.tgz` artifact (caught by Earl manually) and required two fold PRs for Doc (#281, #283). Both failures trace to "no checklist surface at session-end". Sprint Wrap exists so those misses are visible at the moment they happen, not three days later.
+Before this ceremony existed, Sprint 10 leaked the `bradygaster-squad-sdk-0.9.4.tgz` artifact (caught by Earl manually) and required two fold PRs for Doc (#281, #283). Both failures trace to "no checklist surface at session-end". Sprint Wrap exists so those misses are visible at the moment they happen, not three days later.

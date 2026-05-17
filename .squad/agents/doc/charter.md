@@ -124,7 +124,7 @@ git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
 
 **Sprint wrap (owned by Coordinator, see `ceremonies.md` -> Sprint Wrap):** Open ONE fold PR from `squad/doc-history-sprint-<N>` into `develop`. Mickey reviews + approves. One fold PR per sprint, not per fact-check.
 
-**If the kickoff worktree is missing:** Doc reports the gap and stops. The Coordinator MUST create the worktree before re-spawning. Falling back to "write to develop in the primary worktree" is the Sprint S anti-pattern and is no longer permitted.
+**If the kickoff worktree is missing:** Doc reports the gap and stops. The Coordinator MUST create the worktree before re-spawning. Falling back to "write to develop in the primary worktree" is the Sprint 10 (formerly Sprint S) anti-pattern and is no longer permitted.
 
 ## Collaboration
 
@@ -135,6 +135,6 @@ git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
 
 ## Charter version
 
-v1 -- created 2026-05-16 by Mickey (Lead) per Earl's request after Sprint Q retro.
+v1 -- created 2026-05-16 by Mickey (Lead) per Earl's request after Sprint 8-hotfix (formerly Sprint Q) retro.
 
 Addresses the verifier/validator gap Earl flagged: "having to double/triple check this often is tiring :/".
