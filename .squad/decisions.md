@@ -1016,3 +1016,40 @@ In this case the harm was contained -- coordinator harvested the rogue drop into
 
 - Both issues eligible for Squad routing auto-claim per issue labels.
 - No commits or branches needed at this stage (pure issue filing).
+
+---
+
+## 2026-05-17 Sprint 15 Retrospective (Scribe Drop)
+
+**Filed:** 2026-05-17  
+**Source:** .squad/decisions/inbox/scribe-sprint-15-retro-2026-05-17.md  
+**Topic:** Sprint 15 retrospective completion and skill candidates
+
+### Summary
+
+Sprint 15 retrospective complete and filed to `.squad/retros/2026-05-17-sprint-15-retro.md` (11730 B, 0 non-ASCII bytes). All 8 key lessons captured:
+
+1. Scribe charter scope catch (CHANGELOG reassigned to Mickey)
+2. gh squash-merge stray tmp branch quirk
+3. Silent success on background spawn detected via filesystem state
+4. Doc dual-worktree pattern (first Sprint 15 use)
+5. Doc "self-documenting non-ASCII" trap (2nd sprint occurrence)
+6. Branch ancestry hook caught stale sprint branch; recovery pattern validated
+7. Atomic inbox drain forward-fix applied cleanly
+8. Worktree-remove-FIRST held 4-of-4 (lifetime 25-of-25)
+
+### Skill Candidates Flagged for Formalization
+
+- ascii-docs-about-non-ascii (NEW, medium confidence, 2 applications)
+- worktree-base-refresh (NEW, low confidence, 1 application)
+- worktree-remove-first (confirm HIGH, no change)
+
+### Release Notes
+
+- 0.9.5 shipped; tag on main @ 49545ad
+- 6 issues, 6 work PRs + 2 release PRs merged
+- Develop at 2dadf58 (post-release)
+
+### Decision
+
+Accept retro as filed. Skill candidates routed to Pluto for drafting (ascii-docs-about-non-ascii, worktree-base-refresh). No action needed on worktree-remove-first (already HIGH confidence).

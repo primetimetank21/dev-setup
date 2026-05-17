@@ -70,3 +70,16 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **Verdict:** PASS with CONCERNs (no blockers).
 
 
+
+## 2026-05-17 Sprint 15 Session-End Audit
+
+- **Scope:** post-0.9.5 release. main @ 49545ad, develop @ 2dadf58.
+- **Sec 1 (inbox):** 1 file (scribe-sprint-15-retro-2026-05-17.md, 1457 B). Drained to decisions.md chronological journal. PASS.
+- **Sec 2 (history sizes):** scribe 14491B NEAR gate (869B headroom, under 14800 threshold -- monitor only). Doc 13420B, Donald 12688B. All others under 12.5 KB. PASS.
+- **Sec 3 (rogue files):** No _tmp_*, *.tmp, or leftover artifacts at repo root. git status clean. PASS.
+- **Sec 4 (branches):** Local: develop + main only. Remote: origin/develop + origin/main only. No stale squad/* branches. PASS (clean).
+- **Sec 5 (decisions.md size):** 60270 B post-drain. Over 60 KB threshold -- recommend archival next sprint. CONCERN.
+- **Sec 6 (skill candidates):** 2 NEW flagged for Pluto follow-up: ascii-docs-about-non-ascii (medium, 2 apps), worktree-base-refresh (low, 1 app). No Jiminy action needed.
+- **Auto-fixes:** (1) Inbox drain to decisions.md.
+- **CONCERNs:** (a) decisions.md at 60270 B exceeds 60 KB -- archival recommended Sprint 16, (b) scribe history.md at 14491 B (869 B headroom) -- monitor next session.
+- **Verdict:** PASS with CONCERNs (no blockers). Sprint 15 hygiene state is clean.
