@@ -60,6 +60,59 @@ else
   fail "squad-cli.sh does not exit non-zero"
 fi
 
+# --- version-pin enforcement tests ---
+
+# T6: squad-cli.sh reads pinned version from .tool-versions
+if grep -q 'read-tool-version.sh.*squad-cli' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh reads squad-cli version from .tool-versions"
+else
+  fail "squad-cli.sh does not read squad-cli version from .tool-versions"
+fi
+
+# T7: squad-cli.sh installs pinned version via npm (not bare latest)
+if grep -q 'npm install.*SQUAD_CLI_VERSION' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh installs pinned version via npm"
+else
+  fail "squad-cli.sh does not pass pinned version to npm install"
+fi
+
+COPILOT_SCRIPT="${REPO_ROOT}/scripts/linux/tools/copilot-cli.sh"
+
+# T8: copilot-cli.sh reads pinned version from .tool-versions
+if grep -q 'read-tool-version.sh.*copilot-cli' "$COPILOT_SCRIPT"; then
+  pass "copilot-cli.sh reads copilot-cli version from .tool-versions"
+else
+  fail "copilot-cli.sh does not read copilot-cli version from .tool-versions"
+fi
+
+# T9: copilot-cli.sh performs version-aware check (not bare binary-exists guard)
+if grep -q 'INSTALLED_VERSION' "$COPILOT_SCRIPT" && grep -q 'COPILOT_CLI_VERSION' "$COPILOT_SCRIPT"; then
+  pass "copilot-cli.sh performs version-aware idempotency check"
+else
+  fail "copilot-cli.sh still uses bare binary-exists guard (no version comparison)"
+fi
+
+# T10: squad-cli.sh installs from the correct npm package (#255)
+# Root cause investigation: 'session persistence may fail' warning was reported
+# in e2e runs. Confirmed it originates in @github/copilot-sdk (a transitive dep
+# of @bradygaster/squad-cli). Verified absent in 0.9.4. This test ensures the
+# correct package name is installed so the fix is not silently reverted.
+if grep -q '@bradygaster/squad-cli' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh installs @bradygaster/squad-cli (correct package)"
+else
+  fail "squad-cli.sh does not install @bradygaster/squad-cli"
+fi
+
+# T11: squad-cli.sh already-installed check captures stderr with 2>&1 (#255)
+# When squad --version is run, any 'session persistence may fail' warning
+# emitted to stderr must appear in the installer log so it is visible in CI.
+# The already-installed branch uses: squad --version 2>&1
+if grep -q 'squad --version 2>&1' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh already-installed check captures stderr (2>&1)"
+else
+  fail "squad-cli.sh already-installed check does not capture stderr -- warnings will be invisible in CI"
+fi
+
 # --- Summary ---
 
 echo ""

@@ -49,6 +49,8 @@ git checkout -b squad/{issue-number}-{slug}
 
 > This rule exists because "branch ancestry bleed" occurred 3 times in Sprint 6. Every time it's violated, PR review quality degrades.
 
+**All squad branches MUST be cut from `develop`, not `main`.** The pre-commit hook validates this: if you commit to a `squad/*` branch that is not an ancestor of `develop`, the hook warns that you may have accidentally forked from `main` or another squad branch. To fix: `git rebase develop` before pushing.
+
 ---
 
 ## PR Checklist
@@ -109,6 +111,20 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ---
 
+## CHANGELOG Conflict Strategy
+
+When multiple PRs land in a single sprint, `CHANGELOG.md` `[Unreleased]` is a predictable
+conflict zone (multiple PRs append to the same `### Added` / `### Changed` / `### Fixed`
+section). Resolution is mechanical, not semantic:
+1. Entries land in **merge order** (the later PR rebases on top of the earlier one's entry).
+2. Keep **unique section headers** (`### Added`, `### Changed`, `### Fixed`, `### Removed`).
+3. On conflict: **union both entries - keep ALL lines from both sides, no deduplication**.
+   `CHANGELOG.md` is an append-only log, not a deduped list. Both agents intended their entry.
+4. Add `CHANGELOG.md merge=union` to `.gitattributes` is NOT recommended here - manual review
+   catches accidentally inverted entries.
+
+---
+
 ## PowerShell 5.x Compatibility
 
 All `.ps1` scripts in this repo must run on **PowerShell 5.1** (the version shipped with Windows 10/11). PS 7+ runs on Linux Codespaces; PS 5.1 is what end users actually have.
@@ -137,36 +153,29 @@ Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manu
 
 ---
 
-## Pre-push Hook
+## Git Hooks
 
-The hook lives at `hooks/pre-push`. Install it once after cloning:
+Git hooks are **configured automatically** by `setup.sh` / `setup.ps1` via `git config core.hooksPath hooks`. You do not need to copy or symlink anything manually.
 
-```bash
-cp hooks/pre-push .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
-```
+After running setup, the following hooks are active:
 
-### What it does
+| Hook | Behavior |
+|------|----------|
+| `pre-commit` | Checks staged `.sh` files with shellcheck. Blocks commit on errors; silently skips if shellcheck not installed. |
+| `commit-msg` | Enforces Conventional Commits format. Hard reject on non-conforming messages. |
+| `pre-push` | Blocks direct pushes to `main`. Runs shellcheck/PSScriptAnalyzer on changed files (advisory—never blocks). |
 
-| Check | Platform | Behavior |
-|-------|----------|----------|
-| Block push to `main` | All | **Hard block** — exits 1, push is rejected |
-| `shellcheck` on changed `.sh` files | Linux / macOS | Advisory — warnings printed, push continues |
-| `PSScriptAnalyzer` on changed `.ps1` files | Any with `pwsh` | Advisory — warnings printed, push continues |
+See README > Git Hooks (Auto-configured) for details on each hook's checks and how to bypass with `--no-verify`.
 
-### Advisory-only rule
+### Installing PSScriptAnalyzer locally (optional)
 
-The lint checks (shellcheck and PSScriptAnalyzer) are **advisory only** — they print warnings but always exit 0. They will never block a push. Fixes are expected before opening a PR, not before every push.
-
-### Installing PSScriptAnalyzer locally
-
-To get PS lint feedback locally, install the module once in PowerShell:
+To get PS lint feedback during `pre-push`, install the module once in PowerShell:
 
 ```powershell
 Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
 ```
 
-The hook auto-detects `pwsh` and the module. If either is absent the PS check is silently skipped — no action needed on Linux/macOS-only machines.
+The hook auto-detects `pwsh` and the module. If either is absent, the check is silently skipped.
 
 ---
 
@@ -239,4 +248,82 @@ Or list all active worktrees with `git worktree list`.
 
 ---
 
+## Group Letter Assignment (parallel test work)
+
+Behavioral tests in `tests/test_windows_setup.ps1` are organized by alphabetic groups
+(Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel agents may extend this
+file in the same sprint, the **coordinator pre-assigns Group letters in each spawn prompt**
+to prevent collisions. Sprint R example: Chip #267 picked "Group X" independently while
+Goofy #268 also picked "Group X" - required a manual rename to Group Y during rebase.
+Going forward, the coordinator's spawn checklist includes Group letter assignment for any
+agent that may add tests to this file.
+
+---
+
 For the full technical overview, team ownership map, and architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+---
+
+## Tool Version Pin Enforcement
+
+All install scripts that install a versioned tool MUST follow the version-pin pattern.
+**Never use a bare `command -v X` (or `Get-Command X`) idempotency guard.** That pattern
+silently keeps whatever version the runner cached and never upgrades on version bumps.
+
+### Pattern
+
+1. **Pin** the desired version in `.tool-versions`:
+   ```
+   squad-cli 0.9.4
+   gh 2.92.0
+   ```
+
+2. **Read** the pin at install time using the shared helpers:
+   ```bash
+   # Bash/POSIX (Linux/macOS)
+   VERSION="$(sh scripts/lib/read-tool-version.sh squad-cli)"
+   ```
+   ```powershell
+   # PowerShell (Windows)
+   . "$PSScriptRoot\..\..\lib\Read-ToolVersion.ps1"
+   $Version = Get-ToolVersion -Name 'squad-cli'
+   ```
+
+3. **Detect** the installed version:
+   ```bash
+   INSTALLED="$(squad --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+   ```
+
+4. **Branch** on comparison:
+   - installed == pinned -> log OK, skip
+   - installed != pinned (or not installed) -> install/upgrade to pinned version
+
+5. **Install explicitly with version**:
+   ```bash
+   npm install -g "@bradygaster/squad-cli@${VERSION}"
+   ```
+   ```powershell
+   winget install --id GitHub.cli --version $Version ...
+   ```
+
+### Why this matters
+
+The bare-idempotency anti-pattern (`if command -v X; then exit 0; fi`) was the root
+cause of issue #255: squad-cli, copilot-cli, and gh silently stayed at cached/older
+versions on CI runners. Fix PRs that bumped `.tool-versions` had no effect because the
+old binary was already present. Version-aware guards eliminate this silent drift.
+
+### Winget constraint
+
+winget version IDs for some packages (e.g., `GitHub.Copilot`) may not match the semver
+in `.tool-versions` (which typically reflects the npm package version). If winget refuses
+`--version <pin>`, fall back to latest-available and log a WARN. Document the constraint
+in the script header and update `.tool-versions` to a known winget catalog version when
+pinning is required.
+
+### macOS / brew constraint
+
+Homebrew does not publish versioned formulae for tools like `gh`. On macOS, accept
+the latest brew version, compare against the pin, and log a WARN if they differ.
+macOS is a secondary target; version drift is tolerated with visibility.
+

@@ -297,13 +297,16 @@ Write-Host "========================================================" -Foregroun
 $copilotToolPath = Join-Path $RepoRoot 'scripts\windows\tools\copilot.ps1'
 $copilotToolContent = Get-Content $copilotToolPath -Raw
 
-Test-Scenario "Windows setup.ps1 uses winget for Copilot CLI (not gh extension)" {
+Test-Scenario "Windows copilot.ps1 uses npm for Copilot CLI (not winget)" {
     # Check in copilot.ps1 tool file (where the function now lives)
-    if ($copilotToolContent -match 'gh extension install github/gh-copilot') {
-        throw "scripts/windows/tools/copilot.ps1 still uses 'gh extension install' for Copilot CLI - should use winget"
+    if ($copilotToolContent -match 'winget install --id GitHub\.Copilot') {
+        throw "scripts/windows/tools/copilot.ps1 still uses winget for Copilot CLI - should use npm"
     }
-    if ($copilotToolContent -notmatch 'winget install --id GitHub\.Copilot') {
-        throw "scripts/windows/tools/copilot.ps1 does not use 'winget install --id GitHub.Copilot'"
+    if ($copilotToolContent -notmatch 'npm install -g') {
+        throw "scripts/windows/tools/copilot.ps1 does not use 'npm install -g' for Copilot CLI"
+    }
+    if ($copilotToolContent -notmatch '@github/copilot') {
+        throw "scripts/windows/tools/copilot.ps1 does not reference '@github/copilot' package"
     }
 }
 
@@ -322,7 +325,7 @@ Test-Scenario "Copilot CLI: already-installed short-circuit logic is correct" {
     }
 
     if ($wouldInstall) {
-        throw "Install logic called winget even though copilot was already found"
+        throw "Install logic called npm install even though copilot was already found"
     }
 }
 
@@ -338,7 +341,7 @@ if ($null -ne $copilotBin) {
 }
 else {
     Write-Skip "Copilot CLI: Install-CopilotCli live already-installed detection" `
-        "copilot binary not on PATH - run manually after: winget install --id GitHub.Copilot"
+        "copilot binary not on PATH - run manually after: npm install -g `"@github/copilot`""
 }
 
 # ---------------------------------------------------------------------------
@@ -1007,6 +1010,7 @@ if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
         function global:winget {
             $script:WingetCalled = $true
             $script:WingetArgs = $args
+            $global:LASTEXITCODE = 0
         }
         try {
             $output = Install-Psmux 2>&1 | Out-String
@@ -1023,7 +1027,7 @@ if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
 }
 
 Test-Scenario "P-3: Install-Psmux is idempotent (second call does not throw)" {
-    function global:winget { }
+    function global:winget { $global:LASTEXITCODE = 0 }
     try {
         Install-Psmux | Out-Null
         Install-Psmux | Out-Null
@@ -1070,7 +1074,7 @@ Test-Scenario "Q-2: Install-Dotfiles is idempotent (calling twice does not throw
     }
 }
 
-Test-Scenario "Q-3: Install-Dotfiles creates .bak when target differs" {
+Test-Scenario "Q-3: Install-Dotfiles creates timestamped .bak when target differs" {
     $script = Join-Path $RepoRoot 'scripts\windows\tools\dotfiles.ps1'
     $tempHome = Join-Path $env:TEMP "dotfiles_bak_test_$(Get-Random)"
     New-Item -ItemType Directory -Path $tempHome -Force | Out-Null
@@ -1082,13 +1086,45 @@ Test-Scenario "Q-3: Install-Dotfiles creates .bak when target differs" {
         Set-Content -Path $targetFile -Value 'old content that differs' -Encoding UTF8
         . $script
         Install-Dotfiles | Out-Null
-        $bakFile = "$targetFile.bak"
-        if (-not (Test-Path $bakFile)) {
-            throw ".bak file was not created when target content differed"
+        # Expect a .bak.YYYYMMDD-HHmmss file (not a plain .bak)
+        $bakFiles = Get-ChildItem "$targetFile.bak.*" -ErrorAction SilentlyContinue
+        if (-not $bakFiles) {
+            throw "No timestamped .bak.* file was created when target content differed"
         }
-        $bakContent = Get-Content $bakFile -Raw
+        $bakContent = Get-Content $bakFiles[0].FullName -Raw
         if ($bakContent -notmatch 'old content that differs') {
             throw ".bak file does not contain original content"
+        }
+    } finally {
+        $env:USERPROFILE = $origProfile
+        Remove-Item -Recurse -Force $tempHome -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Scenario "Q-4: Three successive installs produce three distinct timestamped backups" {
+    $script = Join-Path $RepoRoot 'scripts\windows\tools\dotfiles.ps1'
+    $tempHome = Join-Path $env:TEMP "dotfiles_3run_test_$(Get-Random)"
+    New-Item -ItemType Directory -Path $tempHome -Force | Out-Null
+    $origProfile = $env:USERPROFILE
+    try {
+        $env:USERPROFILE = $tempHome
+        . $script
+        $targetFile = Join-Path $tempHome '.editorconfig'
+        # Pre-seed the target so all 3 runs see a diff and produce a backup
+        Set-Content -Path $targetFile -Value 'version-0-original' -Encoding UTF8
+        # Run 1: seeds backup of version-0
+        Install-Dotfiles | Out-Null
+        Set-Content -Path $targetFile -Value 'version-1-edit' -Encoding UTF8
+        Start-Sleep -Milliseconds 1100   # ensure distinct 1-second timestamp
+        # Run 2: seeds backup of version-1
+        Install-Dotfiles | Out-Null
+        Set-Content -Path $targetFile -Value 'version-2-edit' -Encoding UTF8
+        Start-Sleep -Milliseconds 1100
+        # Run 3: seeds backup of version-2
+        Install-Dotfiles | Out-Null
+        $bakFiles = Get-ChildItem "$targetFile.bak.*" -ErrorAction SilentlyContinue
+        if ($bakFiles.Count -lt 3) {
+            throw "Expected at least 3 timestamped backups after 3 install runs; found $($bakFiles.Count)"
         }
     } finally {
         $env:USERPROFILE = $origProfile
@@ -1409,6 +1445,440 @@ Test-Scenario "W-3 nvm.ps1 uses two-level Split-Path (not one)" {
     # Ensure the fix uses two levels of Split-Path -Parent
     if ($nvmContent -notmatch 'Split-Path\s*\(\s*Split-Path\s+\$PSScriptRoot\s+-Parent\s*\)\s+-Parent') {
         throw "nvm.ps1 does not use two-level Split-Path for lib resolution"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group X: winget / npm exit code assertion (Issue #226)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group X: winget/npm exit code assertion (Issue #226)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+. (Join-Path $RepoRoot 'scripts\windows\lib\logging.ps1')
+
+Test-Scenario "X-1: Assert-LastExit is defined in logging.ps1" {
+    $cmd = Get-Command Assert-LastExit -ErrorAction SilentlyContinue
+    if (-not $cmd) {
+        throw "Assert-LastExit not defined after dot-sourcing logging.ps1"
+    }
+}
+
+Test-Scenario "X-2: Assert-LastExit does not throw for exit code 0" {
+    $global:LASTEXITCODE = 0
+    Assert-LastExit -ToolName "test-tool"
+}
+
+Test-Scenario "X-3: Assert-LastExit does not throw for ALREADY_INSTALLED (-1978335189)" {
+    $global:LASTEXITCODE = -1978335189
+    Assert-LastExit -ToolName "test-tool" -AllowedExitCodes @(0, -1978335189)
+}
+
+Test-Scenario "X-4: Assert-LastExit throws for unexpected non-zero exit code" {
+    $global:LASTEXITCODE = 2
+    $threw = $false
+    try {
+        Assert-LastExit -ToolName "test-tool" -AllowedExitCodes @(0, -1978335189)
+    } catch {
+        $threw = $true
+    }
+    $global:LASTEXITCODE = 0
+    if (-not $threw) {
+        throw "Assert-LastExit did not throw for exit code 2"
+    }
+}
+
+Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
+    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
+    foreach ($s in $wingetScripts) {
+        $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
+        $content = Get-Content $path -Raw
+        if ($content -notmatch 'Assert-LastExit') {
+            throw "$s.ps1 does not call Assert-LastExit after winget install"
+        }
+    }
+}
+
+Test-Scenario "X-6: squad-cli.ps1 calls Assert-LastExit after npm install" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
+    if ($content -notmatch 'Assert-LastExit') {
+        throw "squad-cli.ps1 does not call Assert-LastExit after npm install"
+    }
+}
+
+Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\uv.ps1') -Raw
+    if ($content -notmatch 'Assert-LastExit') {
+        throw "uv.ps1 does not call Assert-LastExit after install command"
+    }
+}
+
+Test-Scenario "X-8: Assert-LastExit allowed codes include winget ALREADY_INSTALLED in all winget scripts" {
+    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
+    foreach ($s in $wingetScripts) {
+        $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
+        $content = Get-Content $path -Raw
+        if ($content -notmatch '\-1978335189') {
+            throw "$s.ps1 does not include ALREADY_INSTALLED (-1978335189) in AllowedExitCodes"
+        }
+    }
+}
+
+if ($null -eq (Get-Command psmux -ErrorAction SilentlyContinue)) {
+    Test-Scenario "X-9: Simulated winget failure propagates from Install-Psmux" {
+        $psmuxContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1') -Raw
+        $psmuxExec = $psmuxContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
+        Invoke-Expression $psmuxExec
+        function global:winget { $global:LASTEXITCODE = 99 }
+        $threw = $false
+        try {
+            Install-Psmux 2>&1 | Out-Null
+        } catch {
+            $threw = $true
+        } finally {
+            Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
+            $global:LASTEXITCODE = 0
+        }
+        if (-not $threw) {
+            throw "Install-Psmux did not propagate the simulated winget failure"
+        }
+    }
+} else {
+    Write-Skip "X-9: Simulated winget failure propagates from Install-Psmux" `
+        "psmux is installed -- early-return path taken, winget not called"
+}
+
+# ---------------------------------------------------------------------------
+# Group Y: pre-commit + pre-push behavioral tests (Issue #224)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group Y: pre-commit + pre-push behavioral tests (#224)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$preCommitHook = Join-Path $RepoRoot "hooks\pre-commit"
+$prePushHook   = Join-Path $RepoRoot "hooks\pre-push"
+
+if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
+    Write-Skip "Y-1 pre-commit rejects .ps1 with em-dash"          "sh not available"
+    Write-Skip "Y-2 pre-commit allows ASCII-only .ps1"              "sh not available"
+    Write-Skip "Y-3 pre-commit rejects rogue .squad/ path"          "sh not available"
+    Write-Skip "Y-4 pre-push hard-rejects direct push to main"      "sh not available"
+    Write-Skip "Y-5 pre-push allows push to develop"                "sh not available"
+    Write-Skip "Y-6 pre-push exits 0 on feature branch (advisory)"  "sh not available"
+} else {
+    $yTmpBase = Join-Path $PSScriptRoot "tmp_grpy_$(Get-Random)"
+    New-Item -ItemType Directory -Path $yTmpBase -Force | Out-Null
+
+    # Helper: create a minimal git repo with a develop branch
+    function New-YTestRepo([string]$Path) {
+        New-Item -ItemType Directory -Path $Path -Force | Out-Null
+        Push-Location $Path
+        & git init -q 2>&1 | Out-Null
+        & git config core.autocrlf false 2>&1 | Out-Null
+        & git config user.email "test@test.com" 2>&1 | Out-Null
+        & git config user.name "Test" 2>&1 | Out-Null
+        "init" | Set-Content README.md -Encoding ASCII
+        & git add README.md 2>&1 | Out-Null
+        & git commit -q -m "chore: init" 2>&1 | Out-Null
+        & git checkout -q -b develop 2>&1 | Out-Null
+        "develop" | Add-Content README.md -Encoding ASCII
+        & git add README.md 2>&1 | Out-Null
+        & git commit -q -m "chore: develop base" 2>&1 | Out-Null
+        Pop-Location
+    }
+
+    try {
+
+        # ------------------------------------------------------------------
+        # Y-1: pre-commit rejects .ps1 with a non-ASCII byte (em-dash)
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-1 pre-commit rejects .ps1 with em-dash (non-ASCII)" {
+            $repoDir = Join-Path $yTmpBase "y1"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b pluto/ascii-fail 2>&1 | Out-Null
+                # Write a .ps1 containing a UTF-8 em-dash (bytes: 0xE2 0x80 0x94)
+                $before = [System.Text.Encoding]::ASCII.GetBytes('Write-Host "hello ')
+                $emDash = [byte[]](0xE2, 0x80, 0x94)
+                $after  = [System.Text.Encoding]::ASCII.GetBytes(' world"' + [char]10)
+                [System.IO.File]::WriteAllBytes(
+                    (Join-Path $repoDir "test.ps1"),
+                    ($before + $emDash + $after)
+                )
+                & git add "test.ps1" 2>&1 | Out-Null
+                & sh $preCommitHook 2>&1 | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    throw "pre-commit should have rejected .ps1 with em-dash but exited 0"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-2: pre-commit allows a .ps1 that is pure ASCII
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-2 pre-commit allows ASCII-only .ps1" {
+            $repoDir = Join-Path $yTmpBase "y2"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b pluto/ascii-pass 2>&1 | Out-Null
+                'Write-Host "hello -- world"' | Set-Content "test.ps1" -Encoding ASCII
+                & git add "test.ps1" 2>&1 | Out-Null
+                $out = & sh $preCommitHook 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw "pre-commit rejected ASCII-only .ps1 (exit $LASTEXITCODE): $out"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-3: pre-commit rejects a newly staged .squad/ path not on allow-list
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-3 pre-commit rejects rogue .squad/ path" {
+            $repoDir = Join-Path $yTmpBase "y3"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b pluto/rogue-squad 2>&1 | Out-Null
+                New-Item -ItemType Directory -Path ".squad\random" -Force | Out-Null
+                "rogue" | Set-Content ".squad\random\notes.md" -Encoding ASCII
+                & git add ".squad\random\notes.md" 2>&1 | Out-Null
+                & sh $preCommitHook 2>&1 | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    throw "pre-commit should have rejected rogue .squad/ path but exited 0"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-4: pre-push hard-rejects a push whose remote ref is refs/heads/main
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-4 pre-push hard-rejects direct push to main" {
+            $repoDir = Join-Path $yTmpBase "y4"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                # Pipe push-info line as stdin: LOCAL_REF SHA REMOTE_REF SHA
+                $hookUnix   = $prePushHook.Replace('\', '/')
+                $stdinFile  = Join-Path $yTmpBase "push_stdin_y4.txt"
+                Set-Content $stdinFile "refs/heads/develop abc1234 refs/heads/main def5678" -Encoding ASCII
+                $stdinUnix  = $stdinFile.Replace('\', '/')
+                & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1 | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    throw "pre-push should have rejected push to main but exited 0"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-5: pre-push allows a push whose remote ref is NOT main
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-5 pre-push allows push to develop branch" {
+            $repoDir = Join-Path $yTmpBase "y5"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                $hookUnix   = $prePushHook.Replace('\', '/')
+                $stdinFile  = Join-Path $yTmpBase "push_stdin_y5.txt"
+                Set-Content $stdinFile "refs/heads/squad/224-test abc1234 refs/heads/develop def5678" -Encoding ASCII
+                $stdinUnix  = $stdinFile.Replace('\', '/')
+                $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw "pre-push should have allowed push to develop (exit $LASTEXITCODE): $out"
+                }
+            } finally { Pop-Location }
+        }
+
+        # ------------------------------------------------------------------
+        # Y-6: pre-push exits 0 on feature push regardless of PSScriptAnalyzer
+        # The advisory block always uses `|| true`, so warnings must not fail CI.
+        # ------------------------------------------------------------------
+        Test-Scenario "Y-6 pre-push exits 0 on feature branch (PSScriptAnalyzer advisory)" {
+            $repoDir = Join-Path $yTmpBase "y6"
+            New-YTestRepo $repoDir
+            Push-Location $repoDir
+            try {
+                & git checkout -q -b squad/224-advisory-test 2>&1 | Out-Null
+                # Commit a .ps1 so the hook has content to (optionally) analyze
+                'Write-Host "advisory test"' | Set-Content "advisory.ps1" -Encoding ASCII
+                & git add "advisory.ps1" 2>&1 | Out-Null
+                & git commit -q -m "test: advisory ps1" 2>&1 | Out-Null
+                $hookUnix   = $prePushHook.Replace('\', '/')
+                $stdinFile  = Join-Path $yTmpBase "push_stdin_y6.txt"
+                Set-Content $stdinFile "refs/heads/squad/224-advisory-test abc1234 refs/heads/squad/224-advisory-test def5678" -Encoding ASCII
+                $stdinUnix  = $stdinFile.Replace('\', '/')
+                $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw "pre-push advisory path must exit 0 even with PSScriptAnalyzer warnings (exit $LASTEXITCODE): $out"
+                }
+            } finally { Pop-Location }
+        }
+
+    } finally {
+        if (Test-Path $yTmpBase) {
+            Remove-Item $yTmpBase -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group Z: Set-Content encoding hygiene (Issue #234)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group Z: Set-Content encoding hygiene (#234)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "Z-1: profile.ps1 - every Set-Content call has -Encoding" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Set-Content\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Set-Content without -Encoding found in profile.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+Test-Scenario "Z-2: profile.ps1 - every Add-Content call has -Encoding" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\profile.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Add-Content\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Add-Content without -Encoding found in profile.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+Test-Scenario "Z-3: uninstall.ps1 - every Set-Content call has -Encoding" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\uninstall.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Set-Content\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Set-Content without -Encoding found in uninstall.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+Test-Scenario "Z-4: uninstall.ps1 - every Out-File call has -Encoding (future-proof)" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\uninstall.ps1') -Raw
+    $matches = [regex]::Matches($content, 'Out-File\b[^`\n]*')
+    foreach ($m in $matches) {
+        if ($m.Value -notmatch '-Encoding') {
+            throw "Out-File without -Encoding found in uninstall.ps1: $($m.Value.Trim())"
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group AA: uninstall unsets core.hooksPath
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group AA: uninstall unsets core.hooksPath" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "AA-1: uninstall.ps1 contains --unset-all core.hooksPath" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\uninstall.ps1') -Raw
+    if ($content -notmatch '--unset-all core\.hooksPath') {
+        throw "uninstall.ps1 does not call 'git config --unset-all core.hooksPath'"
+    }
+}
+
+Test-Scenario "AA-2: uninstall.sh contains --unset-all core.hooksPath" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts/linux/uninstall.sh') -Raw
+    if ($content -notmatch '--unset-all core\.hooksPath') {
+        throw "uninstall.sh does not call 'git config --unset-all core.hooksPath'"
+    }
+}
+
+Test-Scenario "AA-3: git unset-all core.hooksPath removes the local key (functional)" {
+    $aaTmpDir = Join-Path $PSScriptRoot "tmp_grpaa_$(Get-Random)"
+    New-Item -ItemType Directory -Path $aaTmpDir -Force | Out-Null
+    try {
+        # Simulate install: write hooksPath into a local repo config (no --global)
+        $tempRepo = Join-Path $aaTmpDir "repo"
+        New-Item -ItemType Directory -Path $tempRepo -Force | Out-Null
+        Push-Location $tempRepo
+        try {
+            & git init 2>&1 | Out-Null
+            & git config core.hooksPath '/fake/hooks' 2>&1 | Out-Null
+            $before = & git config --local --get core.hooksPath 2>&1
+            if ([string]::IsNullOrWhiteSpace($before)) {
+                throw "Pre-condition failed: hooksPath was not written to local gitconfig"
+            }
+            # Simulate uninstall: unset hooksPath (no --global, matches uninstall.ps1)
+            & git config --unset-all core.hooksPath 2>&1 | Out-Null
+            & git config --local --get core.hooksPath 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                throw "core.hooksPath still present after unset-all (exit code was 0)"
+            }
+        } finally {
+            Pop-Location
+        }
+    } finally {
+        Remove-Item $aaTmpDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group DD: version-pin enforcement for squad-cli, copilot, and gh (#255)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group DD: version-pin enforcement (squad-cli / copilot / gh)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "DD-1: squad-cli.ps1 reads pinned version from .tool-versions" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
+    if ($content -notmatch 'Get-ToolVersion') {
+        throw "squad-cli.ps1 does not call Get-ToolVersion to read pinned version"
+    }
+    if ($content -notmatch "squad-cli") {
+        throw "squad-cli.ps1 does not reference 'squad-cli' tool name for version lookup"
+    }
+}
+
+Test-Scenario "DD-2: squad-cli.ps1 uses version-aware check (not bare Get-Command)" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
+    if ($content -notmatch 'InstalledVersion') {
+        throw "squad-cli.ps1 does not perform version comparison (no InstalledVersion variable)"
+    }
+    if ($content -notmatch 'SquadCliVersion') {
+        throw "squad-cli.ps1 does not use SquadCliVersion in install command"
+    }
+}
+
+Test-Scenario "DD-3: gh.ps1 uses --version flag with pinned value" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\gh.ps1') -Raw
+    if ($content -notmatch '--version') {
+        throw "gh.ps1 does not pass --version flag to winget"
+    }
+    if ($content -notmatch 'Get-ToolVersion') {
+        throw "gh.ps1 does not call Get-ToolVersion to read pinned version"
+    }
+}
+
+Test-Scenario "DD-4: copilot.ps1 reads pinned version from .tool-versions" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\copilot.ps1') -Raw
+    if ($content -notmatch 'Get-ToolVersion') {
+        throw "copilot.ps1 does not call Get-ToolVersion"
+    }
+    if ($content -notmatch 'copilot-cli') {
+        throw "copilot.ps1 does not reference 'copilot-cli' tool name for version lookup"
+    }
+}
+
+Test-Scenario "DD-5: .tool-versions contains squad-cli and gh pins" {
+    $tvPath = Join-Path $RepoRoot '.tool-versions'
+    $content = Get-Content $tvPath -Raw
+    if ($content -notmatch 'squad-cli\s+[0-9]+\.[0-9]+\.[0-9]+') {
+        throw ".tool-versions does not contain a squad-cli version pin"
+    }
+    if ($content -notmatch 'gh\s+[0-9]+\.[0-9]+\.[0-9]+') {
+        throw ".tool-versions does not contain a gh version pin"
     }
 }
 

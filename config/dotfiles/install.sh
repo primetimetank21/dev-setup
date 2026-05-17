@@ -44,6 +44,23 @@ for arg in "$@"; do
   esac
 done
 
+# ── Helper: timestamped backup, keep last N copies ───────────────────────────
+# Usage: backup_file <target> [<keep_count>]
+# Creates <target>.bak.YYYYMMDD-HHMMSS and trims all but the N most recent.
+# DOTFILE_BACKUP_KEEP overrides the default of 5 at install time.
+backup_file() {
+  local target="$1"
+  local keep="${2:-${DOTFILE_BACKUP_KEEP:-5}}"
+  [ -e "$target" ] || return 0
+  local ts
+  ts=$(date +%Y%m%d-%H%M%S)
+  cp -p "$target" "${target}.bak.${ts}"
+  info "Backed up $target -> ${target}.bak.${ts}"
+  # Remove oldest backups beyond the keep limit
+  # shellcheck disable=SC2012
+  ls -t "${target}.bak."* 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm --
+}
+
 # ── Helper: copy a template file, skipping if destination already matches ───
 # Usage: install_copy <src> <dest> [<label>]
 install_copy() {
@@ -53,9 +70,9 @@ install_copy() {
 
   if [[ "$DRY_RUN" == true ]]; then
     if [[ -f "$dest" ]]; then
-      dry "Would back up existing $dest → ${dest}.bak and overwrite with $src"
+      dry "Would back up existing $dest -> ${dest}.bak.YYYYMMDD-HHMMSS and overwrite with $src"
     else
-      dry "Would copy $src → $dest"
+      dry "Would copy $src -> $dest"
     fi
     return
   fi
@@ -63,8 +80,7 @@ install_copy() {
   if [[ -f "$dest" ]]; then
     # Only back up if the destination is not already this template
     if ! diff -q "$src" "$dest" > /dev/null 2>&1; then
-      cp "$dest" "${dest}.bak"
-      info "Backed up existing $dest → ${dest}.bak"
+      backup_file "$dest"
       cp "$src" "$dest"
       ok "Installed $label"
     else
@@ -126,9 +142,8 @@ install_symlink() {
     # Symlink exists but points somewhere else — replace it
     rm "$link"
   elif [[ -e "$link" ]]; then
-    # Regular file in the way — back it up
-    cp "$link" "${link}.bak"
-    info "Backed up existing $link → ${link}.bak"
+    # Regular file in the way -- back it up
+    backup_file "$link"
     rm "$link"
   fi
 
@@ -168,7 +183,7 @@ substitute_gitconfig() {
 }
 
 # ── Main ─────────────────────────────────────────────────────────────────────
-printf "\n${CYAN}Installing dotfiles from %s${RESET}\n\n" "$DOTFILES_DIR"
+printf '\n%sInstalling dotfiles from %s%s\n\n' "$CYAN" "$DOTFILES_DIR" "$RESET"
 
 # .gitconfig — copy so users can edit without touching the repo template
 install_copy \
@@ -205,7 +220,8 @@ install_symlink \
   "$HOME/.vimrc" \
   ".vimrc"
 
-# .zshrc — copy template on fresh install; append managed block to existing file
+# .zshrc -- copy template on fresh install; append managed block to existing file
+# shellcheck disable=SC2016
 ZSHRC_MANAGED_BLOCK='# --- dev-setup managed block (do not edit) ---
 export PATH="$HOME/.local/bin:$PATH"
 export NVM_DIR="$HOME/.nvm"
@@ -218,14 +234,15 @@ if [[ -f "$HOME/.zshrc" ]]; then
   append_managed_block "$HOME/.zshrc" "$ZSHRC_MANAGED_BLOCK" ".zshrc"
 else
   if [[ "$DRY_RUN" == true ]]; then
-    dry "Would copy .zshrc.template → $HOME/.zshrc"
+    dry "Would copy .zshrc.template -> $HOME/.zshrc"
   else
     cp "$DOTFILES_DIR/.zshrc.template" "$HOME/.zshrc"
     ok "Installed .zshrc from template"
   fi
 fi
 
-# .bashrc — append managed block if file exists (nvm PATH already appended by nvm installer)
+# .bashrc -- append managed block if file exists (nvm PATH already appended by nvm installer)
+# shellcheck disable=SC2016
 BASHRC_MANAGED_BLOCK='# --- dev-setup managed block (do not edit) ---
 export PATH="$HOME/.local/bin:$PATH"
 [ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
@@ -235,4 +252,4 @@ if [[ -f "$HOME/.bashrc" ]]; then
   append_managed_block "$HOME/.bashrc" "$BASHRC_MANAGED_BLOCK" ".bashrc"
 fi
 
-printf "\n${GREEN}Done.${RESET}\n\n"
+printf '\n%sDone.%s\n\n' "$GREEN" "$RESET"

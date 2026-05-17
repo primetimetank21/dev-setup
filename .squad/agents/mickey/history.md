@@ -51,6 +51,10 @@ Lead architect; established foundational team process, architecture, and Windows
 
 ⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
+- **squad upgrade rogue-file bug (0.9.4):** `squad upgrade` dumps template files at `.squad/` root that should only live in `.squad/templates/`. Compare root files against templates — if identical or older, delete. The pre-commit hook allow-list catches these, but clean up before committing.
+- **git-workflow SKILL.md overwrite risk:** Upgrade overwrites customized skills with the built-in generic version. The 0.9.4 version assumes a 3-branch model (dev/insiders/main) and removes our project-specific rules (merge gates, branch protection, Mickey approval requirement). Always diff after upgrade.
+- **New workflows from upgrade may target the squad CLI's own release pipeline** (squad-promote, squad-release, squad-insider-release, squad-preview, squad-docs) — these assume package.json publishing and branches that don't exist in consumer repos. Delete or don't ship unless the repo actually uses that pipeline.
+
 - `git add --renormalize` updates INDEX only, not working tree
 - `script -q /dev/null -c 'command'` for isatty()-gated CLIs (general pattern, deprecated for Copilot CLI)
 - Branch protection write via `gh api` blocked by Codespace token scope — manual UI required
@@ -59,7 +63,8 @@ Lead architect; established foundational team process, architecture, and Windows
 - BOM-encoding gotcha: PS 5.1 `Set-Content -Encoding UTF8` writes UTF-8 WITH BOM. POSIX sh hooks read BOM bytes as line content, breaking regex. Fix: use `-Encoding ASCII` for test temp files (see `.squad/skills/ps51-runtime-file-encoding/SKILL.md`)
 - Worktree isolation: batch 3 used separate worktrees per PR. Zero bleed across 3 parallel PRs. CHANGELOG conflicts are expected and trivial to resolve (combine both [Unreleased] entries).
 - commit-msg hook rejects merge commit messages (non-conventional format). Use `--no-verify` for merge commits during conflict resolution. This is fine.
-- Filed #239 e2e install P0 — Earl emphasized this is the safety net for what really works on fresh machines. Notes: psmux is the Windows tmux with `tmux` alias; squad CLI is verified with `squad --version`, not the npx path; nightly cron approved.
+- Filed #239 e2e install P0 -- Earl emphasized this is the safety net for what really works on fresh machines. Notes: psmux is the Windows tmux with `tmux` alias; squad CLI is verified with `squad --version`, not the npx path; nightly cron approved.
+- 2026-05-16 Hired Doc (Fact Checker) per Earl's request after Sprint Q retro. Universe: Disney Classic. Auto-triggers on review/verify/fact-check/audit keywords. Closes the verifier/validator gap. Hiring pattern: branch from develop, create .squad/agents/{name}/ dir with charter.md + history.md, update registry.json (after last active non-exempt agent, before scribe), update team.md (same position), update routing.md (table row + issue label + new rule + multi-agent scenarios), update CHANGELOG.md [Unreleased], drop decision to .squad/decisions/inbox/mickey-{slug}.md (gitignored, don't stage). Voice considerations: personalize from character source (Seven Dwarfs Doc = methodical, glasses-on, "Let's see now..." -- kind corrections, not snark). Consider squad-hire-agent skill after 2+ hire patterns confirmed -- pattern is now repeatable (Jiminy was first; Doc is second).
 
 ---
 
@@ -831,3 +836,61 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
 - 0.8.0 tag will be created AFTER PR merges to develop and develop merges to main (cannot tag unreleased code on a feature branch)
 
 - **2026-05-16 -- Re-reviewed PR #245 after Goofy revision.** Verdict: APPROVE. All 6 assertion adds confirmed (squad --version on Linux/macOS, squad/psmux/tmux on Windows, in both fresh-shell and post-idempotency phases). Hard-fail enforced, no || true softening. ASCII clean. Goofy history.md updated. Merged via --admin after CI settled.
+
+## Sprint Q Retro Authored -- 2026-05-16
+
+- **Scope:** Post-0.8.0 release retro covering Sprint Q P0 batch (#249, #251, #252) and the 9-round Goofy saga on #251.
+- **Output:** `.squad/retros/2026-05-16-sprint-q-retro.md`
+- **Key findings:**
+  - 8 of 9 rounds on #251 were reactive (patching symptoms surfaced by previous failure), not predictive (upfront failure-mode analysis)
+  - Branch ancestry bleed = 3rd occurrence -- needs prominent placement in CONTRIBUTING.md
+  - Stale branches keep accumulating despite `--delete-branch` on merge -- Ralph EOS sweep is now standing
+  - No verifier/validator role -- Earl had to double/triple-check claims of "done." Open question for Sprint R kickoff
+  - HYGIENE backlog underprioritized -- bumped to P0/P1 for next sprint
+- **Action items filed:**
+  - [Coordinator] "Two strikes" rule -- failure-mode analysis required before round 3 of any fix
+  - [Mickey] Make "branch from develop, never from another squad branch" prominent in CONTRIBUTING.md
+  - [Earl + Coordinator] Decide verifier/validator scope (extend Jiminy / new teammate / process change) before Sprint R
+  - [Mickey] Bump HYGIENE backlog (#224, #227, #228, branch hygiene automation)
+  - [Chip] Track E2E nightly flake rate -- flip `continue-on-error: false` after 2-3 green nightlies (#253)
+  - [Mickey] CHANGELOG conflict strategy doc
+- **Outcome:** Sprint Q closed. 0.8.0 shipped. Sprint R agenda has HYGIENE bumped, two-strikes rule, validator scope decision.
+
+## Squad 0.9.4 Upgrade Audit -- 2026-05-16 (PR #262)
+
+- **Scope:** Audited the `squad upgrade` 0.9.1 -> 0.9.4 diff before shipping. Identified what to SHIP, DELETE, and DO NOT SHIP.
+- **Outcome (PR #262 -- `chore(squad): upgrade governance to 0.9.4`):**
+  - Shipped: `.github/agents/squad.agent.md` payload, 7 modified templates, label-enforcement + slugify workflows, error-recovery skill.
+  - Deleted before commit: 18 rogue files at `.squad/` root (template duplicates / older copies).
+  - Did NOT ship: 6 squad-CLI-internal workflows (squad-ci/docs/insider-release/preview/promote/release) and the overwritten `.copilot/skills/git-workflow/SKILL.md` (reverted to our 2-branch version).
+  - Hook gap fix: added `.squad/templates/*.template` to pre-commit allow-list to prevent rogue-file false positives on legitimate template files.
+- **Decision record:** see `.squad/decisions.md` -> "Squad CLI 0.9.4 Upgrade -- Ship Plan" (executed via PR #262 at 2026-05-16T17:32).
+- **New skill captured:** `.squad/skills/squad-upgrade-hygiene/SKILL.md` so future upgrades follow the same audit pattern instead of rediscovering it.
+
+## Sprint R Retro Action Items -- 2026-05-17 (PR #274)
+
+- **Scope:** Closes #273. Three Sprint R retro action items shipped in one docs-only PR.
+- **Branch:** `squad/273-retro-action-items` (forked from `develop` at PR #272 wrap).
+- **Output (PR #274 -- `docs(squad): Sprint R retro action items (#273)`, +42/-0, 3 files):**
+  1. `.squad/agents/ralph/charter.md` -- added "Develop Commit Ban" section. Documents
+     that `hooks/pre-commit` Check 5 refuses all direct commits to `develop` / `main` /
+     `master` (Ralph included). EOS history entries must use either (a) the short-lived
+     `squad/<agent>-<sprint>-history` branch + PR pattern (canonical example: PR #270)
+     or (b) the Scribe drain fold (canonical example: PR #272). `--no-verify` bypass
+     is explicitly forbidden.
+  2. `CONTRIBUTING.md` -- added "Group Letter Assignment SOP". When multiple agents
+     append to `tests/test_windows_setup.ps1` in parallel, Coordinator pre-assigns
+     Group letters in the spawn prompt (X for Goofy, Y for Chip, etc.). Prevents the
+     Sprint R Group X collision (#267 vs #268) from recurring.
+  3. `CONTRIBUTING.md` -- added "CHANGELOG Conflict Strategy" section. Documents the
+     mechanical resolution for predictable `[Unreleased]` conflicts when multiple PRs
+     land in one sprint: merge order = smaller/clean first, keep unique section headers,
+     union both entries on conflict (CHANGELOG is a log, not a de-dup list).
+- **Key design choice:** All three items are policy/documentation, not code. They
+  encode the lessons from Sprint R into the canonical guardrails (charter + CONTRIBUTING)
+  so every future agent reads them as part of the standard pre-spawn checklist.
+- **Outcome:** All three Sprint R retro action items closed. Pattern: retro -> action -> code
+  loop closed in one sprint. Sprint S then exercised the new SOPs (#275-#282) and
+  confirmed they work in practice -- Group letter SOP held through Z, AA, BB, CC, DD,
+  T6-T11 reservations; CHANGELOG strategy held through 4 separate `[Unreleased]`
+  conflict resolutions; Ralph develop-commit ban was honored throughout.

@@ -254,3 +254,170 @@ Delivered 30 PowerShell aliases with full git/gh/dev parity, conflict guards for
 - ASCII check: <10ms for typical staged .ps1 files (pipes through grep)
 - Rogue path check: <5ms (pure shell pattern matching)
 - Total hook overhead for clean commit: ~20ms (well under 100ms goal)
+
+---
+
+## 2026-05-16 -- Issue #227: Timestamp .bak backups (both platforms)
+
+**Branch:** `squad/227-bak-rotation`
+**PR:** (pending)
+**Status:** PR open, targeting `develop`
+
+### What I did
+
+- Added `backup_file()` to `config/dotfiles/install.sh`:
+  - Creates `<target>.bak.YYYYMMDD-HHMMSS` on each backup
+
+---
+
+## 2026-05-16 -- Sprint S Issue #271 revise: fix(uninstall) core.hooksPath scope mismatch
+
+**Branch:** `squad/271-uninstall-hookspath`
+**PR:** #277 (revised after Windows E2E failure)
+**Status:** Force-pushed; CI re-triggered
+
+### Root cause
+
+setup.ps1 / setup.sh write `core.hooksPath` with no scope flag (defaults to
+`--local`, writing to `.git/config`). The original PR #277 uninstall calls used
+`--global`, targeting `%USERPROFILE%\.gitconfig` where the key was never written.
+Git exited non-zero; the GH Actions pwsh runner template propagates
+`$LASTEXITCODE` as the step exit code, killing the Windows E2E job.
+On Linux, `|| true` hid the error but the local key was never actually unset
+(silent functional bug).
+
+A secondary logic inversion in uninstall.ps1 caused the if/else branches to
+fire on the wrong exit codes, printing [OK] when the key was absent.
+
+### What I changed
+
+- `scripts/windows/uninstall.ps1`: dropped `--global`; flipped if/else so
+  exit-0 is OK, exit-1/5 is SKIP, other is WARN; added `$global:LASTEXITCODE = 0`
+  to prevent residual non-zero from propagating through the GH Actions runner
+  template; added `Write-Warn` helper function.
+- `scripts/linux/uninstall.sh`: dropped `--global`; changed `ok` to `log_ok`
+  (interop with PR #278 logging consolidation that renamed the function).
+- `tests/test_windows_setup.ps1`:
+  - Resolved conflict with Group Z tests (from develop #234) -- kept both.
+  - AA-3 rewritten to test local-scope unset via a temp git init repo instead
+    of `GIT_CONFIG_GLOBAL` override, matching the actual fix (no `--global`).
+  - Fixed AA-1/AA-2 error message strings to drop the `--global` reference.
+
+### Key lessons
+
+- Always match the scope flag in uninstall to whatever scope the install used.
+  When setup.* uses no flag (local default), uninstall must also use no flag.
+- `$global:LASTEXITCODE = 0` at the end of a pwsh uninstall script is a
+  mandatory safety reset when the script runs git commands; the GH Actions
+  runner template will propagate any non-zero residual as the step exit code.
+- `|| true` on Linux hides errors but does not fix them; always confirm the
+  actual command succeeded by checking scope alignment.
+  - Trims all but the N most recent (default N=5, override `DOTFILE_BACKUP_KEEP`)
+  - Replaces the old `cp "$dest" "${dest}.bak"` one-shot pattern in `install_copy`
+    and the `cp "$link" "${link}.bak"` pattern in `install_symlink`
+- Added `Backup-File` function to `scripts/windows/tools/dotfiles.ps1`:
+  - Same timestamp format (`yyyyMMdd-HHmmss`), same N-keep trim
+  - Reads `$env:DOTFILE_BACKUP_KEEP` for override
+  - Replaces the "back up only if no .bak exists yet" guard
+- Updated `scripts/linux/uninstall.sh` `restore_backup()`:
+  - Picks newest `.bak.*` (last known good before most recent install)
+  - Falls back to legacy `.bak` for backward compat
+- Updated `scripts/windows/uninstall.ps1` `Restore-DotfileBackup`:
+  - Same strategy: newest `.bak.*` first, then legacy `.bak`
+  - Updated "foundAny" probe to check `.bak.*` glob too
+- Updated `tests/test_windows_setup.ps1`:
+  - Q-3 now asserts `.bak.*` (timestamped) pattern, not `.bak`
+  - Added Q-4: 3-run acceptance test -- 3 distinct timestamped backups verified
+- CHANGELOG.md [Unreleased] > Changed: appended entry
+- Decision file: `.squad/decisions/inbox/pluto-227-bak-rotation.md`
+
+### Key decisions
+
+- **Restore strategy:** newest backup = state before last install. Oldest = original-original (still accessible manually, kept by N=5 default). Decision file: `pluto-227-bak-rotation.md`.
+- **Default N=5:** env var override `DOTFILE_BACKUP_KEEP` on both platforms.
+- **Cleanup:** automatic inline trim after each backup write. No cron required.
+- **Timestamp format:** `YYYYMMDD-HHmmss` -- sortable, human-readable, filesystem-safe, identical on both platforms.
+
+## 2026-05-16 -- Sprint R: HooksPath Documentation and .bak Rotation Fixes
+
+**PRs:** #266 (docs(contributing): document automatic hooks + branch-from-develop)
+         #269 (feat(dotfiles): timestamp .bak backups with N-keep retention)
+**Branches:** `squad/228-hookspath-docs` and `squad/227-bak-rotation`
+**Status:** MERGED to develop
+
+### PR #266 -- HooksPath Documentation
+
+What I did:
+- Updated CONTRIBUTING.md to replace stale "install hooks manually" section with
+  "Git Hooks / configured automatically" table showing core.hooksPath pattern
+- Added section verifying hooks are auto-configured on clone (no manual steps needed)
+- Added "Branch from develop" validation note to CONTRIBUTING.md to reinforce branch ancestry rule
+- README already had comprehensive Git Hooks section (lines 178+) -- verified and confirmed
+- CHANGELOG updated under [Unreleased] > Changed
+
+Key learnings:
+- Uninstall gap: scripts/linux/uninstall.sh and scripts/windows/uninstall.ps1 do NOT
+  run 'git config --unset core.hooksPath'. After uninstall, hooksPath still points to
+  hooks/ in detached repo. This is a correctness gap (filed as #271 follow-up).
+  Documentation is accurate but incomplete -- resolve #271 to make uninstall reversible.
+
+### PR #269 -- .bak Rotation and Pipefail Fix
+
+What I did:
+- Added timestamped backup pattern to both scripts/linux/uninstall.sh and
+  scripts/windows/uninstall.ps1 (timestamp format: YYYYMMDD-HHMMSS)
+- Updated restore_backup() to pick newest .bak.* file (most recent install state)
+- Fixed critical bug in scripts/linux/uninstall.sh restore_backup():
+  - Problem: 'set -euo pipefail' in uninstall.sh. When no .bak.* files exist,
+    'ls -t ${target}.bak.* 2>/dev/null' expands to literal string, ls exits 2,
+    and pipefail kills the script (this broke E2E uninstall on fresh runners)
+  - Fix: Added '|| newest=""' to the assignment to catch ls failure without dying
+  - This is a classic shell gotcha: glob that fails to expand under strict mode
+- Updated test Q-4 to verify 3 distinct timestamped backups from successive runs
+- CHANGELOG updated [Unreleased] > Added
+
+Key learnings:
+- Shell pipefail gotcha: Any pipeline component that exits non-zero kills the script
+  under 'set -euo pipefail'. Globs that fail to expand are a common trap.
+  Solution: Add '|| fallback' to handle the failure gracefully.
+- Cross-platform consistency: Both Linux and Windows now use identical timestamp
+  format (YYYYMMDD-HHMMSS, sortable, filesystem-safe). Backup strategy matches on both.
+- Defensive restoration: newest backup should restore the install state before the
+  most recent run. Oldest backups accumulate (up to N=5) for manual recovery.
+- Doc's batch fact-check caught the pipefail bug BEFORE merge. This prevented a
+  post-merge P0 fix and validated the batch-check role as high-ROI.
+
+### Notes on Batch Fact-Check
+
+Doc's verification identified 2 real bugs in Sprint R PRs before merge:
+1. #267 X-1 autocrlf failure -- caught and fixed by Chip (rebase)
+2. #269 uninstall.sh pipefail failure -- caught and fixed pre-merge (this work)
+
+This prevents post-merge firefighting and validates batch-check as a standing pattern.
+Recommend spawning Doc on any shell-heavy or multi-platform PR in future sprints.
+
+### PR #275 -- PowerShell .gitattributes CRLF Rule (#231)
+
+**Date:** 2026-05-16  
+**Issue:** #231 -- chore(.gitattributes): add explicit line-ending rule for *.ps1  
+**Branch:** squad/231-ps1-gitattributes  
+**Status:** OPEN (awaiting review)
+
+What I did:
+- Added explicit .gitattributes rules for *.ps1, *.psm1, and *.psd1 files with text eol=crlf
+- Rationale: PowerShell tooling on Windows expects CRLF. When core.autocrlf=true (standard on Windows runners),
+  git normalizes files to LF by default. Setting explicit eol=crlf eliminates this platform divergence and ensures
+  consistent CRLF checkout on all platforms, preventing autocrlf surprises (relates to Sprint R #267 autocrlf lesson).
+- Updated CHANGELOG.md [Unreleased] > Changed section
+- Verified rule with git check-attr: all *.ps1 files now report eol: crlf
+
+Decision made:
+- Scoped to PowerShell files (.ps1/.psm1/.psd1) only, not shell scripts (.sh/.bash)
+- Reason: Shell scripts already have explicit eol=lf rules and are consistent. PowerShell files were missing
+  an explicit rule and were normalizing to the global default (LF), which is wrong for Windows tooling.
+- Shell scripts scope can be addressed in a follow-up if cross-platform shell portability becomes a concern.
+
+Key learnings:
+- Git .gitattributes explicit rules are the cleanest way to override autocrlf behavior consistently across platforms.
+- eol=crlf ensures the working tree always has CRLF on checkout, regardless of core.autocrlf setting.
+- This is especially important for Windows-specific tooling like PowerShell, which expects CRLF.

@@ -212,3 +212,94 @@ Initial setup complete.
 - **gh auth:** ✓ logged in as primetimetank21
 - **CHANGELOG:** [Unreleased] section exists (queue for next release)
 - **Verdict:** READY FOR NEXT SESSION
+
+## Sprint Q + 0.8.0 Release Cleanup -- 2026-05-16
+
+- **Context:** After Sprint Q P0 fixes (#249, #251, #252) merged via #257/#256/#258, cut 0.8.0 release (PR #259 + #260) and shipped GH release. Final EOS sweep.
+- **Cleanup actions:**
+  - Deleted local `release/0.8.0` branch (after PR #259 merged)
+  - Auto-deleted remote `release/0.8.0` (via `--delete-branch` on merge)
+  - Pruned stale local tracking ref `origin/release/0.8.0`
+  - Verified `.squad/log/` and `.squad/orchestration-log/` files are intentionally gitignored (not strays)
+  - Confirmed `.squad/decisions/inbox/` empty (Scribe drained)
+  - Confirmed no rogue `.bak` / `.tmp` files anywhere
+- **Final repo state:**
+  - main: `7d9be7b` (PR #260 merge)
+  - develop: `df3a1cd` (synced with main + retro work pending)
+  - Tag: `0.8.0` pushed
+  - GH release: published at https://github.com/primetimetank21/dev-setup/releases/tag/0.8.0
+  - Local branches: develop, main (and current retro branch)
+  - Remote branches: develop, main
+  - Worktrees: 1 (primary)
+  - Open PRs: 0 (excluding upcoming retro PR)
+  - Open `go:yes` issues: 0
+- **Standing directive lock-in:** EOS sweep confirmed in charter. Every session ends with the 12-point sweep + branch reaping.
+- **Verdict:** CLEAN. Sprint Q + 0.8.0 wrap complete.
+
+## Sprint R EOS Cleanup -- 2026-05-16
+
+- **Context:** Sprint R wrapped with 5 PRs merged (#265, #266, #267, #268, #269)
+  and follow-up issue #271 filed. Final cleanup pass executed.
+- **Cleanup actions:**
+  - Fetched and pruned remote refs (stale refs from previous work removed)
+  - Verified worktree list: 1 primary worktree (C:\Users\Earl Tankard\Coding\dev-setup)
+  - Ran worktree prune (no stale worktrees found)
+  - Local squad branches identified: squad/doc-sprint-r-history (PR #270 OPEN)
+  - Remote squad branches checked and status verified:
+    * squad/224-hook-test-coverage -> PR #267 MERGED, deleted
+    * squad/226-winget-exit-check -> PR #268 MERGED, deleted
+    * squad/227-bak-rotation -> PR #269 MERGED, deleted
+    * squad/228-hookspath-docs -> PR #266 MERGED, deleted
+    * squad/253-e2e-summary -> PR #265 MERGED, deleted
+    * squad/doc-sprint-r-history -> PR #270 OPEN (retained locally)
+  - Verified: no open PRs on any merged branches
+  - Deleted all 5 remote squad/* branches via single push command
+  - Ran final fetch --prune to drop stale tracking refs
+- **Final repo state:**
+  - develop: d71176e (current HEAD, working tree clean)
+  - Local branches: develop, main, squad/doc-sprint-r-history (open PR #270)
+  - Remote branches: develop, main, origin/squad/doc-sprint-r-history
+  - Worktrees: 1 (primary)
+  - Open PRs: 1 (PR #270 on squad/doc-sprint-r-history)
+  - Status: git status -sb shows clean
+- **Branches retained (not deleted):**
+  - squad/doc-sprint-r-history: open PR #270 prevents local/remote deletion
+  - main, develop, release/* (per charter: never touch release branches)
+- **Verdict:** CLEAN. 5 stale sprint branches removed. Working tree verified
+  clean. Ready for next session.
+
+## Sprint S EOS Cleanup -- 2026-05-17
+
+- **Context:** Sprint S wrapped. Jiminy retro (PR #283) and Scribe retro
+  (PR #284) merged. Coordinator handed off to Ralph for final branch reaping
+  per EOS sequence (Jiminy -> Scribe -> Ralph -> session complete).
+- **Trigger:** End-of-Sprint-S session-wrap; develop @ `8103195` (post-#284
+  merge), working tree clean.
+- **PR verification:** Re-verified all 6 candidate branches via
+  `gh pr list --state merged --head <branch>`. All 6 confirmed MERGED:
+  * squad/223-logging-consolidation -> PR #278 (merged 2026-05-17T00:24:54Z)
+  * squad/231-ps1-gitattributes -> PR #275 (merged 2026-05-17T00:19:19Z)
+  * squad/234-ps1-ascii-encoding -> PR #276 (merged 2026-05-17T00:19:28Z)
+  * squad/255-squad-cli-warning -> PR #279 (merged 2026-05-17T01:34:44Z)
+  * squad/255-tool-version-pins -> PR #282 (merged 2026-05-17T01:26:01Z)
+  * squad/271-uninstall-hookspath -> PR #277 (merged 2026-05-17T00:51:50Z)
+- **Cleanup actions:**
+  - Deleted all 6 remote squad/* branches via single
+    `git push origin --delete ...` call
+  - Ran `git fetch --prune` to drop stale tracking refs
+  - Local branches: only `develop` (current) + `main` -- no squad/* survived
+    (Scribe's was auto-cleaned by `gh pr merge --delete-branch` on #284)
+  - Worktrees: 1 primary worktree, no `..\dev-setup-*` strays
+- **Refused / anomalies:** None. All 6 candidate branches had merged PRs;
+  zero force-deletes required.
+- **History-fold:** This entry committed on `squad/ralph-sprint-s-eos`
+  branch + PR opened (charter ban on direct develop commits, per #274).
+  Coordinator will review and merge.
+- **Final repo state:**
+  - develop: `8103195` (working tree clean)
+  - Local branches: develop, main, squad/ralph-sprint-s-eos (this PR)
+  - Remote branches: develop, main, origin/squad/ralph-sprint-s-eos (this PR)
+  - Worktrees: 1 (primary)
+  - Open PRs: 1 (this history-fold)
+- **Verdict:** CLEAN. 6 stale Sprint-S branches reaped. Sprint S backlog
+  complete.

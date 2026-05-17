@@ -14,19 +14,22 @@ How to decide who handles what for the dev-setup project.
 | Code review | Mickey | All PRs reviewed by Mickey before merge |
 | Testing & validation | Chip | Write tests, find edge cases, verify fixes |
 | Squad hygiene, process audit | Jiminy | Untracked files, uncommitted histories, rogue paths, branch ancestry, label hygiene |
-| Session logging | Scribe | Automatic — never needs routing |
+| Verification, fact-checking, claim audits | Doc | Verify research, double-check assertions, run counter-hypotheses, audit external references |
+| Session logging | Scribe | Automatic -- never needs routing |
 | Work queue monitoring | Ralph | Issue triage, backlog, PR status |
 
 ## Multi-Agent Scenarios
 
 | Scenario | Who Gets Spawned |
 |----------|-----------------|
-| "Build the setup script" | Mickey (architecture, sync) → Donald + Goofy (parallel, background) |
+| "Build the setup script" | Mickey (architecture, sync) -> Donald + Goofy (parallel, background) |
 | "Set up dotfiles" | Pluto (main) + Mickey (review) |
 | "Make it work on Windows" | Goofy (script) + Chip (test) |
 | "Add a new tool install" | Donald or Goofy (based on OS) + Pluto (if config needed) |
 | "Validate the setup" | Chip (all environments) |
 | "Team, ..." | Mickey + Donald + Goofy + Pluto in parallel |
+| "Verify the research" / "fact-check this" | Doc (verification) |
+| "Before we ship..." | Doc + Mickey (verify + review) |
 
 ## Issue Routing
 
@@ -39,6 +42,7 @@ How to decide who handles what for the dev-setup project.
 | `squad:pluto` | Dotfiles, configs, environment setup | Pluto |
 | `squad:chip` | Testing, CI, validation work | Chip |
 | `squad:jiminy` | Squad hygiene audit, process QA | Jiminy |
+| `squad:doc` | Fact-checking, verification, audit work | Doc |
 
 ## Rules
 
@@ -50,3 +54,4 @@ How to decide who handles what for the dev-setup project.
 6. **Test alongside build.** When Donald or Goofy write a script, spawn Chip to write test cases simultaneously.
 7. **Mickey reviews before merge.** All work goes through Mickey for final review.
 8. **Jiminy auto-runs** before coordinator returns control to user, after multi-agent batches (3+ spawns), and at session-end. Manual trigger: "Jiminy, check" / "Jiminy, audit". Reports clean state in one line, dirty state with fix-offer.
+9. **Doc auto-runs** on tasks tagged `review`, `verify`, `fact-check`, `audit`, or when a user says "fact-check this", "verify this", "double-check". Reports a verification report inline; only blocks merges if explicitly escalated to a gate.

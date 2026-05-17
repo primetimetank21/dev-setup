@@ -15,5 +15,6 @@ function Install-Uv {
     }
     Write-Info "Installing uv..."
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    Assert-LastExit -ToolName "uv"
     Write-Ok "uv installed"
 }

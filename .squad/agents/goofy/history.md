@@ -106,7 +106,47 @@ Set-Alias -Name <name> -Value <custom-function> -Force -Scope Global
 
 ---
 
-## [2026-05-04] Issue #185: Windows Setup Refactor — 451-line monolith → 9 per-tool files (PR #195)
+## [2026-05-16T18:30:00Z] Issue #226: Assert winget exit code after installs
+
+**Branch:** `squad/226-winget-exit-check`
+**Status:** PR open -- awaiting Doc review
+
+**Bug Pattern:** `winget install` (and `npm install -g`, powershell IEX installs) can return
+non-zero on real failures while the script silently continued. 7 install sites all lacked
+any exit-code check.
+
+**Fix Applied:**
+- Added `Assert-LastExit` helper to `scripts/windows/lib/logging.ps1`
+- `Assert-LastExit -ToolName <name> -AllowedExitCodes @(0, -1978335189)` called immediately
+  after each install command in all 7 sites
+- Winget ALREADY_INSTALLED code 0x8A15002B (= -1978335189 signed int32) treated as success
+- PS function mocks in tests P-2/P-3 updated to set `$global:LASTEXITCODE = 0` explicitly
+  (PS functions do not set LASTEXITCODE; leaving it unset would be racy)
+- 9 new Group X tests added (X-1 through X-9)
+
+**7 Install Sites Fixed:**
+1. `tools/git.ps1` -- winget Git.Git
+2. `tools/gh.ps1` -- winget GitHub.cli
+3. `tools/vim.ps1` -- winget vim.vim
+4. `tools/psmux.ps1` -- winget marlocarlo.psmux
+5. `tools/copilot.ps1` -- winget GitHub.Copilot
+6. `tools/uv.ps1` -- powershell IEX (astral.sh install script)
+7. `tools/squad-cli.ps1` -- npm install -g
+
+**Key Learnings:**
+- PowerShell functions do NOT set `$LASTEXITCODE`; only native external commands do.
+  Test mocks that override winget with a PS function MUST explicitly set
+  `$global:LASTEXITCODE = 0` to avoid racy behavior.
+- Winget ALREADY_INSTALLED = 0x8A15002B = -1978335189 (signed int32). Always include in
+  AllowedExitCodes for winget calls.
+- `Assert-LastExit` must be called BEFORE any subsequent PS commands that might change
+  `$LASTEXITCODE` (i.e., before `Refresh-SessionPath` even though PS functions don't
+  affect it -- defense in depth).
+- `[Parameter(Mandatory)]` on the helper's ToolName param satisfies PSUseSingularNouns
+  and PSReviewUnusedParameter rules without extra suppressions.
+
+---
+
 
 **Status:** ✅ APPROVED, MERGED to develop
 
@@ -266,3 +306,186 @@ Fixed three regressions introduced by PR #130:
 - v5 fix -- Root cause: winget returns before the inner nvm-setup.exe installer finishes writing files/registry. Replaced Add-NvmWindowsPaths with Wait-ForNvmInstall (polling helper, 90s timeout, 5 candidate paths). Kept v4 Refresh-SessionPath merge fix intact. Updated test T-3b, skill doc (Gotcha 2), CHANGELOG.
 - v6 fix -- v5 90s timeout was 10s too short (installer took ~100s in CI run 25970591039). v5 candidate paths also missed actual install location (registry update proved installer succeeded but none of 5 paths matched). v6 uses Refresh-SessionPath + Get-Command nvm as primary detection (path-agnostic), expanded candidate list (7 dirs including C:\nvm, C:\nvm-windows) as fallback, 180s default timeout, and diagnostic dump on timeout failure.
 - v8 fix -- Earl chose portable download approach. winget install was racy (3 different timings in CI: 24s, 100s, >180s). Replaced Wait-ForNvmInstall with Install-NvmPortable + Set-NvmEnvironment. Downloads nvm-noinstall.zip from GitHub releases, extracts to %USERPROFILE%\nvm (standard nvm-windows portable location). Sets NVM_HOME/NVM_SYMLINK at User scope so subsequent shells work too. Deterministic, no installer race.
+
+## 2026-05-16 -- Sprint R: Winget Exit Code Assertion
+
+**PR:** #268 (fix(scripts/windows): assert winget exit code)
+**Branch:** `squad/226-winget-exit-check`
+**Status:** MERGED to develop
+
+### What I did
+
+- Added Assert-LastExit helper to scripts/windows/lib/logging.ps1:
+  - Signature: `Assert-LastExit [int[]]$AllowedExitCodes = @(0)`
+  - Validates $LASTEXITCODE is in the allowed set; exits 1 with clear error message if not
+  - PS 5.1 compatible: uses -notcontains (not ternary or null-conditional)
+- Patched 7 install sites with Assert-LastExit calls after each winget/npm invocation:
+  - tools/git.ps1: winget Git.Git
+  - tools/gh.ps1: winget GitHub.cli
+  - tools/vim.ps1: winget vim.vim
+  - tools/psmux.ps1: winget marlocarlo.psmux
+  - tools/copilot.ps1: winget GitHub.Copilot
+  - tools/uv.ps1: IEX (uses @(0) only, no winget)
+  - tools/squad-cli.ps1: npm install -g
+- Added AllowedExitCodes parameter to handle winget-specific codes (e.g., -1978335189 = ALREADY_INSTALLED)
+- Added test X-9 to verify that simulated winget failure (exit 99) propagates correctly
+- Updated mock P-2 and P-3 to explicitly set $global:LASTEXITCODE = 0 (PS functions don't set it)
+
+### Key learnings
+
+- Winget idempotence: code -1978335189 means tool already installed. Must include in allowed list
+  to avoid false failures on re-run. This is winget-specific; npm uses standard 0.
+- PS function return codes: PowerShell functions do not automatically set $LASTEXITCODE.
+  Callers must check it explicitly after native binary invocation. Tests using mocks
+  must set $global:LASTEXITCODE explicitly before assertion.
+- Error propagation: Assert-LastExit centralizes the pattern, preventing silent failures.
+  Every external tool invocation should be followed by validation.
+- Group letter coordination: This PR also created Group X, but collision with #267 Group X
+  was resolved by merging #268 first and having #267 rebase to Group Y.
+  Lesson: Coordinator should pre-assign group letters in spawn prompts.
+2026-05-16 -- #234 ASCII encoding hygiene
+
+---
+
+## [2026-05-17] Sprint S -- Issue #255: Silent version drift bug (tool-version-pins)
+
+**Branch:** `squad/255-tool-version-pins`
+**Status:** PR open -- awaiting CI and Mickey review
+
+### Background
+
+Doc's fact-check + coordinator audit revealed a P1 silent-drift bug: all three tool
+installers (squad-cli, copilot-cli, gh) used bare `command -v X; then exit 0` guards
+with no version in the install command. Any cached binary on CI runners prevented
+upgrade; `.tool-versions` bumps had no effect.
+
+Earl approved expanding #255 from "investigate Linux warning" to "fix all three tools
+cross-platform."
+
+### What I did
+
+**`.tool-versions`**
+- Added `squad-cli 0.9.4` pin
+- Added `gh 2.92.0` pin
+- `copilot-cli 0.0.339` unchanged
+
+**`scripts/linux/tools/squad-cli.sh`**
+- Reads `SQUAD_CLI_VERSION` from `.tool-versions`
+- Detects installed version via `squad --version 2>&1 | grep -oE '...' | head -1`
+- Version-aware branch: skip / upgrade / fresh-install
+- npm install pinned: `@bradygaster/squad-cli@${SQUAD_CLI_VERSION}`
+
+**`scripts/windows/tools/squad-cli.ps1`**
+- Dot-sources `Read-ToolVersion.ps1`; reads `SquadCliVersion`
+- Detects installed version via regex on `squad --version 2>&1`
+- Version-aware branch mirroring Linux logic
+- npm install pinned: `@bradygaster/squad-cli@$SquadCliVersion`
+
+**`scripts/linux/tools/copilot-cli.sh`**
+- Rewrote: uses `command -v copilot` + version extraction (not `~/.local/bin/copilot` path check)
+- Installs via `npm install -g @githubnext/github-copilot-cli@${COPILOT_CLI_VERSION}`
+- Gracefully skips if npm not available (warns)
+
+**`scripts/windows/tools/copilot.ps1`**
+- Reads `CopilotCliVersion` from `.tool-versions`
+- Detects installed version; passes `--version $CopilotCliVersion` to winget
+- Fallback to latest if winget refuses the version (CONSTRAINT documented in header)
+
+**`scripts/linux/tools/gh.sh`**
+- Linux: tarball download from GitHub releases (reliable cross-distro version pin)
+  - `https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz`
+  - Extracts to `~/.local/bin/gh`; arch detection (amd64/arm64)
+- macOS: brew install/upgrade (WARN if installed version differs; brew cannot pin)
+
+**`scripts/windows/tools/gh.ps1`**
+- Passes `--version $GhVersion` to winget so cached runners cannot drift
+
+### Tests added
+
+- `tests/test_nvm_bootstrap.sh` T6-T9: static checks for version-reading and version-aware idempotency
+- `tests/test_windows_setup.ps1` Group DD (DD-1 to DD-5): Windows version-pin validation
+
+### Skill
+
+- `.squad/skills/tool-version-pin/SKILL.md`: documents the anti-pattern + canonical solution
+
+### Key decisions
+
+- Used npm install (not `gh.io/copilot-install` pipe) for copilot-cli.sh to guarantee
+  version pinning. The `gh.io/copilot-install` script may not honor `COPILOT_CLI_VERSION`
+  env var and installing via named npm package is explicit and verifiable.
+- Used tarball for Linux gh install; avoids apt package-suffix guessing across distros.
+- Added winget fallback for copilot.ps1; winget catalog IDs for GitHub.Copilot may use
+  a different version scheme than the npm package. Documented in script header + CONTRIBUTING.
+- Group DD chosen for test group (BB/CC pre-assigned to other Sprint S agents).
+
+### Constraints documented
+
+- macOS/brew cannot pin gh version -- logs WARN, accepts latest
+- winget `GitHub.Copilot` version ID may differ from semver in .tool-versions
+  (which is the npm @githubnext/github-copilot-cli version); fallback to latest on mismatch
+
+---
+
+## [2026-05-18] Sprint S Revision -- PR #282: Fix copilot package name + pin (BLOCKER P0)
+
+**Branch:** `squad/255-tool-version-pins`
+**Status:** Revised -- force-pushed to PR #282
+
+### Context
+
+Doc's fact-check on PR #282 found a P0 BLOCKER: `@githubnext/github-copilot-cli@0.0.339`
+does not exist on npm. The package publishes versions 0.1.0-0.1.36 only.
+The version `0.0.339` was a stale carry-over from the old `curl gh.io/copilot-install | bash`
+opaque installer, which used its own internal versioning unrelated to any npm package.
+
+### Package research
+
+Two npm packages exist in the "copilot CLI" space:
+- `@githubnext/github-copilot-cli` -- legacy, deprecated, frozen at 0.1.36
+  Description: "A CLI experience for letting GitHub Copilot help you on the command line."
+- `@github/copilot` -- modern, active, current at 1.0.48
+  Description: "GitHub Copilot CLI brings the power of Copilot coding agent directly to your terminal."
+
+**Winner: `@github/copilot@1.0.48`**
+
+Rationale:
+1. The legacy package is explicitly deprecated and frozen -- 0.1.36 is its final version.
+2. The modern package is actively maintained and matches the current product branding.
+3. The original install mechanism (curl gh.io/copilot-install) installed a standalone copilot
+   binary -- NOT from @githubnext/github-copilot-cli. That version number was never a valid
+   npm version for either package. Using @github/copilot@1.0.48 is the clean reset.
+4. Verified: `npm view "@github/copilot@1.0.48" version` returns `1.0.48` -- package exists.
+
+### Windows: switched from winget to npm
+
+The old Windows approach used `winget install --id GitHub.Copilot`. Research showed this
+installs the GitHub Copilot for Visual Studio extension, NOT the CLI. It is the wrong package.
+Switching to `npm install -g "@github/copilot@$CopilotCliVersion"` unifies behavior with
+Linux and installs the actual copilot binary.
+
+P2 fix is moot: the winget fallback path (which had the misleading Write-Ok) was eliminated
+entirely. The npm path has no fallback -- it either installs at the pinned version or fails.
+Write-Ok now reports the pinned version explicitly: "GitHub Copilot CLI installed at $version".
+
+### Changes made
+
+**`.tool-versions`:** `copilot-cli 0.0.339` -> `copilot-cli 1.0.48`
+**`README.md`:** updated example `.tool-versions` block to match
+**`CHANGELOG.md`:** updated copilot-cli entry to describe correct package + reason for correction
+**`scripts/linux/tools/copilot-cli.sh`:** `@githubnext/github-copilot-cli` -> `@github/copilot` (3 locations: header comment, log_warn message, npm install line)
+**`scripts/windows/tools/copilot.ps1`:** full rewrite -- winget -> npm, correct package, clean header, no fallback path, Assert-LastExit preserved
+**`tests/test_windows_setup.ps1`:**
+- Group D test: now asserts `npm install -g` + `@github/copilot` (not winget)
+- X-5: wingetScripts array reduced from 5 to 4 (copilot removed)
+- X-8: same reduction
+- Skip/throw messages updated to reference npm
+
+### Lessons learned (retro pointer)
+
+Validate npm package names AND version existence BEFORE committing a pin sweep:
+  `npm view "@pkgname@version" version`
+must return the version number (not an error) before the pin is committed.
+The version `0.0.339` was never verifiable -- it was copied from curl installer internal
+state without checking whether it corresponded to a real npm package version.
+Add this check to `.squad/skills/tool-version-pin/SKILL.md` validation steps.

@@ -2,6 +2,26 @@
 
 ## Decision Records
 
+## # Decision: Always use -Encoding ASCII for Set-Content/Add-Content/Out-File in Windows scripts
+
+**Issue:** #234
+**PR:** TBD
+**Agent:** Goofy (Cross-Platform)
+**Date:** 2026-05-16
+
+## Context
+
+PowerShell 5.1 defaults Set-Content/Add-Content to UTF-16LE BOM; PS 7 defaults to UTF-8 BOM.
+Both encodings break cross-tool compatibility (git, external editors, shell parsers).
+Profile and config files written by dev-setup must be readable by all tooling without BOM corruption.
+
+## Decision
+
+All Set-Content, Add-Content, and Out-File calls in Windows PowerShell scripts in this repo
+MUST include `-Encoding ASCII` unless the content is explicitly non-ASCII (in which case
+`-Encoding utf8NoBOM` is acceptable on PS7-only paths).
+ASCII is the safe default for all profile blocks and config snippets written by this repo.
+
 ## # Decision: CI PS 5.1 Validation Path
 
 **Issue:** #109
@@ -3449,3 +3469,162 @@ Verifiers MUST NOT create files at .squad/agents/{name}/VERIFICATION_REPORT.md, 
 This is the most comprehensive squad hygiene system any sprint has produced.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+
+---
+
+## # Decision: Squad CLI 0.9.4 Upgrade -- Ship Plan
+
+**Date:** 2026-05-16T17:23:15-04:00
+**Author:** Mickey (Lead)
+**Status:** Executed (PR #262 merged at 2026-05-16T17:32)
+**Context:** Earl ran `squad upgrade` to 0.9.4. Audit complete.
+
+## Decision
+
+### SHIP (stage + commit in one PR)
+
+**Commit 1 -- `chore(squad): upgrade governance to 0.9.4`**
+- `.github/agents/squad.agent.md` -- main payload (version bump, dispatch mechanism, model updates, CURRENT_DATETIME requirement, name param in spawns)
+- `.squad/templates/*` -- all 7 modified templates
+
+**Commit 2 -- `ci(squad): upgrade workflows + add label enforcement`**
+- `.github/workflows/squad-heartbeat.yml` -- removes cron schedule (good: was noisy)
+- `.github/workflows/squad-triage.yml` -- adds slugify() for label names (bugfix)
+- `.github/workflows/sync-squad-labels.yml` -- same slugify() fix
+- `.github/workflows/squad-label-enforce.yml` -- NEW, useful (mutual exclusivity for go:/release:/type:/priority: labels)
+
+**Commit 3 -- `feat(squad): add error-recovery skill`**
+- `.copilot/skills/error-recovery/SKILL.md` -- generic but useful, no conflicts
+
+### DELETE (before committing)
+
+All 18 rogue files at `.squad/` root:
+```
+casting-history.json, casting-policy.json, casting-registry.json,
+charter.md, history.md, roster.md, scribe-charter.md,
+fact-checker-charter.md, constraint-tracking.md, copilot-instructions.md,
+issue-lifecycle.md, mcp-config.md, multi-agent-format.md,
+orchestration-log.md, plugin-marketplace.md, raw-agent-output.md,
+run-output.md, skill.md
+```
+
+Diagnosis: 2 of 3 sampled were IDENTICAL to templates. The third (`casting-policy.json`) was an OLDER version missing `Disney Classic` universe -- the canonical `.squad/casting/policy.json` is correct and richer. All safe to delete.
+
+### DO NOT SHIP -- Separate discussion needed
+
+1. **`.copilot/skills/git-workflow/SKILL.md`** -- OVERWRITTEN with generic 3-branch model. We use 2-branch (develop/main). The new version removes:
+   - Mickey approval requirement
+   - Branch protection section
+   - Our merge gates
+   - References to `develop` (replaced with `dev`)
+
+   **Action:** Revert to HEAD~1 version. File an issue to reconcile if we ever adopt 3-branch.
+
+2. **6 new workflows (DO NOT SHIP):**
+   - `squad-ci.yml` -- empty placeholder ("No build commands configured"). We already have `validate.yml`.
+   - `squad-docs.yml` -- targets `preview` branch (doesn't exist). Intended for squad CLI, not consumers.
+   - `squad-insider-release.yml` -- targets `insider` branch (doesn't exist).
+   - `squad-preview.yml` -- targets `preview` branch (doesn't exist).
+   - `squad-promote.yml` -- assumes dev->preview->main pipeline with package.json publish. Not our model.
+   - `squad-release.yml` -- tag+publish on main push. We don't publish npm packages.
+
+   **Action:** Delete all 6. They're for the squad CLI's own release pipeline.
+
+3. **`.squad/templates/loop.md`** and **`.squad/templates/squad.agent.md.template`** -- NEW templates. Ship with templates commit (harmless, useful for reference).
+
+## Risks
+
+- The `squad.agent.md` now expects `CURRENT_DATETIME` in spawn prompts -- existing agent charters that don't pass it won't break, but won't get time context. Low risk.
+- Model references bumped to `claude-sonnet-4.6` / `gpt-5.3-codex` -- if those aren't available yet, spawns fall through to platform default. No breakage.
+- `squad-heartbeat.yml` loses cron trigger -- Ralph now only fires on issue events. If we want periodic checks, re-add cron later.
+
+## Test Plan
+
+After merge:
+1. Start a new session -- verify `Squad v0.9.4` appears in greeting
+2. Run pre-commit hook -- should pass (no rogue files)
+3. CI should be green on the PR
+4. Verify `squad-triage.yml` labels work (label an issue with `squad`)
+5. Confirm git-workflow SKILL.md is restored to our 2-branch version
+
+---
+
+## # Decision: Hire Doc as Fact Checker
+
+**Date:** 2026-05-16
+**Author:** Mickey (Lead)
+**Status:** Executed (PR #263 merged at 2026-05-16T18:10)
+**Context:** Sprint Q retro identified a verifier/validator gap.
+Squad 0.9.4 ships a fact-checker template. Earl chose to hire before Sprint R.
+
+## Decision
+- Persistent name: Doc (Seven Dwarfs, Disney Classic universe)
+- Role: Fact Checker / Verification Agent
+- Auto-trigger keywords: review, verify, fact-check, audit, double-check
+- Reports advisory by default; can be escalated to a merge gate
+- Will NOT replace Chip (test verification) or Jiminy (process hygiene)
+- Voice: methodical, glasses-on, "Let's see now..." energy
+
+## Rationale
+- Closes the verifier/validator gap from Sprint Q retro
+- Trial run before deciding whether to make it a hard gate
+
+## Files
+- .squad/agents/doc/charter.md (new)
+- .squad/agents/doc/history.md (new)
+- .squad/casting/registry.json (new entry)
+- .squad/team.md (new row)
+- .squad/routing.md (new routing + rule)
+- CHANGELOG.md (Unreleased entry)
+
+---
+
+## # Decision Record: Verification Report -- PR #263 Hire Doc (Fact Checker)
+
+**Date:** 2026-05-16
+**Reviewer:** Doc (Fact Checker)
+**PR:** #263 -- feat(squad): hire Doc (Fact Checker)
+**Status:** Executed -- finding addressed in commit 2fa65e9 before PR #263 merged
+**Recommendation:** PROCEED -- one minor trigger-keyword inconsistency; not a blocker.
+
+## Claims Verified
+
+- [PASS] Doc charter exists at `.squad/agents/doc/charter.md` on branch -- confirmed via git show
+- [PASS] Doc history.md exists at `.squad/agents/doc/history.md` with correct initial entry format -- confirmed via git show
+- [PASS] Doc history.md date matches CURRENT_DATETIME (2026-05-16) -- confirmed
+- [PASS] Advisory by default -- charter Boundaries section and routing.md Rule 9 both state Doc is non-blocking unless escalated; consistent
+- [PASS] registry.json placement -- fact-checker inserted after hygiene-auditor (Jiminy), before scribe/ralph; JSON is valid (no trailing commas) -- confirmed via git show
+- [PASS] team.md row -- Doc inserted after Jiminy, before Scribe; uses checkmark emoji + "Active" matching all other rows exactly -- confirmed via diff
+- [PASS] Routing table row -- "Verification, fact-checking, claim audits | Doc | Verify research, double-check assertions, run counter-hypotheses, audit external references" after Jiminy row; consistent with charter responsibilities -- confirmed via git show
+- [PASS] Issue Routing `squad:doc` label -- label EXISTS on the GitHub repo (confirmed via `gh label list`); no creation needed
+- [PASS] Multi-Agent Scenarios rows -- "Verify the research / fact-check this" -> Doc; "Before we ship..." -> Doc + Mickey; both make sense given routing -- confirmed via git show
+- [PASS] CHANGELOG entry -- in [Unreleased] > ### Added; ASCII-clean double-dash; mentions charter path; accurate summary -- confirmed via diff
+- [PASS] Mickey's history.md new entry -- dated 2026-05-16; accurately describes hire, trigger keywords, and the hiring pattern -- confirmed via diff
+- [PASS] Doc does NOT replace Chip or Jiminy -- charter Boundaries section explicitly names both and explains the three distinct lanes; Chip and Jiminy charters need no update -- confirmed via git show
+- [PASS] squad-hire-agent SKILL.md -- all four routing.md update locations (A-D) listed; all confirmed performed in this PR; checklist matches what Mickey demonstrably did -- confirmed via diff vs skill
+- [WARN] `double-check` trigger classification -- charter lists it as an auto-trigger tag alongside review/verify/fact-check/audit; routing.md Rule 9 places it in the "user says" verbal-trigger bucket, not the tag bucket; PR description and CHANGELOG list only four tags (no double-check); minor inconsistency across three artifacts
+- [PASS] ASCII compliance (new content) -- the only non-ASCII byte in new `+` lines is the checkmark emoji in team.md, which matches the pre-existing style of every other team.md row; Doc charter itself is fully ASCII-clean -- confirmed via Select-String scan of diff
+
+## Counter-Hypotheses Explored
+
+- "squad:doc label might not exist yet and would need creating" -> REFUTED. Label already exists on the repo (`gh label list` returns `squad:doc  Assigned to Doc (Fact Checker)  #9B8FCC`). Someone created it ahead of merge.
+- "registry.json might have invalid JSON after insertion" -> REFUTED. Structure reviewed; no trailing comma on the fact-checker block; scribe/ralph entries follow cleanly.
+- "The checkmark emoji in team.md is a new ASCII violation" -> REFUTED. Every pre-existing row in team.md uses the same checkmark emoji; this is the established style, not a new violation.
+- "Doc might be missing required charter sections compared to the Jiminy hire template" -> REFUTED. Doc charter contains all sections the skill mandates: Identity, Voice, What I Do, Methodology, Triggers, How I Work, Boundaries, Model, Git Rules, Collaboration, Charter version. Jiminy charter structure used as comparison baseline; Doc matches or exceeds it.
+- "Mickey's history entry might use a stale date" -> REFUTED. Entry is dated 2026-05-16, matching CURRENT_DATETIME.
+- "The SKILL.md ASCII Safety note 'Use -- not --' is meaningless (both show as double-dash)" -> PARTIALLY CONFIRMED as a presentational issue. In rendered markdown the note loses its contrast because Mickey could not write an em-dash in an ASCII-safe file. The meaning is clear from context (do not use U+2014). Not a functional bug; the note is correct.
+
+## Issues Found
+
+1. **WARN -- `double-check` trigger: inconsistent classification across three artifacts.**
+   - **Where:** `.squad/agents/doc/charter.md` (When I'm Triggered section) vs. `.squad/routing.md` Rule 9.
+   - **What's wrong:** Charter says `double-check` is an auto-trigger tag (same tier as `review`, `verify`, `fact-check`, `audit`). Routing.md Rule 9 says it is a verbal/manual trigger ("when a user says 'double-check'"). The PR description and CHANGELOG mention only four tags; `double-check` is absent. The template (`fact-checker-charter.md`) also lists only four tags; `double-check` was added by Mickey.
+   - **Impact:** Low. Agents routing on keyword tags may or may not pick up `double-check` depending on which file they read. Advisory role means no merge is blocked, but the routing intent is ambiguous.
+   - **Suggested fix (one of two options):** Either add `double-check` to routing.md Rule 9's tagged list, OR remove it from the charter's auto-trigger tag list and keep it only as a verbal/manual trigger. Either is fine; consistency is the goal.
+   - **Resolution:** Fixed in commit 2fa65e9 before PR #263 merged.
+
+## Recommendation
+
+Proceed with merge. The `double-check` inconsistency is real but advisory -- it does not break any functionality, and Doc's role is non-blocking by design. A follow-up commit to align charter and routing.md on `double-check` placement (tag vs. verbal) would clean it up, but it is not a merge gate.
+
+Good, good -- the hire is internally consistent. The `squad:doc` label is already live, the JSON is valid, the team.md row matches house style exactly, the routing covers all four required locations, and the history entry is properly dated. Mickey did thorough work here.

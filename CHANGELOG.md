@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-05-17
+
+### Added
+- `tests/test_nvm_bootstrap.sh` T6-T9: static source checks verifying that squad-cli and copilot-cli scripts read pins from `.tool-versions` and perform version-aware idempotency (closes #255)
+- `tests/test_nvm_bootstrap.sh` T10-T11: regression sentinel asserting `@bradygaster/squad-cli` is the installed package and that `squad --version` captures stderr so the "session persistence may fail" warning is surfaced in CI (closes #255)
+- `tests/test_windows_setup.ps1` Group DD (DD-1 through DD-5): version-pin validation for Windows squad-cli, copilot, and gh installers (closes #255)
+- `tests/test_windows_setup.ps1` Group X -- behavioral tests for pre-commit (ASCII check, rogue .squad/ path) and pre-push (main guard, feature-branch allow, advisory exit-code) hooks (closes #224)
+- `tests/test_windows_setup.ps1` Group Z -- coverage for `-Encoding ASCII` enforcement in `profile.ps1` and `uninstall.ps1` (closes #234)
+- `tests/test_precommit_hygiene.sh` extended with pre-push section -- 5 bash scenarios covering direct-to-main rejection and advisory exit-code (closes #224)
+- `.squad/skills/tool-version-pin/SKILL.md`: documents the bare-idempotency anti-pattern and the canonical version-pin solution
+- `.copilot/skills/error-recovery/SKILL.md` -- new generic error-recovery skill
+- `.squad/skills/squad-upgrade-hygiene/SKILL.md` -- reusable checklist for auditing future `squad upgrade` runs
+- Doc (Fact Checker) joins the squad -- new agent addressing the verifier/validator gap from Sprint Q retro. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings (Verified/Unverified/Contradicted/Needs Investigation). Charter: `.squad/agents/doc/charter.md`.
+- `.github/workflows/squad-label-enforce.yml` -- enforces mutual exclusivity for `go:`, `release:`, `type:`, `priority:` label groups
+- `.squad/templates/{fact-checker-charter.md, loop.md, squad.agent.md.template}` -- new templates from 0.9.4
+- `hooks/pre-commit` now allows `.squad/templates/*.template` files (squad upgrade ships `squad.agent.md.template`); allow-list extended to permit `.squad/retros/*.md` so session retros can be committed
+- `.squad/agents/ralph/charter.md` "Develop Commit Ban" section -- documents that Ralph (and all agents) cannot commit directly to `develop`/`main`/`master`; EOS history entries flow through short-lived branch+PR or Scribe drain process (closes #273)
+- CONTRIBUTING.md "Group Letter Assignment" section -- coordinator pre-assigns test group letters to prevent parallel-agent collisions; Sprint R example documented (closes #273)
+- CONTRIBUTING.md "CHANGELOG Conflict Strategy" section -- documents mechanical resolution for predictable [Unreleased] conflicts when multiple PRs land in one sprint: merge order, unique headers, union entries (closes #273)
+- CONTRIBUTING.md "Tool Version Pin Enforcement" section -- documents the version-pin workflow and the npm-package validation step (closes #255)
+- `.gitignore` now ignores `*.tgz` tarballs so squad upgrade artifacts cannot accidentally land in commits; Jiminy charter documents the new dispatch SOP
+
+### Changed
+- `.tool-versions`: added `squad-cli 0.9.4` and `gh 2.92.0` pins; corrected `copilot-cli` from stale `0.0.339` to `1.0.48` (`@github/copilot` npm package)
+- `scripts/windows/tools/squad-cli.ps1`, `copilot.ps1`, `gh.ps1`: now dot-source `Read-ToolVersion.ps1` to resolve pinned version at runtime
+- `scripts/windows/tools/profile.ps1` and `scripts/windows/uninstall.ps1`: added `-Encoding ASCII` to all `Set-Content` and `Add-Content` calls. Prevents encoding mismatch between PS 5.1 (UTF-16LE BOM default) and PS 7 (UTF-8 BOM default) (closes #234).
+- `.gitattributes` now pins `*.ps1`, `*.psm1`, and `*.psd1` files to explicit CRLF line endings, eliminating platform divergence when `core.autocrlf` is enabled (closes #231).
+- `setup.sh` and `scripts/linux/uninstall.sh` now source `scripts/linux/lib/log.sh` instead of defining their own logging helpers. Local `log_*` / `ok` / `info` / `skip` definitions removed; all call sites updated to the canonical `log_ok` / `log_info` / `log_warn` / `log_error` names (closes #223).
+- Documentation: README + CONTRIBUTING now document the automatic `core.hooksPath` setup performed by `setup.sh` and `setup.ps1`. Replaced stale "install hooks manually" instruction. Added branch-from-develop validation note per Sprint Q retro (closes #228).
+- Squad governance upgraded from 0.9.1 to 0.9.4 (dispatch mechanism, `CURRENT_DATETIME` requirement, `name` param in spawn prompts, default models bumped to `claude-sonnet-4.6` / `gpt-5.3-codex`, tier-based agent timeout policy)
+- `.github/workflows/squad-heartbeat.yml` removes noisy cron trigger; Ralph now fires on issue events only
+- `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
+- Dotfile backup strategy: `.bak` files are now timestamped (`.bak.YYYYMMDD-HHMMSS`) on both Linux (`config/dotfiles/install.sh`) and Windows (`scripts/windows/tools/dotfiles.ps1`). Keeps last 5 backups by default (override with `DOTFILE_BACKUP_KEEP` env var); previous versions of dotfiles are no longer lost on re-run (closes #227).
+
+### Fixed
+- `scripts/linux/tools/squad-cli.sh`, `scripts/windows/tools/squad-cli.ps1`: replace bare `command -v squad` idempotency guard with version-aware check; installs pinned version via `npm install -g @bradygaster/squad-cli@<version>`; upgrades silently if installed version drifts from pin (closes #255)
+- `scripts/linux/tools/copilot-cli.sh`, `scripts/windows/tools/copilot.ps1`: replace bare binary-exists guard with version-aware check; switch install package from deprecated `@githubnext/github-copilot-cli` to `@github/copilot`; Windows switches from winget (wrong product) to npm for consistency with Linux; pin corrected from stale `0.0.339` (opaque curl-installer version) to `1.0.48` (closes #255)
+- `scripts/linux/tools/gh.sh`: Linux now downloads pinned release tarball from GitHub releases instead of `apt-get install -y gh` (latest); macOS logs WARN if brew installs a version other than the pin (brew versioned formulae not available for gh) (closes #255)
+- `scripts/windows/tools/gh.ps1`: passes `--version $GhVersion` to winget so runner cache cannot silently use an older gh (closes #255)
+- `scripts/linux/uninstall.sh` and `scripts/windows/uninstall.ps1` now run `git config --unset-all core.hooksPath` during uninstall (LOCAL scope, matching setup) so git falls back to per-repo `.git/hooks` defaults instead of pointing at the (now-deleted) dev-setup hooks dir; Windows path resets `$global:LASTEXITCODE = 0` after the unset so the expected non-zero exit when no hookspath is configured no longer fails the uninstall step (closes #271).
+- `.github/workflows/e2e-install.yml` -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
+- `scripts/linux/tools/squad-cli.sh` -- investigated 'session persistence may fail' warning (#255). Root cause: `@github/copilot-sdk` (transitive dep) attempts node:sqlite session storage on startup; on environments without write access to HOME, it emits this warning. Verified absent in squad-cli 0.9.4 `--version` path. Added regression guard: `e2e-install.yml` now captures `squad --version` output and fails if the warning appears. Static installer tests (`test_nvm_bootstrap.sh` T10-T11) verify correct package name and stderr capture.
+- `scripts/windows/tools/*.ps1` -- winget install calls now assert `$LASTEXITCODE` and surface failures to `setup.ps1` (closes #226). 7 install sites previously swallowed non-zero exits silently.
+- `.github/workflows/e2e-install.yml` -- bash `-lc` step bodies now use YAML doubled-single-quote escapes for embedded apostrophes; previously, an inner `'session persistence may fail'` could terminate the wrapping single-quoted YAML scalar mid-string.
+
 ## [0.8.0] - 2026-05-16
 
 ### Added

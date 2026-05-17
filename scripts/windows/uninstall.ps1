@@ -14,14 +14,24 @@ $ErrorActionPreference = 'Stop'
 function Write-Ok   { param([string]$Msg) Write-Host "[OK]   $Msg" -ForegroundColor Green }
 function Write-Skip { param([string]$Msg) Write-Host "[SKIP] $Msg" -ForegroundColor Yellow }
 function Write-Info { param([string]$Msg) Write-Host "[INFO] $Msg" -ForegroundColor Cyan }
+function Write-Warn { param([string]$Msg) Write-Host "[WARN] $Msg" -ForegroundColor Yellow }
 
 # -- Restore dotfile .bak files ------------------------------------------------
+# Restores the newest timestamped backup (.bak.YYYYMMDD-HHmmss).
+# The newest backup is the state just before the most recent install run.
+# To recover the original-original, look for the oldest .bak.* file manually.
 function Restore-DotfileBackup {
     param([string]$Target)
-    $backup = "$Target.bak"
-    if (Test-Path $backup) {
-        Move-Item -Path $backup -Destination $Target -Force
-        Write-Ok "Restored $Target from $backup"
+    # Prefer newest timestamped backup; fall back to legacy .bak
+    $tsBaks = Get-ChildItem "$Target.bak.*" -ErrorAction SilentlyContinue |
+                  Sort-Object LastWriteTime -Descending
+    if ($tsBaks) {
+        $newest = $tsBaks[0]
+        Move-Item -Path $newest.FullName -Destination $Target -Force
+        Write-Ok "Restored $Target from $($newest.Name)"
+    } elseif (Test-Path "$Target.bak") {
+        Move-Item -Path "$Target.bak" -Destination $Target -Force
+        Write-Ok "Restored $Target from $Target.bak (legacy)"
     } else {
         Write-Skip "No backup found for $Target"
     }
@@ -42,7 +52,7 @@ $dotfiles = @(
 
 $foundAny = $false
 foreach ($dotfile in $dotfiles) {
-    if (Test-Path "$dotfile.bak") {
+    if ((Test-Path "$dotfile.bak") -or (Get-ChildItem "$dotfile.bak.*" -ErrorAction SilentlyContinue)) {
         $foundAny = $true
         break
     }
@@ -88,7 +98,7 @@ function Remove-DevSetupProfileBlock {
         Remove-Item $ProfilePath -Force
         Write-Ok "Removed profile (was only dev-setup block): $ProfilePath"
     } else {
-        Set-Content $ProfilePath $cleaned -NoNewline
+        Set-Content $ProfilePath $cleaned -NoNewline -Encoding ASCII
         Write-Ok "Removed dev-setup block from $ProfilePath"
     }
 }
@@ -102,6 +112,17 @@ $profilePaths = @(
 foreach ($p in $profilePaths) {
     Remove-DevSetupProfileBlock -ProfilePath $p
 }
+
+# -- Unset core.hooksPath ------------------------------------------------------
+& git config --unset-all core.hooksPath 2>&1 | Out-Null
+if ($LASTEXITCODE -eq 0) {
+    Write-Ok "core.hooksPath unset (git falls back to per-repo .git/hooks)"
+} elseif ($LASTEXITCODE -in @(1, 5)) {
+    Write-Skip "core.hooksPath was not set (nothing to unset)"
+} else {
+    Write-Warn "git config --unset-all exited $LASTEXITCODE (unexpected; proceeding)"
+}
+$global:LASTEXITCODE = 0
 
 # -- Summary -------------------------------------------------------------------
 Write-Host ""
