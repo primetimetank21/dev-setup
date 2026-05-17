@@ -847,3 +847,134 @@ history-fold-request (audit notes destined for .squad/agents/jiminy/history.md L
 Jiminy self-appended that audit content directly to .squad/agents/jiminy/history.md during
 Sprint 12 Wave 1 (lines 82-83), so the fold-request was satisfied at source. Scribe deleted
 the obsolete inbox file as part of this fold; full audit text lives in jiminy/history.md, not here.
+
+## 2026-05-17 entries (Sprint 12 Wave 2 fold)
+
+### 2026-05-17T02:01:33-04:00: ARCHITECTURE.md Windows orchestrator Dependency Order documented (#310 / Sprint 12 Wave 2)
+**By:** Mickey (Lead)
+**Branch:** squad/310-arch-windows-dep-order
+**What:** Added `### Windows orchestrator chain` subsection under existing `## Dependency Order` H2 in ARCHITECTURE.md. Documents the 12-step invocation chain inside `scripts/windows/setup.ps1` `Main()`: `git -> uv -> nvm -> gh -> auth -> vim -> psmux -> copilot -> squad-cli -> dotfiles -> profile -> hooks`. Includes a function/module/Linux-mirror table, lib load order (`lib/logging.ps1` -> `lib/path.ps1`), cross-platform invariants preserved (auth-after-gh, copilot-after-auth, squad-cli-after-nvm), and Windows-only additions (git first, vim/psmux winget, dotfiles+profile finalizers, inline `Install-GitHook`).
+**Why:**
+1. Dot-source order in `setup.ps1` does NOT match invocation order, which has caused contributor confusion in past PRs (e.g., `auth.ps1` is dot-sourced LAST but invoked 5th). The new section is explicit that `Main()` is the source of truth, not the dot-source block.
+2. Linux/Windows parallel install flow visibility was previously asymmetric -- Linux had a documented chain (`zsh -> uv -> nvm -> gh -> auth -> copilot-cli -> squad-cli`) but Windows did not, despite Windows having a richer chain (12 steps vs. Linux's 7) due to platform-specific additions (git not pre-installed, dotfiles/profile finalizers, winget editor/multiplexer installs).
+3. The chain has shifted across sprints: PR #195 split a monolithic `setup.ps1` into per-tool modules under `scripts/windows/tools/`, and PR #297 moved `auth.ps1` from the windows root into `tools/`. The History paragraph at the end of the new section records this evolution so future PRs can trace the layout lineage without spelunking.
+
+**Style/format decisions:**
+- ASCII arrow chain (`->`) instead of Mermaid: the existing Linux Dep Order is plain ASCII (with U+2192 arrows), and no Mermaid is used anywhere in ARCHITECTURE.md. Brief style pref was "Mermaid preferred IF Linux side has Mermaid, else fall back to ASCII." Fell back to ASCII.
+- Used `->` (two ASCII bytes) instead of `→` (U+2192) for new content: brief gotcha called for "ASCII ONLY." The pre-commit hook only enforces ASCII on `*.ps1` files in practice, but the defensive choice for the new section makes the content portable to any consumer (some downstream tooling or AI agents may CP1252-decode). Existing Linux line with `→` left untouched (out of scope).
+- Table format chosen over a flat bullet list: 12 steps with three columns (function name, source module, Linux mirror) is dense enough that a table is the more readable form.
+
+**Out of scope but worth a follow-up issue:** File Structure tree at ARCHITECTURE.md:54 still lists `auth.ps1` at the `scripts/windows/` root level. PR #297 moved it into `tools/`. The new Dep Order section explicitly cross-references the move so readers are not misled, but the tree itself is stale. Recommend a separate narrow PR to refresh the windows/ subtree in the File Structure section -- not folded here to keep this PR scope tight.
+
+**Verification:** Read `scripts/windows/setup.ps1` directly (lines 1-77) to confirm invocation order from `Main()`. Did not infer from filenames, dot-source order, or prior documentation. Confirmed `lib/` load order from lines 16-17, tool dot-source order from lines 24-34, and `Main()` call order from lines 48-75.
+
+---
+
+### 2026-05-17: Bash test harness convention -- `set -uo pipefail` + tally counters
+**By:** Donald (Shell Dev)
+**What:** Documented the bash test harness convention in `CONTRIBUTING.md` (`Test Harness Pattern` section) and authored `.squad/skills/test-harness-pattern/SKILL.md`. Convention: tests in `tests/*.sh` use `set -uo pipefail` (intentionally NOT `-euo`) so individual assertion failures do not abort the suite; PASS/FAIL state is tallied via counters and the script exits non-zero only when `FAIL > 0`. `-euo` is acceptable only when every potentially-failing command is wrapped in `if`/`||` (three current files do this).
+**Why:** Convention was non-obvious to contributors -- a well-meaning "fix" to add `-e` to a tally suite would break it silently (first failing assertion aborts before the rest of the tests run; CI sees a partial run). Issue #237 surfaced the need to codify the rule. Source-grounded in seven existing bash test files; mixed `-uo` / `-euo` reality documented honestly rather than rewritten.
+**Scope:** Bash tests only. PowerShell tests use a separate `Test-Scenario` harness (`test_windows_setup.ps1`) and are out of scope; would need a separate ticket if a similar codification is wanted there.
+**References:** PR (closes #237); CONTRIBUTING.md `Test Harness Pattern` section; `.squad/skills/test-harness-pattern/SKILL.md`.
+
+---
+
+### 2026-05-17: install-guard helper deferred (closes #235)
+
+**By:** Goofy (Cross-Platform Dev), Sprint 12 Wave 2 -- on behalf of Earl Tankard, Jr., Ph.D.
+
+**What:** Confirmed Case B from the dispatch decision flow -- the `install-guard` /
+`Install-Guard` helper does NOT exist anywhere in `scripts/lib/`,
+`scripts/{linux,windows}/lib/`, or any `scripts/{linux,windows}/setup.{sh,ps1}`
+on develop @ 69391b5. Only proposal-level mentions remain in
+`.squad/agents/mickey/history.md` (V-8 verification, 2026-05-16) and a
+Sprint 11 retro. Issue #235 closed as `not planned`.
+
+**Why:** A premature shared helper would mask the actual diversity in current
+"already installed?" checks. The ~12 tool scripts span three distinct shapes:
+
+1. **Simple presence + early exit** (no version pin): `zsh.sh`, `uv.sh`,
+   `git.ps1`, `vim.ps1`, `uv.ps1`, `psmux.ps1`. Idiom: `command -v X` /
+   `Get-Command X` -> log "already installed" -> exit/return.
+2. **Version-pinned check** (regex extract + compare): `gh.sh/ps1`,
+   `squad-cli.sh/ps1`, `copilot-cli.sh` / `copilot.ps1`, `nvm.sh/ps1` (Node
+   side). Idiom: regex `[0-9]+\.[0-9]+\.[0-9]+` against `--version`, compare
+   against value from `Read-ToolVersion.ps1` / `read-tool-version.sh`, return
+   early on match.
+3. **Composite presence + secondary probe**: `nvm.sh` (`$NVM_DIR/nvm.sh` file
+   test), `nvm.ps1` (`Test-Path nvm.exe`), `copilot.ps1` (gh extension list
+   regex against `gh-copilot`).
+
+A single helper today would either (a) cover only Pattern 1 and leave the
+version-pinned majority untouched, (b) cover Patterns 1+2 and punt Pattern 3,
+or (c) over-engineer with conditional knobs. None is a win at this scale.
+
+**Threshold rule (going forward):** revisit when **3+ new tools sharing a
+single check shape** are added (e.g., 3+ tools that all do version-pinned
+checks against `Read-ToolVersion`). Until then, the inline pattern plus
+`Read-ToolVersion.ps1` / `read-tool-version.sh` lookup remains the canonical
+idiom, already documented in CONTRIBUTING.md "Tool Version Pin Enforcement".
+
+**Outcome:** No code changes. No PR. Issue #235 closed as `not planned` with
+verification comment. Worktree `dev-setup-235` has no commits -- safe to
+remove without remote-branch cleanup (no `git push --delete origin
+squad/235-defer-install-guard` needed).
+
+---
+
+### 2026-05-17: Worktree-isolation discipline gap (Sprint 12 Wave 2 audit finding)
+
+**By:** Jiminy (Hygiene Auditor) -- on behalf of Earl Tankard, Jr., Ph.D.
+**Trigger:** Post-batch audit, 3-agent threshold (Mickey #310/PR #321, Donald #237/PR #320, Goofy #235 Case B).
+
+**What:** During Sprint 12 Wave 2, Mickey (dispatched into worktree `dev-setup-310` for issue #310) wrote his decision drop `mickey-arch-windows-dep-20260517.md` (3432 B) to the MAIN checkout's `.squad/decisions/inbox/` instead of `dev-setup-310/.squad/decisions/inbox/`. Worktree -310's inbox is empty. A second related symptom in the same run: an unrelated stray edit to `ARCHITECTURE.md` (em-dash to `--` normalization, 58 lines) was made on the MAIN checkout and had to be reverted by the coordinator. Two distinct write-to-wrong-CWD events in one agent run.
+
+Mickey's actual PR commit (`fd0401a` on `squad/310-arch-windows-dep-order`) is clean and correct -- ARCH, CHANGELOG, history.md only, no inbox file. So the file-system writes for the PR-bound artifacts went to the right tree, but the decision drop and the abortive ARCH edit both went to the wrong tree.
+
+In the same wave, Donald's parallel spawn (worktree `dev-setup-237`, issue #237) wrote his decision drop CORRECTLY to `dev-setup-237/.squad/decisions/inbox/donald-test-harness-20260517.md`. Same dispatch shape, different outcome. The failure is non-deterministic and likely depends on which tool the agent invokes (PowerShell `Set-Content`/`Add-Content` vs `node` vs `git` resolve paths differently with respect to inherited CWD vs `TEAM_ROOT`).
+
+**Why this matters:** Worktree isolation is the lynchpin of the parallel-agent strategy (codified in `.squad/skills/worktree-isolation/SKILL.md`, Sprint 4 incident, PR #56). When an agent writes to the main checkout instead of its own worktree:
+1. The drop bypasses the per-branch decision audit trail (Scribe's fold logic expects drops to travel WITH the PR commit, not as out-of-band edits to main).
+2. It creates "phantom" unstaged state on `develop`, which the develop-first rule prohibits.
+3. It risks cross-agent collisions if two agents happen to write same-named files to the main checkout simultaneously.
+4. It defeats the `.gitattributes merge=union` strategy for append-only files (the merge driver only helps when both sides commit the change on their own branch).
+
+In this case the harm was contained -- coordinator harvested the rogue drop into the main inbox before damage spread, and the stray ARCH edit was reverted. But the PATTERN is the concern, not this instance.
+
+**Proposed remediation (pick one or stack them):**
+
+1. **Pre-spawn CWD pinning (recommended primary).** Coordinator wraps every worktree-bound dispatch with explicit CWD pinning at the prompt-template level:
+   ```
+   IMPORTANT: Before any file write, run:
+     PowerShell:  Set-Location -LiteralPath "$WORKTREE_PATH"
+     bash:        cd "$WORKTREE_PATH"
+   Verify:
+     PowerShell:  (Get-Location).Path  -- must equal $WORKTREE_PATH
+     bash:        pwd                   -- must equal $WORKTREE_PATH
+   If verification fails, ABORT and report. Do not proceed with any write.
+   ```
+   This puts the burden on the agent's FIRST tool call (cheap), and surfaces the violation immediately if the environment is misconfigured.
+
+2. **Post-write CWD audit step (recommended secondary, defense-in-depth).** Add a final agent-side step before the response-order summary:
+   ```
+   Verify all writes landed under $WORKTREE_PATH:
+     git -C "$WORKTREE_PATH" status --porcelain  -- should show your changes
+     git -C "$MAIN_CHECKOUT" status --porcelain  -- should be UNCHANGED
+   If main checkout shows changes you did not intend, abort and report.
+   ```
+   This catches the failure mode AFTER it happens, before the response-order block, so the coordinator at least learns of it.
+
+3. **Coordinator post-spawn diff check.** Coordinator, after collecting agent results, diffs main checkout against pre-spawn snapshot. Any unexpected file in main -> flag and offer to harvest+revert. This is what the coordinator did manually for Mickey's stray ARCH edit; codify it.
+
+4. **Tool-level fix (longest path).** Wrap PowerShell `Set-Content` / `Add-Content` / `New-Item` in a squad-cli helper that requires `-WorkingDirectory` and refuses ambient CWD. Big lift; defer unless 1+2+3 prove insufficient.
+
+**Recommendation:** Adopt #1 + #2 immediately in the standard dispatch prompt template. #3 is a coordinator-side discipline addition (one-line `git status` comparison before declaring an agent "done"). #4 is overkill for now.
+
+**Out-of-scope follow-ups noted in audit (file separately):**
+- Pre-commit hook ASCII-scan (`hooks/pre-commit` Check 2) globs only `*.ps1`. HEAD's `ARCHITECTURE.md` has 134 non-ASCII line hits (em-dashes, box-drawing, U+2192) that escaped the hook. README has 60, CONTRIBUTING has 12, plus widespread `.squad/` and `.copilot/` content. Recommend a separate ticket: either extend Check 2 to `*.md` (after a one-time normalize sweep) OR explicitly document that ASCII enforcement is `.ps1`-only and `.md` is author discretion. The current state is "implicit silent gap" which is the worst of both worlds.
+
+**References:**
+- `.squad/skills/worktree-isolation/SKILL.md` (Sprint 4 origin)
+- `.squad/agents/mickey/history.md` (Mickey's own note: "pre-commit hook only guards `*.ps1`")
+- `hooks/pre-commit` lines 31-66 (Check 2 scope)
+- PRs #321 (Mickey) + #320 (Donald) -- the contrast pair that revealed the non-determinism
