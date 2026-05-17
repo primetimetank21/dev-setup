@@ -265,3 +265,44 @@ Appended team updates to:
     outside that scope, defer summarization and flag in the health report
     rather than expanding the staging glob. The hard gate fires next pass;
     discipline beats sprawl.
+
+### 2026-05-17 -- Sprint 12 Wave 2 fold
+
+- Drained 4 inbox decisions to .squad/decisions.md (appended under new
+  "## 2026-05-17 entries (Sprint 12 Wave 2 fold)" section):
+  - mickey-arch-windows-dep-20260517.md (ARCH Windows Dep Order, closes #310)
+  - donald-test-harness-20260517.md (bash test harness pattern, closes #237)
+  - goofy-install-guard-deferral-20260517.md (Case B closure, abstraction
+    3-site rule, closes #235 as not_planned)
+  - jiminy-wave-2-audit-20260517.md (worktree-isolation remediation, pre-commit
+    ASCII scope gap surfaced as #322)
+- Folded staged history modifications from MAIN checkout (goofy + jiminy) by
+  copying file content into this worktree and staging via explicit git add --.
+  Same content path as a normal commit -- coordinator will clear the M state
+  on main after this PR merges with git checkout -- .squad/agents/{goofy,jiminy}/history.md.
+- Decisions.md gate state: pre-fold 44,473 B -> post-fold 57,253 B. **50 KB
+  hard gate crossed, but NO entries eligible for 7-day archive cut** -- the
+  oldest live entry is dated 2026-05-14 (3 days old). Strict-rule reading: the
+  archive step ran with empty eligibility set. File will remain at ~57 KB until
+  next fold when the 2026-05-14 entries age past the 7-day window.
+- Orchestration log entries written for the 5 wave events (PR #320, PR #321,
+  Goofy #235 Case B close, Jiminy audit, issue #322 filing). Directory is
+  gitignored -- entries are local-only operational logs.
+- Session log: `.squad/sessions/2026-05-17.md` (gitignored, local-only) per
+  dispatch instruction. Note: prior Scribe convention pointed at `.squad/log/`
+  (singular) for session logs -- both are gitignored, both work, dispatch wins.
+  Possible drift between dispatch template and Scribe charter convention worth
+  reconciling in a future pass.
+- CHANGELOG [Unreleased] -> ### Changed: one fold-note entry (Sprint 12
+  Wave 2 fold).
+- Hard guardrails honored: branch squad/scribe-sprint-12-wave-2-fold from
+  develop @ def5e59, no direct develop commits, conventional commit prefix
+  docs(scribe):, explicit-path staging only (no git add .squad/), worktree
+  CWD pinned at every file write (per Jiminy Wave 2 audit remediation).
+- **History gate WARNINGS (>= 15 KB, no archival this fold per #319 scope):**
+  scribe 15.8 KB (this entry pushes past gate), chip 36.9 KB, donald 28.5 KB,
+  goofy 39.9 KB, jiminy 24.3 KB, mickey 75.5 KB, pluto 29.7 KB, ralph 23.9 KB.
+  Eight agents at or above the warn line. Pluto and Doc remain healthy / low.
+  Recommend Coordinator schedule history-archival sweep (issue #319 scope)
+  after Wave 2 settles.
+- Main-checkout post-commit verification: see PR description / summary.

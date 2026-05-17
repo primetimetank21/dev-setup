@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ARCHITECTURE.md: rewrote `Script Conventions` section to point at `scripts/{linux,windows}/lib/` as source of truth; documents `source` / dot-source loading + `Read-ToolVersion.ps1` parser pattern (closes #309)
 - Sprint naming convention reverted from letters back to numbers: Q -> Sprint 8-hotfix, R -> Sprint 9, S -> Sprint 10, T -> Sprint 11; next = Sprint 12. Tier 3 full sweep across 21 files (~170 refs). Retro files renamed with `git mv`. First-occurrence `(formerly Sprint X)` aliases added for grep continuity. CONTRIBUTING.md "Sprint Naming Convention" section updated with mapping table and aliasing convention.
 - `.aliases`: added header marking the file as bash/zsh-only (not POSIX); documents non-POSIX features in use and intended loading pattern (closes #236)
+- `.squad/decisions.md`: drained 4 Wave 2 inbox drops (mickey #310, donald #237, goofy #235, jiminy audit); folded staged history modifications (goofy, jiminy); archive gate crossed (57 KB >= 50 KB) but no entries eligible for 7-day cut (oldest live entry 2026-05-14, 3 days old) -- (Sprint 12 Wave 2 fold)
 
 ### Removed
 - Legacy GitHub labels `priority: high`, `priority: medium`, `priority: low` (with spaces) deleted; canonical taxonomy is now `priority:p0..p3` (closes #254)

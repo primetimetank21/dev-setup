@@ -596,3 +596,51 @@ $global:LASTEXITCODE = 0   # reset after classification
 Must use `$global:LASTEXITCODE` (not local `$LASTEXITCODE = 0` which only
 shadows the automatic variable).
 
+
+### Sprint 12 Wave 2 -- #235 install-guard deferral (Case B, 2026-05-17)
+
+**Reassigned from Mickey** mid-sprint to fit my cross-platform scripts lane.
+Investigated, applied the dispatch decision flow's Case B (helper does not exist;
+only proposed), closed the issue as `not planned`. No code changes, no PR.
+
+**Investigation summary:**
+- Searched `scripts/lib/`, `scripts/{linux,windows}/lib/`, both `setup.{sh,ps1}`,
+  and every `scripts/{linux,windows}/tools/*` for `install-guard` /
+  `Install-Guard` / `is_installed` / `Test-IsInstalled` / `IsInstalled`.
+  Zero hits in code. Only mentions are in Mickey's history (V-8 audit, 2026-05-16)
+  and the Sprint 11 retro.
+- Mapped the current "already installed?" idioms across ~12 tool scripts and
+  found three distinct shapes (simple presence, version-pinned regex, composite
+  presence + secondary probe). A premature helper would either undercover or
+  over-engineer.
+
+**Threshold rule formalized (Case B closure note):** revisit when 3+ tools
+sharing a single check shape land (e.g., 3+ version-pinned tools using
+`Read-ToolVersion`). Until then, the inline idiom plus `Read-ToolVersion.ps1` /
+`read-tool-version.sh` is the canonical pattern -- already documented in
+CONTRIBUTING.md "Tool Version Pin Enforcement".
+
+**Files touched in worktree (NOT committed -- per Case B "no PR" instruction):**
+- `.squad/decisions/inbox/goofy-install-guard-deferral-20260517.md` -- decision drop
+- `.squad/agents/goofy/history.md` -- this entry
+
+**Worktree status:** branch `squad/235-defer-install-guard` has zero commits.
+Worktree `C:\Users\Earl Tankard\Coding\dev-setup-235` is safe to remove. No
+remote-branch cleanup needed (the branch was created locally and never pushed).
+Coordinator/Scribe should harvest the two `.squad/` files above into the main
+checkout before `git worktree remove` runs, or they will be lost.
+
+**Coordination notes:**
+- Mickey (working on #310, ARCHITECTURE.md Windows Dep Order): no overlap --
+  I did not touch ARCHITECTURE.md.
+- Donald (working on #237, CONTRIBUTING.md test harness): no overlap --
+  I did not touch CONTRIBUTING.md. Future deferral revisit may add a brief
+  note under "Tool Version Pin Enforcement" but only when the 3-site threshold
+  is met, which is post-Sprint 12.
+
+**Skill candidate noted:** "abstraction-threshold" rule (the 3-site shared-pattern
+test) is potentially reusable beyond this issue. Did NOT formalize as
+`.squad/skills/abstraction-threshold/SKILL.md` yet -- one application is not
+enough to confirm. Will lift to a skill the next time we defer a premature
+helper for the same reason (e.g., a future "shared CLI auth helper" or "shared
+PATH-refresh helper" deferral). At that point the pattern earns `low` confidence.
