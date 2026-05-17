@@ -121,3 +121,48 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
   fact-checks (Sprint 9 / Sprint 10 batch reviews) because those produce
   cumulative `.squad/agents/doc/history.md` entries that benefit from the
   isolated worktree pattern.
+
+
+### 2026-05-17 -- Sixth verification: Issue #342 README fact-check audit (Sprint 13 changes)
+
+- Single-target README audit on squad/342-readme-audit (base develop @ bf1b44f).
+  Audit-only dispatch; Mickey applies edits in Wave 2.
+- **8 divergences found** (3 HIGH / 2 MEDIUM / 3 LOW). Verdict: PROCEED.
+- **HIGH F1:** README pre-commit description (L194-L196) reduces a 6-check
+  hook to "Runs shellcheck on staged .sh files". Sprint 13 ASCII scope
+  expansion to .md and .sh (#322B / PR #334) is unmentioned.
+- **HIGH F2:** scripts/lib/ascii-sweep.py (PR #335) is absent from README;
+  zero hits for "ascii-sweep" or "ASCII" anywhere.
+- **HIGH F3 (gate for Wave 2):** README.md itself carries 645 non-ASCII bytes
+  inside the file-tree fenced code block (L80-L130) -- box-drawing glyphs
+  U+251C/U+2502/U+2514/U+2500 plus U+2014 em dashes. ascii-sweep.py preserves
+  fenced code by design and does NOT clean them; pre-commit Check 2 scans
+  full staged content regardless of fences. Any in-place README edit will
+  fail to commit until those bytes are converted. Recommend Mickey clean
+  the tree block FIRST in Wave 2.
+- **MEDIUM F4/F5:** file-tree scripts/lib/ entry missing ascii-sweep.py;
+  file-tree pre-commit one-liner (L115) understated.
+- **LOW F6:** scripts/{linux,windows}/lib/ subdirs not in README tree
+  (defensible -- README operates above ARCHITECTURE's detail level).
+- **LOW F7:** README does not state pre-commit also refuses direct commits
+  on develop/main/master (Check 5 of the hook).
+- **LOW F8:** task brief mentioned "10 agents now"; team.md and
+  .squad/agents/ both have exactly 9 entries. README's "nine" is correct.
+  Flagged to Mickey to confirm with Earl before bumping.
+- **Pattern note (gitignore-vs-allow-list collision):** the dispatch brief
+  told me to git add .squad/decisions/inbox/doc-readme-audit-2026-05-17.md.
+  That path is gitignored (.gitignore L4) AND would be rejected by
+  pre-commit Check 4 even if force-staged. Resolved by also writing the
+  audit to .squad/decisions/doc-readme-audit-2026-05-17.md (canonical,
+  hook-allowed; mirrors goofy-ascii-sweep.md convention). The inbox copy
+  remains on disk per Doc charter; the canonical copy is the PR artifact.
+  Recommend updating Doc's dispatch template so future audits route
+  straight to .squad/decisions/ when the PR must carry the artifact.
+- Cross-checks that PASSED: 4-hook count (#326/PR #330), auth.ps1 tools/
+  path (#297), .tool-versions excerpt byte-match, supported platforms,
+  clone/pwsh quick-start, commit-msg + prepare-commit-msg + pre-push
+  descriptions. Recorded in audit "Cross-checks that PASSED" section so
+  Mickey does not re-verify them.
+- Audit file: .squad/decisions/doc-readme-audit-2026-05-17.md (14770 bytes,
+  0 non-ASCII). Inbox mirror: .squad/decisions/inbox/doc-readme-audit-2026-05-17.md
+  (gitignored, not committed).
