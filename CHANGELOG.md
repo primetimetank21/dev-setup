@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- squad: Sprint 13 retrospective at .squad/retros/2026-05-17-sprint-13-retro.md
 
 ### Changed
 
