@@ -6,7 +6,7 @@ source: https://github.com/tamirdresher/squad-skills/tree/main/plugins/github-mu
 author: tamirdresher
 ---
 
-# GitHub Multi-Account — AI-Driven Setup
+# GitHub Multi-Account -- AI-Driven Setup
 
 ## When to Activate
 When the user has multiple GitHub accounts (check with `gh auth status`). If you see 2+ accounts listed, this skill applies.
@@ -74,13 +74,13 @@ ghw api user --jq '.login'   # should show work username
 ### Step 5: Tell the user
 "All set! From now on use `ghp` for personal repos and `ghw` for work repos. I'll use them too."
 
-## After Setup — Usage Rules
+## After Setup -- Usage Rules
 
-1. **NEVER** use bare `gh` for repo operations — always `ghp` or `ghw`
-2. **NEVER** manually `gh auth switch` — the aliases handle it
+1. **NEVER** use bare `gh` for repo operations -- always `ghp` or `ghw`
+2. **NEVER** manually `gh auth switch` -- the aliases handle it
 3. Determine alias by repo owner:
-   - Personal account repos → `ghp` / `gh-personal`
-   - Work/EMU account repos → `ghw` / `gh-work`
+   - Personal account repos -> `ghp` / `gh-personal`
+   - Work/EMU account repos -> `ghw` / `gh-work`
 
 ## Repo-Specific Account Binding
 

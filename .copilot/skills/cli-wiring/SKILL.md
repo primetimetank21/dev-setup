@@ -2,7 +2,7 @@
 
 **Bug class:** Commands implemented in `packages/squad-cli/src/cli/commands/` but never routed in `cli-entry.ts`.
 
-## Checklist — Adding a New CLI Command
+## Checklist -- Adding a New CLI Command
 
 1. **Create command file** in `packages/squad-cli/src/cli/commands/<name>.ts`
    - Export a `run<Name>(cwd, options)` async function (or class with static methods for utility modules)
@@ -23,7 +23,7 @@
    console.log(`             Usage: <name> [flags]`);
    ```
 
-4. **Verify both exist** — the recurring bug is doing step 1 but missing steps 2-3.
+4. **Verify both exist** -- the recurring bug is doing step 1 but missing steps 2-3.
 
 ## Wiring Patterns by Command Type
 

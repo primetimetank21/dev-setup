@@ -79,9 +79,9 @@ Track delegated work completion:
 squad discover
 
 # Output:
-#   platform-squad  →  org/platform  (kubernetes, helm, monitoring)
-#   frontend-squad  →  org/frontend  (react, nextjs, storybook)
-#   data-squad      →  org/data      (spark, airflow, dbt)
+#   platform-squad  ->  org/platform  (kubernetes, helm, monitoring)
+#   frontend-squad  ->  org/frontend  (react, nextjs, storybook)
+#   data-squad      ->  org/data      (spark, airflow, dbt)
 ```
 
 ### Delegating work
@@ -106,9 +106,9 @@ export default defineSquad({
 ```
 
 ## Anti-Patterns
-- **Direct file writes across repos** — Never modify another squad's `.squad/` directory. Use issues and PRs as the communication protocol.
-- **Tight coupling** — Don't depend on another squad's internal structure. Use the manifest as the public API contract.
-- **Unbounded delegation** — Always include acceptance criteria and a timeout. Don't create open-ended requests.
-- **Skipping discovery** — Don't hardcode squad locations. Use manifests and the discovery protocol.
-- **Sharing secrets** — Never include credentials, tokens, or internal URLs in cross-squad issues.
-- **Circular delegation** — Track delegation chains. If squad A delegates to B which delegates back to A, something is wrong.
+- **Direct file writes across repos** -- Never modify another squad's `.squad/` directory. Use issues and PRs as the communication protocol.
+- **Tight coupling** -- Don't depend on another squad's internal structure. Use the manifest as the public API contract.
+- **Unbounded delegation** -- Always include acceptance criteria and a timeout. Don't create open-ended requests.
+- **Skipping discovery** -- Don't hardcode squad locations. Use manifests and the discovery protocol.
+- **Sharing secrets** -- Never include credentials, tokens, or internal URLs in cross-squad issues.
+- **Circular delegation** -- Track delegation chains. If squad A delegates to B which delegates back to A, something is wrong.

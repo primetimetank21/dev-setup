@@ -40,41 +40,41 @@ failed -- look for `[ ] FAIL` lines in the output.
 === dev-setup Idempotency Test Suite ===
     Repo root: /workspaces/dev-setup
 
-ℹ  INFO: --- Tool script existence ---
-✅ PASS: zsh.sh exists
-✅ PASS: uv.sh exists
-✅ PASS: nvm.sh exists
-✅ PASS: gh.sh exists
-✅ PASS: copilot-cli.sh exists
+[i]  INFO: --- Tool script existence ---
+[x] PASS: zsh.sh exists
+[x] PASS: uv.sh exists
+[x] PASS: nvm.sh exists
+[x] PASS: gh.sh exists
+[x] PASS: copilot-cli.sh exists
 
-ℹ  INFO: --- Tool installation verification ---
-✅ PASS: zsh is on PATH
-✅ PASS: gh CLI is on PATH
-✅ PASS: uv is on PATH (~/.local/bin)
-✅ PASS: nvm is available (sourced from /root/.nvm)
-✅ PASS: node is on PATH
-✅ PASS: npm is on PATH
+[i]  INFO: --- Tool installation verification ---
+[x] PASS: zsh is on PATH
+[x] PASS: gh CLI is on PATH
+[x] PASS: uv is on PATH (~/.local/bin)
+[x] PASS: nvm is available (sourced from /root/.nvm)
+[x] PASS: node is on PATH
+[x] PASS: npm is on PATH
 
-ℹ  INFO: --- Tool script idempotency (second-run) ---
-✅ PASS: zsh.sh: idempotent — detected existing install on second run
-✅ PASS: uv.sh: idempotent — detected existing install on second run
-✅ PASS: nvm.sh: idempotent — detected existing install on second run
-✅ PASS: gh.sh: idempotent — detected existing install on second run
-✅ PASS: copilot-cli.sh: no error on second run
+[i]  INFO: --- Tool script idempotency (second-run) ---
+[x] PASS: zsh.sh: idempotent -- detected existing install on second run
+[x] PASS: uv.sh: idempotent -- detected existing install on second run
+[x] PASS: nvm.sh: idempotent -- detected existing install on second run
+[x] PASS: gh.sh: idempotent -- detected existing install on second run
+[x] PASS: copilot-cli.sh: no error on second run
 
-ℹ  INFO: --- Config file integrity ---
-✅ PASS: /etc/shells: no duplicate zsh entry (count: 1)
-✅ PASS: No duplicate NVM_DIR in ~/.zshrc (found 1 occurrence)
-✅ PASS: No duplicate .local/bin in ~/.zshrc (found 1 occurrence)
-✅ PASS: No duplicate nvm.sh source line in ~/.zshrc (found 1 occurrence)
-✅ PASS: NVM_DIR exists: /root/.nvm
+[i]  INFO: --- Config file integrity ---
+[x] PASS: /etc/shells: no duplicate zsh entry (count: 1)
+[x] PASS: No duplicate NVM_DIR in ~/.zshrc (found 1 occurrence)
+[x] PASS: No duplicate .local/bin in ~/.zshrc (found 1 occurrence)
+[x] PASS: No duplicate nvm.sh source line in ~/.zshrc (found 1 occurrence)
+[x] PASS: NVM_DIR exists: /root/.nvm
 
-ℹ  INFO: --- Full setup.sh second-run integration test ---
-✅ PASS: setup.sh: second run completed without error
+[i]  INFO: --- Full setup.sh second-run integration test ---
+[x] PASS: setup.sh: second run completed without error
 
-═══════════════════════════════════════
+=======================================
  Results: 21 passed, 0 failed
-═══════════════════════════════════════
+=======================================
 ```
 
 ## Known limitations
