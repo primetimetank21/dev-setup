@@ -8,6 +8,7 @@
 
 # Binary artifacts — do not commit compiled binaries or archives
 *.tar.gz
+*.tgz
 *.zip
 *.dll
 *.exe
