@@ -6,17 +6,17 @@
 
 ## Summary
 
-Created GitHub issues #102 and #103 to track Windows PowerShell setup bugs discovered during test writing session. Reviewed commits c06ceb2 and 9a63720 — APPROVED both.
+Created GitHub issues #102 and #103 to track Windows PowerShell setup bugs discovered during test writing session. Reviewed commits c06ceb2 and 9a63720 -- APPROVED both.
 
 ## Issues Created
 
-- **#102:** PS5 compatibility test failures — tracks PSAvoidUsingEmptyCatchBlock lint issue
-- **#103:** Profile corruption + Copilot CLI install — tracks setup.ps1 script-related issues
+- **#102:** PS5 compatibility test failures -- tracks PSAvoidUsingEmptyCatchBlock lint issue
+- **#103:** Profile corruption + Copilot CLI install -- tracks setup.ps1 script-related issues
 
 ## Commits Reviewed
 
-- **c06ceb2** — APPROVED: Initial test implementation (chip-write-tests)
-- **9a63720** — APPROVED: Windows setup test suite
+- **c06ceb2** -- APPROVED: Initial test implementation (chip-write-tests)
+- **9a63720** -- APPROVED: Windows setup test suite
 
 ## Outcome
 

@@ -6,12 +6,12 @@
 
 | Tool | Purpose |
 |------|---------|
-| `zsh` | Shell — installed and set as default on Linux/macOS |
+| `zsh` | Shell -- installed and set as default on Linux/macOS |
 | `uv` | Python package and environment manager (fast pip replacement) |
 | `nvm` + Node.js LTS | Node Version Manager + latest Node LTS |
 | `gh` | GitHub CLI |
 | GitHub Copilot CLI | AI pair programmer in your terminal (`gh copilot`) |
-| `vim` | Modal text editor — installed on all platforms |
+| `vim` | Modal text editor -- installed on all platforms |
 | `tmux` | Terminal multiplexer (Linux/macOS) |
 | `psmux` | Terminal multiplexer (Windows) |
 | `squad-cli` | AI agent orchestration tool (installed via npm) |
@@ -21,11 +21,11 @@
 
 | Platform | Status | Entry point |
 |----------|:------:|-------------|
-| Linux (native) | ✅ | `bash setup.sh` |
-| macOS | ✅ | `bash setup.sh` |
-| WSL (Windows Subsystem for Linux) | ✅ | `bash setup.sh` |
-| Windows (native PowerShell) | ✅ | `powershell -ExecutionPolicy Bypass -File setup.ps1` |
-| Dev Container / GitHub Codespace | ✅ | Automatic (runs on container creation) |
+| Linux (native) | [x] | `bash setup.sh` |
+| macOS | [x] | `bash setup.sh` |
+| WSL (Windows Subsystem for Linux) | [x] | `bash setup.sh` |
+| Windows (native PowerShell) | [x] | `powershell -ExecutionPolicy Bypass -File setup.ps1` |
+| Dev Container / GitHub Codespace | [x] | Automatic (runs on container creation) |
 
 ## Quick Start
 
@@ -129,7 +129,7 @@ dev-setup/
     └── ...                     — see ARCHITECTURE.md for the full breakdown
 ```
 
-Root entry points (`setup.sh`, `setup.ps1`) are thin routers — they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
+Root entry points (`setup.sh`, `setup.ps1`) are thin routers -- they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
 
 ## Shell Aliases
 
@@ -152,7 +152,7 @@ After running setup, you get shortcuts for common git, dev, and utility commands
 **ls shortcuts** (Linux/macOS only): `ll`, `la`, `l`, `lh`
 
 Full definitions:
-- **Linux/macOS:** `config/dotfiles/.aliases` (bash/zsh only — see header for the non-POSIX features in use)
+- **Linux/macOS:** `config/dotfiles/.aliases` (bash/zsh only -- see header for the non-POSIX features in use)
 - **Windows:** `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function)
 
 ## Shell Functions
@@ -161,13 +161,13 @@ Three helper functions are available after setup:
 
 ### Linux / macOS / WSL
 
-**`create_tmux`** — Create or attach to the `tank_dev` tmux session. If the session exists, attaches to it. If not, creates it first.
+**`create_tmux`** -- Create or attach to the `tank_dev` tmux session. If the session exists, attaches to it. If not, creates it first.
 
 ```bash
 create_tmux
 ```
 
-**`start_up`** — Shortcut that calls `create_tmux`. Use this in your shell startup for auto-attach.
+**`start_up`** -- Shortcut that calls `create_tmux`. Use this in your shell startup for auto-attach.
 
 ```bash
 start_up
@@ -175,7 +175,7 @@ start_up
 
 ### Windows
 
-**`New-PsmuxSession`** — Create or attach to the `tank_dev` psmux session (Windows equivalent of `create_tmux`).
+**`New-PsmuxSession`** -- Create or attach to the `tank_dev` psmux session (Windows equivalent of `create_tmux`).
 
 ```powershell
 New-PsmuxSession
@@ -212,8 +212,8 @@ Rewrites git's auto-generated merge/revert commit messages into Conventional Com
 ### `pre-push`
 
 1. **Blocks** direct pushes to `main` (hard stop).
-2. **Runs shellcheck** on changed `.sh` files — advisory, never blocks (Linux/macOS).
-3. **Runs PSScriptAnalyzer** on changed `.ps1` files — advisory, never blocks (requires `pwsh` + PSScriptAnalyzer module; silently skipped if absent).
+2. **Runs shellcheck** on changed `.sh` files -- advisory, never blocks (Linux/macOS).
+3. **Runs PSScriptAnalyzer** on changed `.ps1` files -- advisory, never blocks (requires `pwsh` + PSScriptAnalyzer module; silently skipped if absent).
 
 Use `--no-verify` to bypass hooks in emergencies.
 
@@ -239,7 +239,7 @@ To bump a tool version, edit the version number in `.tool-versions` and re-run s
 
 **Dotfiles:** Edit or add templates in `config/dotfiles/`. Each file is copied into your home directory on first run. Existing files are not overwritten unless you pass `--force`.
 
-**Adding a tool:** Drop a new script in `scripts/linux/tools/` (or `scripts/windows/`) following the naming pattern of existing tools, then call it from `scripts/linux/setup.sh` (or the Windows equivalent). Scripts must be idempotent — check whether the tool is already installed before doing anything.
+**Adding a tool:** Drop a new script in `scripts/linux/tools/` (or `scripts/windows/`) following the naming pattern of existing tools, then call it from `scripts/linux/setup.sh` (or the Windows equivalent). Scripts must be idempotent -- check whether the tool is already installed before doing anything.
 
 ## Contributing
 

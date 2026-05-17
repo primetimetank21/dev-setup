@@ -6,24 +6,24 @@
 
 The [circuit breaker template](ralph-circuit-breaker.md) handles single-instance rate limiting well. But when multiple Ralphs run across machines (or pods on K8s), each instance independently hits API limits:
 
-- **No coordination** — 5 Ralphs each think they have full API quota
-- **Thundering herd** — All Ralphs retry simultaneously after rate limit resets
-- **Priority inversion** — Low-priority work exhausts quota before critical work runs
-- **Reactive only** — Circuit opens AFTER 429, wasting the failed request
+- **No coordination** -- 5 Ralphs each think they have full API quota
+- **Thundering herd** -- All Ralphs retry simultaneously after rate limit resets
+- **Priority inversion** -- Low-priority work exhausts quota before critical work runs
+- **Reactive only** -- Circuit opens AFTER 429, wasting the failed request
 
 ## Solution: 6-Pattern Architecture
 
-These patterns layer on top of the existing circuit breaker. Each is independent — adopt one or all.
+These patterns layer on top of the existing circuit breaker. Each is independent -- adopt one or all.
 
-### Pattern 1: Traffic Light (RAAS — Rate-Aware Agent Scheduling)
+### Pattern 1: Traffic Light (RAAS -- Rate-Aware Agent Scheduling)
 
 Map GitHub API `X-RateLimit-Remaining` to traffic light states:
 
 | State | Remaining % | Behavior |
 |-------|------------|----------|
-| 🟢 GREEN | >20% | Normal operation |
-| 🟡 AMBER | 5–20% | Only P0 agents proceed |
-| 🔴 RED | <5% | Block all except emergency P0 |
+| [GREEN] GREEN | >20% | Normal operation |
+| [YELLOW] AMBER | 5-20% | Only P0 agents proceed |
+| [RED] RED | <5% | Block all except emergency P0 |
 
 ```typescript
 type TrafficLight = 'green' | 'amber' | 'red';
@@ -149,9 +149,9 @@ Non-overlapping jitter windows prevent thundering herd:
 
 | Priority | Retry Window | Description |
 |----------|-------------|-------------|
-| P0 (Lead) | 500ms–5s | Recovers first |
-| P1 (Specialists) | 2s–30s | Moderate delay |
-| P2 (Ralph/Scribe) | 5s–60s | Most patient |
+| P0 (Lead) | 500ms-5s | Recovers first |
+| P1 (Specialists) | 2s-30s | Moderate delay |
+| P2 (Ralph/Scribe) | 5s-60s | Most patient |
 
 ```typescript
 function getRetryDelay(priority: number, attempt: number): number {
@@ -217,13 +217,13 @@ See [keda-copilot-scaler](https://github.com/tamirdresher/keda-copilot-scaler) f
 
 ## Quick Start
 
-1. **Minimum viable:** Adopt Pattern 1 (Traffic Light) — read `X-RateLimit-Remaining` from API responses
-2. **Multi-machine:** Add Pattern 2 (Cooperative Pool) — shared `rate-pool.json`
-3. **Production:** Add Pattern 3 (Predictive CB) — prevent 429s entirely
+1. **Minimum viable:** Adopt Pattern 1 (Traffic Light) -- read `X-RateLimit-Remaining` from API responses
+2. **Multi-machine:** Add Pattern 2 (Cooperative Pool) -- shared `rate-pool.json`
+3. **Production:** Add Pattern 3 (Predictive CB) -- prevent 429s entirely
 4. **Kubernetes:** Add KEDA scaler for automatic pod scaling
 
 ## References
 
-- [Circuit Breaker Template](ralph-circuit-breaker.md) — Foundation patterns
-- [Squad on AKS](https://github.com/tamirdresher/squad-on-aks) — Production K8s deployment
-- [KEDA Copilot Scaler](https://github.com/tamirdresher/keda-copilot-scaler) — Custom KEDA external scaler
+- [Circuit Breaker Template](ralph-circuit-breaker.md) -- Foundation patterns
+- [Squad on AKS](https://github.com/tamirdresher/squad-on-aks) -- Production K8s deployment
+- [KEDA Copilot Scaler](https://github.com/tamirdresher/keda-copilot-scaler) -- Custom KEDA external scaler

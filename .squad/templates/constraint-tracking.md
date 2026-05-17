@@ -11,7 +11,7 @@ When the user or system imposes constraints (question limits, revision limits, t
 ## Rules
 
 - Update the counter each time the constraint is consumed
-- When a constraint is exhausted, state it: `📊 Question budget exhausted (3/3). Proceeding with current information.`
+- When a constraint is exhausted, state it: `[CHART] Question budget exhausted (3/3). Proceeding with current information.`
 - If no constraints are active, do not display counters
 - Include the final constraint status in multi-agent artifacts
 

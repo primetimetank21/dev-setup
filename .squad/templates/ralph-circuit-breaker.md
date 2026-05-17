@@ -1,4 +1,4 @@
-# Ralph Circuit Breaker — Model Rate Limit Fallback
+# Ralph Circuit Breaker -- Model Rate Limit Fallback
 
 > Classic circuit breaker pattern (Hystrix / Polly / Resilience4j) applied to Copilot model selection.
 > When the preferred model hits rate limits, Ralph automatically degrades to free-tier models, then self-heals.
@@ -14,9 +14,9 @@ Premium models burn quota fast:
 | `claude-sonnet-4.6` | 1x | Moderate with many Ralphs |
 | `claude-opus-4.6` | 10x | High |
 | `gpt-5.4` | 50x | Very high |
-| `gpt-5.4-mini` | **0x** | **Free — unlimited** |
-| `gpt-5-mini` | **0x** | **Free — unlimited** |
-| `gpt-4.1` | **0x** | **Free — unlimited** |
+| `gpt-5.4-mini` | **0x** | **Free -- unlimited** |
+| `gpt-5-mini` | **0x** | **Free -- unlimited** |
+| `gpt-4.1` | **0x** | **Free -- unlimited** |
 
 ## Circuit Breaker States
 
@@ -37,20 +37,20 @@ Premium models burn quota fast:
 ### CLOSED (normal operation)
 - Use preferred model from config
 - Every successful response confirms circuit stays closed
-- On rate limit error → transition to OPEN
+- On rate limit error -> transition to OPEN
 
-### OPEN (rate limited — fallback active)
+### OPEN (rate limited -- fallback active)
 - Fall back through the free-tier model chain:
   1. `gpt-5.4-mini`
   2. `gpt-5-mini`
   3. `gpt-4.1`
 - Start cooldown timer (default: 10 minutes)
-- When cooldown expires → transition to HALF-OPEN
+- When cooldown expires -> transition to HALF-OPEN
 
 ### HALF-OPEN (testing recovery)
 - Try preferred model again
-- If 2 consecutive successes → transition to CLOSED
-- If rate limit error → back to OPEN, reset cooldown
+- If 2 consecutive successes -> transition to CLOSED
+- If rate limit error -> back to OPEN, reset cooldown
 
 ## State File: `.squad/ralph-circuit-breaker.json`
 
@@ -301,10 +301,10 @@ Override defaults by editing `.squad/ralph-circuit-breaker.json`:
 
 The state file tracks operational metrics:
 
-- **totalFallbacks** — How many times the circuit opened
-- **totalRecoveries** — How many times it recovered to preferred model
-- **lastFallbackAt** — ISO timestamp of last rate limit event
-- **lastRecoveryAt** — ISO timestamp of last successful recovery
+- **totalFallbacks** -- How many times the circuit opened
+- **totalRecoveries** -- How many times it recovered to preferred model
+- **lastFallbackAt** -- ISO timestamp of last rate limit event
+- **lastRecoveryAt** -- ISO timestamp of last successful recovery
 
 Query metrics with:
 ```powershell

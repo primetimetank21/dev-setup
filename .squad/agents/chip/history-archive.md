@@ -7,7 +7,7 @@ Archived from history.md on 2026-05-17 per Sprint 13 #319. See history.md for ac
 # Project Context
 
 - **Owner:** Earl Tankard, Jr., Ph.D.
-- **Project:** dev-setup — A replicable setup script system for Dev Containers and Codespaces
+- **Project:** dev-setup -- A replicable setup script system for Dev Containers and Codespaces
 - **Stack:** Bash, Zsh, PowerShell, shell scripting, cross-platform tooling
 - **Created:** 2026-04-07T03:05:10Z
 
@@ -17,16 +17,16 @@ Archived from history.md on 2026-05-17 per Sprint 13 #319. See history.md for ac
 - Target environments: GitHub Codespaces, Dev Containers, fresh machines
 - Tools to install: zsh, uv, nvm, gh CLI, GitHub Copilot CLI, and user shortcuts
 - Dotfiles and shell configs are managed as templates
-- Scripts must be idempotent — safe to run multiple times
+- Scripts must be idempotent -- safe to run multiple times
 
 ## Core Context
 
-**Sprints 1–7 Summary (2026-04-07 to 2026-05-04):**
+**Sprints 1-7 Summary (2026-04-07 to 2026-05-04):**
 
 Established CI/CD validation framework and cross-platform test coverage infrastructure:
 
-- **Sprints 1–4:** Linux/Windows CI workflows, shellcheck (shell scripts), PSScriptAnalyzer (PowerShell)
-- **Sprint 5:** Windows PowerShell regression test suite (15 tests, Groups A–D); idempotency test framework
+- **Sprints 1-4:** Linux/Windows CI workflows, shellcheck (shell scripts), PSScriptAnalyzer (PowerShell)
+- **Sprint 5:** Windows PowerShell regression test suite (15 tests, Groups A-D); idempotency test framework
 - **Sprint 6:** PS 5.1 dual-runtime validation (`Parser::ParseFile` syntax checks, PSScriptAnalyzer on windows-latest); git hooks testing
 - **Sprint 7:** Git hooks tests (commit-msg validation, branch guard); PS variable guard fixes via Test-Path guards (later reverted to PSVersion pattern)
 - **Sprint 8:** Group K, N, O, P test updates for split Windows setup architecture and AllScope alias override verification
@@ -40,9 +40,9 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 - Conditional skip pattern: `Get-Command -ErrorAction SilentlyContinue` outside test block, call `Write-Skip` if found
 
 **Key Files:**
-- `.github/workflows/validate.yml` — 5 jobs: lint-ps, validate-ps (PS 7+), validate-ps51 (PS 5.1), lint-shell, validate-linux
-- `tests/test_windows_setup.ps1` — 61 tests across 11 groups (A–L); Groups A–B verify functions, C–D integration, E vim, F aliases, G squad-cli, J sentinel, K profile paths, L PSScriptAnalyzer hook
-- `tests/test_idempotency.sh` — Linux idempotency baseline
+- `.github/workflows/validate.yml` -- 5 jobs: lint-ps, validate-ps (PS 7+), validate-ps51 (PS 5.1), lint-shell, validate-linux
+- `tests/test_windows_setup.ps1` -- 61 tests across 11 groups (A-L); Groups A-B verify functions, C-D integration, E vim, F aliases, G squad-cli, J sentinel, K profile paths, L PSScriptAnalyzer hook
+- `tests/test_idempotency.sh` -- Linux idempotency baseline
 
 **Tech Debt:**
 - Test file assertions must track actual implementation patterns; static-analysis tests break silently when code refactors
@@ -51,13 +51,13 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
 - Hook bypass pattern: use `case "$STRIPPED" in "Merge "*|"Revert "*) exit 0 ;; esac` to skip validation for git auto-generated messages. Must go BEFORE the regex check so these messages never hit the conventional-commits filter. Position matters -- if the case block is after the regex, the hook rejects before reaching it.
 
-- CP1252 encoding trap: Em dash `—` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
+- CP1252 encoding trap: Em dash `--` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
 - Invoke-Expression for function loading: Load functions at Group scope before Test-Scenario calls; `& ([scriptblock]::Create(...))` creates child scope where functions vanish after test
-- PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks — test suite requirements > runtime logic correctness
+- PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks -- test suite requirements > runtime logic correctness
 - Test suite can check one pattern (e.g., PSVersion guards) but code implements different valid pattern -- tests must be updated in sync
 - PS 5.1 CI step runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so the test file itself must be ASCII-clean (no emojis, em dashes, arrows, or any non-ASCII chars)
 - shellcheck `-s bash` flag is needed for sourced dotfiles like `.aliases` that have no shebang -- tells shellcheck the dialect without requiring SC2148 fix
@@ -212,14 +212,14 @@ Replaced the broad `Merge`/`Revert` case bypass with a spec-compliant approach:
 ## [2026-05-16T01:30:00Z] Issue #197: Non-ASCII Test File Fix (CP1252 Encoding Cleanup)
 
 **Branch:** `squad/197-ps51-compat-fix`  
-**Status:** ✅ COMPLETE — file fully ASCII-clean, committed & pushed
+**Status:** [x] COMPLETE -- file fully ASCII-clean, committed & pushed
 
 Removed 14 non-ASCII characters from `tests/test_windows_setup.ps1` to resolve CP1252 encoding trap on PS 5.1:
 
 **Characters Replaced:**
-- 8 emoji test markers (`✓`, `✗`, `⚠`, etc.) → `[PASS]`, `[FAIL]`, `[SKIP]` text tags
-- 4 em dashes (U+2014) in comments → ` - ` (space-hyphen-space)
-- 2 arrows (U+2192) in comments → `->` (ASCII hyphen-greater-than)
+- 8 emoji test markers (`[x]`, `[ ]`, `!`, etc.) -> `[PASS]`, `[FAIL]`, `[SKIP]` text tags
+- 4 em dashes (U+2014) in comments -> ` - ` (space-hyphen-space)
+- 2 arrows (U+2192) in comments -> `->` (ASCII hyphen-greater-than)
 
 **Why:** PS 5.1 reads files as CP1252 by default. UTF-8 byte sequences for non-ASCII chars produce bytes that CP1252 misinterprets as string terminators or control chars, causing `ParserError: TerminatorExpectedAtEndOfString`.
 
@@ -256,30 +256,30 @@ Added three new test groups validating PS 5.1 AllScope alias override behavior a
 ## [2026-05-04] PR #195 Group K Test Updates: Windows Setup Split Refactor
 
 **PR:** #195 (refactor Windows setup into per-tool files)  
-**Status:** ✅ MERGED to develop
+**Status:** [x] MERGED to develop
 
 Updated all 5 Group K tests (K-1 through K-5) to track new file locations after Goofy split monolithic `scripts/windows/setup.ps1` into per-tool files under `scripts/windows/tools/`:
 
 **Changes:**
-- K-1, K-2, K-4, K-5: Updated AST parser target from `setup.ps1` → `tools/profile.ps1` (where `Write-PowerShellProfile` now lives)
+- K-1, K-2, K-4, K-5: Updated AST parser target from `setup.ps1` -> `tools/profile.ps1` (where `Write-PowerShellProfile` now lives)
 - K-3: Updated heredoc extraction to read from `profile.ps1`
 - All 5 tests verified passing, 61/61 tests passing overall, 5/5 CI green
 
-**Key Learning:** When code is refactored into separate modules, AST-based tests must track the actual file containing the function being tested — not just the top-level orchestrator. Group K tests verify profile management logic, so they reference the dedicated `profile.ps1` tool file where `Write-PowerShellProfile` lives.
+**Key Learning:** When code is refactored into separate modules, AST-based tests must track the actual file containing the function being tested -- not just the top-level orchestrator. Group K tests verify profile management logic, so they reference the dedicated `profile.ps1` tool file where `Write-PowerShellProfile` lives.
 
 ---
 
 ## [2026-04-18] Sprint 7 Completion: Issues #121 (git hooks), #123 (CI triage)
 
 **Session:** Full autonomous execution  
-**Status:** ✅ All work merged to develop
+**Status:** [x] All work merged to develop
 
-**Issue #121 — git hooks implementation (PR #130):**
-- `hooks/commit-msg` — Conventional Commits validation (hard reject, exit 1)
-- `hooks/pre-push` — Branch protection (block direct push to main) + shellcheck on changed .sh files
+**Issue #121 -- git hooks implementation (PR #130):**
+- `hooks/commit-msg` -- Conventional Commits validation (hard reject, exit 1)
+- `hooks/pre-push` -- Branch protection (block direct push to main) + shellcheck on changed .sh files
 - Tests: Group A (hook config, files exist, shebangs valid); Group B (commit-msg validation)
 
-**Issue #123 — CI triage & PS 5.1 compat (PR #130):**
+**Issue #123 -- CI triage & PS 5.1 compat (PR #130):**
 - 5 historical CI failures on main branch: Stale, superseded by PR #126 (em-dash removal)
 - Pre-existing develop failure: Root setup.ps1 using PSVersionTable checks instead of Test-Path Variable:* guards
 - Fix: Replaced all version checks with Test-Path Variable:* guards (pattern: `Test-Path Variable:IsWindows -and $IsWindows`)

@@ -5,7 +5,7 @@ Idempotency test suite for the `dev-setup` scripts.
 ## What is idempotency?
 
 A script is **idempotent** when running it multiple times produces the same
-result as running it once — no duplicate side effects, no errors on repeat
+result as running it once -- no duplicate side effects, no errors on repeat
 runs. In this project, every tool installer in `scripts/linux/tools/` checks
 whether the tool is already present before attempting to install it.
 
@@ -32,7 +32,7 @@ bash tests/test_idempotency.sh
 ```
 
 Exit code `0` means all tests passed. Exit code `1` means at least one test
-failed — look for `❌ FAIL` lines in the output.
+failed -- look for `[ ] FAIL` lines in the output.
 
 ### Example output
 

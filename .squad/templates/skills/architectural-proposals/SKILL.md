@@ -26,13 +26,13 @@ Proposals create alignment before code is written. Cheaper to change a doc than 
 ### Proposal Structure (docs/proposals/)
 
 **Required sections:**
-1. **Problem Statement** — Why current state is broken (specific, measurable evidence)
-2. **Proposed Architecture** — Solution with technical specifics (not hand-waving)
-3. **What Changes** — Impact on existing work (waves, milestones, modules)
-4. **What Stays the Same** — Preserve existing functionality (no regression)
-5. **Key Decisions Needed** — Explicit choices with recommendations
-6. **Risks and Mitigations** — Likelihood + impact + mitigation strategy
-7. **Scope** — What's in v1, what's deferred (timeline clarity)
+1. **Problem Statement** -- Why current state is broken (specific, measurable evidence)
+2. **Proposed Architecture** -- Solution with technical specifics (not hand-waving)
+3. **What Changes** -- Impact on existing work (waves, milestones, modules)
+4. **What Stays the Same** -- Preserve existing functionality (no regression)
+5. **Key Decisions Needed** -- Explicit choices with recommendations
+6. **Risks and Mitigations** -- Likelihood + impact + mitigation strategy
+7. **Scope** -- What's in v1, what's deferred (timeline clarity)
 
 **Optional sections:**
 - Implementation Plan (high-level milestones)
@@ -63,10 +63,10 @@ When a proposal invalidates existing wave structure:
 4. **Update dependencies:** Document new blocking relationships
 
 **Example (Interactive Shell):**
-- Wave 0 (NEW): Interactive Shell — blocks all other waves
-- Wave 1 (ADJUSTED): npm Distribution — shell bundled in cli.js
-- Wave 2 (DEFERRED): SquadUI — waits for shell foundation
-- Wave 3 (ADJUSTED): Public Docs — now documents shell as primary interface
+- Wave 0 (NEW): Interactive Shell -- blocks all other waves
+- Wave 1 (ADJUSTED): npm Distribution -- shell bundled in cli.js
+- Wave 2 (DEFERRED): SquadUI -- waits for shell foundation
+- Wave 3 (ADJUSTED): Public Docs -- now documents shell as primary interface
 
 ### Decision Framing
 
@@ -134,14 +134,14 @@ When a proposal invalidates existing wave structure:
 ## Anti-Patterns
 
 **Avoid:**
-- ❌ Proposals without problem statements (solution-first thinking)
-- ❌ Vague architecture ("we'll use a shell") — be specific (ink components, session registry, spawn.ts)
-- ❌ Ignoring existing work — always document impact on waves/milestones
-- ❌ No risk analysis — every architecture has risks, document them
-- ❌ Unbounded scope — draw the v1 line explicitly
-- ❌ Missing decision ownership — always say "needs sign-off from X"
-- ❌ No backward compatibility plan — users don't care about your replatform
-- ❌ Hand-waving timelines ("a few weeks") — be specific (2-3 weeks, 1 engineer full-time)
+- [ ] Proposals without problem statements (solution-first thinking)
+- [ ] Vague architecture ("we'll use a shell") -- be specific (ink components, session registry, spawn.ts)
+- [ ] Ignoring existing work -- always document impact on waves/milestones
+- [ ] No risk analysis -- every architecture has risks, document them
+- [ ] Unbounded scope -- draw the v1 line explicitly
+- [ ] Missing decision ownership -- always say "needs sign-off from X"
+- [ ] No backward compatibility plan -- users don't care about your replatform
+- [ ] Hand-waving timelines ("a few weeks") -- be specific (2-3 weeks, 1 engineer full-time)
 
 **Red flags in proposal reviews:**
 - "Users will love this" (citation needed)

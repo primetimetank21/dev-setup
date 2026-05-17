@@ -39,13 +39,13 @@ Mickey facilitated the Sprint 5 retrospective, reviewing:
 
 ## Outcomes
 
-**Status:** ✅ Complete
+**Status:** [x] Complete
 
 | Artifact | Status | Details |
 |----------|--------|---------|
-| Retro doc | ✅ Written | Comprehensive, 130 lines, 6 sections |
-| Action items | ✅ Documented | 6 items, P1/P2/P3 prioritized |
-| Inbox file | ✅ Created | Ready for decision merge |
+| Retro doc | [x] Written | Comprehensive, 130 lines, 6 sections |
+| Action items | [x] Documented | 6 items, P1/P2/P3 prioritized |
+| Inbox file | [x] Created | Ready for decision merge |
 
 ---
 
@@ -53,10 +53,10 @@ Mickey facilitated the Sprint 5 retrospective, reviewing:
 
 - **Action items generated:** 6
 - **Items queued for Sprint 6:** 6
-- **P1 items:** 1 (develop → main promotion)
+- **P1 items:** 1 (develop -> main promotion)
 - **P2 items:** 3 (decisions.md consultation, PowerShell lint, issue framing)
 - **P3 items:** 2 (timeout policy dry-run, sequence chicken-egg tasks)
-- **Process closure:** 100% (Sprint 4 retro items → Sprint 5 shipped)
+- **Process closure:** 100% (Sprint 4 retro items -> Sprint 5 shipped)
 
 ---
 
@@ -64,12 +64,12 @@ Mickey facilitated the Sprint 5 retrospective, reviewing:
 
 These 6 action items are now in the decision inbox and awaiting Scribe merge. They should be triaged into Sprint 6 planning:
 
-1. 🔴 **P1 — develop → main promotion** (Mickey/Earl)
-2. 🟡 **P2 — Consult decisions.md during planning** (Mickey)
-3. 🟡 **P2 — Fix PowerShell lint CI failure** (Goofy/Chip)
-4. 🟡 **P2 — Frame issues as problems** (Mickey)
-5. 🟠 **P3 — Dry-run timeout policy** (Ralph/Mickey)
-6. 🟠 **P3 — Sequence chicken-and-egg tasks** (Mickey/Ralph)
+1. [RED] **P1 -- develop -> main promotion** (Mickey/Earl)
+2. [YELLOW] **P2 -- Consult decisions.md during planning** (Mickey)
+3. [YELLOW] **P2 -- Fix PowerShell lint CI failure** (Goofy/Chip)
+4. [YELLOW] **P2 -- Frame issues as problems** (Mickey)
+5. [ORANGE] **P3 -- Dry-run timeout policy** (Ralph/Mickey)
+6. [ORANGE] **P3 -- Sequence chicken-and-egg tasks** (Mickey/Ralph)
 
 ---
 

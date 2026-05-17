@@ -7,9 +7,9 @@
 ## Summary
 
 Merged 3 PRs into develop with `--admin` bypass flag:
-- PR #59 (Remove ps.tar.gz) ✅
-- PR #61 (CI improvements) ✅
-- PR #58 (SQUAD_WORKTREES config) ✅
+- PR #59 (Remove ps.tar.gz) [x]
+- PR #61 (CI improvements) [x]
+- PR #58 (SQUAD_WORKTREES config) [x]
 
 ## Merge Pattern
 
@@ -22,4 +22,4 @@ First batch successfully integrated into develop. Issues #56, #57, and CI relate
 
 ## Status
 
-✅ MERGED — First batch integrated
+[x] MERGED -- First batch integrated

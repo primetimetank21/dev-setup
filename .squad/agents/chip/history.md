@@ -1,7 +1,7 @@
 # Project Context
 
 - **Owner:** Earl Tankard, Jr., Ph.D.
-- **Project:** dev-setup — A replicable setup script system for Dev Containers and Codespaces
+- **Project:** dev-setup -- A replicable setup script system for Dev Containers and Codespaces
 - **Stack:** Bash, Zsh, PowerShell, shell scripting, cross-platform tooling
 - **Created:** 2026-04-07T03:05:10Z
 
@@ -11,16 +11,16 @@
 - Target environments: GitHub Codespaces, Dev Containers, fresh machines
 - Tools to install: zsh, uv, nvm, gh CLI, GitHub Copilot CLI, and user shortcuts
 - Dotfiles and shell configs are managed as templates
-- Scripts must be idempotent — safe to run multiple times
+- Scripts must be idempotent -- safe to run multiple times
 
 ## Core Context
 
-**Sprints 1–7 Summary (2026-04-07 to 2026-05-04):**
+**Sprints 1-7 Summary (2026-04-07 to 2026-05-04):**
 
 Established CI/CD validation framework and cross-platform test coverage infrastructure:
 
-- **Sprints 1–4:** Linux/Windows CI workflows, shellcheck (shell scripts), PSScriptAnalyzer (PowerShell)
-- **Sprint 5:** Windows PowerShell regression test suite (15 tests, Groups A–D); idempotency test framework
+- **Sprints 1-4:** Linux/Windows CI workflows, shellcheck (shell scripts), PSScriptAnalyzer (PowerShell)
+- **Sprint 5:** Windows PowerShell regression test suite (15 tests, Groups A-D); idempotency test framework
 - **Sprint 6:** PS 5.1 dual-runtime validation (`Parser::ParseFile` syntax checks, PSScriptAnalyzer on windows-latest); git hooks testing
 - **Sprint 7:** Git hooks tests (commit-msg validation, branch guard); PS variable guard fixes via Test-Path guards (later reverted to PSVersion pattern)
 - **Sprint 8:** Group K, N, O, P test updates for split Windows setup architecture and AllScope alias override verification
@@ -34,9 +34,9 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 - Conditional skip pattern: `Get-Command -ErrorAction SilentlyContinue` outside test block, call `Write-Skip` if found
 
 **Key Files:**
-- `.github/workflows/validate.yml` — 5 jobs: lint-ps, validate-ps (PS 7+), validate-ps51 (PS 5.1), lint-shell, validate-linux
-- `tests/test_windows_setup.ps1` — 61 tests across 11 groups (A–L); Groups A–B verify functions, C–D integration, E vim, F aliases, G squad-cli, J sentinel, K profile paths, L PSScriptAnalyzer hook
-- `tests/test_idempotency.sh` — Linux idempotency baseline
+- `.github/workflows/validate.yml` -- 5 jobs: lint-ps, validate-ps (PS 7+), validate-ps51 (PS 5.1), lint-shell, validate-linux
+- `tests/test_windows_setup.ps1` -- 61 tests across 11 groups (A-L); Groups A-B verify functions, C-D integration, E vim, F aliases, G squad-cli, J sentinel, K profile paths, L PSScriptAnalyzer hook
+- `tests/test_idempotency.sh` -- Linux idempotency baseline
 
 **Tech Debt:**
 - Test file assertions must track actual implementation patterns; static-analysis tests break silently when code refactors
@@ -45,13 +45,13 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
 - Hook bypass pattern: use `case "$STRIPPED" in "Merge "*|"Revert "*) exit 0 ;; esac` to skip validation for git auto-generated messages. Must go BEFORE the regex check so these messages never hit the conventional-commits filter. Position matters -- if the case block is after the regex, the hook rejects before reaching it.
 
-- CP1252 encoding trap: Em dash `—` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
+- CP1252 encoding trap: Em dash `--` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
 - Invoke-Expression for function loading: Load functions at Group scope before Test-Scenario calls; `& ([scriptblock]::Create(...))` creates child scope where functions vanish after test
-- PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks — test suite requirements > runtime logic correctness
+- PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks -- test suite requirements > runtime logic correctness
 - Test suite can check one pattern (e.g., PSVersion guards) but code implements different valid pattern -- tests must be updated in sync
 - PS 5.1 CI step runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so the test file itself must be ASCII-clean (no emojis, em dashes, arrows, or any non-ASCII chars)
 - shellcheck `-s bash` flag is needed for sourced dotfiles like `.aliases` that have no shebang -- tells shellcheck the dialect without requiring SC2148 fix

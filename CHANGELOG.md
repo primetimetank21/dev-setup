@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- docs: ASCII-sweep all repo Markdown files (em-dash, arrows, smart quotes, box-drawing) per repo policy (#322 part A)
 - squad: compress 8 over-gate agent history.md files per Scribe HARD GATE (#319)
 - squad: fold Sprint 13 Wave 1 hygiene drops into per-topic decisions and re-compress jiminy/history.md back under 15KB gate
 

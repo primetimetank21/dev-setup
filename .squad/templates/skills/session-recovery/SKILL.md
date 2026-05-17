@@ -7,12 +7,12 @@ source: "earned"
 tools:
   - name: "sql"
     description: "Query session_store database for past session history"
-    when: "Always — session_store is the source of truth for session history"
+    when: "Always -- session_store is the source of truth for session history"
 ---
 
 ## Context
 
-Squad agents run in Copilot CLI sessions that can be interrupted — terminal crashes, network drops, machine restarts, or accidental window closes. When this happens, in-progress work may be left in a partially-completed state: branches with uncommitted changes, issues marked in-progress with no active agent, or checkpoints that were never finalized.
+Squad agents run in Copilot CLI sessions that can be interrupted -- terminal crashes, network drops, machine restarts, or accidental window closes. When this happens, in-progress work may be left in a partially-completed state: branches with uncommitted changes, issues marked in-progress with no active agent, or checkpoints that were never finalized.
 
 Copilot CLI stores session history in a SQLite database called `session_store` (read-only, accessed via the `sql` tool with `database: "session_store"`). This skill teaches agents how to query that store to detect interrupted sessions and resume work.
 
@@ -136,7 +136,7 @@ copilot --resume SESSION_ID
 **Recovering from a crash during PR creation:**
 1. Query recent sessions filtered by branch name
 2. Find the session that was working on the PR
-3. Check its last checkpoint — was the code committed? Was the PR created?
+3. Check its last checkpoint -- was the code committed? Was the PR created?
 4. Resume or manually complete the remaining steps
 
 **Finding yesterday's work on a feature:**
@@ -147,9 +147,9 @@ copilot --resume SESSION_ID
 
 ## Anti-Patterns
 
-- ❌ Searching by partial session IDs — always use full UUIDs
-- ❌ Resuming sessions that completed successfully — they have no pending work
-- ❌ Using `MATCH` with special characters without escaping — wrap paths in double quotes
-- ❌ Skipping the automated-session filter — high-volume automated sessions will flood results
-- ❌ Assuming FTS5 is semantic search — it's keyword-based; always expand queries with synonyms
-- ❌ Ignoring checkpoint data — checkpoints show exactly where the session stopped
+- [ ] Searching by partial session IDs -- always use full UUIDs
+- [ ] Resuming sessions that completed successfully -- they have no pending work
+- [ ] Using `MATCH` with special characters without escaping -- wrap paths in double quotes
+- [ ] Skipping the automated-session filter -- high-volume automated sessions will flood results
+- [ ] Assuming FTS5 is semantic search -- it's keyword-based; always expand queries with synonyms
+- [ ] Ignoring checkpoint data -- checkpoints show exactly where the session stopped

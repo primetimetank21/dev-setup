@@ -10,10 +10,10 @@
 
 ### Entry Points
 
-Two root-level entry points — one per platform family:
+Two root-level entry points -- one per platform family:
 
-- `setup.sh` — Unix (Linux, macOS, WSL). Uses `uname -s` + `/proc/version` for OS detection.
-- `setup.ps1` — Windows. Uses PowerShell's `$IsWindows` builtin.
+- `setup.sh` -- Unix (Linux, macOS, WSL). Uses `uname -s` + `/proc/version` for OS detection.
+- `setup.ps1` -- Windows. Uses PowerShell's `$IsWindows` builtin.
 
 Neither entry point installs tools. They are thin routers only.
 
@@ -35,12 +35,12 @@ dev-setup/
 
 ### WSL Handling
 
-WSL is detected by grepping `/proc/version` for "microsoft". WSL is **routed as Linux** — it gets `scripts/linux/setup.sh`, not the Windows path. WSL users have a full Linux environment; treating them as Windows would install the wrong toolset.
+WSL is detected by grepping `/proc/version` for "microsoft". WSL is **routed as Linux** -- it gets `scripts/linux/setup.sh`, not the Windows path. WSL users have a full Linux environment; treating them as Windows would install the wrong toolset.
 
 ### Tool Script Pattern
 
 Each tool in `scripts/linux/tools/` is a standalone bash script:
-- Check if already installed → skip if so (idempotency)
+- Check if already installed -> skip if so (idempotency)
 - Install if missing
 - `exit 0` on success or skip, `exit 1` on failure
 
@@ -56,7 +56,7 @@ The cold-start constraint is real: on a brand-new machine, a user needs exactly 
 
 ### Why separate the router from the installer?
 
-The router (`setup.sh`) needs to be stable — it's what people bookmark or put in onboarding docs. The installer (`scripts/linux/setup.sh`) will change as tools are added/removed. Keeping them separate means the public API is stable.
+The router (`setup.sh`) needs to be stable -- it's what people bookmark or put in onboarding docs. The installer (`scripts/linux/setup.sh`) will change as tools are added/removed. Keeping them separate means the public API is stable.
 
 ### Why run tool scripts via `bash <script>` not `source`?
 

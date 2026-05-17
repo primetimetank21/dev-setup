@@ -1,7 +1,7 @@
 # Project Context
 
 - **Owner:** Earl Tankard, Jr., Ph.D.
-- **Project:** dev-setup — A replicable setup script system for Dev Containers and Codespaces
+- **Project:** dev-setup -- A replicable setup script system for Dev Containers and Codespaces
 - **Stack:** Bash, Zsh, PowerShell, shell scripting, cross-platform tooling
 - **Created:** 2026-04-07T03:05:10Z
 
@@ -11,11 +11,11 @@
 - Target environments: GitHub Codespaces, Dev Containers, fresh machines
 - Tools to install: zsh, uv, nvm, gh CLI, GitHub Copilot CLI, and user shortcuts
 - Dotfiles and shell configs are managed as templates
-- Scripts must be idempotent — safe to run multiple times
+- Scripts must be idempotent -- safe to run multiple times
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
 <!-- Append new learnings below. Each entry is something lasting about the project. -->
 
@@ -25,12 +25,12 @@
 - The coordinator creates worktrees at `{repo-parent}/{repo-name}-{issue-number}` so each agent gets a fully isolated working tree.
 - This prevents the Sprint 4 race condition where Chip-issue-43 checked out a branch while Chip-issue-41 was mid-commit on the same working tree.
 - `SQUAD_WORKTREES=1` is now set by default in `.devcontainer/devcontainer.json` `remoteEnv`.
-- Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md § "Parallel Agent Work"`.
+- Full pattern documented in `.squad/skills/worktree-isolation/SKILL.md` and `CONTRIBUTING.md Sec. "Parallel Agent Work"`.
 - PR: https://github.com/primetimetank21/dev-setup/pull/58
 
 ### Gitconfig templates do not support shell expansion (Issue #184)
 
-- Git reads `.gitconfig` values as literal strings — `${EDITOR:-vim}` is NOT expanded by the shell, it becomes the literal editor command, which fails.
+- Git reads `.gitconfig` values as literal strings -- `${EDITOR:-vim}` is NOT expanded by the shell, it becomes the literal editor command, which fails.
 - For any tool-config template that is NOT processed by a shell at apply time, always use literal values.
 - Pattern: use a sensible literal default + a comment showing how to override (e.g., `# Override with: git config --global core.editor <your-editor>`).
 - The dotfiles `install.sh` does `sed` substitution for `YOUR_NAME`/`YOUR_EMAIL` placeholders, but does NOT expand arbitrary shell variables in the gitconfig template.

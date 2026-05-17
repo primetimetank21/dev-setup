@@ -28,10 +28,10 @@ Every verified item gets one of:
 
 | Rating | Meaning |
 |--------|---------|
-| ✅ Verified | Confirmed via source, test, or direct observation |
-| ⚠️ Unverified | Plausible but could not confirm — needs human review |
-| ❌ Contradicted | Found evidence that contradicts the claim |
-| 🔍 Needs Investigation | Requires deeper analysis beyond current scope |
+| [x] Verified | Confirmed via source, test, or direct observation |
+| ! Unverified | Plausible but could not confirm -- needs human review |
+| [ ] Contradicted | Found evidence that contradicts the claim |
+| [SEARCH] Needs Investigation | Requires deeper analysis beyond current scope |
 
 ## When I'm Triggered
 
@@ -42,10 +42,10 @@ Every verified item gets one of:
 
 ## How I Work
 
-1. **Read the artifact** — understand what's being claimed
-2. **Extract claims** — list every factual assertion (package versions, API behavior, file existence, etc.)
-3. **Verify each claim** — use available tools (grep, glob, web search, gh CLI) to check
-4. **Run counter-hypotheses** — for key assumptions, ask "what if this is wrong?"
+1. **Read the artifact** -- understand what's being claimed
+2. **Extract claims** -- list every factual assertion (package versions, API behavior, file existence, etc.)
+3. **Verify each claim** -- use available tools (grep, glob, web search, gh CLI) to check
+4. **Run counter-hypotheses** -- for key assumptions, ask "what if this is wrong?"
 5. **Produce a verification report:**
 
 ```markdown

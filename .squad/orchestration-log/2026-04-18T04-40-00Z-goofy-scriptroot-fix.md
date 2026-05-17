@@ -1,9 +1,9 @@
-# Orchestration Log: Goofy — PowerShell $PSScriptRoot Fix
+# Orchestration Log: Goofy -- PowerShell $PSScriptRoot Fix
 
 **Date:** 2026-04-18T04:40:00Z  
 **Agent:** Goofy (Cross-Platform Developer)  
 **Tier:** Quick (5 min)  
-**Status:** ✅ COMPLETED
+**Status:** [x] COMPLETED
 
 ## Spawn Request
 
@@ -13,14 +13,14 @@
 
 ## Outcome
 
-✅ **Fix Verified:** setup.ps1 line 51 now uses reliable script directory resolution:
+[x] **Fix Verified:** setup.ps1 line 51 now uses reliable script directory resolution:
 ```powershell
 $ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
 ```
 
-✅ **Decision Documented:** goofy-scriptroot-fix.md captures pattern, rationale, and scope (all .ps1 files)
+[x] **Decision Documented:** goofy-scriptroot-fix.md captures pattern, rationale, and scope (all .ps1 files)
 
-✅ **History Updated:** Goofy's history.md appended with completion note
+[x] **History Updated:** Goofy's history.md appended with completion note
 
 ## Checkpoint Timeline
 

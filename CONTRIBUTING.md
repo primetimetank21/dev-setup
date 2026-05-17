@@ -1,14 +1,14 @@
 # Contributing to dev-setup
 
-Welcome! This repo is maintained by the **Disney Classic Squad** — a team of specialized AI agents each owning a slice of the codebase. Human contributors are equally welcome. This guide explains how to work alongside the squad.
+Welcome! This repo is maintained by the **Disney Classic Squad** -- a team of specialized AI agents each owning a slice of the codebase. Human contributors are equally welcome. This guide explains how to work alongside the squad.
 
 ---
 
 ## Branch Protection
 
-The `develop` branch is protected at the GitHub level. Direct pushes are blocked for everyone — all changes must go through a PR with at least one approving review and passing CI.
+The `develop` branch is protected at the GitHub level. Direct pushes are blocked for everyone -- all changes must go through a PR with at least one approving review and passing CI.
 
-The branch protection rule has `enforce_admins` intentionally **disabled**. Why? On a solo-owner repo, GitHub blocks self-approval — an admin can't approve their own PR. Setting `enforce_admins=true` would create a deadlock: the only approver (the admin) can't approve themselves. The solution is `enforce_admins=false`, which allows the repo owner to use `gh pr merge --admin` to bypass the approval requirement *only when necessary* (e.g., to unblock themselves). This preserves the protection goal (no direct pushes) while avoiding the self-approval deadlock.
+The branch protection rule has `enforce_admins` intentionally **disabled**. Why? On a solo-owner repo, GitHub blocks self-approval -- an admin can't approve their own PR. Setting `enforce_admins=true` would create a deadlock: the only approver (the admin) can't approve themselves. The solution is `enforce_admins=false`, which allows the repo owner to use `gh pr merge --admin` to bypass the approval requirement *only when necessary* (e.g., to unblock themselves). This preserves the protection goal (no direct pushes) while avoiding the self-approval deadlock.
 
 ---
 
@@ -94,7 +94,7 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ## Code Review
 
-- **Mickey** is the lead reviewer — all PRs require Mickey's approval before merge.
+- **Mickey** is the lead reviewer -- all PRs require Mickey's approval before merge.
 - **CI must be green** before requesting review. Do not ask for review on a failing PR.
 - Reviewers may request changes or reassign work to a different squad member.
 - If Mickey rejects a PR, a *different* agent (not the original author) will be assigned to revise.
@@ -105,7 +105,7 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 **ALL merges use regular merge commits** (`--merge` or `gh pr merge --no-squash`).
 
-**Never squash** — not for feature PRs to `develop`, not for sprint wrap PRs (`develop` → `main`). This is a hard team rule.
+**Never squash** -- not for feature PRs to `develop`, not for sprint wrap PRs (`develop` -> `main`). This is a hard team rule.
 
 **Why?** Regular merge commits preserve history and make debugging (`git log`, `git blame`) clear. Squash collapses history, making it harder to trace which issue introduced a bug.
 
@@ -131,14 +131,14 @@ All `.ps1` scripts in this repo must run on **PowerShell 5.1** (the version ship
 
 ### Checklist for any `.ps1` changes
 
-- [ ] **No `$MyInvocation.MyCommand.Path`** — use `$PSScriptRoot` instead. `MyCommand.Path` returns null in PS 5.x when dot-sourced.
-- [ ] **PS 6+ automatic variables are guarded** — `$IsLinux`, `$IsMacOS`, `$IsWindows` do not exist in PS 5.x. Always guard:
+- [ ] **No `$MyInvocation.MyCommand.Path`** -- use `$PSScriptRoot` instead. `MyCommand.Path` returns null in PS 5.x when dot-sourced.
+- [ ] **PS 6+ automatic variables are guarded** -- `$IsLinux`, `$IsMacOS`, `$IsWindows` do not exist in PS 5.x. Always guard:
   ```powershell
   if ($PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux) { ... }
   ```
-- [ ] **Works under `Set-StrictMode -Version Latest`** — `setup.ps1` runs with StrictMode on. Uninitialized variables and undefined properties are hard errors, not silent nils.
-- [ ] **String literals are ASCII-only in test files** — Characters whose UTF-8 encoding contains byte `0x94` (em-dash `—`, curly quotes `""`, box-drawing chars) corrupt PS 5.x parsing under CP1252. Use plain hyphens and straight quotes in all test strings.
-- [ ] **Built-in alias conflicts handled** — Before `Set-Alias`, remove conflicts: `Remove-Item -Force Alias:\{name} -ErrorAction SilentlyContinue`
+- [ ] **Works under `Set-StrictMode -Version Latest`** -- `setup.ps1` runs with StrictMode on. Uninitialized variables and undefined properties are hard errors, not silent nils.
+- [ ] **String literals are ASCII-only in test files** -- Characters whose UTF-8 encoding contains byte `0x94` (em-dash `--`, curly quotes `""`, box-drawing chars) corrupt PS 5.x parsing under CP1252. Use plain hyphens and straight quotes in all test strings.
+- [ ] **Built-in alias conflicts handled** -- Before `Set-Alias`, remove conflicts: `Remove-Item -Force Alias:\{name} -ErrorAction SilentlyContinue`
 
 ### Testing on PS 5.1
 
@@ -163,7 +163,7 @@ After running setup, the following hooks are active:
 |------|----------|
 | `pre-commit` | Checks staged `.sh` files with shellcheck. Blocks commit on errors; silently skips if shellcheck not installed. |
 | `commit-msg` | Enforces Conventional Commits format. Hard reject on non-conforming messages. |
-| `pre-push` | Blocks direct pushes to `main`. Runs shellcheck/PSScriptAnalyzer on changed files (advisory—never blocks). |
+| `pre-push` | Blocks direct pushes to `main`. Runs shellcheck/PSScriptAnalyzer on changed files (advisory--never blocks). |
 
 See README > Git Hooks (Auto-configured) for details on each hook's checks and how to bypass with `--no-verify`.
 
@@ -242,7 +242,7 @@ When enabled, the Squad coordinator creates an isolated `git worktree` for each 
 /workspaces/dev-setup-56/
 ```
 
-Each worktree has its own index and working files but shares the same `.git` object store with the main repo — no extra disk space for history, just the working tree.
+Each worktree has its own index and working files but shares the same `.git` object store with the main repo -- no extra disk space for history, just the working tree.
 
 ### Cleaning up
 

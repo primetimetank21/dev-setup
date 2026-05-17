@@ -1,7 +1,7 @@
 # Project Context
 
 - **Owner:** Earl Tankard, Jr., Ph.D.
-- **Project:** dev-setup — A replicable setup script system for Dev Containers and Codespaces
+- **Project:** dev-setup -- A replicable setup script system for Dev Containers and Codespaces
 - **Stack:** Bash, Zsh, PowerShell, shell scripting, cross-platform tooling
 - **Created:** 2026-04-07T03:05:10Z
 
@@ -11,18 +11,18 @@
 - Target environments: GitHub Codespaces, Dev Containers, fresh machines
 - Tools to install: zsh, uv, nvm, gh CLI, GitHub Copilot CLI, and user shortcuts
 - Dotfiles and shell configs are managed as templates
-- Scripts must be idempotent — safe to run multiple times
+- Scripts must be idempotent -- safe to run multiple times
 
 ## Core Context
 
-**Sprints 1–7 Summary (2026-04-07 to 2026-05-04):**
+**Sprints 1-7 Summary (2026-04-07 to 2026-05-04):**
 
 Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 
-- **Sprints 1–4:** 6 tool install scripts (zsh, uv, nvm, gh CLI, GitHub Copilot CLI, auth); shell profile injection for multiple shells (.bashrc, .zshrc); idempotency across multiple runs
+- **Sprints 1-4:** 6 tool install scripts (zsh, uv, nvm, gh CLI, GitHub Copilot CLI, auth); shell profile injection for multiple shells (.bashrc, .zshrc); idempotency across multiple runs
 - **Sprint 5:** gh 2.89.0+ built-in promotion handling (`gh copilot -- --help` passthrough); CI=true env var for isatty()-gated CLI probes; Copilot CLI download workarounds (PTY script, stdin pipe, final CI=true fix); exec 2>&1 stderr/stdout merge; CRLF guard in devcontainer
 - **Sprint 6:** tmux addition to prerequisites; issue #138 (dual-path profile, AllScope alias guards)
-- **Sprint 7–8:** vim PATH permanence via registry SetEnvironmentVariable
+- **Sprint 7-8:** vim PATH permanence via registry SetEnvironmentVariable
 
 **Key Patterns Established:**
 - `set -euo pipefail` + `exec 2>&1` for ordered diagnostic output
@@ -33,9 +33,9 @@ Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 - Idempotency: skip+warn pattern when optional tools missing (npm, gh)
 
 **Key Files:**
-- `scripts/linux/setup.sh` — orchestrator: prerequisite install, run_tool helper, profile injection
-- `scripts/linux/tools/*.sh` — 6 tool scripts + auth; each has `set -euo pipefail`, idempotency guard at top
-- `.gitattributes` — eol=lf for *.sh; paired with devcontainer CRLF strip guard
+- `scripts/linux/setup.sh` -- orchestrator: prerequisite install, run_tool helper, profile injection
+- `scripts/linux/tools/*.sh` -- 6 tool scripts + auth; each has `set -euo pipefail`, idempotency guard at top
+- `.gitattributes` -- eol=lf for *.sh; paired with devcontainer CRLF strip guard
 
 **Tech Debt Addressed:**
 - ps.tar.gz binary artifact removed (69MB compiled PowerShell/.NET SDK)
@@ -45,11 +45,11 @@ Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
-- Never probe gh built-ins with `--help` alone — use `gh copilot -- --help` to reach binary; `--` passes flag through unconditionally
-- Never use `gh extension list | grep` or `gh alias list | grep` as sole idempotency gate — always probe actual command with `--help`
-- gh alias conflict blocks extension install silently (stdout, not stderr) — guard with delete before install
+- Never probe gh built-ins with `--help` alone -- use `gh copilot -- --help` to reach binary; `--` passes flag through unconditionally
+- Never use `gh extension list | grep` or `gh alias list | grep` as sole idempotency gate -- always probe actual command with `--help`
+- gh alias conflict blocks extension install silently (stdout, not stderr) -- guard with delete before install
 - `CI=true` is correct non-interactive trigger for any gh built-in that gates on `IsCI()`; never use `CanPrompt()` in postCreateCommand (no TTY)
 - `script(1)` PTY is right tool for isatty-gated CLIs but not when parent pipe may close early (e.g., container lifecycle hooks)
 - Directory existence check for Copilot binary: `~/.local/share/gh/copilot` (not exit code probe)
@@ -74,21 +74,21 @@ Lessons preserved verbatim in Learnings section above (gh built-in `--` passthro
 
 ## Learnings
 
-### 2026-04-19: Issue #178 — macOS/Linux install_prerequisites divergence
+### 2026-04-19: Issue #178 -- macOS/Linux install_prerequisites divergence
 
 The `install_prerequisites()` function in `scripts/linux/setup.sh` maintains separate package lists
-for macOS (brew) and Linux (apt). These lists can silently drift apart — vim was present in the
+for macOS (brew) and Linux (apt). These lists can silently drift apart -- vim was present in the
 Linux apt path but missing from the macOS brew path. When adding new prerequisites, always verify
 both platform branches get the package to maintain the cross-platform parity documented in README.
 **PRs:** #70, #71  
-**Status:** ✅ Both merged to develop
+**Status:** [x] Both merged to develop
 
-**Issue #68 — exec 2>&1 for ordered log output:**
+**Issue #68 -- exec 2>&1 for ordered log output:**
 - Root cause: stderr and stdout buffers independent in piped environments; error lines appear before unrelated INFO/OK lines
 - Fix: `exec 2>&1` immediately after `set -euo pipefail` in setup.sh and scripts/linux/setup.sh
 - Rule: FD inheritance covers all child processes; no need to add to tool scripts
 
-**Issue #69 — onCreateCommand CRLF guard in devcontainer:**
+**Issue #69 -- onCreateCommand CRLF guard in devcontainer:**
 - Root cause: PR #66 added `.gitattributes` eol=lf + `git add --renormalize`, but this updates git INDEX only, not working tree
 - Windows users with existing checkout still have CRLF .sh files; bind-mount sees `set: pipefail\r` errors
 - Fix: `onCreateCommand` strips `\r` before `postCreateCommand` runs
@@ -120,7 +120,7 @@ both platform branches get the package to maintain the cross-platform parity doc
 - **Hits:** Real issues in logging duplication and test inconsistency.
 - **Misses:** V-10 and V-14 are design choices, not bugs. V-12 requires squad-cli versioning philosophy decision.
 
-- **2026-05-16 — Cleanup of rogue verification reports.** Coordinator dropped Scribe between verifier batch and Mickey filing, so verifier history edits + 3 rogue VERIFICATION_REPORT files sat uncommitted on develop. I consolidated all 3 reports into .squad/orchestration-log/2026-05-16-verification-evidence.md (correct location per Source of Truth Hierarchy), deleted the rogues, and committed everything. Lesson: rogue files at .squad/{anything-not-in-spec}.md are spawn-hygiene violations. Future verifier batches must use ONE of: history.md (learnings), decisions/inbox/ (decisions), orchestration-log/ (evidence).
+- **2026-05-16 -- Cleanup of rogue verification reports.** Coordinator dropped Scribe between verifier batch and Mickey filing, so verifier history edits + 3 rogue VERIFICATION_REPORT files sat uncommitted on develop. I consolidated all 3 reports into .squad/orchestration-log/2026-05-16-verification-evidence.md (correct location per Source of Truth Hierarchy), deleted the rogues, and committed everything. Lesson: rogue files at .squad/{anything-not-in-spec}.md are spawn-hygiene violations. Future verifier batches must use ONE of: history.md (learnings), decisions/inbox/ (decisions), orchestration-log/ (evidence).
 - 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
 

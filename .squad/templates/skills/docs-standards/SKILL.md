@@ -26,14 +26,14 @@ Squad documentation follows the Microsoft Style Guide with Squad-specific conven
 - **Cross-references at bottom:** Related pages linked after main content
 
 ### Structure
-- **Title (H1)** → **Warning/callout** → **Try this code** → **Overview** → **HR** → **Content (H2 sections)**
+- **Title (H1)** -> **Warning/callout** -> **Try this code** -> **Overview** -> **HR** -> **Content (H2 sections)**
 
 ### Test Sync Rule
 - **Always update test assertions:** When adding docs pages to `features/`, `scenarios/`, `guides/`, update corresponding `EXPECTED_*` arrays in `test/docs-build.test.ts` in the same commit
 
 ## Examples
 
-✓ **Correct:**
+[x] **Correct:**
 ```markdown
 # Getting started with Squad
 
@@ -53,7 +53,7 @@ Squad helps you build AI teams...
 Run the following command...
 ```
 
-✗ **Incorrect:**
+[ ] **Incorrect:**
 ```markdown
 # Getting Started With Squad  // Title case
 

@@ -1,7 +1,7 @@
 # Dotfile Templates
 
 Managed by **Pluto** (Config Engineer). These templates give every Dev Container
-and Codespace a sensible, consistent environment right out of the box — no
+and Codespace a sensible, consistent environment right out of the box -- no
 manual config required on day one.
 
 ---
@@ -14,7 +14,7 @@ manual config required on day one.
 | `.editorconfig` | `$HOME/.editorconfig` | Symlink | Shared, not machine-specific |
 | `.npmrc.template` | `$HOME/.npmrc` | Copy | Editable per-machine |
 | `.vimrc` | `$HOME/.vimrc` | Symlink | Vim configuration |
-| `install.sh` | — | Script | Idempotent installer |
+| `install.sh` | -- | Script | Idempotent installer |
 
 ---
 
@@ -55,7 +55,7 @@ bash config/dotfiles/install.sh
 ```
 
 If the env vars are not set, the placeholders (`YOUR_NAME`, `YOUR_EMAIL`)
-remain in `$HOME/.gitconfig` — just edit the file manually.
+remain in `$HOME/.gitconfig` -- just edit the file manually.
 
 **Included defaults (and why):**
 
@@ -65,7 +65,7 @@ remain in `$HOME/.gitconfig` — just edit the file manually.
 | `core.editor` | `vim` | Sensible default; override with `git config --global core.editor <editor>` |
 | `pull.rebase` | `false` | Merge on pull is a safe, explicit default |
 | `init.defaultBranch` | `main` | Modern default; avoids `master` |
-| `push.autoSetupRemote` | `true` | Skip manual `-u origin <branch>` on first push (Git ≥ 2.37) |
+| `push.autoSetupRemote` | `true` | Skip manual `-u origin <branch>` on first push (Git >= 2.37) |
 | `merge.ff` | `false` | Always create a merge commit for clear history |
 | `fetch.prune` | `true` | Keep local refs clean when remote branches are deleted |
 | `diff.algorithm` | `histogram` | Better diff quality for code and prose |
@@ -98,7 +98,7 @@ repo root, so it applies to this project directly.
 |---------|-------------|-------------|-------|
 | `[*]` | space | 2 | Baseline for everything |
 | `[*.md]` | space | 2 | `trim_trailing_whitespace = false` (Markdown hard breaks) |
-| `[Makefile]` | **tab** | — | `make` requires real tabs |
+| `[Makefile]` | **tab** | -- | `make` requires real tabs |
 | `[*.sh]` | space | 2 | Explicit (matches baseline) |
 | `[*.ps1]` | space | **4** | Microsoft PowerShell convention |
 | `[*.py]` | space | **4** | PEP 8 |
@@ -148,17 +148,17 @@ Edit `config/dotfiles/.vimrc` in the repo and the changes apply immediately
 
 | Setting | Value | Reason |
 |---------|-------|--------|
-| `set nocompatible` | — | Disable vi compatibility mode |
-| `set number` | — | Show line numbers |
-| `set cursorline/column` | — | Highlight cursor position |
+| `set nocompatible` | -- | Disable vi compatibility mode |
+| `set number` | -- | Show line numbers |
+| `set cursorline/column` | -- | Highlight cursor position |
 | `set shiftwidth=4` | 4 | 4-space indentation |
 | `set tabstop=4` | 4 | Tab = 4 spaces |
-| `set expandtab` | — | Expand tabs to spaces |
-| `set nowrap` | — | Disable line wrapping |
-| `set incsearch` | — | Incremental search |
-| `set ignorecase` / `smartcase` | — | Smart case-insensitive search |
-| `set hlsearch` | — | Highlight search matches |
-| `set wildmenu` | — | Better command-line completion |
+| `set expandtab` | -- | Expand tabs to spaces |
+| `set nowrap` | -- | Disable line wrapping |
+| `set incsearch` | -- | Incremental search |
+| `set ignorecase` / `smartcase` | -- | Smart case-insensitive search |
+| `set hlsearch` | -- | Highlight search matches |
+| `set wildmenu` | -- | Better command-line completion |
 
 ---
 
@@ -167,7 +167,7 @@ Edit `config/dotfiles/.vimrc` in the repo and the changes apply immediately
 `install.sh` is safe to run multiple times:
 
 - **Symlinks:** If `$HOME/.editorconfig` already points to the correct target,
-  the script prints `→ Already installed: .editorconfig` and skips it.
+  the script prints `-> Already installed: .editorconfig` and skips it.
   If the symlink points somewhere else, it is replaced.
 
 - **Copied files:** If `$HOME/.gitconfig` already exists and matches the
@@ -175,7 +175,7 @@ Edit `config/dotfiles/.vimrc` in the repo and the changes apply immediately
   (e.g. you've edited it), the existing file is backed up to
   `$HOME/.gitconfig.bak` before the template is copied.
 
-- **Backups:** A `.bak` file is only created once per run — subsequent runs
+- **Backups:** A `.bak` file is only created once per run -- subsequent runs
   see the template file in place and skip.
 
 ---

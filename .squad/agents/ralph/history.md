@@ -9,7 +9,7 @@ Agent Ralph initialized and ready for work.
 
 ## Recent Updates
 
-📌 Team initialized on 2026-04-07
+[PIN] Team initialized on 2026-04-07
 
 ---
 > Compressed 2026-05-17 per #319 (Option A: older entries summarized in-place; no archive file).
@@ -29,7 +29,7 @@ Lessons preserved verbatim in Learnings section below (Unicode in .ps1, self-app
 
 ## Learnings
 
-⚠️ **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
+! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
 
 Initial setup complete.
 

@@ -18,4 +18,4 @@ CONTRIBUTING.md updated with enforcement rationale and merge workflow documented
 
 ## Status
 
-✅ COMPLETE — Documentation committed to squad/54-block-direct-pushes
+[x] COMPLETE -- Documentation committed to squad/54-block-direct-pushes
