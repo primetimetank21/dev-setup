@@ -5,71 +5,17 @@
 
 ---
 
-## Session Logs Created
+> Compressed 2026-05-17 per #319 (Option A: older entries summarized in-place; no archive file).
 
-All session logs written to `.squad/log/`.
+## Pre-2026-05-16 Activity (summary)
 
-| Date | Topic | Status |
-|------|-------|--------|
-| 2026-04-07 | Squad init | ✅ |
-| 2026-04-07 | Issues created | ✅ |
-| 2026-04-08 | Sprint 5 retro | ✅ |
-| 2026-04-08 | Sprint 5 close | ✅ |
-| 2026-04-13 | Session wrap | ✅ |
-| 2026-04-18 | PS 5.x hotfix retro | ✅ |
-| 2026-04-18 | setup.ps1 scriptdir fix | ✅ |
-| 2026-04-18 | Sprint 6 kickoff | ✅ |
-| 2026-04-18 | Sprint 6 alias parity | ✅ |
-| 2026-04-18 | Sprint 6 wrapup | ✅ |
-| 2026-04-18 | **Sprint 7 implementation** | ✅ |
-| 2026-05-16 | PR #200 merge + Issue #197 closed | ✅ |
+Compressed; older session logs kept as short bullets.
 
----
-
-## Decisions Merged (2026-04-18)
-
-Merged 6 decision inbox files into `decisions.md`:
-
-1. **chip-121-hooks.md** — Git hooks implementation details
-2. **chip-123-ci-triage.md** — CI triage findings & PS 5.1 fixes
-3. **mickey-122-branch-isolation.md** — Branch isolation rule rationale
-4. **mickey-bug-issues-124-125.md** — Bug issue context (Sprint 6 hotfix)
-5. **mickey-hotfix-wrap.md** — Sprint 6 hotfix merge summary
-6. **mickey-review-130.md** — PR #130 review outcomes
-
-All inbox files deleted after merge.
-
----
-
-## Orchestration Logs Created (2026-04-18T20-53-40Z)
-
-Per-agent execution logs written to `.squad/orchestration-log/`:
-
-1. `2026-04-18T20-53-40Z-hotfix-sprint-wrap.md` — Mickey (Sprint 6 hotfix to main)
-2. `2026-04-18T20-53-40Z-chip-121-git-hooks.md` — Chip (Git hooks implementation)
-3. `2026-04-18T20-53-40Z-mickey-122-branch-isolation.md` — Mickey (Branch isolation docs)
-4. `2026-04-18T20-53-40Z-chip-123-ci-triage.md` — Chip (CI triage & PS guards)
-5. `2026-04-18T20-53-40Z-mickey-review-129.md` — Mickey (PR #129 review)
-6. `2026-04-18T20-53-40Z-mickey-review-130.md` — Mickey (PR #130 review)
-7. `2026-04-18T20-53-40Z-sprint7-wrap.md` — Mickey (Sprint 7 wrap pending)
-
----
-
-## Cross-Agent History Updates (2026-04-18)
-
-Appended team updates to:
-- **Chip:** Added Sprint 7 completion summary (Issues #121, #123, PR #130)
-- **Mickey:** Added full Sprint 7 execution summary (all agents, PRs, issues)
-
----
-
-## Final Status
-
-✅ All orchestration logs created
-✅ All decision inbox files merged and deleted
-✅ All session logs written
-✅ Cross-agent history updated
-✅ Ready for git commit & push
+- **2026-04-07 to 2026-04-18** 12 session logs written to `.squad/log/` covering squad init, issue creation, Sprint 5 retro/close, Sprint 6 kickoff/alias-parity/wrapup, Sprint 7 implementation, PS 5.x hotfix retro, setup.ps1 scriptdir fix.
+- **2026-04-18** Merged 6 decision inbox files into `decisions.md` (chip-121-hooks, chip-123-ci-triage, mickey-122-branch-isolation, mickey-bug-issues-124-125, mickey-hotfix-wrap, mickey-review-130). All inbox files deleted post-merge.
+- **2026-04-18T20-53-40Z** Per-agent orchestration logs created: hotfix-sprint-wrap (Mickey), 121-git-hooks (Chip), 122-branch-isolation (Mickey), 123-ci-triage (Chip), review-129 (Mickey), review-130 (Mickey), sprint7-wrap (Mickey).
+- **2026-04-18** Cross-agent history appended: Chip got Sprint 7 completion summary (#121, #123, PR #130); Mickey got full Sprint 7 execution summary.
+- **2026-05-16** PR #200 merge + Issue #197 closed session logged.
 
 ---
 
@@ -83,188 +29,23 @@ Appended team updates to:
 - 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
 
 
-### 2026-05-16 -- Session drain: Sprint 8-hotfix (formerly Sprint Q) wrap
-- Drained 3 inbox decisions: mickey-squad-0.9.4-upgrade (PR #262), mickey-hire-doc-fact-checker (PR #263), doc-pr-263-fact-check (Doc's first verification)
-- Appended Doc's first-run reflections to .squad/agents/doc/history.md
-- Appended Mickey's PR #262 audit reflection to .squad/agents/mickey/history.md (if missing)
-- Created session log: .squad/log/2026-05-16-sprint-q-wrap-0.8.0-0.9.4-doc-hire.md
+### Session drains 2026-05-16 to 2026-05-17 (summary)
 
-### 2026-05-16 -- Session drain: Sprint 9 (formerly Sprint R) wrap + retro + agent histories
-- Drained 1 inbox decision: doc-sprint-r-batch-fact-check.md (Doc's batch verification of 5 PRs)
-  - Incorporated Doc's verdicts into retro: 2 real bugs caught pre-merge (autocrlf in #267, pipefail in #269)
-  - Documented Group X collision friction and CHANGELOG multi-PR conflicts
-- Created .squad/retros/2026-05-16-sprint-r-retro.md with full Sprint 9 recap:
-  - 5 PRs shipped (#265, #266, #267, #268, #269)
-  - Follow-up #271 filed (uninstall hooksPath gap)
-  - Wins: parallel worktrees, batch fact-check caught real bugs, E2E summary job
-  - Learnings: pre-commit Check 5 blocks direct develops, CHANGELOG conflicts predictable
-  - Action items: Group letter pre-assignment, charter clarification, lint checklist
-- Appended Sprint 9 entries to 4 agent history files:
-  - chip/history.md: PR #267 (hook behavioral tests, autocrlf fix, Group Y rename)
-  - goofy/history.md: PR #268 (winget exit assertion, Assert-LastExit pattern, Group X)
-  - pluto/history.md: PRs #266 (hooksPath docs) + #269 (.bak rotation, pipefail fix)
-  - ralph/history.md: already written by Ralph, folded into drain PR (no direct develop commit)
-
-### 2026-05-17 -- Session drain: Sprint 10 (formerly Sprint S) retro + agent histories fold
-- Created `.squad/retros/2026-05-17-sprint-s-retro.md`: full Sprint 10 recap covering
-  10 PRs (#274-#283), Doc batch fact-check verdicts, version-pin anti-pattern resolution,
-  $LASTEXITCODE / YAML quoting / function-rename collision learnings, and action items
-  for Sprint 11 (formerly Sprint T).
-- Folded Jiminy's modified `.squad/agents/jiminy/history.md` (Sprint 10 end-of-sprint
-  audit entry that he could not direct-commit per pre-commit Check 5) into the drain PR.
-- Backfilled Mickey Sprint 10 entry in `.squad/agents/mickey/history.md` for PR #274
-  (Sprint 9 retro action items: Ralph develop-commit ban, Group letter SOP, CHANGELOG
-  conflict strategy). Mickey shipped #274 without writing his own history entry; Jiminy
-  flagged the gap in his end-of-sprint audit.
-- Drained 2 inbox decisions locally: `doc-sprint-s-batch-fact-check.md` and
-  `doc-pr-282-fact-check.md`. Both already folded into `doc/history.md` via PRs #281
-  and #283; deletion is non-tracked (inbox is gitignored).
-- Skipped Ralph history.md write: Ralph has not been dispatched for Sprint 10 EOS yet;
-  six stale remote `squad/*` branches survive post-merge. Recommended Coordinator
-  dispatch Ralph after this PR merges.
-- Logged session locally to `.squad/log/2026-05-17-sprint-s-retro-fold.md`
-  (gitignored, local-only).
-
-### 2026-05-17 -- Sprint 11 retrospective
-
-- Created `.squad/retros/2026-05-17-sprint-t-retro.md`: full Sprint 11 recap covering
-  6 PRs (#296-#302), first exercise of #293 SOPs (Jiminy gates fired clean both
-  times), sequential Goofy pattern validation, Group EE test addition, and the
-  gh --delete-branch quirk (#300).
-- Sprint 11 was the first sprint with the post-batch Jiminy audit gate, session-end
-  Jiminy gate, and Doc worktree pattern SOPs in effect. All exercisable gates passed.
-- Action items for Sprint 12 (formerly Sprint U): #300 fix decision, Mickey's ARCHITECTURE.md follow-ups,
-  continued SOP exercise.
-- Precedent: PR #284 (Sprint 10 retro).
-
-### 2026-05-17 -- Post-0.9.0 Action Items Closeout
-- Amended `.squad/retros/2026-05-17-sprint-s-retro.md` in place with a new
-  "Action Items Closed (post-0.9.0)" section at the bottom. No new retro
-  file authored -- the 3-PR follow-up batch is too small to warrant its
-  own doc. Section folds three closures into the existing Sprint 10 retro:
-  - PR #291 (Mickey) -- `.squad/skills/pwsh-lastexitcode/SKILL.md` +
-    CONTRIBUTING "PowerShell Exit Code Discipline" section + audit of
-    `scripts/windows/`. Closes #288. Audit surfaced 5 unmitigated
-    `$LASTEXITCODE` sites in `setup.ps1` + `auth.ps1`, filed as #292
-    (Goofy, P2) and tracked as Sprint 11 spillover.
-  - PR #293 (Mickey) -- combined decision + template changes for Doc
-    worktree pattern (Option B: dedicated `..\dev-setup-doc` worktree on
-    per-sprint `squad/doc-history-sprint-<N>` branch) and Jiminy
-    auto-dispatch (Option A: 3-surface checklist in charter + loop.md +
-    ceremonies.md). Closes #289 + #290. Replaces the dual-fold-PR pattern
-    that produced #281 + #283 in Sprint 10.
-- Verified no stale doc references in README.md or ARCHITECTURE.md (no
-  mentions of "Doc commits to develop", "Jiminy dispatch is manual",
-  Doc worktree pattern, or `pwsh-lastexitcode` at all -- those concepts
-  live in CONTRIBUTING.md and `.squad/` only). CONTRIBUTING.md already
-  updated by #291 + #293; CHANGELOG `[Unreleased]` already references
-  #288/#289/#290 correctly via Mickey's entries. No stale-doc edits
-  needed in this PR.
-- Inbox state: empty (`.squad/decisions/inbox/` clean from Sprint 10
-  drain). No additional drain required.
-- Verification checklist seeded for Sprint 11: first multi-agent batch
-  exercises Jiminy auto-dispatch gate; first Doc fact-check exercises
-  the dedicated-worktree pattern; #292 picked up in Sprint 11 triage.
-- Hard guardrails honored: no edits to `[0.9.0]` CHANGELOG section,
-  no new retro file, no edits to other agents' history.md, no direct
-  develop commits (branch `squad/scribe-post-090-retro` from develop @
-  `94b696c`).
-
-### 2026-05-17 -- Sprint 11 retro filed (PR #303)
-
-- Filed `.squad/retros/2026-05-17-sprint-11-retro.md` (originally named
-  `2026-05-17-sprint-t-retro.md`) via PR #303 on branch
-  `squad/scribe-sprint-t-retro`. Merged at 04:16 UTC, before the 0.9.1 release cut.
-- This retro covered Sprint 11 proper -- 4 work PRs (#296, #297, #298, #301)
-  closing 4 issues (#229, #230, #233, #292), plus 2 bonus Jiminy audit PRs
-  (#299, #302). First sprint exercising the PR #293 SOPs; all exercisable
-  gates passed clean.
-- The retro filename was renamed via `git mv` in PR #308 minutes later (Tier 3
-  sprint-naming sweep). The H1 picked up the `(formerly Sprint T)` alias.
-
-### 2026-05-17 -- Mini-event retro: 0.9.1 release + sprint naming rename
-
-- Created `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md`.
-  Mini-event retro covering work that landed AFTER PR #303 in the same session:
-  0.9.1 release (PRs #305 + #307, tag, GH release), the Tier 3 sprint-naming
-  sweep (Mickey PR #308 + Doc commit `56c3c1f`), and the Sprint 12 backlog
-  enumeration (2 new issues #309 + #310).
-- Decision: mini-events get their own tighter retro file rather than folding
-  into a session log. Rationale: (a) sprint naming convention is now permanent
-  policy worth surfacing in retro history; (b) the Doc no-worktree decision
-  and the `area:scripts` label gotcha are operational learnings that would get
-  lost in `.squad/log/`. Two-page retro is the right size; full sprint retros
-  remain the larger format.
-- Updated `.squad/agents/mickey/history.md`: appended PR #308 merge outcome,
-  Sprint 12 backlog summary, label gotcha note.
-- Updated `.squad/agents/doc/history.md`: appended pattern note documenting
-  the one-off fact-check NO-worktree decision rule (codified in the retro).
-- Updated `.squad/agents/scribe/history.md` (this entry): logged Sprint 11
-  retro PR #303 plus this mini-event retro.
-- Hard guardrails honored: branch `squad/scribe-0.9.1-rename-retro` from
-  `develop @ c93a54c`, no direct develop commits, ASCII only in new content,
-  conventional commit prefix `docs(scribe):`, PR not merged (left for
-  coordinator review). No inbox drop (no reusable decision worth recording --
-  the policy is already in CONTRIBUTING.md).
+- **2026-05-16 Sprint 8-hotfix wrap.** Drained 3 inbox decisions (mickey-squad-0.9.4-upgrade PR #262, mickey-hire-doc-fact-checker PR #263, doc-pr-263-fact-check). Doc's first-run reflections + Mickey's PR #262 audit reflection appended to respective history.md files. Session log: `.squad/log/2026-05-16-sprint-q-wrap-0.8.0-0.9.4-doc-hire.md`.
+- **2026-05-16 Sprint 9 wrap + retro + agent histories.** Drained 1 inbox (doc-sprint-r-batch-fact-check). Created `.squad/retros/2026-05-16-sprint-r-retro.md`: 5 PRs (#265-#269), follow-up #271 filed, Doc verdicts caught 2 real bugs pre-merge (autocrlf #267, pipefail #269). Appended Sprint 9 entries to chip/goofy/pluto histories.
+- **2026-05-17 Sprint 10 retro + agent histories fold.** Created `.squad/retros/2026-05-17-sprint-s-retro.md` covering 10 PRs (#274-#283). Folded Jiminy's modified history (couldn't direct-commit per pre-commit Check 5). Backfilled Mickey Sprint 10 entry for PR #274 (Mickey shipped without writing -- gap caught by Jiminy). Drained 2 inbox decisions locally (already folded into doc/history.md via PRs #281+#283; inbox gitignored). Skipped Ralph (not dispatched for Sprint 10 EOS yet).
+- **2026-05-17 Sprint 11 retrospective.** Created `.squad/retros/2026-05-17-sprint-t-retro.md` covering 6 PRs (#296-#302). First exercise of #293 SOPs (post-batch Jiminy gate fired clean twice). Sequential Goofy pattern validated. Group EE test addition. `gh --delete-branch` quirk filed as #300. Renamed via `git mv` in PR #308 minutes later.
+- **2026-05-17 Post-0.9.0 Action Items Closeout.** Amended Sprint 10 retro in-place with closures for PR #291 (pwsh-lastexitcode skill + #292 spillover) and PR #293 (Doc worktree Option B + Jiminy auto-dispatch Option A; replaces #281+#283 dual-fold pattern). No new retro file -- 3-PR follow-up too small. CONTRIBUTING.md already updated by #291+#293; CHANGELOG references intact.
+- **2026-05-17 Sprint 11 retro filed (PR #303).** Filed retro covering 4 work PRs (#296/#297/#298/#301) closing 4 issues + 2 bonus Jiminy audit PRs (#299/#302). Merged 04:16 UTC before 0.9.1 cut. Filename `git mv`-renamed via PR #308 Tier 3 sprint-naming sweep minutes later.
+- **2026-05-17 Mini-event retro: 0.9.1 release + sprint naming rename.** Created `.squad/retros/2026-05-17-sprint-11-release-and-rename-retro.md` covering work after PR #303 in same session (0.9.1 PRs #305+#307, tag, GH release, Tier 3 sweep #308 + Doc commit `56c3c1f`, Sprint 12 backlog #309+#310). Decision: mini-events get tighter retro file rather than session log fold (sprint-naming policy is permanent; operational learnings would get lost in `.squad/log/`).
 
 ## Learnings (Scribe)
 
-- **Mini-event retros work.** When a session ships work that does not belong
-  in a full sprint retro (release cut + meta-cleanup + backlog sweep), a
-  smaller-scope retro file in `.squad/retros/` is the right home. Keep it
-  to ~1-2 pages. Reference but do not rewrite any sprint retro the mini-event
-  follows.
-- **Label-vocab gotcha is worth a one-line entry in any retro that hits it.**
-  Future Scribes filing retros that mention `gh issue create` failures
-  (`area:scripts` not existing, missing `priority:p4`, etc.) should call out
-  the actual label set in the retro so the next session does not repeat the
-  lookup. Six area labels exist: ci, hooks, windows, macos, linux, meta.
-- **Sprint rename sweeps require Scribe to think about retro filenames.** When
-  a Tier 3 rename runs in the same session as a retro PR (this session: #303
-  filed then #308 renamed it), the retro file itself gets `git mv`-ed and the
-  H1 picks up the alias. Not a problem -- just a pattern worth flagging so
-  future Scribes do not double-write or get confused about which filename is
-  canonical.
-- **`(formerly Sprint X)` aliasing on first-occurrence-per-file** is now the
-  team convention for any historical reference. Applied automatically in
-  this retro for `Sprint T` -> `Sprint 11` (the retro H1 itself uses the
-  new name only; old references inside CHANGELOG headers and other retros
-  carry the alias on first mention).
-- **Sprint 12 Wave 1 fold (2026-05-17).** Folded 5-agent batch with 2 inbox
-  decisions, 5 orchestration-log entries, 1 session log, and a Jiminy
-  history-rescue. Patterns earned:
-  - **5-agent batch fold pattern.** When Wave N closes with 4-5 merged PRs +
-    1 audit-only issue close, one Scribe fold PR covers the whole wave.
-    Spawn manifest goes straight from coordinator into individual
-    orchestration-log entries -- one file per agent, ISO 8601 UTC timestamp
-    with colons replaced by dashes (`2026-05-17T06-01-33Z-{agent}-{slug}.md`).
-    Keep each entry small (~1-2 KB) using the template field table.
-  - **Jiminy-history-rescue pattern.** When an agent has violated the
-    develop-commit ban by writing loose to their own `history.md` on develop,
-    Scribe rescues that file in the same fold PR as the inbox drain. Stage
-    `.squad/agents/{agent}/history.md` explicitly with `git add -- <path>` --
-    do NOT broaden the staging glob. Note the rescue in the PR body so the
-    audit trail is clear ("pre-existed in main checkout before this PR --
-    earlier rules violation now resolved"). This is the documented drain SOP.
-  - **Obsolete fold-request handling.** A `history-fold-request` inbox file
-    is OBSOLETE if the target agent self-appended the content directly
-    (rules violation aside, the content is in place). Delete the inbox file
-    without re-merging (would duplicate content). Document the disposition
-    in decisions.md as a "Fold note (Scribe)" subsection on the partner
-    decision entry so the audit trail survives the delete.
-  - **Size-gated 7-day archive cut.** At >= 50 KB, the 7-day rule fires.
-    Find the date boundary (entries dated > N-7 days are KEEP; <= N-7 days
-    are ARCHIVE). Cut on the trailing `---` separator before the first
-    KEEP entry so both files have clean section boundaries. Move content
-    via PowerShell `[System.IO.File]::WriteAllText` with
-    `UTF8Encoding($false)` (no BOM) to preserve existing em-dashes in
-    archive without polluting the rewritten live file. Result this fold:
-    164,339 B -> 44,473 B live, 122,314 B archive.
-  - **History-summarization scope tension.** When a fold's staging scope
-    is restricted (per-task spec) and the 15-KB hard gate fires on agents
-    outside that scope, defer summarization and flag in the health report
-    rather than expanding the staging glob. The hard gate fires next pass;
-    discipline beats sprawl.
+- **Mini-event retros work.** When a session ships work that doesn't fit a full sprint retro (release cut + meta-cleanup + backlog sweep), a smaller-scope retro file is the right home. ~1-2 pages. Reference but don't rewrite any sprint retro it follows.
+- **Label-vocab gotcha worth a one-line entry in any retro that hits it.** Future Scribes filing retros mentioning `gh issue create` failures should call out the actual label set. Six area labels: ci, hooks, windows, macos, linux, meta.
+- **Sprint rename sweeps require Scribe to think about retro filenames.** When a Tier 3 rename runs in same session as a retro PR (this session: #303 filed -> #308 renamed it), the retro file itself gets `git mv`-ed and the H1 picks up the alias. Not a problem -- just flag so future Scribes don't double-write.
+- **`(formerly Sprint X)` aliasing on first-occurrence-per-file** is team convention for historical references. Applied automatically in retros.
+- **Sprint 12 Wave 1 fold (2026-05-17).** Folded 5-agent batch with 2 inbox decisions, 5 orchestration-log entries, 1 session log, 1 Jiminy history-rescue. Lessons earned: 5-agent batch fold pattern (one PR per wave, per-agent orchestration logs ~1-2 KB each with ISO 8601 UTC timestamps); Jiminy-history-rescue pattern (stage explicitly with `git add -- <path>`, do NOT broaden glob, note rescue in PR body); obsolete fold-request handling (delete inbox file without re-merging if content is already in place); size-gated 7-day archive cut (>=50 KB triggers rule, cut on trailing `---` separator, use `[System.IO.File]::WriteAllText` with no-BOM UTF8); history-summarization scope tension (defer when 15-KB hard gate fires outside fold scope -- discipline beats sprawl).
 
 ### 2026-05-17 -- Sprint 12 Wave 2 fold
 
@@ -337,3 +118,12 @@ Appended team updates to:
   jiminy 28 KB (incl session-end audit entry), ralph 24 KB. Eight
   agents above gate. Archival sweep (#319) is now Sprint 13 P0 -- run
   before Sprint 13's first PRs land.
+
+
+## 2026-05-17 Sprint 13 Wave 1 -- History archival sweep (#319)
+
+- **Scope:** 8 over-gate .squad/agents/*/history.md files compressed under the 15 KB Scribe charter HARD GATE.
+- **Strategy:** Option B (split with history-archive.md) for mickey/goofy/chip (largest). Option A (summarize-in-place) for pluto/donald/jiminy/ralph/scribe. Front matter + last sprint verbatim; older sessions reduced to dated one-line bullets preserving lessons + PR/issue cross-refs.
+- **Before/after (bytes):** mickey 80823 -> 12076 (+ archive 57671); goofy 39857 -> 13923 (+ archive 24057); chip 36943 -> 12470 (+ archive 19911); pluto 29712 -> 14792; donald 28539 -> 12712; jiminy 28051 -> 8630; ralph 28464 -> 9503; scribe 20511 -> 11831 (this entry included). All 9 agent histories now under 15 KB; doc was already 10169 (untouched).
+- **Forward fix from PR #323 bug (atomic drain):** confirmed for next inbox fold cycle -- git add -- decisions.md AND git rm -- .squad/decisions/inbox/*.md MUST land in the SAME commit so drain is atomic with merge. Surfaced by Jiminy Sprint 12 session-end audit.
+- **Lesson candidate (history-compression):** the WHAT-to-preserve heuristic that worked here: (a) Key Details / Core Context / Learnings preamble verbatim; (b) most recent sprint(s) verbatim; (c) older sessions as date + outcome + PR/issue ref bullets; (d) skill triggers and recurring-incident patterns kept literal even when compressed. Not yet formalized as a skill -- second application will tell if it generalizes.
