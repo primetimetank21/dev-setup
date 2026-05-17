@@ -50,18 +50,23 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **Recurring-incident references preserved:** worktree-isolation, ASCII-scope gap, atomic-drain, CP1252 trap, autocrlf, AllScope, dogfood, abstraction-threshold.
 - **Verdict:** 1 auto-fix, 6 flags, GO recommendation for 0.9.3 (deferred to coordinator post-Scribe-W2-fold).
 
-## 2026-05-17 Sprint 13 Session-End Audit
+## 2026-05-17 Sprint 13 Session-End Audit (compressed)
 
-- **Scope:** post-0.9.3 close. main @ tag 0.9.3 (edc67e2), develop @ a930540. 9 PRs merged (#330-#339), 5 issues closed (#317/#319/#322/#325/#326), 2 direct-push commits (bd35b4b W1 hygiene, 7c799be W2 catch-up).
-- **Sec 1 (stale refs):** Pruned `origin/squad/scribe-sprint13-retro` (PR #339 head). `origin/squad/319-history-archival` is a LIVE remote branch (PR #332 merged, branch not deleted) -- Ralph EOS scope; out of prune scope. PASS with CONCERN.
-- **Sec 2 (gone branches):** None. Only `develop` (current) + `main`. PASS.
-- **Sec 3 (history sizes):** Pre-tail all 9 under 15360 gate (tightest: pluto 14786, scribe 14445). PASS.
-- **Sec 4 (inbox drain):** 2 drops drained. `scribe-w2-fold` folded into `scribe-history-compression.md` (3rd-application compression skill READY + atomic-rm canonical model). `mickey-release-093` archived to NEW `mickey-release-process.md` (3rd app of release-cut pattern). Both physically deleted. PASS.
-- **Sec 5 (labels):** All 9 squad:* + priority:p0-p3 + area:ci/hooks/windows/macos/linux/meta + type:feature/bug/docs/spike/chore/epic present. PASS.
-- **Sec 6 (CHANGELOG):** `[0.9.3]` correctly carries 8 entries (1+4+3+0). `[Unreleased]` has retro entry (#339) post-cut. Prior-sprint convention put retros under same-version block -- editorial CONCERN, out of Jiminy auto-fix scope.
-- **Sec 7 (skill candidates):** 2 Sprint 14 issue candidates: (a) formalize `history-compression` (3rd app, READY), (b) formalize `per-topic inbox routing` (2nd app, READY per coordinator). Deferred: `ascii-sweep` (1st), `ship-test eat-dogfood` (1st), `batch narrow doc fixes` (2nd).
-- **Sec 8 (readiness):** Tree clean. 0 open issues. 0 open PRs. Pre-commit hook ASCII-gated. No blocking dirt.
-- **Auto-fixes this session:** 1 commit -- (1) prune origin tracking refs, (2) drain 2 inbox drops + per-topic placement, (3) compress prior W2 audit + append this tail.
-- **Final verdict:** GO for session close.
+- post-0.9.3 close. main @ edc67e2, develop @ a930540. 9 PRs merged, 5 issues closed. All 8 sections PASS (1 CONCERN: stale remote branch Ralph EOS scope). 1 auto-fix commit (prune + inbox drain + compress + tail). Verdict: GO.
+
+## 2026-05-17 Sprint 14 Session-End Audit
+
+- **Scope:** post-0.9.4 release. main @ 008f166, develop @ 331c99b.
+- **Sec 1 (inbox):** Empty. PASS.
+- **Sec 2 (history sizes):** Doc 13023B NEAR -- compressed to 12200B. All others OK. PASS (after fix).
+- **Sec 3 (ASCII gate):** 60+ .md files carry non-ASCII (legacy debt pre-dating #334 hook expansion). ARCHITECTURE.md 1368B worst. CONCERN -- dedicated sweep needed Sprint 15.
+- **Sec 4 (decisions):** All 6 Sprint 14 drops present. 13 canonical total. decisions.md 57096B. PASS.
+- **Sec 5 (labels):** 32 total. priority:p3, platform:{linux,macos,windows} all present. PASS.
+- **Sec 6 (worktree/branches):** Single worktree (develop). Local: develop + main only. 2 stale remote (release/0.9.4, squad/sprint14-retro) -- Ralph EOS scope. PASS with CONCERN.
+- **Sec 7 (tag/release):** 0.9.4 tag exists, release published 2026-05-17. PASS.
+- **Sec 8 (CHANGELOG):** [Unreleased] present, [0.9.4] - 2026-05-17 present. PASS.
+- **Auto-fixes:** (1) Doc history compression 13023->12200B, (2) Sprint 13 EOS entry compressed.
+- **CONCERNs (not auto-fixed):** (a) 60+ legacy non-ASCII .md files -- Sprint 15 sweep candidate, (b) 2 stale remote branches -- Ralph EOS.
+- **Verdict:** PASS with CONCERNs (no blockers).
 
 
