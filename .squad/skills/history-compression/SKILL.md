@@ -1,7 +1,7 @@
 ---
 name: history-compression
-confidence: medium
-applications: 3
+confidence: high
+applications: 8
 last_updated: 2026-05-17
 ---
 
@@ -27,6 +27,11 @@ After Scribe compresses N files, subsequent agent hygiene-tail appends rebound f
 1. **PR #319 / #332** -- Initial 8-agent history.md archival sweep
 2. **PR #333 (Sprint 13 W1 fold)** -- jiminy/history.md re-compress (22548 -> 13078 B)
 3. **PR #336 (Sprint 13 W2 fold)** -- Multi-file re-compress (jiminy, goofy, scribe, mickey)
+4. **PR #345 (Sprint 14 skill formalization)** -- Scribe self-apply post-formalization
+5. **PR #344 (Sprint 14 CHANGELOG fold)** -- Mickey compressed 4 entries in CHANGELOG fold
+6. **PR #348 (Sprint 14 README edit)** -- Mickey applied during README edit phase
+7. **PR #349 (Sprint 14 label migration)** -- Pluto applied to history.md post-phase-6
+8. **Sprint 14 retro (this file, Scribe)** -- 6th application: scribe/history.md session-drains compression (13622 -> 11850 B post-append)
 
 ## Validation
 Pre-commit hook does NOT enforce the gate; Scribe's fold workflow does. Audit via:

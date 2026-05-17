@@ -1,7 +1,7 @@
 ---
 name: per-topic-inbox-routing
-confidence: medium
-applications: 2
+confidence: high
+applications: 7
 last_updated: 2026-05-17
 ---
 
@@ -41,6 +41,11 @@ Future Scribes: do NOT collapse the two stores. Both serve distinct lookup modes
    - `scribe-w1-fold-2026-05-17.md` -> appended to `scribe-history-compression.md` (continuation)
    - `mickey-w2-2026-05-17-hook-extension.md` -> NEW `mickey-hook-policy.md` (new theme)
    - `goofy-w2-2026-05-17-ascii-sweep.md` -> NEW `goofy-ascii-sweep.md` (skill seed)
+3. **Sprint 14 skill formalization (PR #345)** -- Scribe decision: routed to per-topic `.squad/decisions/scribe-skills-formalized.md` (new theme)
+4. **Sprint 14 label taxonomy (PR #349)** -- Pluto decision: routed to per-topic `.squad/decisions/label-policy-taxonomy.md` (new theme)
+5. **Sprint 14 README editorial (PR #348)** -- Mickey decision: routed to per-topic `.squad/decisions/readme-editorial.md` (new theme)
+6. **Sprint 14 sync-squad-labels follow-up (PR #351)** -- Pluto decision: appended to `label-policy-taxonomy.md` (continuation)
+7. **Sprint 14 CHANGELOG placement (PR #344)** -- Mickey decision: routed to per-topic `.squad/decisions/changelog-editorial.md` (new theme)
 
 ## Forward-fix history
 - **PR #323 (origin of atomic-rm forward-fix):** First inbox-drain implementation merged drop CONTENT but did NOT remove source drops -- caused next cycle to re-fold same content. Initial Scribe theory was "use `git rm`". WRONG: inbox is gitignored, so `git rm` was a misconception. Corrected forward-fix recorded in `scribe-history-compression.md`: physical delete IS the atomic action.
