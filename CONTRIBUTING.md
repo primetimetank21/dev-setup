@@ -261,3 +261,69 @@ agent that may add tests to this file.
 ---
 
 For the full technical overview, team ownership map, and architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+---
+
+## Tool Version Pin Enforcement
+
+All install scripts that install a versioned tool MUST follow the version-pin pattern.
+**Never use a bare `command -v X` (or `Get-Command X`) idempotency guard.** That pattern
+silently keeps whatever version the runner cached and never upgrades on version bumps.
+
+### Pattern
+
+1. **Pin** the desired version in `.tool-versions`:
+   ```
+   squad-cli 0.9.4
+   gh 2.92.0
+   ```
+
+2. **Read** the pin at install time using the shared helpers:
+   ```bash
+   # Bash/POSIX (Linux/macOS)
+   VERSION="$(sh scripts/lib/read-tool-version.sh squad-cli)"
+   ```
+   ```powershell
+   # PowerShell (Windows)
+   . "$PSScriptRoot\..\..\lib\Read-ToolVersion.ps1"
+   $Version = Get-ToolVersion -Name 'squad-cli'
+   ```
+
+3. **Detect** the installed version:
+   ```bash
+   INSTALLED="$(squad --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+   ```
+
+4. **Branch** on comparison:
+   - installed == pinned -> log OK, skip
+   - installed != pinned (or not installed) -> install/upgrade to pinned version
+
+5. **Install explicitly with version**:
+   ```bash
+   npm install -g "@bradygaster/squad-cli@${VERSION}"
+   ```
+   ```powershell
+   winget install --id GitHub.cli --version $Version ...
+   ```
+
+### Why this matters
+
+The bare-idempotency anti-pattern (`if command -v X; then exit 0; fi`) was the root
+cause of issue #255: squad-cli, copilot-cli, and gh silently stayed at cached/older
+versions on CI runners. Fix PRs that bumped `.tool-versions` had no effect because the
+old binary was already present. Version-aware guards eliminate this silent drift.
+
+### Winget constraint
+
+winget version IDs for some packages (e.g., `GitHub.Copilot`) may not match the semver
+in `.tool-versions` (which typically reflects the npm package version). If winget refuses
+`--version <pin>`, fall back to latest-available and log a WARN. Document the constraint
+in the script header and update `.tool-versions` to a known winget catalog version when
+pinning is required.
+
+### macOS / brew constraint
+
+Homebrew does not publish versioned formulae for tools like `gh`. On macOS, accept
+the latest brew version, compare against the pin, and log a WARN if they differ.
+macOS is a secondary target; version drift is tolerated with visibility.
+

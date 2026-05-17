@@ -1,41 +1,44 @@
 #!/usr/bin/env bash
-# scripts/linux/tools/copilot-cli.sh — Install GitHub Copilot CLI
+# scripts/linux/tools/copilot-cli.sh -- Install GitHub Copilot CLI at pinned version
 #
 # Called by: scripts/linux/setup.sh
-# Owner:     Donald
-# Idempotent: yes — checks for ~/.local/bin/copilot before attempting install.
+# Owner:     Donald / Goofy (#255)
+# Idempotent: yes -- version-aware; upgrades if installed version != pinned version.
 #
-# Installs the standalone GitHub Copilot CLI (github/copilot-cli) via the
-# official install script (https://gh.io/copilot-install). Non-root install
-# lands at ~/.local/bin/copilot, which is already in PATH via the dev-setup
-# managed block.
+# Install mechanism: npm install -g @github/copilot@<version>
+# This guarantees the pinned version and works regardless of the system package manager.
 
 set -euo pipefail
 
 # shellcheck disable=SC1091
 . "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 
-COPILOT_BIN="${HOME}/.local/bin/copilot"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COPILOT_CLI_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" copilot-cli)"
 
-if [[ -x "$COPILOT_BIN" ]]; then
-  log_ok "GitHub Copilot CLI already installed"
+log_info "Pinned copilot-cli version: ${COPILOT_CLI_VERSION}"
+
+# Detect installed version; command may emit warnings to stderr before the semver
+INSTALLED_VERSION=""
+if command -v copilot &>/dev/null; then
+  INSTALLED_VERSION="$(copilot --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+fi
+
+if [ "${INSTALLED_VERSION}" = "${COPILOT_CLI_VERSION}" ]; then
+  log_ok "GitHub Copilot CLI already at pinned version ${COPILOT_CLI_VERSION}"
   exit 0
 fi
 
-log_info "Installing GitHub Copilot CLI..."
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COPILOT_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" copilot-cli)"
-log_info "Pinned copilot-cli version: ${COPILOT_VERSION}"
-
-# Official install script. Non-root: installs to ~/.local/bin/copilot (in PATH).
-# Root: installs to /usr/local/bin/copilot.
-if curl -fsSL https://gh.io/copilot-install | bash; then
-  if [[ -x "$COPILOT_BIN" ]]; then
-    log_ok "GitHub Copilot CLI installed"
-  else
-    log_warn "Install script ran but binary not found at ${COPILOT_BIN} — may need manual install"
-  fi
+if [ -n "${INSTALLED_VERSION}" ]; then
+  log_info "Copilot CLI ${INSTALLED_VERSION} installed; upgrading to pinned ${COPILOT_CLI_VERSION}..."
 else
-  log_warn "Could not install GitHub Copilot CLI — run 'curl -fsSL https://gh.io/copilot-install | bash' manually"
+  log_info "Installing GitHub Copilot CLI ${COPILOT_CLI_VERSION}..."
 fi
+
+if ! command -v npm &>/dev/null; then
+  log_warn "npm not found -- cannot install copilot-cli via npm; run 'npm install -g @github/copilot@${COPILOT_CLI_VERSION}' once Node is available"
+  exit 0
+fi
+
+npm install -g "@github/copilot@${COPILOT_CLI_VERSION}"
+log_ok "GitHub Copilot CLI installed at ${COPILOT_CLI_VERSION}"

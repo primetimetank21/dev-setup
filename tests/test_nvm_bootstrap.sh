@@ -60,6 +60,38 @@ else
   fail "squad-cli.sh does not exit non-zero"
 fi
 
+# --- version-pin enforcement tests ---
+
+# T6: squad-cli.sh reads pinned version from .tool-versions
+if grep -q 'read-tool-version.sh.*squad-cli' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh reads squad-cli version from .tool-versions"
+else
+  fail "squad-cli.sh does not read squad-cli version from .tool-versions"
+fi
+
+# T7: squad-cli.sh installs pinned version via npm (not bare latest)
+if grep -q 'npm install.*SQUAD_CLI_VERSION' "$SQUAD_SCRIPT"; then
+  pass "squad-cli.sh installs pinned version via npm"
+else
+  fail "squad-cli.sh does not pass pinned version to npm install"
+fi
+
+COPILOT_SCRIPT="${REPO_ROOT}/scripts/linux/tools/copilot-cli.sh"
+
+# T8: copilot-cli.sh reads pinned version from .tool-versions
+if grep -q 'read-tool-version.sh.*copilot-cli' "$COPILOT_SCRIPT"; then
+  pass "copilot-cli.sh reads copilot-cli version from .tool-versions"
+else
+  fail "copilot-cli.sh does not read copilot-cli version from .tool-versions"
+fi
+
+# T9: copilot-cli.sh performs version-aware check (not bare binary-exists guard)
+if grep -q 'INSTALLED_VERSION' "$COPILOT_SCRIPT" && grep -q 'COPILOT_CLI_VERSION' "$COPILOT_SCRIPT"; then
+  pass "copilot-cli.sh performs version-aware idempotency check"
+else
+  fail "copilot-cli.sh still uses bare binary-exists guard (no version comparison)"
+fi
+
 # --- Summary ---
 
 echo ""

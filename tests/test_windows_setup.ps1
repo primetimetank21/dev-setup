@@ -297,13 +297,16 @@ Write-Host "========================================================" -Foregroun
 $copilotToolPath = Join-Path $RepoRoot 'scripts\windows\tools\copilot.ps1'
 $copilotToolContent = Get-Content $copilotToolPath -Raw
 
-Test-Scenario "Windows setup.ps1 uses winget for Copilot CLI (not gh extension)" {
+Test-Scenario "Windows copilot.ps1 uses npm for Copilot CLI (not winget)" {
     # Check in copilot.ps1 tool file (where the function now lives)
-    if ($copilotToolContent -match 'gh extension install github/gh-copilot') {
-        throw "scripts/windows/tools/copilot.ps1 still uses 'gh extension install' for Copilot CLI - should use winget"
+    if ($copilotToolContent -match 'winget install --id GitHub\.Copilot') {
+        throw "scripts/windows/tools/copilot.ps1 still uses winget for Copilot CLI - should use npm"
     }
-    if ($copilotToolContent -notmatch 'winget install --id GitHub\.Copilot') {
-        throw "scripts/windows/tools/copilot.ps1 does not use 'winget install --id GitHub.Copilot'"
+    if ($copilotToolContent -notmatch 'npm install -g') {
+        throw "scripts/windows/tools/copilot.ps1 does not use 'npm install -g' for Copilot CLI"
+    }
+    if ($copilotToolContent -notmatch '@github/copilot') {
+        throw "scripts/windows/tools/copilot.ps1 does not reference '@github/copilot' package"
     }
 }
 
@@ -322,7 +325,7 @@ Test-Scenario "Copilot CLI: already-installed short-circuit logic is correct" {
     }
 
     if ($wouldInstall) {
-        throw "Install logic called winget even though copilot was already found"
+        throw "Install logic called npm install even though copilot was already found"
     }
 }
 
@@ -338,7 +341,7 @@ if ($null -ne $copilotBin) {
 }
 else {
     Write-Skip "Copilot CLI: Install-CopilotCli live already-installed detection" `
-        "copilot binary not on PATH - run manually after: winget install --id GitHub.Copilot"
+        "copilot binary not on PATH - run manually after: npm install -g `"@github/copilot`""
 }
 
 # ---------------------------------------------------------------------------
@@ -1486,8 +1489,8 @@ Test-Scenario "X-4: Assert-LastExit throws for unexpected non-zero exit code" {
     }
 }
 
-Test-Scenario "X-5: All 5 winget install scripts call Assert-LastExit" {
-    $wingetScripts = @('git', 'gh', 'vim', 'psmux', 'copilot')
+Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
+    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
     foreach ($s in $wingetScripts) {
         $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
         $content = Get-Content $path -Raw
@@ -1512,7 +1515,7 @@ Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
 }
 
 Test-Scenario "X-8: Assert-LastExit allowed codes include winget ALREADY_INSTALLED in all winget scripts" {
-    $wingetScripts = @('git', 'gh', 'vim', 'psmux', 'copilot')
+    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
     foreach ($s in $wingetScripts) {
         $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
         $content = Get-Content $path -Raw
@@ -1817,6 +1820,65 @@ Test-Scenario "AA-3: git unset-all core.hooksPath removes the local key (functio
         }
     } finally {
         Remove-Item $aaTmpDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group DD: version-pin enforcement for squad-cli, copilot, and gh (#255)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group DD: version-pin enforcement (squad-cli / copilot / gh)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+Test-Scenario "DD-1: squad-cli.ps1 reads pinned version from .tool-versions" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
+    if ($content -notmatch 'Get-ToolVersion') {
+        throw "squad-cli.ps1 does not call Get-ToolVersion to read pinned version"
+    }
+    if ($content -notmatch "squad-cli") {
+        throw "squad-cli.ps1 does not reference 'squad-cli' tool name for version lookup"
+    }
+}
+
+Test-Scenario "DD-2: squad-cli.ps1 uses version-aware check (not bare Get-Command)" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
+    if ($content -notmatch 'InstalledVersion') {
+        throw "squad-cli.ps1 does not perform version comparison (no InstalledVersion variable)"
+    }
+    if ($content -notmatch 'SquadCliVersion') {
+        throw "squad-cli.ps1 does not use SquadCliVersion in install command"
+    }
+}
+
+Test-Scenario "DD-3: gh.ps1 uses --version flag with pinned value" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\gh.ps1') -Raw
+    if ($content -notmatch '--version') {
+        throw "gh.ps1 does not pass --version flag to winget"
+    }
+    if ($content -notmatch 'Get-ToolVersion') {
+        throw "gh.ps1 does not call Get-ToolVersion to read pinned version"
+    }
+}
+
+Test-Scenario "DD-4: copilot.ps1 reads pinned version from .tool-versions" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\copilot.ps1') -Raw
+    if ($content -notmatch 'Get-ToolVersion') {
+        throw "copilot.ps1 does not call Get-ToolVersion"
+    }
+    if ($content -notmatch 'copilot-cli') {
+        throw "copilot.ps1 does not reference 'copilot-cli' tool name for version lookup"
+    }
+}
+
+Test-Scenario "DD-5: .tool-versions contains squad-cli and gh pins" {
+    $tvPath = Join-Path $RepoRoot '.tool-versions'
+    $content = Get-Content $tvPath -Raw
+    if ($content -notmatch 'squad-cli\s+[0-9]+\.[0-9]+\.[0-9]+') {
+        throw ".tool-versions does not contain a squad-cli version pin"
+    }
+    if ($content -notmatch 'gh\s+[0-9]+\.[0-9]+\.[0-9]+') {
+        throw ".tool-versions does not contain a gh version pin"
     }
 }
 
