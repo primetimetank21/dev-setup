@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `hooks/pre-push`: documented advisory-only intent of the PSScriptAnalyzer step with an inline comment block at the top of the PSSA section; clarifies that PSSA findings warn but do not block, explains the three reasons (availability gap, subjective rules, out-of-scope hardening), and flags `|| true` as load-bearing (closes #233)
 - `CONTRIBUTING.md` "Why is PSSA advisory in `pre-push`?" subsection under Git Hooks: codifies the advisory model for contributors so the `|| true` in `hooks/pre-push` is not incorrectly "fixed" away (closes #233)
+- ARCHITECTURE.md: refreshed file trees + agent/skill rosters + hook + CI layout to reflect Sprint Q-S changes (`prepare-commit-msg`, per-tool Windows layout, `.tool-versions` pin-driven install, Doc + Jiminy agents, `.squad/decisions/`) (closes #229)
 - `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint S (closes #289, #290)
 - `.squad/decisions/doc-and-jiminy-automation.md`: decision record for squad operational SOPs
 - `CONTRIBUTING.md` "Squad Operational Gates (Coordinator dispatch)" section -- human-facing summary of the Doc worktree + Jiminy auto-dispatch SOPs codified in this PR
