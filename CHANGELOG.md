@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `scripts/linux/tools/squad-cli.sh`, `scripts/windows/tools/squad-cli.ps1`: replace bare `command -v squad` idempotency guard with version-aware check; installs pinned version via `npm install -g @bradygaster/squad-cli@<version>`; upgrades silently if installed version drifts from pin (closes #255)
+- `scripts/linux/tools/copilot-cli.sh`, `scripts/windows/tools/copilot.ps1`: replace bare binary-exists guard with version-aware check; switch install package from deprecated `@githubnext/github-copilot-cli` to `@github/copilot`; Windows switches from winget (wrong product) to npm for consistency with Linux; pin corrected from stale `0.0.339` (opaque curl-installer version) to `1.0.48` (closes #255)
+- `scripts/linux/tools/gh.sh`: Linux now downloads pinned release tarball from GitHub releases instead of `apt-get install -y gh` (latest); macOS logs WARN if brew installs a version other than the pin (brew versioned formulae not available for gh) (closes #255)
+- `scripts/windows/tools/gh.ps1`: passes `--version $GhVersion` to winget so runner cache cannot silently use an older gh (closes #255)
+
+### Changed
+- `.tool-versions`: added `squad-cli 0.9.4` and `gh 2.92.0` pins; corrected `copilot-cli` from stale `0.0.339` to `1.0.48` (`@github/copilot` npm package)
+- `scripts/windows/tools/squad-cli.ps1`, `copilot.ps1`, `gh.ps1`: now dot-source `Read-ToolVersion.ps1` to resolve pinned version at runtime
+
+### Added
+- `tests/test_nvm_bootstrap.sh` T6-T9: static source checks verifying that squad-cli and copilot-cli scripts read pins from `.tool-versions` and perform version-aware idempotency (closes #255)
+- `tests/test_windows_setup.ps1` Group DD (DD-1 through DD-5): version-pin validation for Windows squad-cli, copilot, and gh installers (closes #255)
+- `.squad/skills/tool-version-pin/SKILL.md`: documents the bare-idempotency anti-pattern and the canonical version-pin solution
+
 ### Changed
 - `scripts/windows/tools/profile.ps1` and `scripts/windows/uninstall.ps1`: added `-Encoding ASCII` to all `Set-Content` and `Add-Content` calls. Prevents encoding mismatch between PS 5.1 (UTF-16LE BOM default) and PS 7 (UTF-8 BOM default) (closes #234).
 - Documentation: README + CONTRIBUTING now document the automatic `core.hooksPath` setup performed by `setup.sh` and `setup.ps1`. Replaced stale "install hooks manually" instruction. Added branch-from-develop validation note per Sprint Q retro (closes #228).

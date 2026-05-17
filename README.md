@@ -220,7 +220,7 @@ nodejs 22.11.0
 nvm 0.39.7
 nvm-windows 1.2.2
 uv 0.4.18
-copilot-cli 0.0.339
+copilot-cli 1.0.48
 ```
 
 To bump a tool version, edit the version number in `.tool-versions` and re-run setup. Each line is `toolname version`, one per line. Blank lines and lines starting with `#` are ignored.
