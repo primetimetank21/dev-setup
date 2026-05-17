@@ -7,24 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-05-17
+
 ### Fixed
 - `scripts/windows/tools/auth.ps1` + `scripts/windows/setup.ps1`: applied `$LASTEXITCODE` reset mitigation at 5 sites; eliminates spurious failure detection when callers check exit codes downstream (closes #292)
 
 ### Added
 - `.squad/skills/pwsh-lastexitcode/SKILL.md`: documents the `$LASTEXITCODE` propagation gotcha across pwsh `&` script-call boundaries; canonical fix is `$global:LASTEXITCODE = 0` after expected-failure commands (closes #288, surfaced by #277)
 - CONTRIBUTING.md "PowerShell Exit Code Discipline" section referencing the new skill
+- `.squad/decisions/doc-and-jiminy-automation.md`: decision record codifying the post-batch Jiminy audit gate and the Doc subagent worktree pattern (closes #289, #290)
+- `.squad/retros/2026-05-17-sprint-t-retro.md`: Sprint T retrospective - first sprint exercising the #293 SOPs (Jiminy gates fired clean, Doc worktree not triggered); 6 PRs merged, sequential Goofy pattern validated, Group EE static-source tests added
 
 ### Changed
-- Sprint T end-of-session cleanup: no straggler branches/worktrees
-- `.squad/retros/2026-05-17-sprint-t-retro.md`: Sprint T retrospective - first sprint exercising #293 SOPs (Jiminy gates fired clean, Doc worktree not triggered); 6 PRs merged, sequential Goofy pattern validated, Group EE tests added
+- `scripts/windows/auth.ps1` moved to `scripts/windows/tools/auth.ps1` for consistency with the per-tool layout introduced in #195; all callers updated (closes #230)
+- ARCHITECTURE.md: refreshed file trees + agent/skill rosters + hook + CI layout to reflect Sprint Q-S changes (`prepare-commit-msg`, per-tool Windows layout, `.tool-versions` pin-driven install, Doc + Jiminy agents, `.squad/decisions/`) (closes #229)
 - `hooks/pre-push`: documented advisory-only intent of the PSScriptAnalyzer step with an inline comment block at the top of the PSSA section; clarifies that PSSA findings warn but do not block, explains the three reasons (availability gap, subjective rules, out-of-scope hardening), and flags `|| true` as load-bearing (closes #233)
 - `CONTRIBUTING.md` "Why is PSSA advisory in `pre-push`?" subsection under Git Hooks: codifies the advisory model for contributors so the `|| true` in `hooks/pre-push` is not incorrectly "fixed" away (closes #233)
-- ARCHITECTURE.md: refreshed file trees + agent/skill rosters + hook + CI layout to reflect Sprint Q-S changes (`prepare-commit-msg`, per-tool Windows layout, `.tool-versions` pin-driven install, Doc + Jiminy agents, `.squad/decisions/`) (closes #229)
 - `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint S (closes #289, #290)
-- `.squad/decisions/doc-and-jiminy-automation.md`: decision record for squad operational SOPs
-- `CONTRIBUTING.md` "Squad Operational Gates (Coordinator dispatch)" section -- human-facing summary of the Doc worktree + Jiminy auto-dispatch SOPs codified in this PR
+- `CONTRIBUTING.md` "Squad Operational Gates (Coordinator dispatch)" section -- human-facing summary of the Doc worktree + Jiminy auto-dispatch SOPs
 - `hooks/pre-commit` Source of Truth allow-list extended to include canonical `.squad/decisions/*.md` files (top-level decisions directory, distinct from the gitignored `inbox/` subdir). Required so permanent decision records like `.squad/decisions/doc-and-jiminy-automation.md` are commit-eligible.
-- `scripts/windows/auth.ps1` moved to `scripts/windows/tools/auth.ps1` for consistency with the per-tool layout introduced in #195; all callers updated (closes #230)
+- Sprint T end-of-session cleanup: no straggler branches/worktrees
 
 ## [0.9.0] - 2026-05-17
 
