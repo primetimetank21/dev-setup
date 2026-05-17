@@ -421,3 +421,52 @@ Key learnings:
 - Git .gitattributes explicit rules are the cleanest way to override autocrlf behavior consistently across platforms.
 - eol=crlf ensures the working tree always has CRLF on checkout, regardless of core.autocrlf setting.
 - This is especially important for Windows-specific tooling like PowerShell, which expects CRLF.
+
+
+---
+
+## 2026-05-17 -- Sprint T Issue #233: docs(hooks) PSScriptAnalyzer advisory-only intent
+
+**Branch:** `squad/233-pssa-advisory-docs`
+**PR:** (pending push)
+**Status:** Docs-only change; PSSA logic already advisory (`|| true` on inner pwsh call, line 51)
+
+### What I did
+
+- `hooks/pre-push`: Added a 14-line comment block (lines 29-43) above the PSSA section
+  explaining advisory-only intent. Three reasons codified: (1) availability gap on hosts
+  without pwsh + PSGallery access, (2) subjective rules like PSAvoidUsingWriteHost are
+  style not bugs, (3) blocking would require version pin + cmdlet allowlist out of scope.
+  Practical implication noted: `|| true` is load-bearing, do not remove. No env var
+  opt-in to strict mode exists; flagged as potential future feature.
+- `CONTRIBUTING.md`: Added "Why is PSSA advisory in `pre-push`?" subsection (3 bullet
+  list) under existing "Installing PSScriptAnalyzer locally (optional)" block. Mirrors the
+  inline rationale and points readers back to the inline comment so the `|| true` is
+  not "fixed" away by well-meaning contributors.
+- `CHANGELOG.md`: Two entries in `[Unreleased]` `### Changed` for the pre-push comment
+  block and the CONTRIBUTING subsection, both closing #233.
+
+### Confirmation: PSSA logic was already advisory
+
+Verified `hooks/pre-push:51` ends with `|| true` and the surrounding `echo` on
+line 49 already says `(advisory)`. The Group L test suite in
+`tests/test_windows_setup.ps1` (L-1 through L-5) and `Tpp5` in
+`tests/test_precommit_hygiene.sh` already enforce the advisory contract
+(no `exit 1` on PSSA lines; pre-push exits 0 on feature branches even with .ps1 staged).
+Therefore: NO behavior change in this PR, NO follow-up issue required.
+
+### Validation
+
+- `git diff --stat`: 3 files, +25/-1 lines.
+- All Group L test invariants preserved: `command -v pwsh` still present, `Invoke-ScriptAnalyzer`
+  still present, `Get-Module.*PSScriptAnalyzer` still present, no comment line contains both
+  `PSScriptAnalyzer` and `exit 1`, shebang remains `#!/bin/sh`.
+- Comment block sized at 14 lines (within 8-15 budget from task spec).
+
+### Key learnings
+
+- When the intent IS already implemented correctly but undocumented, the cheap fix is
+  always an inline comment block adjacent to the load-bearing line. Future contributors
+  who see `|| true` and think "bug" need the comment within eyeshot, not three docs away.
+- README/CONTRIBUTING already said "advisory, never blocks" but never said WHY. The why is
+  what prevents tightening. Always document the rationale, not just the behavior.

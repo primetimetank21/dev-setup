@@ -26,7 +26,21 @@ if command -v shellcheck >/dev/null 2>&1; then
   fi
 fi
 
-# Run PSScriptAnalyzer on changed .ps1 files if pwsh is available (advisory)
+# --- PSScriptAnalyzer (PSSA): ADVISORY ONLY ---------------------------------
+# This block lints changed .ps1 files but NEVER blocks the push. Rationale:
+#   * PSSA is not always installed on contributor hosts (Linux/macOS without
+#     PowerShell Core, or Windows boxes without PSGallery network access).
+#   * Many PSSA rules are subjective style preferences (PSAvoidUsingWriteHost,
+#     PSUseSingularNouns, etc.) and should not gate a developer push.
+#   * Blocking would require pinning a specific PSSA version + curating a
+#     cmdlet allowlist; that is out of scope for the local pre-push hook.
+#     CI (PR gate, see CONTRIBUTING.md > Git Hooks) is the authoritative lint.
+# Practical implication: this block exits 0 regardless of findings; output is
+# informational only (Write-Warning). The `|| true` on the inner pwsh call is
+# load-bearing -- do not remove. Contributors who want strict local linting
+# can run `Invoke-ScriptAnalyzer` manually before pushing. No env var opt-in
+# to strict mode exists today; adding one is a potential future feature.
+# ----------------------------------------------------------------------------
 if command -v pwsh >/dev/null 2>&1; then
   PS1_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '\.ps1$' || true)
   if [ -n "$PS1_CHANGED" ]; then
