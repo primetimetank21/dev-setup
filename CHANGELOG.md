@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.squad/skills/squad-upgrade-hygiene/SKILL.md` -- reusable checklist for auditing future `squad upgrade` runs
 - `.squad/templates/{fact-checker-charter.md, loop.md, squad.agent.md.template}` -- new templates from 0.9.4
 - `hooks/pre-commit` now allows `.squad/templates/*.template` files (squad upgrade ships `squad.agent.md.template`)
+- `.squad/agents/ralph/charter.md` "Develop Commit Ban" section -- documents that Ralph (and all agents) cannot commit directly to `develop`/`main`/`master`; EOS history entries flow through short-lived branch+PR or Scribe drain process (closes #273)
+- CONTRIBUTING.md "Group Letter Assignment" section -- coordinator pre-assigns test group letters to prevent parallel-agent collisions; Sprint R example documented (closes #273)
+- CONTRIBUTING.md "CHANGELOG Conflict Strategy" section -- documents mechanical resolution for predictable [Unreleased] conflicts when multiple PRs land in one sprint: merge order, unique headers, union entries (closes #273)
 
 ## [0.8.0] - 2026-05-16
 

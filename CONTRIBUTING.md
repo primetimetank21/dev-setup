@@ -111,6 +111,20 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ---
 
+## CHANGELOG Conflict Strategy
+
+When multiple PRs land in a single sprint, `CHANGELOG.md` `[Unreleased]` is a predictable
+conflict zone (multiple PRs append to the same `### Added` / `### Changed` / `### Fixed`
+section). Resolution is mechanical, not semantic:
+1. Entries land in **merge order** (the later PR rebases on top of the earlier one's entry).
+2. Keep **unique section headers** (`### Added`, `### Changed`, `### Fixed`, `### Removed`).
+3. On conflict: **union both entries - keep ALL lines from both sides, no deduplication**.
+   `CHANGELOG.md` is an append-only log, not a deduped list. Both agents intended their entry.
+4. Add `CHANGELOG.md merge=union` to `.gitattributes` is NOT recommended here - manual review
+   catches accidentally inverted entries.
+
+---
+
 ## PowerShell 5.x Compatibility
 
 All `.ps1` scripts in this repo must run on **PowerShell 5.1** (the version shipped with Windows 10/11). PS 7+ runs on Linux Codespaces; PS 5.1 is what end users actually have.
@@ -231,6 +245,18 @@ git worktree remove /workspaces/dev-setup-56
 ```
 
 Or list all active worktrees with `git worktree list`.
+
+---
+
+## Group Letter Assignment (parallel test work)
+
+Behavioral tests in `tests/test_windows_setup.ps1` are organized by alphabetic groups
+(Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel agents may extend this
+file in the same sprint, the **coordinator pre-assigns Group letters in each spawn prompt**
+to prevent collisions. Sprint R example: Chip #267 picked "Group X" independently while
+Goofy #268 also picked "Group X" - required a manual rename to Group Y during rebase.
+Going forward, the coordinator's spawn checklist includes Group letter assignment for any
+agent that may add tests to this file.
 
 ---
 
