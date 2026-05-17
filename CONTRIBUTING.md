@@ -268,6 +268,40 @@ agent that may add tests to this file.
 
 ---
 
+## Sprint Naming Convention
+
+Sprints use **numeric naming** (Sprint 1, Sprint 2, ...).
+
+### History
+
+- **Sprints 1-7** -- numbered, each shipped its own version (0.1.0 - 0.7.0). CHANGELOG headers
+  used the suffix `-- Sprint N: name`.
+- **Sprint 8** -- gap audit / Windows setup refactor (PR #195 et al). Folded into 0.8.0 alongside Sprint Q.
+- **Sprint Q** -- emergency hotfix batch fixed AFTER Sprint 8 wrap but BEFORE 0.8.0 ship.
+  Three P0 install regressions (#249, #251, #252). Got the letter "Q" because it was an
+  out-of-cadence quality/hotfix interjection.
+- **Sprint R, S, T** -- continued the letter scheme instead of switching back to numbers. With
+  only 26 letters in the alphabet and 4 already used in 2 weeks, the letter scheme isn't
+  sustainable. Reverting to numbers (decision: 0.9.1 release wrap, Earl-driven).
+
+### Convention going forward
+
+- Next sprint after Sprint T = **Sprint 9** (NOT Sprint U).
+- CHANGELOG release headers MUST include `-- Sprint N: short-name` suffix (matches the 0.1.0-0.7.0 pattern).
+- Retro file naming: `.squad/retros/YYYY-MM-DD-sprint-N-retro.md` (numeric).
+- Sprint Q/R/S/T retros stay named as-is (historical record).
+- Out-of-cadence hotfix sprints (a la Sprint Q) get a `-hotfix` suffix in retro filename:
+  `.squad/retros/YYYY-MM-DD-sprint-N-hotfix-retro.md` -- the version header attribution stays
+  on the numeric parent (e.g., `Sprint 8 + Sprint 8-hotfix`).
+
+### Why this matters
+
+The letter scheme caused real confusion: Sprint 8 silently vanished from CHANGELOG headers
+between 0.7.0 and 0.8.0, and the alphabet runs out. Numbers are unbounded and consistent
+with the established 1-7 history.
+
+---
+
 For the full technical overview, team ownership map, and architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ---
