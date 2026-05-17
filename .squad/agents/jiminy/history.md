@@ -94,3 +94,20 @@ None. Jiminy begins auto-running on the next Coordinator return-to-user.
 - **2026-05-17 -- Sprint 12 session-end audit (develop `5dfc476`).** All 9 Sprint 12 issues closed across 3 waves + 2 fold PRs (10 PRs: #313/#314/#315/#316/#318/#320/#321/#323/#324). Tree clean, 0 worktree orphans, 5 stale `origin/squad/*` tracking refs (Ralph EOS scope). Label state: 8 squad:* present, `squad:scribe` MISSING (gap surfaced by #319). PR labels: only #320/#321 carry full set among Sprint 12 merges; #313/#314/#315/#316/#318/#323/#324 unlabeled (process gap). History-tail compliance: ALL AGENTS clean. Skills: label-hygiene + test-harness-pattern present + template-compliant; abstraction-threshold not formalized as expected. **Scribe inbox-drain bug:** decisions.md grew 44473->57253 bytes (drained content) but 4 inbox files NOT deleted -- non-atomic drain. Surfaced as lesson + forward-fix.
 - **Lesson (Scribe inbox-drain bug):** When folding inbox decisions, `git add -- decisions.md` AND `git rm -- decisions/inbox/*.md` MUST happen in the SAME commit so drain is atomic. Filed as forward-fix expectation for next Scribe cycle (see PR #319 spec).
 - **Lesson (squad: label set incomplete):** Standard label set covers 8 active engineering agents but omits `squad:scribe`. Service-role follow-ups force routing miss. Recommend next label sweep create `squad:scribe`.
+
+## 2026-05-17 Sprint 13 Wave 1 Post-Batch Audit
+
+FYI -- this file is over 15KB gate (19852 bytes pre-append). Forward fix needed in Scribe W1 fold or via re-compress; Scribe's W1 fold preserved both her baseline AND this agent's Wave 1 hygiene-tail entry through rebase.
+
+- **Scope:** PRs #330 (Mickey #325+#326), #331 (Jiminy #317), #332 (Scribe #319). Develop @ 114ea63, tree clean, only main worktree, no local squad/* branches.
+- **Sec 1 (cleanliness):** Tree clean. One stale remote tracking ref `origin/squad/319-history-archival` still present -- Ralph EOS scope (Jiminy cannot delete branches per charter). No rogue files at repo root.
+- **Sec 2 (squad hygiene):** 9 agent history.md files present (chip 12470, donald 12712, goofy 13923, mickey 13830, pluto 14792, ralph 9503, scribe 13334, doc 10169 -- all under gate; **jiminy 19852 OVER**). Inbox has 3 drops all well-named per `<agent>-<batch>-<date>-<topic>.md`. decisions.md does not exist as a single file -- per-topic files only (doc-and-jiminy-automation 12115, mickey-architecture-entry-point 2710, pluto-dotfiles 2074). Skills dir has 13 entries incl new `worktree-remove-first/`.
+- **Sec 3 (labels):** PRs #330/#331/#332 all carry full 4-label set (priority + type + area + squad). Process discipline restored vs Sprint 12.
+- **Sec 4 (hygiene-tail):** Mickey, Jiminy, Scribe each appended own history.md AND dropped inbox note. 3/3 compliant.
+- **Sec 5 (skill drift):** Mickey flagged "batch narrow doc fixes into one PR" as 2nd application -- candidate surfaced, NOT formalized (one more application would justify). Scribe flagged "history-compression heuristic" as 1st application -- watch for second.
+- **Sec 6 (forward-fix):** Scribe history Wave 1 entry explicitly re-confirms atomic-rm forward-fix from PR #323 bug. Captured.
+- **Sec 7 (backlog):** Only #322 (pre-commit ASCII scope gap) open under `release:backlog` -- Wave 2 candidate.
+- **Sec 8 (recommendation):** GO for Wave 2 (#322 fan-out to Goofy + Mickey). Suggest 0.9.3 cut AFTER Wave 2 ships; current Unreleased delta is light.
+- **Flags for Coordinator:** (a) `.squad/agents/doc/` is NOT a stray -- has full charter (Fact Checker, hired 2026-05-16, 7101 B charter.md). Roster of 9 in this audit brief omits it. DECISION NEEDED: formally adopt doc into roster + add `squad:doc` label, or surface intent to retire. NOT auto-fixed. (b) jiminy/history.md over-gate. (c) stale remote tracking ref `origin/squad/319-history-archival` -- Ralph EOS.
+- **Auto-fixes applied:** None. Inbox drain not performed (Scribe W1 fold owns that; content not yet in decisions store).
+- **Verdict:** Jiminy fixed 0 items, flags 3 (1 roster gap, 1 over-gate file, 1 stale ref).
