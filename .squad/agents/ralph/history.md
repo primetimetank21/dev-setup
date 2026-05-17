@@ -205,3 +205,7 @@ Actions taken:
 
 Sprint 14 delivered: 15 PRs merged, 6 decision drops, 2 skill graduations, 1 retro (PR #354).
 Post-EOS: develop + main synchronized at 0.9.4 tag. Working tree clean. Verdict: CLEAN.
+
+## 2026-05-17 -- Sprint 15 EOS (Ralph)
+
+2026-05-17 Sprint 15 wrap: 0.9.5 released to main @ 49545ad (PR #361 merge). Sprint shipped 5 PRs (#355-#359): #355 Sprint letter ref normalization (R/S/T -> 11/12/13), #356/#358 legacy non-ASCII sweep (33 .md files, 1250 bytes removed), #359 history fold + canonical decision record. develop @ 64c61c6 post-Jiminy-audit. No cleanup needed -- prior agents already swept: Jiminy's session-end audit + Coordinator's per-wave fold pattern maintained zero orphan branches, zero stale worktrees, zero rogue files. Verified: local branches (develop, main only), remote branches (origin/develop, origin/main, origin/HEAD only), worktrees (1 primary), git status clean. Release: https://github.com/primetimetank21/dev-setup/releases/tag/0.9.5. Verdict: CLEAN.
