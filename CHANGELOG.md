@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sprint 14 retro at .squad/retros/2026-05-17-sprint-14-retro.md
 
 ### Changed
+- Normalized historical Sprint letter references (Sprint R/S/T) to numbers (Sprint 11/12/13) in CHANGELOG.md historical entries for consistency with current Sprint NN numbering (#355).
 - history-compression skill: confidence medium -> high (8+ applications in Sprint 14)
 - per-topic-inbox-routing skill: confidence medium -> high (7+ applications in Sprint 14)
 
@@ -63,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README.md: refreshed to reflect Sprints 8-12 changes (auth.ps1 path move, .tool-versions pinning, expanded squad roster, decisions/retros workflow, numeric sprint naming convention, ARCH/CONTRIB cross-references) (closes #306)
 - ARCHITECTURE.md: documented Windows orchestrator dependency order chain; mirrors the Linux Dependency Order section for parallel install flow visibility (closes #310)
 - ARCHITECTURE.md: rewrote `Script Conventions` section to point at `scripts/{linux,windows}/lib/` as source of truth; documents `source` / dot-source loading + `Read-ToolVersion.ps1` parser pattern (closes #309)
-- Sprint naming convention reverted from letters back to numbers: Q -> Sprint 8-hotfix, R -> Sprint 9, S -> Sprint 10, T -> Sprint 11; next = Sprint 12. Tier 3 full sweep across 21 files (~170 refs). Retro files renamed with `git mv`. First-occurrence `(formerly Sprint X)` aliases added for grep continuity. CONTRIBUTING.md "Sprint Naming Convention" section updated with mapping table and aliasing convention.
+- Sprint naming convention standardized to numeric format: Sprint 8-hotfix, Sprint 9, Sprint 10, Sprint 11; next = Sprint 12. Tier 3 full sweep across 21 files (~170 refs). Retro files renamed with `git mv`. Historical sprint letter references removed in favor of numeric format for consistency. CONTRIBUTING.md "Sprint Naming Convention" section updated with current numeric convention.
 - `.aliases`: added header marking the file as bash/zsh-only (not POSIX); documents non-POSIX features in use and intended loading pattern (closes #236)
 - `.squad/decisions.md`: drained 4 Wave 2 inbox drops (mickey #310, donald #237, goofy #235, jiminy audit); folded staged history modifications (goofy, jiminy); archive gate crossed (57 KB >= 50 KB) but no entries eligible for 7-day cut (oldest live entry 2026-05-14, 3 days old) -- (Sprint 12 Wave 2 fold)
 - `.squad/retros/2026-05-17-sprint-12-retro.md`: new Sprint 12 retrospective (3 waves, 10 PRs, 9 issues closed, worktree-isolation + ASCII-scope lessons learned)
@@ -71,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Legacy GitHub labels `priority: high`, `priority: medium`, `priority: low` (with spaces) deleted; canonical taxonomy is now `priority:p0..p3` (closes #254)
 
-## [0.9.1] - 2026-05-17 -- Sprint 11 (formerly Sprint T): Architecture refresh and tools hardening
+## [0.9.1] - 2026-05-17 -- Sprint 11: Architecture refresh and tools hardening
 
 ### Fixed
 - `scripts/windows/tools/auth.ps1` + `scripts/windows/setup.ps1`: applied `$LASTEXITCODE` reset mitigation at 5 sites; eliminates spurious failure detection when callers check exit codes downstream (closes #292)
@@ -87,12 +88,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ARCHITECTURE.md: refreshed file trees + agent/skill rosters + hook + CI layout to reflect Sprint 8-hotfix through Sprint 10 changes (`prepare-commit-msg`, per-tool Windows layout, `.tool-versions` pin-driven install, Doc + Jiminy agents, `.squad/decisions/`) (closes #229)
 - `hooks/pre-push`: documented advisory-only intent of the PSScriptAnalyzer step with an inline comment block at the top of the PSSA section; clarifies that PSSA findings warn but do not block, explains the three reasons (availability gap, subjective rules, out-of-scope hardening), and flags `|| true` as load-bearing (closes #233)
 - `CONTRIBUTING.md` "Why is PSSA advisory in `pre-push`?" subsection under Git Hooks: codifies the advisory model for contributors so the `|| true` in `hooks/pre-push` is not incorrectly "fixed" away (closes #233)
-- `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint 10 (formerly Sprint S) (closes #289, #290)
+- `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint 10 (closes #289, #290)
 - `CONTRIBUTING.md` "Squad Operational Gates (Coordinator dispatch)" section -- human-facing summary of the Doc worktree + Jiminy auto-dispatch SOPs
 - `hooks/pre-commit` Source of Truth allow-list extended to include canonical `.squad/decisions/*.md` files (top-level decisions directory, distinct from the gitignored `inbox/` subdir). Required so permanent decision records like `.squad/decisions/doc-and-jiminy-automation.md` are commit-eligible.
 - Sprint 11 end-of-session cleanup: no straggler branches/worktrees
 
-## [0.9.0] - 2026-05-17 -- Sprint 9 (formerly Sprint R) + Sprint 10: Hygiene backlog and tool-version pin sweep
+## [0.9.0] - 2026-05-17 -- Sprint 9 + Sprint 10: Hygiene backlog and tool-version pin sweep
 
 ### Added
 - `tests/test_nvm_bootstrap.sh` T6-T9: static source checks verifying that squad-cli and copilot-cli scripts read pins from `.tool-versions` and perform version-aware idempotency (closes #255)
