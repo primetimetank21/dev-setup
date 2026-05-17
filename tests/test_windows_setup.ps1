@@ -1970,6 +1970,341 @@ Test-Scenario "EE-5: setup.ps1 resets LASTEXITCODE after git rev-parse in Instal
 }
 
 # ---------------------------------------------------------------------------
+# Group FF: uninstall idempotency + restore (Issue #238)
+# ---------------------------------------------------------------------------
+#
+# Covers scripts/windows/uninstall.ps1 (and its sibling scripts/linux/uninstall.sh)
+# for two non-negotiable properties:
+#   - Idempotency: running uninstall twice must not error and must leave the
+#     filesystem in the same state as after the first run.
+#   - Restore: any timestamped (.bak.YYYYMMDD-HHmmss) or legacy (.bak) backup
+#     created by setup must be restored by uninstall, preferring the newest
+#     timestamped backup so users recover the state immediately before the
+#     most recent install run.
+#
+# Functional tests invoke the real uninstall.ps1 in a child powershell process
+# with USERPROFILE / HOMEDRIVE / HOMEPATH overridden so $HOME inside the child
+# resolves to a throwaway tmp directory. CWD is also pinned to a tmp git repo
+# so the script's `git config --unset-all core.hooksPath` cannot mutate the
+# tester's global or user git config.
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group FF: uninstall idempotency + restore (#238)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$ffUninstallPs1 = Join-Path $RepoRoot 'scripts\windows\uninstall.ps1'
+$ffUninstallSh  = Join-Path $RepoRoot 'scripts/linux/uninstall.sh'
+
+# Helper: run uninstall.ps1 in an isolated child process with $HOME = $FakeHome.
+# Returns a hashtable with ExitCode, StdOut, StdErr.
+function Invoke-UninstallIsolated {
+    param(
+        [Parameter(Mandatory)][string]$FakeHome,
+        [Parameter(Mandatory)][string]$TmpRepo
+    )
+    $savedUP   = $env:USERPROFILE
+    $savedHD   = $env:HOMEDRIVE
+    $savedHP   = $env:HOMEPATH
+    $savedEAP  = $ErrorActionPreference
+    Push-Location $TmpRepo
+    try {
+        # Native-command stderr (e.g. git) must not throw under the harness-wide
+        # $ErrorActionPreference = "Stop". We capture it explicitly via 2>file.
+        $ErrorActionPreference = 'Continue'
+
+        $env:USERPROFILE = $FakeHome
+        $drive = Split-Path -Qualifier $FakeHome
+        $env:HOMEDRIVE = $drive
+        $env:HOMEPATH  = $FakeHome.Substring($drive.Length)
+
+        $stderrFile = Join-Path $FakeHome '_stderr.log'
+        $stdoutLines = & powershell -NoProfile -ExecutionPolicy Bypass -File $ffUninstallPs1 2>$stderrFile
+        $childExit   = $LASTEXITCODE
+
+        return @{
+            ExitCode = $childExit
+            StdOut   = ($stdoutLines | Out-String)
+            StdErr   = (Get-Content $stderrFile -Raw -ErrorAction SilentlyContinue)
+        }
+    } finally {
+        $env:USERPROFILE       = $savedUP
+        $env:HOMEDRIVE         = $savedHD
+        $env:HOMEPATH          = $savedHP
+        $ErrorActionPreference = $savedEAP
+        Pop-Location
+    }
+}
+
+# Helper: create an isolated tmp HOME + tmp git repo for one test scenario.
+# NOTE: do NOT name a local variable `$home` -- PowerShell is case-insensitive
+# and `$HOME` is a Constant automatic variable; assignment would throw.
+function New-FfSandbox {
+    $root     = Join-Path $PSScriptRoot "tmp_grpff_$(Get-Random)"
+    $fakeHome = Join-Path $root 'home'
+    $repo     = Join-Path $root 'repo'
+    New-Item -ItemType Directory -Path $fakeHome -Force | Out-Null
+    New-Item -ItemType Directory -Path $repo -Force | Out-Null
+    Push-Location $repo
+    try { & git init --quiet 2>&1 | Out-Null } finally { Pop-Location }
+    return @{ Root = $root; Home = $fakeHome; Repo = $repo }
+}
+
+# -------------------- Static source checks --------------------
+
+Test-Scenario "FF-1: uninstall.ps1 restores all five managed dotfiles" {
+    $content = Get-Content $ffUninstallPs1 -Raw
+    $expected = @('.gitconfig', '.npmrc', '.editorconfig', '.aliases', '.vimrc')
+    foreach ($df in $expected) {
+        if ($content -notmatch [regex]::Escape("'$df'")) {
+            throw "uninstall.ps1 dotfile list is missing '$df'"
+        }
+    }
+}
+
+Test-Scenario "FF-2: uninstall.ps1 prefers newest timestamped .bak.* over legacy .bak" {
+    $content = Get-Content $ffUninstallPs1 -Raw
+    # Newest-wins: Get-ChildItem on "$Target.bak.*" sorted descending by LastWriteTime
+    if ($content -notmatch 'Get-ChildItem\s+"\$Target\.bak\.\*"') {
+        throw "Restore-DotfileBackup does not enumerate timestamped backups via Get-ChildItem '`$Target.bak.*'"
+    }
+    if ($content -notmatch 'Sort-Object\s+LastWriteTime\s+-Descending') {
+        throw "Restore-DotfileBackup does not sort timestamped backups newest-first"
+    }
+    # Fallback: legacy .bak only used when no timestamped backup exists
+    if ($content -notmatch 'Test-Path\s+"\$Target\.bak"') {
+        throw "Restore-DotfileBackup does not fall back to legacy `$Target.bak"
+    }
+}
+
+Test-Scenario "FF-3: uninstall.ps1 uses Move-Item -Force so re-runs do not error on existing target" {
+    $content = Get-Content $ffUninstallPs1 -Raw
+    # Both branches (timestamped + legacy) must use -Force so a leftover target file
+    # from an aborted previous run does not block restoration.
+    $forceCount = ([regex]::Matches($content, 'Move-Item[^\r\n]*-Force')).Count
+    if ($forceCount -lt 2) {
+        throw "Expected at least 2 Move-Item -Force calls in Restore-DotfileBackup, found $forceCount"
+    }
+}
+
+Test-Scenario "FF-4: uninstall.sh restores the same five managed dotfiles" {
+    $content = Get-Content $ffUninstallSh -Raw
+    $expected = @('.gitconfig', '.npmrc', '.editorconfig', '.aliases', '.vimrc')
+    foreach ($df in $expected) {
+        if ($content -notmatch [regex]::Escape("`$HOME/$df")) {
+            throw "uninstall.sh DOTFILES list is missing '$df'"
+        }
+    }
+}
+
+Test-Scenario "FF-5: uninstall.sh prefers newest timestamped .bak.* over legacy .bak" {
+    $content = Get-Content $ffUninstallSh -Raw
+    # Source uses: newest=$(ls -t "${target}.bak."* 2>/dev/null | head -n 1)
+    # Note the trailing `.` lives inside the quote and `*` is outside.
+    if ($content -notmatch 'ls\s+-t\s+"\$\{target\}\.bak\."\*') {
+        throw "restore_backup does not enumerate timestamped backups via 'ls -t'"
+    }
+    # Fallback uses: [[ -f "${target}.bak" ]]
+    if ($content -notmatch '\[\[\s+-f\s+"\$\{target\}\.bak"\s+\]\]') {
+        throw "restore_backup does not fall back to legacy timestamp-less .bak"
+    }
+}
+
+# -------------------- Functional: restore behavior --------------------
+
+Test-Scenario "FF-6: newest timestamped .bak.* wins when multiple backups exist" {
+    $sb = New-FfSandbox
+    try {
+        $gitconfig = Join-Path $sb.Home '.gitconfig'
+        $oldBak    = "$gitconfig.bak.20200101-000000"
+        $newBak    = "$gitconfig.bak.20250601-120000"
+        # Comment lines are valid git-config syntax so the script's later
+        # `git config --unset-all core.hooksPath` can still parse $HOME/.gitconfig.
+        Set-Content -Path $oldBak -Value '# sentinel: original-old' -Encoding ASCII
+        Start-Sleep -Milliseconds 50  # ensure LastWriteTime differs
+        Set-Content -Path $newBak -Value '# sentinel: original-new' -Encoding ASCII
+
+        $result = Invoke-UninstallIsolated -FakeHome $sb.Home -TmpRepo $sb.Repo
+        if ($result.ExitCode -ne 0) {
+            throw "uninstall.ps1 exited $($result.ExitCode). StdErr: $($result.StdErr)"
+        }
+        if (-not (Test-Path $gitconfig)) {
+            throw ".gitconfig was not restored"
+        }
+        $restored = (Get-Content $gitconfig -Raw).TrimEnd("`r", "`n")
+        if ($restored -ne '# sentinel: original-new') {
+            throw "Expected newest backup '# sentinel: original-new' to win, got '$restored'"
+        }
+        # Newest .bak.* should have been consumed (moved); older preserved for manual recovery
+        if (Test-Path $newBak) {
+            throw "Newest timestamped backup '$newBak' was not consumed by Move-Item"
+        }
+        if (-not (Test-Path $oldBak)) {
+            throw "Older timestamped backup '$oldBak' was unexpectedly consumed (should remain for manual recovery)"
+        }
+    } finally {
+        Remove-Item $sb.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Scenario "FF-7: legacy .bak is restored when no timestamped backup exists" {
+    $sb = New-FfSandbox
+    try {
+        $vimrc = Join-Path $sb.Home '.vimrc'
+        Set-Content -Path "$vimrc.bak" -Value 'legacy-vimrc-content' -Encoding ASCII
+
+        $result = Invoke-UninstallIsolated -FakeHome $sb.Home -TmpRepo $sb.Repo
+        if ($result.ExitCode -ne 0) {
+            throw "uninstall.ps1 exited $($result.ExitCode). StdErr: $($result.StdErr)"
+        }
+        if (-not (Test-Path $vimrc)) {
+            throw ".vimrc was not restored from legacy .bak"
+        }
+        $restored = (Get-Content $vimrc -Raw).TrimEnd("`r", "`n")
+        if ($restored -ne 'legacy-vimrc-content') {
+            throw "Expected 'legacy-vimrc-content', got '$restored'"
+        }
+        if (Test-Path "$vimrc.bak") {
+            throw "Legacy .bak was not consumed by Move-Item"
+        }
+    } finally {
+        Remove-Item $sb.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Scenario "FF-8: second uninstall run is idempotent (no error, no state change)" {
+    $sb = New-FfSandbox
+    try {
+        $gitconfig = Join-Path $sb.Home '.gitconfig'
+        # Comment line is valid git-config syntax so re-invoking uninstall
+        # (which calls `git config --unset-all core.hooksPath`) cannot trip on
+        # a malformed user gitconfig.
+        Set-Content -Path "$gitconfig.bak.20250101-120000" -Value '# sentinel: restored-content' -Encoding ASCII
+
+        # First run: should restore .gitconfig
+        $first = Invoke-UninstallIsolated -FakeHome $sb.Home -TmpRepo $sb.Repo
+        if ($first.ExitCode -ne 0) {
+            throw "First uninstall run exited $($first.ExitCode). StdErr: $($first.StdErr)"
+        }
+        if (-not (Test-Path $gitconfig)) {
+            throw "First run failed to restore .gitconfig"
+        }
+        $firstContent = (Get-Content $gitconfig -Raw)
+        $firstLen     = (Get-Item $gitconfig).Length
+
+        # Second run: should be a no-op (no backups left to restore, no errors)
+        $second = Invoke-UninstallIsolated -FakeHome $sb.Home -TmpRepo $sb.Repo
+        if ($second.ExitCode -ne 0) {
+            throw "Second uninstall run exited $($second.ExitCode). StdErr: $($second.StdErr)"
+        }
+        $secondContent = (Get-Content $gitconfig -Raw)
+        $secondLen     = (Get-Item $gitconfig).Length
+
+        if ($firstLen -ne $secondLen) {
+            throw "Idempotency broken: .gitconfig size changed across runs ($firstLen -> $secondLen)"
+        }
+        if ($firstContent -ne $secondContent) {
+            throw "Idempotency broken: .gitconfig content changed across runs"
+        }
+        # Second run must explicitly log 'No backup found' or 'No dotfiles to restore'
+        if ($second.StdOut -notmatch 'No (backup found|dotfiles to restore)') {
+            throw "Second run did not log a no-op restore marker. StdOut: $($second.StdOut)"
+        }
+    } finally {
+        Remove-Item $sb.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Scenario "FF-9: uninstall removes dev-setup profile block while preserving surrounding content" {
+    $sb = New-FfSandbox
+    try {
+        # Build a fake PS 5.1 profile path under the fake HOME
+        $profileDir = Join-Path $sb.Home 'Documents\WindowsPowerShell'
+        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+        $profilePath = Join-Path $profileDir 'Microsoft.PowerShell_profile.ps1'
+
+        $userLineBefore = "Set-Alias myalias Get-ChildItem"
+        $userLineAfter  = "Write-Host 'user epilogue'"
+        $profileBody = @"
+$userLineBefore
+
+# BEGIN dev-setup profile
+Set-Alias gg git
+# END dev-setup profile
+
+$userLineAfter
+"@
+        Set-Content -Path $profilePath -Value $profileBody -Encoding ASCII
+
+        $result = Invoke-UninstallIsolated -FakeHome $sb.Home -TmpRepo $sb.Repo
+        if ($result.ExitCode -ne 0) {
+            throw "uninstall.ps1 exited $($result.ExitCode). StdErr: $($result.StdErr)"
+        }
+        if (-not (Test-Path $profilePath)) {
+            throw "Profile was deleted even though it had non-dev-setup content"
+        }
+        $after = Get-Content $profilePath -Raw
+        if ($after -match '# BEGIN dev-setup profile' -or $after -match '# END dev-setup profile') {
+            throw "dev-setup managed block was not removed. Profile content:`n$after"
+        }
+        if ($after -notmatch [regex]::Escape($userLineBefore)) {
+            throw "User content before the managed block was lost"
+        }
+        if ($after -notmatch [regex]::Escape($userLineAfter)) {
+            throw "User content after the managed block was lost"
+        }
+    } finally {
+        Remove-Item $sb.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Scenario "FF-10: re-running uninstall after profile block already removed is a no-op" {
+    $sb = New-FfSandbox
+    try {
+        $profileDir = Join-Path $sb.Home 'Documents\WindowsPowerShell'
+        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+        $profilePath = Join-Path $profileDir 'Microsoft.PowerShell_profile.ps1'
+
+        $profileBody = @"
+Set-Alias myalias Get-ChildItem
+
+# BEGIN dev-setup profile
+Set-Alias gg git
+# END dev-setup profile
+"@
+        Set-Content -Path $profilePath -Value $profileBody -Encoding ASCII
+
+        # First run: strips the block
+        $first = Invoke-UninstallIsolated -FakeHome $sb.Home -TmpRepo $sb.Repo
+        if ($first.ExitCode -ne 0) {
+            throw "First run exited $($first.ExitCode). StdErr: $($first.StdErr)"
+        }
+        $afterFirst = Get-Content $profilePath -Raw
+        $sizeFirst  = (Get-Item $profilePath).Length
+
+        # Second run: should detect the absent block and log SKIP, no error, no rewrite
+        $second = Invoke-UninstallIsolated -FakeHome $sb.Home -TmpRepo $sb.Repo
+        if ($second.ExitCode -ne 0) {
+            throw "Second run exited $($second.ExitCode). StdErr: $($second.StdErr)"
+        }
+        $afterSecond = Get-Content $profilePath -Raw
+        $sizeSecond  = (Get-Item $profilePath).Length
+
+        if ($sizeFirst -ne $sizeSecond) {
+            throw "Idempotency broken: profile size changed across runs ($sizeFirst -> $sizeSecond)"
+        }
+        if ($afterFirst -ne $afterSecond) {
+            throw "Idempotency broken: profile content changed across runs"
+        }
+        if ($second.StdOut -notmatch 'No dev-setup block in') {
+            throw "Second run did not log 'No dev-setup block in ...' SKIP marker. StdOut: $($second.StdOut)"
+        }
+    } finally {
+        Remove-Item $sb.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
