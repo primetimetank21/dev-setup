@@ -15,7 +15,8 @@
 # Mocking strategy:
 #   Tests A-C create a stub gh script in a temp dir added to PATH.
 #   Test D relies on the idempotency check which runs BEFORE any gh calls.
-#   The repo must have tag 0.9.7 resolvable (used as --last-tag).
+#   New-TestEnv creates a git sandbox with tag 0.9.7 so tag resolution is
+#   self-contained for CI (no dependency on host repo tags).
 #
 # Usage:
 #   pwsh -File tests\test_changelog_fold.ps1
@@ -203,6 +204,23 @@ function New-TestEnv {
     # chmod +x so bash can execute it via PATH lookup
     $posixStub = ConvertTo-PosixPath $stubPath
     & $bashPath -c "chmod +x '$posixStub'"
+
+    # Initialize git repo with 0.9.7 tag for tag-resolution tests (Issue #430).
+    # changelog-fold.ps1 / changelog-fold.sh resolve --last-tag via git commands,
+    # so the test sandbox must have the tag present to be self-contained for CI.
+    Push-Location $dir
+    try {
+        & git init -q 2>&1 | Out-Null
+        & git config user.name "Test User" 2>&1 | Out-Null
+        & git config user.email "test@example.com" 2>&1 | Out-Null
+        "initial" | Out-File -FilePath "README.md" -Encoding ASCII -NoNewline
+        & git add README.md 2>&1 | Out-Null
+        & git commit -q -m "initial commit" 2>&1 | Out-Null
+        & git tag 0.9.7 HEAD 2>&1 | Out-Null
+    }
+    finally {
+        Pop-Location
+    }
 
     return $dir
 }

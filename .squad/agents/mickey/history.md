@@ -111,6 +111,7 @@ Issue #371: decisions.md hard gate policy review. decisions.md was 65,737 bytes,
 
 Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05-17 (3 Added, 3 Changed, 1 Fixed) covering #371 #381 #382 #383 #384 (Sprint 17: Hygiene gate restoration + label automation + skill formalization). PR #393: release/0.9.7 -> develop (squash). PR #394: develop -> main (regular merge, fe83af3). Tag 0.9.7 bare at f596202. GitHub release: https://github.com/primetimetank21/dev-setup/releases/tag/0.9.7.
 
-## Sprint 19 -- #414
+## Sprint 19 -- #414, #430
 
 2026-05-18: Squad-spawn helper + lint-spawn-prompt backstop (PR #420). Added scripts/squad-spawn.{ps1,sh} (auto-inject hygiene tail, idempotent, {name}/{N}/{worktree-path} substitution) and scripts/lint-spawn-prompt.{ps1,sh} (6-marker scan, exit 0/1). .squad/skills/spawn-prompt-lint/SKILL.md added (medium confidence). routing.md updated with helper/linter enforcement paths. 20 tests (4 files x 5 cases). Root-cause fix for Sprint 18 #406/#407 fixup pattern.
+2026-05-18: test_changelog_fold.ps1 CI fix (PR #431, #430). New-TestEnv now creates git sandbox with tag 0.9.7 for tag-resolution self-containment. Rejected fetch-tags in validate.yml -- hermetic test sandboxes preferred.
