@@ -56,76 +56,11 @@ Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 - sed -i 's/\r//' chosen over dos2unix for POSIX portability
 
 ---
-> Compressed 2026-05-17 per #319 (Option A: older entries summarized in-place; no archive file).
+> Compressed 2026-05-18 (Jiminy S17 audit): pre-Sprint-12 entries archived to history-archive.md.
 
-## Recent Work (pre-Sprint-9 summary)
+## Pre-Sprint-12 Summary
 
-Compressed; full detail dropped in favor of preserved lessons in Learnings.
-
-- **2026-04-12 to 2026-04-13** Issues #68/#69 stdout/stderr merge + CRLF guard (PR #70/#71 merged). Issue #72 directory-based install check + printf pipe (PR #73 merged). Issues #75/#76 vim prerequisites + script PTY for Copilot CLI (PRs #77/#78). Issue #76 revised: standalone copilot-cli install via official script (PR #82).
-- **2026-04-12 -- Issue #79 / PR #80** CI=true env var to bypass non-interactive Copilot binary download (isatty()/IsCI gate fix). Root cause traced in cli/cli source.
-- **2026-04-13 to 2026-04-25** PR #146 test regressions fixed (Issue #138), PR #170 Remove-Item AllScope guard for `ep` alias.
-- **2026-04-19** Issue #138 lead session wrap-up (dual-path profile + force-alias).
-- **2026-05-04** Issue #173 / PR #176 shell aliases for shutdown control. Post-sprint Linux shell audit (2026-05-16).
-
-Lessons preserved verbatim in Learnings section above (gh built-in `--` passthrough, CI=true non-interactive trigger, exec 2>&1 for ordered output, CRLF onCreateCommand guard, directory check over exit-code probe).
-
----
-
-## Learnings
-
-### 2026-04-19: Issue #178 -- macOS/Linux install_prerequisites divergence
-
-The `install_prerequisites()` function in `scripts/linux/setup.sh` maintains separate package lists
-for macOS (brew) and Linux (apt). These lists can silently drift apart -- vim was present in the
-Linux apt path but missing from the macOS brew path. When adding new prerequisites, always verify
-both platform branches get the package to maintain the cross-platform parity documented in README.
-**PRs:** #70, #71  
-**Status:** [x] Both merged to develop
-
-**Issue #68 -- exec 2>&1 for ordered log output:**
-- Root cause: stderr and stdout buffers independent in piped environments; error lines appear before unrelated INFO/OK lines
-- Fix: `exec 2>&1` immediately after `set -euo pipefail` in setup.sh and scripts/linux/setup.sh
-- Rule: FD inheritance covers all child processes; no need to add to tool scripts
-
-**Issue #69 -- onCreateCommand CRLF guard in devcontainer:**
-- Root cause: PR #66 added `.gitattributes` eol=lf + `git add --renormalize`, but this updates git INDEX only, not working tree
-- Windows users with existing checkout still have CRLF .sh files; bind-mount sees `set: pipefail\r` errors
-- Fix: `onCreateCommand` strips `\r` before `postCreateCommand` runs
-- Rule: When adding .gitattributes eol rules, always add devcontainer onCreateCommand CRLF strip as defensive guard
-
-## Learnings
-
-### Issue #189 - Uninstall/cleanup scripts (2025-07-17)
-
-- Created scripts/linux/uninstall.sh and scripts/windows/uninstall.ps1
-- Linux markers: # --- dev-setup managed block (do not edit) --- / # --- end dev-setup managed block ---
-- Windows markers: # BEGIN dev-setup profile / # END dev-setup profile
-- Dotfile .bak paths: ~/.gitconfig, ~/.npmrc, ~/.editorconfig, ~/.aliases, ~/.vimrc
-- Windows profile paths: Documents/WindowsPowerShell and Documents/PowerShell
-- Uninstallers are idempotent; tools intentionally left installed
-- PS1 ASCII safety: box-drawing chars (U+2500 range) trigger the same CP1252 issue as em dashes
-
-### Issue #191 - Windows GitHub auth step (2026-05-16)
-- PR: TBD -- `feat(windows): add gh auth step`
-- Branch: `squad/191-windows-auth` from `develop`
-- What: Added scripts/windows/auth.ps1 with Invoke-GhAuth that mirrors Linux auth.sh
-- Key findings: Linux uses gh auth login with no flags; Windows uses --hostname github.com --git-protocol https --web for explicit interactive flow. Auth failure is always non-fatal (warn and continue). Non-interactive detection via CI/CODESPACES env vars and [Environment]::UserInteractive.
-- Tests: Group S verifies function exists (S-1), exits cleanly when gh missing (S-2), skips prompt when already authenticated (S-3)
-
-### Audit verification (2026-05-04)
-- **Task:** Verify 5 findings from gap-audit (V-2, V-4, V-10, V-12, V-14)
-- **Report:** .squad/agents/donald/verification-report-2026-05-04.md
-- **Summary:** V-2 CONFIRMED (logging consolidation, P1); V-4 CONFIRMED (macOS Homebrew guidance, P2); V-10 CONFIRMED but P3 (POSIX syntax in .aliases, not needed); V-12 CONFIRMED but needs design decision on squad-cli versioning; V-14 CONFIRMED but intentional in some tests (test harness pattern).
-- **Hits:** Real issues in logging duplication and test inconsistency.
-- **Misses:** V-10 and V-14 are design choices, not bugs. V-12 requires squad-cli versioning philosophy decision.
-
-- **2026-05-16 -- Cleanup of rogue verification reports.** Coordinator dropped Scribe between verifier batch and Mickey filing, so verifier history edits + 3 rogue VERIFICATION_REPORT files sat uncommitted on develop. I consolidated all 3 reports into .squad/orchestration-log/2026-05-16-verification-evidence.md (correct location per Source of Truth Hierarchy), deleted the rogues, and committed everything. Lesson: rogue files at .squad/{anything-not-in-spec}.md are spawn-hygiene violations. Future verifier batches must use ONE of: history.md (learnings), decisions/inbox/ (decisions), orchestration-log/ (evidence).
-- 2026-05-16: Jiminy joined the squad as Hygiene Auditor (process QA, not code review). Will audit your hygiene compliance after spawns. See .squad/agents/jiminy/charter.md for scope.
-- 2026-05-16 Hygiene retro complete -- 4 action items shipped (pre-spawn-checklist skill + squad-history-check CI gate + PR template + 6 standing rules). See .squad/log/2026-05-16-hygiene-retro-complete.md.
-
-- **2026-05-16 -- Reviewed PR #244 (Mickey's retroactive tags + 0.8.0 cut).** Verdict: APPROVE (posted as comment since GitHub single-owner repos cannot self-approve; --admin merge used). CHANGELOG cut is clean (empty Unreleased, all entries under 0.8.0, no drops). Spot-checked 3/7 SHAs (0.1.0, 0.5.0, 0.7.0) -- all point at release-shaped merge commits matching Mickey's rationale table. All 7 tags and GitHub releases confirmed present. Commit uses Conventional Commits format with Copilot co-author trailer.
-2026-05-16 -- #223 logging consolidation
+Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-#82 (stdout/stderr, CRLF, CI=true, Copilot CLI install); PR #146/#170 (test regressions, AllScope guard); #173/#176 (shell aliases); #178 (cross-platform prerequisites parity); #189 (uninstall scripts); #191 (Windows gh auth); verification batch V-2/V-4/V-10/V-12/V-14; rogue file cleanup; PR #244 review; #223 logging consolidation; hygiene retro.
 
 ### Sprint 12 -- PR #313: Issue #236 docs(.aliases): mark file as bash/zsh-only
 
@@ -144,3 +79,16 @@ both platform branches get the package to maintain the cross-platform parity doc
 - Authored `.squad/skills/test-harness-pattern/SKILL.md` (confidence: medium, domain: testing). Skill captures the rule, the rule of thumb, the counter-naming variance, the path-setup boilerplate, the helper convention, and four anti-patterns (notably the `((PASS++))` exit-code-1 trap under `set -e`).
 - Cross-link: CONTRIBUTING.md's new section sits between Parallel Agent Work and Group Letter Assignment, so the testing sections cluster.
 - Out of scope (per ticket): refactoring tests, adding new tests, changing `set -*` flags in existing files, PowerShell test harness.
+
+### Sprint 17 -- PR #389 (closes #382): Sprint-end label automation with verification
+
+- **What:** Hybrid (C) delivery -- standalone bash script `scripts/sprint-end-labels.sh` and matching workflow `.github/workflows/sprint-end-labels.yml`. For every issue/PR carrying a given sprint label, removes `release:backlog` (if present) and adds `release:shipped-X.Y.Z` (if missing). Never touches type/area/squad/priority labels.
+- **The Earl directive:** every `gh issue edit --add-label`/`--remove-label` is paired with a re-query (`gh issue view <N> --json labels`) that asserts the desired state. On mismatch, retry the **read** (never the write) on exponential backoff 1s/2s/4s, then fail loudly with the actual label set in the error. Implemented as `verify_with_retry` calling `has_label`. Skill formalized at `.squad/skills/gh-label-verify-retry/SKILL.md`.
+- **Tests:** `tests/test_sprint_end_labels.ps1` (6 PASS). The retry-loop tests do not use a fake `gh`; they source the script's helpers into a bash shim and override `has_label` directly. This was the second attempt: the first tried to plant a `gh` shim on PATH but Git Bash on Windows kept resolving the real `gh.exe`, so function override is more portable. Backoff wall-clock (1+2+4 + 1+2+4 = 14s) is observable in test timing.
+- **Idempotency:** double-checked by the skip-add/skip-remove branches that key on the **pre-fetched** label list (not on `gh edit` exit code). A second invocation reports `skip remove: ... not present` / `skip add: ... already present`.
+- **Workflow safety:** `dry_run` input defaults to `'true'` -- operator must consciously flip it. Workflow uses `permissions: issues: write, pull-requests: write, contents: read` (least privilege for the job).
+- **Sprint-16 dry-run probe:** `sprint:16` does not exist as a label in this repo (sprint labels weren't in use during S16). The script handled the empty result cleanly (`found 0 ... nothing to do`). Cross-validated the per-issue branch by running a dry-run with `release:backlog` as the search label, which produced clean DRY-RUN lines for 26 closed items.
+- **Gotcha caught locally:** `Get-Command bash` on Windows returned `C:\Windows\system32\bash.exe` (the WSL stub), which choked on the script with "no installed distributions." Test now prefers explicit Git Bash paths (`C:\Program Files\Git\bin\bash.exe`) and falls back to PATH lookup that skips `System32\bash.exe`. Lesson: any bash-via-PowerShell script should never `Get-Command bash` without filtering the WSL stub.
+- **Ancestry fixup:** branch was forked from a develop ancestor 4 commits behind tip; rebased onto `origin/develop` before commit to satisfy pre-commit ancestry check. `git stash push -u` + `rebase` + `stash pop` was needed because the new files were staged.
+- **Out of scope:** did NOT introduce live label writes during testing; did NOT add a `sprint:N` label vocabulary; did NOT modify any existing workflow.
+- **Lesson:** when a write API has any read-after-write delay, treat "the CLI returned 0" as a hint, not a guarantee. A 3-step exponential backoff costs ~7s in the worst case and removes a whole class of silent-miss bugs from batch automation.
