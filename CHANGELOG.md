@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint-end label automation: `scripts/sprint-end-labels.sh` + `.github/workflows/sprint-end-labels.yml`. Applies `release:shipped-X.Y.Z` and removes `release:backlog` across all issues/PRs carrying a given sprint label. Hard-verifies every label op via re-query with 3-retry exponential backoff (1s, 2s, 4s). Dry-run mode (`--dry-run`) for safe rehearsals. Type/area/squad/priority labels are never touched. Covered by `tests/test_sprint_end_labels.ps1` (6 tests, including happy-path and fail-loudly retry scenarios). New skill `.squad/skills/gh-label-verify-retry/SKILL.md` formalizes the write-then-verify-then-retry pattern. (#382)
+
 ### Changed
 
 ### Fixed

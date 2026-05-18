@@ -6,6 +6,9 @@
 # Squad: SubSquad activation file (local to this machine)
 .squad-workstream
 
+# Tests: ephemeral shim directories created by tests/test_sprint_end_labels.ps1
+.test-tmp/
+
 # Binary artifacts — do not commit compiled binaries or archives
 *.tar.gz
 *.tgz

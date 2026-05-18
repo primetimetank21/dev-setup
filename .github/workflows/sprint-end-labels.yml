@@ -1,0 +1,68 @@
+name: Sprint End Labels
+
+# Sprint-end label automation (Issue #382).
+#
+# Runs scripts/sprint-end-labels.sh against the repo, applying these
+# transitions to every issue/PR carrying the given sprint label:
+#   - remove release:backlog (if present)
+#   - add   release:shipped-X.Y.Z (if missing)
+#
+# Type/area/squad/priority labels are never touched.
+#
+# Verification is enforced by the script: after each label op, the script
+# re-queries the issue and retries up to 3 times with exponential backoff.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sprint_label:
+        description: 'Sprint label to target (e.g. sprint:17)'
+        required: true
+        type: string
+      release_label:
+        description: 'Release label to apply (e.g. release:shipped-1.17.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (no writes)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  apply-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify gh and jq are available
+        run: |
+          gh --version
+          jq --version
+
+      - name: Run sprint-end-labels.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/sprint-end-labels.sh
+
+          DRY_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_FLAG="--dry-run"
+          fi
+
+          scripts/sprint-end-labels.sh \
+            --sprint  "${{ inputs.sprint_label }}" \
+            --release-label "${{ inputs.release_label }}" \
+            --repo "${{ github.repository }}" \
+            $DRY_FLAG
