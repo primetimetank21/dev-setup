@@ -124,3 +124,9 @@ Formalized two skills surfaced by Sprint 17 audit:
 Both SKILLs use YAML frontmatter (name/description/domain/confidence/source), Context, Recipe with PowerShell + bash snippets, Why-this-order rationale, real PR/SHA examples, Anti-Patterns, Related Skills, References. Meta-validation: this very append was pre-checked against the size-check skill being formalized.
 
 **Lesson:** when formalizing a hygiene skill, eat your own dog food -- verify the very edit committing the skill follows the rule the skill teaches.
+## Sprint 19 -- Issue #417: routing.md pre-spawn worktree clarification
+
+**PR:** #418
+**Status:** Complete.
+
+Added 2-3 line clarification to routing.md "Pre-Spawn Worktree Creation" section: coordinators must pre-create N isolated worktrees BEFORE dispatching N parallel agents. Cross-references worktree-isolation SKILL (no duplication). Surfaces pattern already implicit in worktree-isolation/SKILL.md and issue-lifecycle.md.
