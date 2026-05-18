@@ -109,7 +109,7 @@ First live production run of sprint-end-labels.sh script completed. Decision doc
 Created three labels with standardized naming and color scheme:
 - sprint:17 (#FFA500) -- Orange, identifies S17 work
 - sprint:18 (#FF8C00) -- Dark Orange, identifies S18 work  
-- elease:shipped-0.9.7 (#0E8A16) -- Green, marks shipped release
+- release:shipped-0.9.7 (#0E8A16) -- Green, marks shipped release
 
 Scheme applied to all Sprint 17 closed issues and merged PRs. Going forward, sprint labels will be created at sprint start per this standard.
 
