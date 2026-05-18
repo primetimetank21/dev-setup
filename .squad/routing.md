@@ -60,8 +60,29 @@ After creation, verify: gh pr view <N> --json baseRefName --jq .baseRefName
 Must equal "develop". If not, close the PR and recreate with --base develop.
 ```
 
-See also `.squad/skills/pre-spawn-checklist/SKILL.md` for the full hygiene tail
-template.
+See also `.squad/skills/pre-spawn-checklist/SKILL.md` for the full background
+checklist.
+
+## Mandatory Hygiene Tail
+
+Every coordinator spawn prompt MUST include the **Mandatory Hygiene Tail** block
+verbatim. The canonical template lives at:
+
+  `.squad/templates/spawn-prompt-hygiene.md`
+
+Copy-paste the entire block from that file into every spawn prompt. No items may
+be omitted. The block covers:
+
+1. CWD-pin verification before every file write
+2. base=develop discipline (ref: `.squad/skills/gh-pr-base-develop/SKILL.md`)
+3. ASCII discipline per file written (ref: `.copilot/skills/ascii-docs-about-non-ascii/SKILL.md`)
+4. history.md pre-size-check before append (ref: `.squad/skills/history-md-pre-size-check/SKILL.md`)
+5. Worktree-remove-FIRST cleanup after merge (ref: `.squad/skills/worktree-remove-first/SKILL.md`)
+6. Hygiene tail completion (history append, inbox drop, skill formalization check)
+
+Rationale: Sprint 17 retro identified 3 hygiene failures (history.md gate breach,
+ASCII em-dash in .gitignore, PR #368 --base=main) all preventable by a mandatory
+template. Issue #397.
 
 ## Rules
 
