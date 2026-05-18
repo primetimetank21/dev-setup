@@ -80,6 +80,44 @@ jobs:
           chmod +x tests/test_alias_parity.sh
           bash tests/test_alias_parity.sh
 
+      - name: Run tool version tests
+        run: |
+          chmod +x tests/test_tool_versions.sh
+          bash tests/test_tool_versions.sh
+
+      - name: Run idempotency test
+        run: |
+          chmod +x tests/test_idempotency.sh
+          bash tests/test_idempotency.sh
+
+      - name: Run nvm bootstrap test
+        run: |
+          chmod +x tests/test_nvm_bootstrap.sh
+          bash tests/test_nvm_bootstrap.sh
+
+      - name: Run shared logging test
+        run: |
+          chmod +x tests/test_shared_logging.sh
+          bash tests/test_shared_logging.sh
+
+      - name: Run squad spawn test
+        run: |
+          chmod +x tests/test_squad_spawn.sh
+          bash tests/test_squad_spawn.sh
+
+      - name: Run spawn prompt lint test
+        run: |
+          chmod +x tests/test_spawn_prompt_lint.sh
+          bash tests/test_spawn_prompt_lint.sh
+
+      - name: Configure git hooks for precommit test
+        run: git config core.hooksPath hooks
+
+      - name: Run precommit hygiene test
+        run: |
+          chmod +x tests/test_precommit_hygiene.sh
+          bash tests/test_precommit_hygiene.sh
+
   validate-macos:
     name: Validate macOS Setup
     runs-on: macos-latest
@@ -157,6 +195,15 @@ jobs:
       - name: Run tool version tests
         run: bash tests/test_tool_versions.sh
 
+      - name: Run idempotency test
+        run: bash tests/test_idempotency.sh
+
+      - name: Run squad spawn test
+        run: bash tests/test_squad_spawn.sh
+
+      - name: Run spawn prompt lint test
+        run: bash tests/test_spawn_prompt_lint.sh
+
   lint-shell-scripts:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
@@ -220,6 +267,18 @@ jobs:
 
       - name: Run git hooks tests
         run: pwsh tests/test_git_hooks.ps1
+
+      - name: Run changelog fold test
+        run: pwsh tests/test_changelog_fold.ps1
+
+      - name: Run squad spawn test
+        run: pwsh tests/test_squad_spawn.ps1
+
+      - name: Run spawn prompt lint test
+        run: pwsh tests/test_spawn_prompt_lint.ps1
+
+      - name: Run sprint end labels test
+        run: pwsh tests/test_sprint_end_labels.ps1
 
   validate-ps51:
     name: Validate PowerShell 5.1 Compatibility
