@@ -38,7 +38,7 @@ What Jiminy checks, by lane:
 
 - Open PRs have `priority:pN` + `squad:{member}` labels
 - Open issues have phase priority label when actionable
-- No squash merges on `develop` or `main` (Earl's standing directive: regular merge commits only)
+- Regular merge commits ONLY for `develop -> main` release cuts and recovery back-merges. Feature/sprint PRs to `develop` use squash merges (Earl's standing directive, clarified 2026-05-17 -- see decisions.md).
 - Conventional Commits format on recent commits (commit-msg hook enforces, but Jiminy spot-checks)
 - PRs include `Co-authored-by: Copilot` trailer when authored via the agent system
 
