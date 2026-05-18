@@ -246,6 +246,7 @@ Test-Scenario 'A: dry-run output present; CHANGELOG not modified' {
     $posixChangelog = ConvertTo-PosixPath $tmpChangelog
     try {
         $out = & $bashPath -c "
+cd '$posixEnvDir' &&
 export PATH='$posixEnvDir':`$PATH
 '$posixScript' \
     --release-version 0.9.99 \
@@ -293,6 +294,7 @@ Test-Scenario 'B: apply mode folds CHANGELOG.md correctly' {
     $posixChangelog = ConvertTo-PosixPath $tmpChangelog
     try {
         $out = & $bashPath -c "
+cd '$posixEnvDir' &&
 export PATH='$posixEnvDir':`$PATH
 '$posixScript' \
     --release-version 0.9.99 \
@@ -358,6 +360,7 @@ Test-Scenario 'C: missing entries reported to stderr' {
         $tmpErr     = Join-Path $env_dir 'stderr.txt'
         $posixErr   = ConvertTo-PosixPath $tmpErr
         & $bashPath -c "
+cd '$posixEnvDir' &&
 export PATH='$posixEnvDir':`$PATH
 '$posixScript' \
     --release-version 0.9.99 \
@@ -395,6 +398,7 @@ Test-Scenario 'D: idempotency gate exits 1 for already-folded version' {
     $posixChangelog = ConvertTo-PosixPath $tmpChangelog
     try {
         $out = & $bashPath -c "
+cd '$posixEnvDir' &&
 export PATH='$posixEnvDir':`$PATH
 '$posixScript' \
     --release-version 0.9.99 \
