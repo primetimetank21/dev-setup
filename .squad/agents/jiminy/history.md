@@ -27,6 +27,7 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **Lesson (Scribe inbox-drain bug):** When folding inbox decisions, the per-topic-file `git add` AND `git rm -- decisions/inbox/*.md` MUST land in the SAME commit so drain is atomic with merge. Forward-fix expectation for next Scribe cycle (PR #319 spec; re-tested in Sprint 13 W1 fold).
 - **Lesson (squad: label set incomplete):** Standard label set covers 8 engineering agents but omits `squad:scribe`. Service-role follow-ups force routing miss. Recommend next label sweep create `squad:scribe` (and audit `squad:ralph` usage; precedent exists for service-role labels).
 - **Recurring incident references preserved:** worktree-isolation (Sprint 4 race condition + Sprint 12 W2 CWD-resolution variant), ASCII scope gap (#322, `*.ps1`-only pre-commit), CP1252 byte 0x94 trap in PowerShell string literals, `autocrlf` and `AllScope` alias hazards, atomic-drain (PR #323 bug).
+- **2026-05-18 -- Sprint 17 Wave 1 post-batch audit.** AUTO-FIXED: (1) donald/history.md 15860B over gate -- compressed to 10236B + archive; (2) .gitignore em-dash U+2014 from PR #389 -- replaced with `--`. All other lanes clean.
 
 ## 2026-05-17 Sprint 13 Wave 1
 
