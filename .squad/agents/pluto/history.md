@@ -97,3 +97,12 @@ Drafted and landed `.copilot/skills/worktree-base-refresh/SKILL.md` -- the first
 Full documentation archived to `.squad/agents/pluto/history-archive.md`.
 
 Decision drop: `.squad/decisions/inbox/pluto-364-worktree-base-refresh.md`
+
+---
+
+## Sprint 17 W1 -- Issues #383 + #384: skill formalization wave
+
+**PRs:** #386 (squash-merged to develop @ 17c940b)
+**Status:** Complete.
+
+Updated `worktree-remove-first` SKILL.md (confidence high->medium, harvest as primary ordering rationale, Sprint 15+16 citations). Created `gh-pr-base-develop` SKILL.md (new -- codifies --base develop rule from PR #368 incident). Updated `routing.md` with Spawn-Prompt Hygiene section.
