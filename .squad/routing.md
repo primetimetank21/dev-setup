@@ -80,6 +80,40 @@ verbatim. The canonical template lives at:
 
   `.squad/templates/spawn-prompt-hygiene.md`
 
+Coordinators MUST use one of the two enforcement paths below (issue #414):
+
+**(a) Auto-inject via squad-spawn (preferred):**
+
+```
+# Windows
+pwsh -File scripts\squad-spawn.ps1 --body <prompt-skeleton.md> \
+    --name <agent> --issue <N> --worktree <path>
+
+# POSIX
+bash scripts/squad-spawn.sh --body <prompt-skeleton.md> \
+    --name <agent> --issue <N> --worktree <path>
+```
+
+Outputs the assembled prompt on stdout. Pipe into the `task` tool prompt
+parameter. Substitutes `{name}`, `{N}`, and `{worktree-path}` automatically.
+Idempotent: will not double-inject if markers are already present.
+
+**(b) Lint-verify before spawning:**
+
+```
+# Windows
+pwsh -File scripts\lint-spawn-prompt.ps1 --file <prompt.md>
+
+# POSIX
+bash scripts/lint-spawn-prompt.sh --file <prompt.md>
+```
+
+Exit 0 = all 6 markers present (safe to spawn).
+Exit 1 = list of missing markers (do not spawn; fix first).
+
+See `.squad/skills/spawn-prompt-lint/SKILL.md` for the 6 marker definitions and
+the full recipe.
+
 Copy-paste the entire block from that file into every spawn prompt. No items may
 be omitted. The block covers:
 
