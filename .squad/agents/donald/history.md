@@ -92,3 +92,15 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 - **Ancestry fixup:** branch was forked from a develop ancestor 4 commits behind tip; rebased onto `origin/develop` before commit to satisfy pre-commit ancestry check. `git stash push -u` + `rebase` + `stash pop` was needed because the new files were staged.
 - **Out of scope:** did NOT introduce live label writes during testing; did NOT add a `sprint:N` label vocabulary; did NOT modify any existing workflow.
 - **Lesson:** when a write API has any read-after-write delay, treat "the CLI returned 0" as a hint, not a guarantee. A 3-step exponential backoff costs ~7s in the worst case and removes a whole class of silent-miss bugs from batch automation.
+
+### Sprint 18 Wave 1 -- #400: sprint-end-labels.sh first live production run
+
+- **What:** First live production run of `scripts/sprint-end-labels.sh`. Chose input scheme (A): backfill `sprint:17` onto Sprint 17 closed issues (#371, #381, #382, #383, #384) and merged PRs (#385-#396), then ran the script live. Also created `sprint:17`, `sprint:18`, and `release:shipped-0.9.7` labels, establishing the sprint label scheme going forward.
+- **Bugs surfaced (2):**
+  1. **PRs excluded from query** -- `gh issue list --search` silently appends `is:issue`, excluding all PRs. Fix: query issues via `gh issue list --state closed` and PRs via `gh pr list --state merged` separately, then combine + deduplicate with `jq -n '$issues + $prs | unique_by(.number)'`.
+  2. **Windows jq CRLF breaks idempotency guard** -- Windows `jq` outputs `\r\n`. The trailing `\r` attached to the last label in the TSV field caused the grep match to fail, so already-labeled items appeared to need re-labeling. Fix: pipe jq output through `tr -d '\r'` before the `while read` loop.
+- **Verification:** All 17 adds verified on first read (0 retries). Earl directive satisfied.
+- **Idempotency:** Confirmed on 3rd run: `total=17 changed=0 already-correct=17`.
+- **Tests:** 6 -> 7 (new Test G: CRLF regression, function-override shim).
+- **PR:** #403 (squash-merged to develop @ c03b2d2)
+- **Lesson:** `gh issue list --search` is issues-only even with the search API; must pair with `gh pr list` for combined automation. Windows jq CRLF is a latent trap in any bash script that reads jq TSV output on Windows.

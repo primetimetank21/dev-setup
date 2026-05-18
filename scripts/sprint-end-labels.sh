@@ -252,21 +252,30 @@ main() {
     log "repo           : (default from git remote)"
   fi
 
-  # gh issue list treats PRs as issues only when querying via the search API.
-  # We pull both via --search to capture issues AND PRs in one call.
-  local search_query
-  search_query="label:\"$SPRINT_LABEL\" state:closed"
+  # gh issue list --search silently appends is:issue, so PRs are excluded.
+  # We must query issues and PRs separately and combine them.
+  log "querying issues (state:closed) + PRs (state:merged) with label '$SPRINT_LABEL'"
 
-  log "querying: $search_query (state:closed)"
-
-  # Use --search so both issues and PRs are returned. Cap at 200; warn if hit.
-  local json
-  json=$(gh issue list \
+  local issues_json prs_json json
+  issues_json=$(gh issue list \
     "${GH_REPO_ARGS[@]}" \
     --state closed \
     --search "label:\"$SPRINT_LABEL\"" \
     --json number,title,labels \
     --limit 200)
+
+  prs_json=$(gh pr list \
+    "${GH_REPO_ARGS[@]}" \
+    --state merged \
+    --search "label:\"$SPRINT_LABEL\"" \
+    --json number,title,labels \
+    --limit 200)
+
+  # Merge, deduplicate, and sort by number.
+  json=$(jq -n \
+    --argjson issues "$issues_json" \
+    --argjson prs "$prs_json" \
+    '$issues + $prs | unique_by(.number) | sort_by(.number)')
 
   local count
   count=$(printf '%s' "$json" | jq 'length')
@@ -278,8 +287,11 @@ main() {
     return 0
   fi
 
-  if [[ "$count" -ge 200 ]]; then
-    warn "hit the 200-item cap; re-run with a narrower sprint label if more exist"
+  local issues_count prs_count
+  issues_count=$(printf '%s' "$issues_json" | jq 'length')
+  prs_count=$(printf '%s' "$prs_json" | jq 'length')
+  if [[ "$issues_count" -ge 200 || "$prs_count" -ge 200 ]]; then
+    warn "hit the 200-item cap on issues or PRs; re-run with a narrower sprint label if more exist"
   fi
 
   # Iterate. Use process substitution to avoid subshell variable scoping.
@@ -303,7 +315,8 @@ main() {
       skipped=$(( skipped + 1 ))
     fi
   done < <(printf '%s' "$json" \
-    | jq -r '.[] | [(.number|tostring), .title, ([.labels[].name] | join(","))] | @tsv')
+    | jq -r '.[] | [(.number|tostring), .title, ([.labels[].name] | join(","))] | @tsv' \
+    | tr -d '\r')
 
   log "summary: total=$total changed=$changed already-correct=$skipped dry-run=$([[ $DRY_RUN -eq 1 ]] && echo yes || echo no)"
 }
