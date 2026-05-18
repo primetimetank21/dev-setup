@@ -15,6 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.9.7] - 2026-05-17 -- Sprint 17: Hygiene gate restoration + label automation + skill formalization
+
+### Added
+
+- Sprint-end label automation: `scripts/sprint-end-labels.sh` + `.github/workflows/sprint-end-labels.yml`. Applies `release:shipped-X.Y.Z` and removes `release:backlog` across all issues/PRs carrying a given sprint label. Hard-verifies every label op via re-query with 3-retry exponential backoff (1s, 2s, 4s). Dry-run mode (`--dry-run`) for safe rehearsals. Type/area/squad/priority labels are never touched. Covered by `tests/test_sprint_end_labels.ps1` (6 tests, including happy-path and fail-loudly retry scenarios). New skill `.squad/skills/gh-label-verify-retry/SKILL.md` formalizes the write-then-verify-then-retry pattern. (#382)
+- New skills formalized: `gh-pr-base-develop` (high-conf, --base develop enforcement pattern), `worktree-remove-first` (medium-conf, worktree-remove-before-merge quirk), `gh-label-verify-retry` (high-conf, write-then-verify-then-retry pattern). (#383, #384, #382)
+- Per-sprint decisions sub-folders introduced: `sprint-12.md` and `sprint-15.md` added under `.squad/decisions/`; sub-folder policy documented. (#371)
+
+### Changed
+
+- README refresh: expanded 8-agent roster, updated hooks list, hygiene gates, and skill ecosystem pointer for v0.9.6 state. (#381)
+- `decisions.md` restructured to current-sprint-only live file; gate restored from 65737 B to 7228 B. (#371)
+- `routing.md`: spawn-prompt hygiene section added. (#384)
+
+### Fixed
+
+- `.gitignore` em-dash artifact removed (hand-off slip caught by Jiminy Sprint 17 audit). (#390)
+
+### Removed
+
 ## [0.9.6] - 2026-05-17 -- Sprint 16: Skill formalization + hygiene gate review
 
 ### Added

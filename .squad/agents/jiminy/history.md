@@ -27,6 +27,7 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **Lesson (Scribe inbox-drain bug):** When folding inbox decisions, the per-topic-file `git add` AND `git rm -- decisions/inbox/*.md` MUST land in the SAME commit so drain is atomic with merge. Forward-fix expectation for next Scribe cycle (PR #319 spec; re-tested in Sprint 13 W1 fold).
 - **Lesson (squad: label set incomplete):** Standard label set covers 8 engineering agents but omits `squad:scribe`. Service-role follow-ups force routing miss. Recommend next label sweep create `squad:scribe` (and audit `squad:ralph` usage; precedent exists for service-role labels).
 - **Recurring incident references preserved:** worktree-isolation (Sprint 4 race condition + Sprint 12 W2 CWD-resolution variant), ASCII scope gap (#322, `*.ps1`-only pre-commit), CP1252 byte 0x94 trap in PowerShell string literals, `autocrlf` and `AllScope` alias hazards, atomic-drain (PR #323 bug).
+- **2026-05-18 -- Sprint 17 Wave 1 post-batch audit.** AUTO-FIXED: (1) donald/history.md 15860B over gate -- compressed to 10236B + archive; (2) .gitignore em-dash U+2014 from PR #389 -- replaced with `--`. All other lanes clean.
 
 ## 2026-05-17 Sprint 13 Wave 1
 
@@ -83,3 +84,18 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **Auto-fixes:** (1) Inbox drain to decisions.md.
 - **CONCERNs:** (a) decisions.md at 60270 B exceeds 60 KB -- archival recommended Sprint 16, (b) scribe history.md at 14491 B (869 B headroom) -- monitor next session.
 - **Verdict:** PASS with CONCERNs (no blockers). Sprint 15 hygiene state is clean.
+
+### Sprint 16 EOS Audit (2026-05-17T20:08:00-04:00)
+
+- **Scope:** post-0.9.6 release. main @ 10d203f, develop @ aba8332. Tag 0.9.6 @ 38c0942.
+- **Manifest:** 8 spawns (mickey-10, scribe-6, pluto-3/4/5, mickey-11/12, scribe-7).
+- **Sec 1 (inbox):** 3 undrained files (mickey-s16-dispatch, mickey-s16-wrap, scribe-363-archival). FAIL -- Scribe drain needed.
+- **Sec 2 (history sizes):** pluto 15694B OVER 15360B HARD GATE. All others pass. FAIL.
+- **Sec 3 (rogue files):** None. Working tree clean. PASS.
+- **Sec 4 (branches):** 3 stale remote squad/* branches (367-skill-drift-audit, s16-retro, scribe-s16-history-append). Ralph cleanup needed. CONCERN.
+- **Sec 5 (orchestration-log):** No Sprint 16 entries. Only Sprint 15 log exists. CONCERN.
+- **Sec 6 (git):** develop in sync. Tag correct. #373 regular merge confirmed. #368 on main = documented recovery. PASS.
+- **Sec 7 (process):** 0 open PRs. Issue #371 labels correct. PASS.
+- **Sec 8 (squash policy):** Charter says no squash on develop. Sprint 16 used squash for 6 PRs. Mismatch. FINDING (no auto-fix, history rewrite forbidden).
+- **Auto-fixes:** (1) Wrote jiminy-s16-eos.md to inbox. (2) History append via branch PR.
+- **Verdict:** DIRTY -- 2 blockers (inbox undrained, pluto gate breach). Session close BLOCKED pending Scribe action.

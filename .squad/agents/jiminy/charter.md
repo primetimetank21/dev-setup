@@ -25,6 +25,9 @@ What Jiminy checks, by lane:
 - Decisions inbox not drained (files in `.squad/decisions/inbox/` after Scribe should have merged)
 - `history.md` edits modified but not committed
 - Charter files modified after creation (should be Coordinator-only writes)
+- `decisions.md` over the 51,200 byte (50 KB) hard gate -- flag and require Scribe to run sprint archival
+  (Policy: at sprint wrap, Scribe moves sprint entries to `.squad/decisions/sprint-NN.md`.
+   Live file holds current sprint only. See `.squad/decisions/inbox/copilot-directive-20260517203933-decisions-gate-policy.md` for full rationale.)
 
 ### 2. Git hygiene
 
@@ -38,7 +41,7 @@ What Jiminy checks, by lane:
 
 - Open PRs have `priority:pN` + `squad:{member}` labels
 - Open issues have phase priority label when actionable
-- No squash merges on `develop` or `main` (Earl's standing directive: regular merge commits only)
+- Regular merge commits ONLY for `develop -> main` release cuts and recovery back-merges. Feature/sprint PRs to `develop` use squash merges (Earl's standing directive, clarified 2026-05-17 -- see decisions.md).
 - Conventional Commits format on recent commits (commit-msg hook enforces, but Jiminy spot-checks)
 - PRs include `Co-authored-by: Copilot` trailer when authored via the agent system
 
