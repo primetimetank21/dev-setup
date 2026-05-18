@@ -99,3 +99,9 @@
 - **Retro:** written to .squad/retros/2026-05-18-sprint-18-retro.md (6609 bytes, 135 lines). 0 non-ASCII bytes verified. Merged as PR #408 @ TBD.
 - **Inbox drain:** 4 files archived into .squad/decisions/sprint-18.md: Mickey hygiene tail directive (PR #401), Jiminy post-batch audit (PR #404), Donald label automation live (PR #403 primary + #407 fixup), Pluto skill formalization (PR #402 + #406 fixup). Pluto misplaced file moved from root to inbox per archival policy.
 - **Key learning:** Mandatory hygiene tail template effective post-deployment. Same-wave agents need template embedded directly in spawn prompts, not linked. Coordinator memory stored: inject template verbatim into every spawn.
+## 2026-05-18 Sprint 18 -- Legacy Decisions One-Shot Dump (Option 2)
+
+- **Scope:** Archived 16 pre-Sprint-17 orphan decision files to decisions-legacy.md per Earl Option 2 (one-shot dump vs Option 1 sprint bucketing).
+- **What:** Consolidated 16 orphans into .squad/decisions/decisions-legacy.md (85661 B, 0 non-ASCII), deleted orphans, per-sprint archives (sprint-12/15/18) untouched.
+- **Decisions archived:** changelog-retro-placement, copilot-directive-2026-05-17-label-automation-live-run, doc-356-ascii-sweep, doc-and-jiminy-automation, doc-readme-audit-2026-05-17, goofy-ascii-sweep, label-taxonomy-2026-05-17, mickey-architecture-entry-point, mickey-hook-policy, mickey-release-process, pluto-dotfiles, pluto-skill-drift-2026-05-17, readme-edit-decisions-2026-05-17, release-094-2026-05-17, scribe-history-compression, sync-workflow-followups-2026-05-17.
+- **Outcome:** .squad/decisions/ now contains 4 canonical files (sprint-12.md, sprint-15.md, sprint-18.md, decisions-legacy.md). ASCII verified 0 non-ASCII bytes in archive.
