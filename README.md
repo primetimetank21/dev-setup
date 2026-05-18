@@ -114,6 +114,7 @@ dev-setup/
 +-- hooks/
 |   +-- commit-msg            -- Enforce Conventional Commits
 |   +-- pre-commit            -- 6-check hygiene gate (branch ancestry + ASCII on .ps1/.md/.sh + .squad/ allow-list + inbox guard + branch refusal + shellcheck); see Git Hooks below
+|   +-- prepare-commit-msg    -- Rewrite merge/revert messages to Conventional Commits form; see Git Hooks below
 |   \-- pre-push             -- Block pushes to main; advisory linting
 +-- tests/                    -- Validation tests (bash + PowerShell)
 |   +-- test_aliases.sh
@@ -124,8 +125,11 @@ dev-setup/
 +-- .devcontainer/            -- Dev Container / Codespace configuration
 +-- .github/workflows/        -- CI validation and squad automation
 \-- .squad/                   -- Squad coordination (committed; not installed onto end-user machines)
-    +-- agents/                 -- per-agent charter.md + history.md
-    +-- decisions.md            -- append-only decision log; older entries fold to decisions-archive.md
+    +-- agents/                 -- per-agent charter.md + history.md (9 agents: Mickey, Donald, Goofy, Pluto, Chip, Jiminy, Doc, Scribe, Ralph)
+    +-- decisions.md            -- append-only decision log (<= 50KB gate)
+    +-- decisions-archive.md    -- historical decisions fold here when main >= 50KB
+    +-- skills/                 -- formalized agent skills and patterns (15+ skills)
+    +-- routing.md              -- work routing table + spawn-prompt hygiene rules
     +-- retros/                 -- sprint retrospectives (committed; pre-commit allow-listed)
     \-- ...                     -- see ARCHITECTURE.md for the full breakdown
 ```
@@ -262,11 +266,32 @@ To bump a tool version, edit the version number in `.tool-versions` and re-run s
 
 ## Contributing
 
-This repo is maintained by the **dev-setup squad** -- a team of nine specialized AI agents (Mickey, Donald, Goofy, Pluto, Chip on engineering; Jiminy, Doc, Scribe, Ralph on process and hygiene), each owning a slice of the codebase. Human contributors are welcome too.
+This repo is maintained by the **dev-setup squad** -- a team of nine specialized AI agents, each owning a slice of the codebase:
+
+**Engineering:** Mickey (Lead/Architecture), Donald (Bash/Linux/macOS), Goofy (PowerShell/Windows), Pluto (Dotfiles/Config), Chip (Tests/CI)
+
+**Process & Hygiene:** Jiminy (Squad Ops Auditor), Doc (Fact-Checker), Scribe (Session Logger), Ralph (Work Queue Monitor)
+
+Human contributors are welcome too.
+
+### Squad Resources
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) -- full technical overview, OS detection logic, script conventions, Windows dependency order, team ownership map, and a guide for adding a new tool.
 - [CONTRIBUTING.md](./CONTRIBUTING.md) -- contributor workflow: branch naming (`squad/{issue}-{slug}` from `develop`), PR checklist, Conventional Commits, test harness pattern, sprint naming convention.
-- [CHANGELOG.md](./CHANGELOG.md) -- release history in Keep a Changelog format. Sprints use numeric naming (Sprint 1 through Sprint 12); historical letter-named sprints (Q, R, S, T) appear as `Sprint N (formerly Sprint X)` aliases for grep continuity.
+- [CHANGELOG.md](./CHANGELOG.md) -- release history in Keep a Changelog format. Sprints use numeric naming (Sprint 1 through Sprint 16); historical letter-named sprints (Q, R, S, T) appear as `Sprint N (formerly Sprint X)` aliases for grep continuity.
+- `.squad/routing.md` -- work routing table (who handles what by task type; spawn-prompt hygiene rules).
+- `.squad/skills/` -- formalized agent skills and decision patterns (15+ skills covering architecture, testing, Unix/Windows patterns, and squad operations).
+- `.squad/decisions.md` / `.squad/decisions-archive.md` -- team decision log (decisions.md keeps entries under 50KB gate; older entries fold to archive).
+- `.squad/agents/` -- per-agent charter (role, scope, trigger rules), history.md (session logs, keeps entries under 15KB gate), and team timeout policy.
+- `.squad/retros/` -- sprint retrospectives (v0.9.4+ format).
+
+### Squad Conventions
+
+All commits follow **Conventional Commits** format: `type(scope): description`. Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. The `commit-msg` hook enforces this; `prepare-commit-msg` rewrite auto-converts merge/revert messages to Conventional Commits form.
+
+PRs to `develop` use **squash merges** (feature PRs, sprint work). Release cuts from `develop` to `main` use **regular (non-squash) merges** for clean release lineage.
+
+All squad files (charters, histories, decisions, retros) are ASCII-only. Use `python scripts/lib/ascii-sweep.py` to auto-convert em dashes, smart quotes, and other Unicode punctuation to ASCII equivalents.
 
 ---
 
