@@ -106,3 +106,21 @@ Decision drop: `.squad/decisions/inbox/pluto-364-worktree-base-refresh.md`
 **Status:** Complete.
 
 Updated `worktree-remove-first` SKILL.md (confidence high->medium, harvest as primary ordering rationale, Sprint 15+16 citations). Created `gh-pr-base-develop` SKILL.md (new -- codifies --base develop rule from PR #368 incident). Updated `routing.md` with Spawn-Prompt Hygiene section.
+
+---
+
+## Sprint 18 W1 -- Issues #398 + #399: history-md-pre-size-check + changelog-fold-completeness SKILLs
+
+**PR:** #402 (squash-merged to develop @ a546421)
+**Branch:** squad/398-399-skill-formalizations
+**Status:** Complete.
+
+Formalized two skills surfaced by Sprint 17 audit:
+
+1. `.squad/skills/history-md-pre-size-check/SKILL.md` (8,283 B) -- mandatory pre-append size check at 14336 B threshold (90% of 15360 B hard gate). Recipe: `(Get-Item path).Length` measure -> compare -> compress via `history-archive.md` rotation if over -> then append. Cross-linked from `routing.md` Mandatory Hygiene Tail item 4 (PR #401).
+
+2. `.copilot/skills/changelog-fold-completeness/SKILL.md` (9,751 B) -- pre-release CHANGELOG fold rule: enumerate ALL sprint PRs via `gh pr list --search 'merged:>SHA'` and ALL closed issues via `gh issue list --state closed --search "closed:>DATE"`; do NOT trust `[Unreleased]` section completeness. Recurring failure mode caught across Sprints 15/16/17 where only first-lander entry was captured.
+
+Both SKILLs use YAML frontmatter (name/description/domain/confidence/source), Context, Recipe with PowerShell + bash snippets, Why-this-order rationale, real PR/SHA examples, Anti-Patterns, Related Skills, References. Meta-validation: this very append was pre-checked against the size-check skill being formalized.
+
+**Lesson:** when formalizing a hygiene skill, eat your own dog food -- verify the very edit committing the skill follows the rule the skill teaches.
