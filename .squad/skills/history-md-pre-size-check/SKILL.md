@@ -24,8 +24,24 @@ Both failure modes have occurred in three consecutive sprints (15, 16, 17). The 
 is a single size read before each append. This skill codifies that pre-check as a
 mandatory step.
 
-**Hard gate:** 15360 bytes (pre-commit hook in `hooks/pre-commit`, Check 4).
+**Hard gate:** 15360 bytes (pre-commit hook in `hooks/pre-commit`, Check 7).
 **Safe threshold:** 14336 bytes (90% of the gate, leaving ~1 KB headroom).
+
+## Layered enforcement
+
+This skill operates at two complementary layers:
+
+1. **Agent discipline (this recipe).** Pre-append size check before any bytes are
+   written to `history.md`. Prevents the problem before git is involved.
+
+2. **Pre-commit hook (`hooks/pre-commit`, Check 7, issue #416).** Hard-rejects any
+   staged `history.md` blob over 15360 B; warns (exit 0) when over 14336 B. Added in
+   Sprint 19 after PR #412 breached the gate through agent-discipline-only enforcement.
+
+Both layers enforce the same thresholds (14336 B warn, 15360 B hard). The hook is the
+safety net when the agent-discipline step is skipped or mis-estimates the entry size.
+Passing the hook does NOT mean the file is healthy -- it means it is under the gate
+right now. Keep running the discipline recipe every sprint to stay clear of the gate.
 
 ## Recipe
 
@@ -155,6 +171,6 @@ this SKILL.
 - PR #390 (commit 6375a49) -- Sprint 17 incident: donald/history.md 15860->10236 B
 - PR #378 (commit df59a9c / 8e2c659) -- Sprint 16 incident: pluto/history.md 15694->8734 B
 - Commit 7fe4eb0 -- Sprint 15 EOS cleanup (pluto + scribe history compress)
-- `hooks/pre-commit` Check 4 -- the 15360 B gate enforcement
+- `hooks/pre-commit` Check 7 -- the 15360 B gate enforcement (added Sprint 19, issue #416)
 
-**Last reviewed:** 2026-05-17 (Sprint 18, issue #398)
+**Last reviewed:** 2026-05-18 (Sprint 19, issue #416 -- pre-commit gate added as Check 7)

@@ -7,6 +7,7 @@
 #   4. Staged inbox file check (.squad/decisions/inbox/ should be gitignored)
 #   5. Refuse commits directly on develop/main/master
 #   6. Shellcheck on staged .sh files
+#   7. history.md size gate (15360 B hard limit, 14336 B warn threshold)
 set -e
 
 # ---------------------------------------------------------------------------
@@ -177,6 +178,27 @@ case "$current_branch" in
     exit 1
     ;;
 esac
+
+# ---------------------------------------------------------------------------
+# Check 7: history.md size gate (15360 B hard limit, 14336 B warn threshold)
+#
+# Measured against staged blob (git show), not working tree, so the gate
+# fires on the exact bytes that will land in the commit.
+# wc -c | tr -d ' ' strips leading whitespace emitted by BSD wc on macOS.
+# || true after grep prevents set -e failure when no history.md is staged.
+# ---------------------------------------------------------------------------
+for staged_file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '^\.squad/agents/[^/]+/history\.md$' || true); do
+  size=$(git show :"$staged_file" | wc -c | tr -d ' ')
+  if [ "$size" -gt 15360 ]; then
+    echo ""
+    echo "ERROR: $staged_file is $size bytes (max 15360 B)."
+    echo "  Compress before commit -- see .squad/skills/history-md-pre-size-check/SKILL.md"
+    echo ""
+    exit 1
+  elif [ "$size" -gt 14336 ]; then
+    echo "WARN: $staged_file is $size bytes (warn at 14336 B, hard limit 15360 B). Consider compressing." >&2
+  fi
+done
 
 # ---------------------------------------------------------------------------
 # Check 6: Shellcheck on staged .sh files (existing behavior)
