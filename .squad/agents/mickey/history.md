@@ -114,3 +114,8 @@ Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05
 ## Sprint 19 -- #414
 
 2026-05-18: Squad-spawn helper + lint-spawn-prompt backstop (PR #420). Added scripts/squad-spawn.{ps1,sh} (auto-inject hygiene tail, idempotent, {name}/{N}/{worktree-path} substitution) and scripts/lint-spawn-prompt.{ps1,sh} (6-marker scan, exit 0/1). .squad/skills/spawn-prompt-lint/SKILL.md added (medium confidence). routing.md updated with helper/linter enforcement paths. 20 tests (4 files x 5 cases). Root-cause fix for Sprint 18 #406/#407 fixup pattern.
+
+## Sprint 19 -- #423
+
+2026-05-18: Sprint-end label automation PowerShell port (PR TBD). Created scripts/sprint-end-labels.ps1 (functional parity with bash version: same CLI surface, verification + retry logic, idempotency, dry-run support) and tests/test_sprint_end_labels_pwsh.ps1 (5 tests: --help, missing flags, --dry-run, idempotency, retry loop). Test strategy: gh.cmd stub wrapper pattern for Windows (not direct PowerShell script in PATH). Decision drop: .squad/decisions/inbox/mickey-423-sprint-end-labels-ps.md.
+
