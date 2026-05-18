@@ -25,6 +25,9 @@ What Jiminy checks, by lane:
 - Decisions inbox not drained (files in `.squad/decisions/inbox/` after Scribe should have merged)
 - `history.md` edits modified but not committed
 - Charter files modified after creation (should be Coordinator-only writes)
+- `decisions.md` over the 51,200 byte (50 KB) hard gate -- flag and require Scribe to run sprint archival
+  (Policy: at sprint wrap, Scribe moves sprint entries to `.squad/decisions/sprint-NN.md`.
+   Live file holds current sprint only. See `.squad/decisions/inbox/copilot-directive-20260517203933-decisions-gate-policy.md` for full rationale.)
 
 ### 2. Git hygiene
 

@@ -101,3 +101,7 @@ Filed 6 GitHub issues for Sprint 16: #363 (Scribe decisions.md archival), #362/#
 Forward-merge recovery context: PR #368 (skill drift audit) landed on main by mistake at 128218a. Forward-merged back to develop via merge commit d102a7c. develop is an ancestor of main; develop->main release merge brought main forward via regular merge PR #373 (merge commit 10d203f).
 
 CHANGELOG [Unreleased] folded to [0.9.6] - 2026-05-17 (3 Added, 2 Changed). New empty [Unreleased] boilerplate at top. PR #372: release/0.9.6 -> develop (squash, merge commit 7172ae7). PR #373: develop -> main (regular merge, merge commit 10d203f). Tag 0.9.6 (bare X.Y.Z) at 38c0942. GitHub release: https://github.com/primetimetank21/dev-setup/releases/tag/0.9.6. Decision drop: `.squad/decisions/inbox/mickey-s16-wrap.md`.
+
+## Sprint 17 Wave 1 -- #371
+
+Issue #371: decisions.md hard gate policy review. decisions.md was 65,737 bytes, over the 51,200 byte (50 KB) hard gate. Chose Option 3+5 hybrid: per-sprint sub-folders with auto-archive on sprint wrap. Archived Sprint 12 decisions (2026-05-14 to 2026-05-16) to .squad/decisions/sprint-12.md (55,958 bytes) and Sprint 15 content (dispatch + retro) to .squad/decisions/sprint-15.md (3,337 bytes). decisions.md trimmed to Sprint 16+ content (7,228 bytes, PASS). Updated Jiminy charter (added decisions.md gate check) and Scribe charter (added sprint archival step 7). Decision drop: .squad/decisions/inbox/copilot-directive-20260517203933-decisions-gate-policy.md. PR: squad/371-decisions-gate -> develop.
