@@ -44,6 +44,25 @@ How to decide who handles what for the dev-setup project.
 | `squad:jiminy` | Squad hygiene audit, process QA | Jiminy |
 | `squad:doc` | Fact-checking, verification, audit work | Doc |
 
+## Spawn-Prompt Hygiene
+
+Every coordinator spawn prompt that includes a `gh pr create` step MUST
+explicitly instruct the agent to pass `--base develop`. See
+`.squad/skills/gh-pr-base-develop/SKILL.md` for the full rule, the verification
+step (`gh pr view <N> --json baseRefName`), and the recovery recipe if the wrong
+base is used.
+
+Minimum required snippet in every spawn prompt that creates a PR:
+
+```
+**gh pr create MUST pass `--base develop` explicitly.**
+After creation, verify: gh pr view <N> --json baseRefName --jq .baseRefName
+Must equal "develop". If not, close the PR and recreate with --base develop.
+```
+
+See also `.squad/skills/pre-spawn-checklist/SKILL.md` for the full hygiene tail
+template.
+
 ## Rules
 
 1. **Eager by default** -- spawn all agents who could usefully start work, including anticipatory work.
