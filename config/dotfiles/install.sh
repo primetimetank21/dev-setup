@@ -100,15 +100,21 @@ append_managed_block() {
   local label="${3:-$(basename "$dest")}"
   local marker="# --- dev-setup managed block"
 
+  # Ensure destination file exists
+  if [[ ! -f "$dest" ]]; then
+    touch "$dest"
+  fi
+
   if [[ "$DRY_RUN" == true ]]; then
     if grep -qF "$marker" "$dest" 2>/dev/null; then
-      dry "$label (dev-setup block already present — would skip)"
+      dry "$label (dev-setup block already present -- would skip)"
     else
       dry "Would append dev-setup block to $label"
     fi
     return
   fi
 
+  # Check if marker already exists (idempotent)
   if grep -qF "$marker" "$dest" 2>/dev/null; then
     skip "$label (dev-setup block already present)"
     return

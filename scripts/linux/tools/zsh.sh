@@ -29,14 +29,17 @@ fi
 
 # Set zsh as default shell (idempotent — check current shell first)
 ZSH_PATH="$(command -v zsh)"
+
+# Ensure zsh is in /etc/shells (idempotent check)
+if ! grep -qxF "$ZSH_PATH" /etc/shells 2>/dev/null; then
+  log_info "Adding $ZSH_PATH to /etc/shells..."
+  echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
+fi
+
+# Change default shell if needed
 if [[ "$SHELL" != "$ZSH_PATH" ]]; then
   log_info "Setting zsh as default shell..."
-  if grep -qF "$ZSH_PATH" /etc/shells; then
-    chsh -s "$ZSH_PATH" || log_warn "Could not change shell automatically (may need sudo or manual action)"
-  else
-    echo "$ZSH_PATH" | sudo tee -a /etc/shells
-    chsh -s "$ZSH_PATH" || log_warn "Could not change shell automatically"
-  fi
+  chsh -s "$ZSH_PATH" || log_warn "Could not change shell automatically (may need sudo or manual action)"
 fi
 
 log_ok "zsh installed: $(zsh --version)"
