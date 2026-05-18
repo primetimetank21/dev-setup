@@ -94,3 +94,8 @@
 - **Retro:** written to .squad/retros/2026-05-18-sprint-17-retro.md (5392 bytes, 95 lines). 0 non-ASCII bytes verified. Merged as PR #391 @ 97760a7.
 - **Inbox drain:** 2 files drained: skill-formalization-wave (Pluto worktree-remove-first + gh-pr-base-develop) + sprint-end-labels (Donald gh-label-verify-retry SKILL). Content merged into decisions.md.
 - **Key learning:** Per-sprint decisions.md sub-folder model (Option 3+5 hybrid) met gate immediately (65737 -> 7228 B). Sustainable architecture validated.
+## 2026-05-18 Sprint 18 -- Retro & Inbox Drain
+- **Scope:** 4 issues closed (#397-#400), 7 PRs merged (#401-#407; 4 work + 3 audit/fixup). Retro + inbox drain (4 files).
+- **Retro:** written to .squad/retros/2026-05-18-sprint-18-retro.md (6609 bytes, 135 lines). 0 non-ASCII bytes verified. Merged as PR #408 @ TBD.
+- **Inbox drain:** 4 files archived into .squad/decisions/sprint-18.md: Mickey hygiene tail directive (PR #401), Jiminy post-batch audit (PR #404), Donald label automation live (PR #403 primary + #407 fixup), Pluto skill formalization (PR #402 + #406 fixup). Pluto misplaced file moved from root to inbox per archival policy.
+- **Key learning:** Mandatory hygiene tail template effective post-deployment. Same-wave agents need template embedded directly in spawn prompts, not linked. Coordinator memory stored: inject template verbatim into every spawn.
