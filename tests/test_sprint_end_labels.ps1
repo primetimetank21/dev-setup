@@ -281,6 +281,84 @@ echo "UNREACHABLE"
 }
 
 # ---------------------------------------------------------------------------
+# Test G: CRLF in jq TSV output must not break idempotency guard.
+#
+# Regression for #400: Windows jq outputs CRLF line endings. Without
+# `tr -d '\r'` in the process substitution, the trailing \r attaches to
+# the last label in a line, causing the grep match to fail, so a label
+# that is already present on an issue gets re-applied on every run.
+#
+# We simulate this by feeding jq-like TSV with \r\n into process_issue
+# and asserting "skip add" fires (not "adding").
+# ---------------------------------------------------------------------------
+
+Test-Scenario 'CRLF in TSV does not break idempotency guard (regression #400)' {
+    $shimDir = Join-Path $RepoRoot ".test-tmp\sel-crlf-$([Guid]::NewGuid().ToString('N'))"
+    New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
+    try {
+        $shimPosix   = $shimDir.Replace('\','/')
+        $scriptPosix = $ScriptPath.Replace('\','/')
+
+        $driver = @"
+#!/usr/bin/env bash
+set -uo pipefail
+
+GH_REPO_ARGS=()
+DRY_RUN=0
+BACKLOG_LABEL="release:backlog"
+RELEASE_LABEL="release:shipped-1.0.0"
+log()  { printf '[shim] %s\n' "`$*"; }
+warn() { printf '[shim] WARN: %s\n' "`$*" >&2; }
+err()  { printf '[shim] ERROR: %s\n' "`$*" >&2; }
+
+# Pull in process_issue and its helpers from the real script.
+eval "`$(sed -n '/^has_label()/,/^process_issue()/{ /^process_issue()/d; p }' '${scriptPosix}')"
+eval "`$(sed -n '/^verify_with_retry()/,/^process_issue()/{ /^process_issue()/d; p }' '${scriptPosix}')"
+eval "`$(sed -n '/^process_issue()/,/^# ----/{ /^# ----/d; p }' '${scriptPosix}')"
+
+# Stub verify_with_retry: should NOT be called (label already present).
+verify_call_count=0
+verify_with_retry() { verify_call_count=`$((verify_call_count+1)); }
+
+# Feed a TSV line with CRLF (the \r\n that Windows jq emits).
+# The labels field ends with release:shipped-1.0.0 followed by \r.
+# The tr -d '\r' fix in the script removes the \r before read.
+output=`$(while IFS=`$'\t' read -r number title labels_csv; do
+  process_issue "`$number" "`$title" "`$labels_csv"
+done < <(printf '%s\r\n' '371	Test issue	sprint:17,release:shipped-1.0.0' | tr -d '\r'))
+
+if echo "`$output" | grep -q 'adding:'; then
+  echo "FAIL: 'adding' fired even though label was present (CRLF not stripped)" >&2
+  exit 1
+fi
+if ! echo "`$output" | grep -q 'skip add:'; then
+  echo "FAIL: expected 'skip add' but not found; output: `$output" >&2
+  exit 1
+fi
+if [ "`$verify_call_count" -ne 0 ]; then
+  echo "FAIL: verify_with_retry called `$verify_call_count times, expected 0" >&2
+  exit 1
+fi
+echo "PASS_CRLF"
+"@
+        $driverPath = Join-Path $shimDir 'driver.sh'
+        Set-Content -Path $driverPath -Value $driver -Encoding ASCII -NoNewline
+
+        $driverPosix = $driverPath.Replace('\','/')
+        $out  = (& $bashPath $driverPosix 2>&1) -join "`n"
+        $code = $LASTEXITCODE
+        if ($code -ne 0) {
+            throw "exit=$code output=$out"
+        }
+        if ($out -notmatch 'PASS_CRLF') {
+            throw "expected PASS_CRLF in output; got: $out"
+        }
+    } finally {
+        Remove-Item -Recurse -Force $shimDir -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 
