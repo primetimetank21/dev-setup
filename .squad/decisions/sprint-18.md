@@ -187,3 +187,107 @@ Added Test G to tests/test_sprint_end_labels.ps1 to detect CRLF regression. Uses
 - Sprint 17 retro identified 3 failure patterns
 - Sprint 18 formalization completed
 - Skill metadata verified (YAML frontmatter, domain, confidence, source)
+
+---
+
+# Decision: Cut release 0.9.8 now
+
+**Date:** 2026-05-19
+**Author:** Mickey (Squad Lead)
+**Sprint:** 18
+
+## Decision
+
+Cut release 0.9.8 immediately. No defer.
+
+## Rationale
+
+Earl Tankard directed: "cut 0.9.8 now." All Sprint 18 work is complete (PRs #401-#408, issues #397-#400 closed). No outstanding blockers or deferred items. Hygiene tail template, 2 new SKILLs, and sprint-end-labels.sh live validation are all ship-ready.
+
+## Defer considerations (rejected)
+
+- No active PRs in flight that needed to land first
+- No known regressions
+- Sprint 18 scope fully closed
+
+## Artifacts
+
+- PR #409: release/0.9.8 -> develop (squash merge, a125d3b)
+- PR #410: develop -> main (regular merge, 1f67bca)
+- Tag: 0.9.8 at 77d1079
+- GitHub release: https://github.com/primetimetank21/dev-setup/releases/tag/0.9.8
+
+---
+
+# Ralph Sprint 18 EOS Sweep
+
+**Date:** 2026-05-17
+**Release:** 0.9.8 @ 1f67bca
+**Status:** CLEAN
+
+## Cleanup Summary
+
+### Remote Branches Deleted
+- squad/402-pluto-history-fixup (PR #406, merged)
+- squad/403-donald-history-fixup (PR #407, merged)
+- squad/s18-scribe-retro (PR #408, merged)
+
+### Verification Results
+- **Remote squad/*/release/*/agent/* branches:** 0 (expected: 0) PASS
+- **Local squad/*/release/*/agent/* branches:** 0 (expected: 0) PASS
+- **Worktrees:** 1 primary only (expected: 1) PASS
+- **Open PRs:** 0 PASS
+- **Open issues:** 0 PASS
+- **Release/* branches:** 0 (verified, as expected) PASS
+- **0.9.8 tag:** 1f67bca PASS
+
+## Operations Completed
+- Deleted 3 stale remote branches (all merged, no open PRs)
+- Pruned orphaned worktrees (none found)
+- Verified release/* branch absence
+- Synced develop to latest (a125d3b)
+- All post-state gates passed
+
+## Next Session Readiness
+Repository is clean and ready for Sprint 19. No orphaned branches, worktrees, or stale references remain.
+
+---
+
+# Decision: Sprint 18 Legacy Decisions One-Shot Dump
+
+**Date:** 2026-05-18T23:12:47-04:00
+**By:** Scribe (Copilot, spawned by Coordinator)
+**Closes:** Decides legacy archival strategy for pre-Sprint-17 orphan decision files
+
+## Choice: Option 2 -- One-Shot Dump
+
+Earl chose **Option 2 (one-shot dump)** per the S18 legacy cleanup charter.
+
+**Rationale recorded:** Rather than guessing which sprint each of 16 pre-Sprint-17 orphan decision files belongs to (Option 1: bucket-by-sprint approach with ambiguity risk), consolidate all 16 into a single .squad/decisions/decisions-legacy.md flat archive file, then delete the orphans. The archive preserves original filenames as section headers for searchability. This avoids guessing-cost overhead and keeps the per-sprint archival model clean going forward.
+
+## Outcome
+
+- **Archive created:** .squad/decisions/decisions-legacy.md (85661 bytes, 0 non-ASCII)
+- **Orphans deleted:** All 16 pre-Sprint-17 decision files removed from root
+- **Sprint archives untouched:** sprint-12.md, sprint-15.md, sprint-18.md remain in place
+- **Post-state:** .squad/decisions/ now contains exactly 4 canonical files (3 sprint archives + 1 legacy archive)
+- **ASCII compliance:** Archive fully ASCII-clean; em-dashes, smart quotes, box-drawing glyphs transliterated to ASCII equivalents
+
+## 16 Archived Files
+
+1. changelog-retro-placement.md
+2. copilot-directive-2026-05-17-label-automation-live-run.md
+3. doc-356-ascii-sweep.md
+4. doc-and-jiminy-automation.md
+5. doc-readme-audit-2026-05-17.md
+6. goofy-ascii-sweep.md
+7. label-taxonomy-2026-05-17.md
+8. mickey-architecture-entry-point.md
+9. mickey-hook-policy.md
+10. mickey-release-process.md
+11. pluto-dotfiles.md
+12. pluto-skill-drift-2026-05-17.md
+13. readme-edit-decisions-2026-05-17.md
+14. release-094-2026-05-17.md
+15. scribe-history-compression.md
+16. sync-workflow-followups-2026-05-17.md

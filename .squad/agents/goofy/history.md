@@ -104,3 +104,7 @@ Lessons preserved verbatim in Learnings section above (CP1252 trap, AllScope ali
 - Intentional preservation: code fences (per repo policy). Checkmarks U+2705 -> [x], crosses U+274C -> [ ] across team.md and status tables to preserve task-list semantics.
 - Coordinated with Mickey (parallel worktree, hooks/pre-commit patch -- Issue #322 part B). No overlap; only CHANGELOG.md is a predicted rebase conflict (Changed vs Fixed sections).
 - Lessons: fence-aware sweep is essential -- naive global replace would mangle ARCHITECTURE.md tree diagrams. Script generalizable -> candidate skill if applied a second time.
+
+## Sprint 19
+
+- **2026-05-18 -- Sprint 19 (PR #419, issue #416): pre-commit history.md size gate.** Added Check 7 to hooks/pre-commit: rejects staged .squad/agents/*/history.md blobs > 15360 B, warns > 14336 B. 29/29 tests pass (3 new Check 7 cases). Updated SKILL.md with Layered enforcement section + corrected Check 4 -> Check 7 reference.

@@ -6,11 +6,35 @@
   sprint-12.md -- Sprint 12 decisions (2026-05-14 to 2026-05-16) + Sprint 12 Wave 2 fold
   sprint-15.md -- Sprint 15 dispatch and retrospective (2026-05-17)
   sprint-17.md -- Sprint 17 decisions (2026-05-18+)
+  sprint-19.md -- Sprint 19 decisions (2026-05-17 to 2026-05-18)
   decisions-archive.md -- pre-Sprint 12 archive (entries dated <= 2026-05-04)
 Policy: at each sprint wrap, Scribe moves all entries for that sprint to
   .squad/decisions/sprint-NN.md and resets the live file to Sprint 16+ content.
 Hard gate: 51200 bytes (50 KB). Gate checked at each commit via pre-commit hook.
 Active: Sprint 16+ entries below.)
+
+## Active Rules (Policy Directives)
+
+### 2026-05-18T01:20:31-04:00: Commit trailer convention -- Copilot identity collapse
+
+**By:** Earl Tankard (via Copilot)
+
+**What:** All squad agent commits use the following Co-authored-by trailer:
+
+  Co-authored-by: Copilot <copilot@github.com>
+
+This matches the @copilot coding-agent bot identity that GitHub displays on autonomous PRs. Eliminates the dual-Copilot contributor count caused by the noreply form `223556219+Copilot@users.noreply.github.com`.
+
+**Scope:**
+- Applies to all new squad agent spawn prompts -- coordinator must use `copilot@github.com` in the embedded trailer instruction.
+- Applies to Scribe commits (history.md, decisions.md, session logs).
+- Applies to direct release commits and tag-author messages where applicable.
+- Does NOT apply to historical commits -- no git history rewrite.
+- Does NOT apply to commits the Copilot CLI itself produces under its own system-mandated trailer (rare; mostly the coordinator runs `gh pr merge` or `git commit` indirectly via spawned agents).
+
+**Why:** User request -- captured for team memory. Earl noticed GitHub showing 3 contributors (self + 2 Copilots) and wants the bot attribution unified.
+
+**Implementation note for future sessions:** Update `.squad/templates/spawn-prompt-hygiene.md` or a dedicated `.copilot/skills/commit-trailer/SKILL.md` so this isn't lost when the inbox drains. (Optional follow-up issue.)
 
 ## Sprint 17 Decisions (2026-05-18+)
 
