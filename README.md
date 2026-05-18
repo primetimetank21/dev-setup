@@ -264,6 +264,38 @@ To bump a tool version, edit the version number in `.tool-versions` and re-run s
 
 **Adding a tool:** Drop a new script in `scripts/linux/tools/` (or `scripts/windows/`) following the naming pattern of existing tools, then call it from `scripts/linux/setup.sh` (or the Windows equivalent). Scripts must be idempotent -- check whether the tool is already installed before doing anything.
 
+## CI Workflows
+
+### Sprint-End Label Automation
+
+When a sprint wraps, every issue and PR carrying its `sprint:N` label needs the same end-state transition:
+
+- remove `release:backlog` (if present)
+- add `release:shipped-X.Y.Z` (if missing)
+
+Type, area, squad, and priority labels are never touched.
+
+This is done by `scripts/sprint-end-labels.sh` and the matching workflow `.github/workflows/sprint-end-labels.yml`.
+
+**Manual / local run (dry-run by default for safety):**
+
+```bash
+scripts/sprint-end-labels.sh \
+  --sprint sprint:17 \
+  --release-label release:shipped-1.17.0 \
+  --dry-run
+```
+
+Remove `--dry-run` to apply changes.
+
+**Workflow trigger:** Actions tab -> "Sprint End Labels" -> Run workflow. Inputs: `sprint_label`, `release_label`, `dry_run` (defaults to `true`).
+
+**Verification (HARD REQUIREMENT):** After every label op, the script re-queries the issue and asserts the desired state. On mismatch it retries the read (not the write) with exponential backoff -- 1s, 2s, 4s -- then fails loudly. The CLI's exit code alone is treated as necessary-but-not-sufficient. See `.squad/skills/gh-label-verify-retry/SKILL.md` for the pattern.
+
+**Idempotent:** Safe to run twice. A second run finds no work to do.
+
+**Tested by:** `tests/test_sprint_end_labels.ps1` -- six scenarios including a function-override harness that exercises both the retry-and-succeed and fail-loudly-after-3 paths without hitting the GitHub API.
+
 ## Contributing
 
 This repo is maintained by the **dev-setup squad** -- a team of nine specialized AI agents, each owning a slice of the codebase:
