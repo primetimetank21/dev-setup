@@ -1,0 +1,29 @@
+# .mailmap -- consolidates committer identities for git shortlog, git log --use-mailmap,
+# and GitHub's contributor graph. Does NOT rewrite history; non-destructive.
+#
+# Format: <Canonical Name> <canonical@email> <other@email>
+# See: https://git-scm.com/docs/gitmailmap
+
+# Copilot: collapse the dual identity. The Copilot CLI user (223556219+...)
+# and the @copilot bot account both represent the same Copilot collaborator.
+Copilot <copilot@github.com> <223556219+Copilot@users.noreply.github.com>
+
+# Earl Tankard, Jr., Ph.D.: consolidate his GitHub noreply form and his
+# personal gmail address into the single canonical noreply identity.
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> <theflashtank21@gmail.com>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> primetimetank21 <theflashtank21@gmail.com>
+
+# Squad agent fake-emails: these are Earl's local automation (no real GitHub
+# accounts). Attribute their commits/co-authorship to Earl.
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Jiminy <jiminy@local>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Jiminy <jiminy@dev-setup>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Ralph <ralph@local>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Ralph <ralph@dev-setup>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Scribe <scribe@local>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Scribe <scribe@dev-setup>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Doc <doc@local>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Doc <doc@dev-setup>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Donald <donald@squad.local>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Mickey <mickey@local>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Mickey <mickey@dev-setup>
+Earl Tankard, Jr., Ph.D. <45021016+primetimetank21@users.noreply.github.com> Pluto <pluto@local>
