@@ -1152,3 +1152,15 @@ PR #368 (skill drift audit) landed on main by mistake at commit 128218a. Forward
 
 Accept all Sprint 16 work as complete. Acknowledge decisions.md gate breach (#371 tracks policy review). Scribe compression of pluto/history.md resolves blocker #2.
 
+---
+
+## 2026-05-17T20:30 Earl directive -- squash-merge policy clarification
+
+**By:** Earl (via Coordinator, Sprint 16 EOS Q&A)
+**What:** Squash merges to `develop` ARE the standing policy. Regular merges apply ONLY to `develop -> main` release cuts (and any back-merge recovery). Jiminy's charter line 41 ("No squash merges on develop or main") was outdated -- update to clarify.
+**Why:** Sprint 16 squash-merge mismatch surfaced by Jiminy-4 EOS audit. Earl confirmed via choice "Charter is outdated -- squash to develop is what I want."
+**Impact:**
+- Jiminy charter line 41 needs rewrite
+- No retroactive changes to past sprints (no history rewriting)
+- This memory should be stored for future sessions
+
