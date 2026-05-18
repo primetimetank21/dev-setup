@@ -99,3 +99,8 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **Sec 8 (squash policy):** Charter says no squash on develop. Sprint 16 used squash for 6 PRs. Mismatch. FINDING (no auto-fix, history rewrite forbidden).
 - **Auto-fixes:** (1) Wrote jiminy-s16-eos.md to inbox. (2) History append via branch PR.
 - **Verdict:** DIRTY -- 2 blockers (inbox undrained, pluto gate breach). Session close BLOCKED pending Scribe action.
+
+
+### Sprint 18 W1 Post-Batch Audit (jiminy-6, 2026-05-18)
+
+- Compressed ralph/history.md 15006->9312 B + scribe/history.md 14449->13606 B. PR #404 -> develop. Flagged: pluto+donald missing inbox drops + history trail entries for #402/#403. All other checks PASS.
