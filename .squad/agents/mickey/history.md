@@ -105,3 +105,8 @@ CHANGELOG [Unreleased] folded to [0.9.6] - 2026-05-17 (3 Added, 2 Changed). New 
 ## Sprint 17 Wave 1 -- #371
 
 Issue #371: decisions.md hard gate policy review. decisions.md was 65,737 bytes, over the 51,200 byte (50 KB) hard gate. Chose Option 3+5 hybrid: per-sprint sub-folders with auto-archive on sprint wrap. Archived Sprint 12 decisions (2026-05-14 to 2026-05-16) to .squad/decisions/sprint-12.md (55,958 bytes) and Sprint 15 content (dispatch + retro) to .squad/decisions/sprint-15.md (3,337 bytes). decisions.md trimmed to Sprint 16+ content (7,228 bytes, PASS). Updated Jiminy charter (added decisions.md gate check) and Scribe charter (added sprint archival step 7). Decision drop: .squad/decisions/inbox/copilot-directive-20260517203933-decisions-gate-policy.md. PR: squad/371-decisions-gate -> develop.
+
+
+## Sprint 17 release cut -- 0.9.7
+
+Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05-17 (3 Added, 3 Changed, 1 Fixed) covering #371 #381 #382 #383 #384 (Sprint 17: Hygiene gate restoration + label automation + skill formalization). PR #393: release/0.9.7 -> develop (squash). PR #394: develop -> main (regular merge, fe83af3). Tag 0.9.7 bare at f596202. GitHub release: https://github.com/primetimetank21/dev-setup/releases/tag/0.9.7.
