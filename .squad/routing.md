@@ -63,6 +63,16 @@ Must equal "develop". If not, close the PR and recreate with --base develop.
 See also `.squad/skills/pre-spawn-checklist/SKILL.md` for the full background
 checklist.
 
+## Pre-Spawn Worktree Creation (Multi-Agent Runs)
+
+When dispatching N agents in parallel (2+ concurrent agents), the coordinator MUST
+pre-create N isolated worktrees before spawning any agents. This prevents
+branch-checkout races when agents share a single working tree. For each agent:
+```
+git worktree add ../dev-setup-{issue-N} -b squad/{N}-{slug} develop
+```
+Pass each agent its `WORKTREE_PATH`. Ref: `.squad/skills/worktree-isolation/SKILL.md`.
+
 ## Mandatory Hygiene Tail
 
 Every coordinator spawn prompt MUST include the **Mandatory Hygiene Tail** block
