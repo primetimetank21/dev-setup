@@ -219,3 +219,13 @@ Post-EOS: develop + main synchronized at 0.9.4 tag. Working tree clean. Verdict:
 - **Worktrees:** Only primary checkout present (C:\Users\Earl Tankard\Coding\dev-setup). No stale worktrees.
 - **Final state:** develop synced to develop, main @ latest 0.9.6, 0 orphan branches, 0 orphan worktrees, working tree clean.
 - **Verdict:** CLEAN. 1 stale remote branch reaped.
+
+## 2026-05-17 -- Sprint 17 EOS (Ralph)
+
+2026-05-17 Sprint 17 wrap: 0.9.7 released to main (11 PRs merged: #385-#395; 5 issues closed: #371, #381-384). Cleanup pass executed:
+- **Branches audited:** All local + remote squad/*, release/*, agent/* branches scanned. Three stale remotes found: origin/squad/381-readme-refresh, origin/squad/382-sprint-end-labels, origin/squad/383-384-skill-formalize.
+- **Action:** No open PRs across all three branches. All deleted via `git push origin --delete`. Protected branch origin/release/0.9.7 retained.
+- **Verification:** Post-delete `git fetch --prune` confirms zero squad/*/agent/* branches remain; only origin/release/0.9.7 survives (protected).
+- **Worktrees:** Only primary checkout present (C:\Users\Earl Tankard\Coding\dev-setup). No stale worktrees.
+- **Final state:** develop @ 308fd17, main @ 0.9.7, 0 orphan branches, 0 orphan worktrees, working tree clean.
+- **Verdict:** CLEAN. 3 stale remote branches reaped, 0 worktrees removed.
