@@ -56,13 +56,10 @@
 
 ## 2026-05-17 Sprint 14 Wave 1 -- Skill formalization (#340 + #341)
 
-- **Scope:** formalized two Scribe skills at medium confidence per Jiminy Sprint 13 EOS audit. One PR closes both #340 and #341.
-- **Skills shipped:**
-  - `.squad/skills/history-compression/SKILL.md` -- 4-step heuristic (front-matter verbatim, current sprint verbatim, older to dated bullets, preserve skill+incident refs), 13KB compress target with 15360 B hard gate, rebound-problem note. 3 applications cited (PR #319/#332, #333, #336).
-  - `.squad/skills/per-topic-inbox-routing/SKILL.md` -- routing decision tree (append / new / delete-stale), atomic-rm model (inbox gitignored -> physical delete IS the atomic action; NOT `git rm`), dual-model coexistence (per-topic `.squad/decisions/*.md` canonical for inbox drains; `.squad/decisions.md` parallel chronological journal; both coexist). 2 applications cited (PR #333, #336) + forward-fix history from PR #323.
-- **Dogfood:** applied history-compression skill to this very file post-append to stay under 15360 B gate. Sprint 13 verbose entries (W1 sweep + W1 fold + W2 fold + retro) condensed to dated bullets; Sprint 14 W1 (this entry) kept verbatim per spec.
-- **Lesson (skill formalization threshold):** medium confidence at 2-3 applications; high confidence reserved for >=5 applications across distinct contexts. Both skills hit medium this wave.
-- **Atomic-drain forward-fix:** N/A this wave (no inbox drops drained; pure skill formalization).
+- **Scope:** Formalized 2 Scribe skills at medium confidence per Jiminy Sprint 13 EOS audit.
+- **Skills shipped:** `.squad/skills/history-compression/SKILL.md` (4-step heuristic, 13KB target, 15360 B hard gate, 3 applications cited) + `.squad/skills/per-topic-inbox-routing/SKILL.md` (routing decision tree, atomic-rm model, dual-model coexistence, 2 applications cited).
+- **Dogfood:** Applied history-compression skill to this file post-append. Pre-Sprint-14 condensed.
+- **Lesson:** Medium confidence at 2-3 applications; high at >=5 across distinct contexts.
 
 ## 2026-05-17 Sprint 14 -- Release 0.9.4
 
