@@ -109,3 +109,13 @@ Post-EOS: develop + main synchronized at 0.9.4 tag. Working tree clean. Verdict:
 - **Worktrees:** Only primary checkout present (C:\Users\Earl Tankard\Coding\dev-setup). No stale worktrees.
 - **Final state:** develop @ 308fd17, main @ 0.9.7, 0 orphan branches, 0 orphan worktrees, working tree clean.
 - **Verdict:** CLEAN. 3 stale remote branches reaped, 0 worktrees removed.
+
+## 2026-05-17 -- Sprint 18 EOS (Ralph)
+
+2026-05-17 Sprint 18 wrap: 0.9.8 released to main @ 1f67bca (4 issues closed: #397-#400; 10 PRs merged: #401-#410). Cleanup pass executed:
+- **Branches audited:** All local + remote squad/*, release/*, agent/* branches scanned. Three stale remotes found: origin/squad/402-pluto-history-fixup (PR #406), origin/squad/403-donald-history-fixup (PR #407), origin/squad/s18-scribe-retro (PR #408).
+- **Action:** No open PRs across all three branches. All deleted via git push origin --delete. Verified release/* branches absent (per stored memory sweep).
+- **Verification:** Post-delete git fetch --prune + git branch --list confirm zero squad/*/release/*/agent/* branches remain.
+- **Worktrees:** Only primary checkout present (C:\Users\Earl Tankard\Coding\dev-setup). No stale worktrees.
+- **Final state:** develop @ a125d3b, main @ 0.9.8, 0 orphan branches, 0 orphan worktrees, working tree clean.
+- **Verdict:** CLEAN. 3 stale remote branches reaped, 0 worktrees removed.
