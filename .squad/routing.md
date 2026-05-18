@@ -84,6 +84,13 @@ Rationale: Sprint 17 retro identified 3 hygiene failures (history.md gate breach
 ASCII em-dash in .gitignore, PR #368 --base=main) all preventable by a mandatory
 template. Issue #397.
 
+Every release spawn (Mickey or coordinator) MUST run a CHANGELOG completeness
+check before folding `[Unreleased]`. See
+`.copilot/skills/changelog-fold-completeness/SKILL.md` for the full recipe
+(git log + gh pr list + gh issue list cross-reference against [Unreleased]).
+The fold is GATED on completeness -- do not fold until all merged PRs and closed
+issues have entries.
+
 ## Rules
 
 1. **Eager by default** -- spawn all agents who could usefully start work, including anticipatory work.
