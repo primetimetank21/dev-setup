@@ -201,4 +201,30 @@ individual agent appends and therefore lives at the team level.
 - `CHANGELOG.md` -- Keep a Changelog format reference
 - `https://keepachangelog.com/en/1.1.0/` -- canonical format spec
 
-**Last reviewed:** 2026-05-17 (Sprint 18, issue #399)
+## Codified Script
+
+This SKILL has been codified as executable scripts (Issue #415):
+
+- `scripts/changelog-fold.sh` -- POSIX bash implementation
+- `scripts/changelog-fold.ps1` -- PowerShell mirror
+
+**Usage (bash):**
+```
+bash scripts/changelog-fold.sh \
+  --release-version X.Y.Z \
+  --last-tag X.Y.W \
+  --release-date YYYY-MM-DD \
+  [--changelog-path path/to/CHANGELOG.md] \
+  [--dry-run | --apply]
+```
+
+Default mode is `--dry-run`. Pass `--apply` to write changes in-place.
+
+The scripts:
+- Resolve the last-tag commit date from git
+- Query `gh pr list` and `gh issue list` for items since that date
+- Deduplicate, categorize by label or title prefix
+- Check for items missing from `[Unreleased]` and warn to stderr
+- Build a correctly formatted section and either print (dry-run) or splice it in
+
+**Last reviewed:** 2026-05-18 (Sprint 19, Issue #415)

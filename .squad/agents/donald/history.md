@@ -80,6 +80,12 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 - Cross-link: CONTRIBUTING.md's new section sits between Parallel Agent Work and Group Letter Assignment, so the testing sections cluster.
 - Out of scope (per ticket): refactoring tests, adding new tests, changing `set -*` flags in existing files, PowerShell test harness.
 
+### Sprint 19 -- PR #415: Codify changelog-fold-completeness as script
+
+- **What:** Implemented `scripts/changelog-fold.sh` (POSIX bash) and `scripts/changelog-fold.ps1` (PowerShell) to automate the CHANGELOG fold recipe from `.copilot/skills/changelog-fold-completeness/SKILL.md`. Added `tests/test_changelog_fold.ps1` (5 tests, all pass). Updated SKILL.md to reference the new scripts.
+- **CLI:** `--release-version` (required), `--last-tag`, `--release-date`, `--changelog-path`, `--dry-run` (default), `--apply`. Idempotency gate exits 1 if version already present.
+- **Key fixes:** (1) `[[ -n ]] &&` compound in `$()` with `set -e` aborts subshell -- replaced with unconditional `printf`. (2) PowerShell here-strings write CRLF, breaking bash stub shebangs in tests -- fixed via `[System.IO.File]::WriteAllText` with `($lines -join "\`n")`. (3) Scoop jq shim hits arg-length limit on large JSON -- pre-combined arrays via stdin instead of `--argjson`. Live dry-run against 0.9.8..HEAD: 104 PRs + 51 issues processed cleanly.
+
 ### Sprint 17 -- PR #389 (closes #382): Sprint-end label automation with verification
 
 - **What:** Hybrid (C) delivery -- standalone bash script `scripts/sprint-end-labels.sh` and matching workflow `.github/workflows/sprint-end-labels.yml`. For every issue/PR carrying a given sprint label, removes `release:backlog` (if present) and adds `release:shipped-X.Y.Z` (if missing). Never touches type/area/squad/priority labels.
