@@ -115,3 +115,12 @@ Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05
 
 2026-05-18: Squad-spawn helper + lint-spawn-prompt backstop (PR #420). Added scripts/squad-spawn.{ps1,sh} (auto-inject hygiene tail, idempotent, {name}/{N}/{worktree-path} substitution) and scripts/lint-spawn-prompt.{ps1,sh} (6-marker scan, exit 0/1). .squad/skills/spawn-prompt-lint/SKILL.md added (medium confidence). routing.md updated with helper/linter enforcement paths. 20 tests (4 files x 5 cases). Root-cause fix for Sprint 18 #406/#407 fixup pattern.
 2026-05-18: test_changelog_fold.ps1 CI fix (PR #431, #430). New-TestEnv now creates git sandbox with tag 0.9.7 for tag-resolution self-containment. Rejected fetch-tags in validate.yml -- hermetic test sandboxes preferred.
+
+
+## 2026-05-18 03:09 (PR #433-fix, Issue #433)
+- **Outcome**: Fixed test_changelog_fold sandbox CWD regression
+- **Lesson**: Sandbox tests must run from a neutral CWD to reproduce CI's
+  stateless environment. Don't rely on host worktree's git state.
+  The cd '\' && prefix ensures bash inherits the sandbox's
+  git repo rather than whatever CWD the test runner happens to be in.
+- **Files**: tests/test_changelog_fold.ps1
