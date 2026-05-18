@@ -1,60 +1,68 @@
 ---
 name: "worktree-remove-first"
-description: "Safe merge sequence for Squad PRs developed in a git worktree -- remove the worktree and delete the local branch BEFORE invoking gh pr merge --delete-branch, to sidestep a deterministic gh CLI quirk that leaves the remote branch ref orphaned"
+description: "Safe merge sequence for Squad PRs developed in a git worktree -- harvest hygiene files, remove the worktree, delete the local branch, THEN invoke gh pr merge --delete-branch. Skipping this order loses inbox files or leaves orphaned remote refs."
 domain: "repo-meta, release-flow"
-confidence: "high"
-source: "earned (issue #317, Sprint 12 -> Sprint 13, 5-of-5 proven)"
+confidence: "medium"
+source: "earned (issue #317 Sprint 12-13, 29+ applications Sprints 12-16)"
 ---
 
 ## Context
 
 When a Squad agent develops a PR in an isolated git worktree (per the
 `worktree-isolation` skill), the local feature branch is checked out inside the
-worktree, not the main checkout. Merging that PR via
-`gh pr merge <N> --delete-branch` while the worktree still owns the branch
-fails 100% deterministically: gh refuses to delete the remote ref (or reports
-"merge failed" / "branch still protected") because it sees the local branch is
-checked out in a working tree. The squash/merge itself succeeds on the GitHub
-side, but the remote-side `--delete-branch` step half-fails, leaving an
-orphaned `origin/squad/<N>-<slug>` ref behind.
+worktree, not the main checkout. Two independent failure modes arise if the
+merge sequence is wrong:
+
+1. **Hygiene loss.** The agent may have dropped files into
+   `.squad/decisions/inbox/` or appended to `history.md` inside the worktree
+   without pushing. Those changes live only in the worktree index. If the
+   worktree is torn down before they are harvested, or if the PR is merged
+   before the coordinator inspects the worktree, those files are silently lost.
+
+2. **Orphaned remote ref.** Calling `gh pr merge <N> --delete-branch` while the
+   worktree still has the branch checked out causes the gh CLI to abort the
+   remote-delete step (or half-fail silently), leaving `origin/squad/<N>-<slug>`
+   behind after the merge commit lands on develop.
 
 This skill applies whenever an agent (or coordinator) is about to merge any
 `squad/*` PR that was developed in a worktree -- which, under the standard
 Squad dispatch flow, is effectively every feature PR.
 
-The pattern was originally tracked as a recurring nuisance in issue #300
-(closed once as "no longer reproducible") and re-surfaced in Sprint 12 Wave 2,
-where it was reproduced 5-of-5 across PRs #320, #321, #323, #324, and #327
-(plus the 0.9.2 release PR #328 using `--merge`). Issue #317 captures the
-formal write-up; this skill is the codification.
+The pattern was originally tracked in issue #300 (closed once as
+"no longer reproducible") and re-surfaced in Sprint 12 Wave 2 across PRs
+#320, #321, #323, #324, #327. Issue #317 is the formal write-up.
+The skill has been applied 29+ times across Sprints 12-16 without a single
+failure when the order is followed.
 
 ## Patterns
 
 ### Pattern 1 -- The worktree-remove-FIRST sequence (mandatory for any worktree-developed PR)
 
-Run these five steps IN ORDER from the MAIN checkout (never from the worktree
+Run these steps IN ORDER from the MAIN checkout (never from the worktree
 being torn down).
 
 ```powershell
-# 0. Harvest. Before destroying the worktree, copy out any uncommitted hygiene
-# files the agent forgot to push (history.md tail, decisions/inbox/ drops).
-# Stage them on develop from the main checkout, or stash and re-push.
+# Step 1. Harvest hygiene files BEFORE touching the worktree.
+# Inspect .squad/decisions/inbox/* and any history.md appends the agent
+# dropped in the worktree but did not push. Copy or cherry-pick them onto
+# develop from the main checkout now, before the worktree is destroyed.
+# If everything is already pushed, this step is a quick ls-and-confirm.
 
-# 1. Remove the worktree. --force handles the case where the agent left a
-# dirty index; you have already harvested in step 0.
+# Step 2. Remove the worktree. --force handles a dirty index; you have
+# already harvested in step 1.
 git worktree remove ..\dev-setup-<N> --force
 
-# 2. Delete the LOCAL feature branch. It is now dangerous to leave around --
-# any future `git checkout` could land you back on it.
+# Step 3. Delete the LOCAL feature branch. With the worktree gone this ref
+# is now an orphan that will cause confusion on future checkouts.
 git branch -D squad/<N>-<slug> 2>$null
 
-# 3. Merge the PR with --delete-branch. With the worktree gone and the local
-# ref deleted, gh's pre-flight check passes and the remote ref is removed
-# cleanly along with the merge.
+# Step 4. Merge the PR with --delete-branch. With the worktree gone and the
+# local ref deleted, gh's pre-flight check passes and the remote ref is
+# removed cleanly along with the merge commit.
 gh pr merge <N> --admin --squash --delete-branch
 
-# 4. Verify. Both local AND remote refs should be gone.
-git branch --list "squad/<N>-*"          # expect empty
+# Step 5. Verify. Both local AND remote refs should be gone.
+git branch --list "squad/<N>-*"             # expect empty
 git ls-remote --heads origin "squad/<N>-*"  # expect empty
 ```
 
@@ -67,7 +75,7 @@ commit history preserved, swap `--squash` for `--merge`:
 gh pr merge <N> --admin --merge --delete-branch
 ```
 
-The worktree-remove-FIRST sequence (steps 0-2 above) is identical; only the
+The worktree-remove-FIRST sequence (steps 1-3 above) is identical; only the
 merge strategy differs. Proven on the 0.9.1 and 0.9.2 cuts.
 
 ### Pattern 3 -- Recovery if you forget and merge with the worktree still attached
@@ -102,30 +110,45 @@ the worktree first removes the precondition that trips the check.
 
 ## Examples
 
-**Sprint 12 Wave 2 (5-of-5 successful applications):**
+**Sprint 12 Wave 2 (5-of-5 -- first formal application after issue #317):**
 - PR #320 (Donald, `squad/237-test-harness-pattern`)
 - PR #321 (Mickey, `squad/310-arch-windows-dep-order`)
-- PR #323 (Scribe wave-2 fold, `squad/scribe-sprint-12-wave-2-fold`)
+- PR #323 (Scribe wave-2 fold)
 - PR #324 (Mickey, `squad/306-readme-refresh`)
 - PR #327 (Scribe sprint-12 retro fold)
+- PR #328 (`release/0.9.2`) -- same sequence with `--merge` to preserve history
 
-**Sprint 12 release:**
-- PR #328 (`release/0.9.2`), same sequence with `--merge` instead of
-  `--squash` to preserve the release history.
+**Sprint 15 (4-of-4 -- Doc dual-worktree wave):**
+- PR #357 (Mickey, `squad/355-sprint-letter-normalization`)
+- PR #358 (Doc, `squad/356-ascii-sweep`)
+- PR #359 (Doc, history fold `squad/doc-history-sprint-15`)
+- PR #360 (Coordinator, develop->main release fold)
+
+Lifetime record at Sprint 15 close: 25-of-25 across Sprints 12-15.
+
+**Sprint 16 (3 additional applications):**
+- PR #368 (Pluto, `squad/367-skill-drift-audit`) -- also the `--base main`
+  incident; worktree-remove-FIRST itself was followed correctly
+- PR #369 (Pluto, `squad/362-ascii-docs-skill`)
+- PR #370 (Pluto, `squad/364-worktree-base-refresh-skill`)
 
 **Counter-example (Sprint 11, before the pattern was named):**
 - Issue #300 tracked an apparent 5-of-6 fail rate of
-  `gh pr merge --delete-branch` producing ghost remote refs. At the time, the
-  root cause was hypothesised as a `gh` upstream bug. The Sprint 12 evidence
-  reframes it: the trigger was the worktree-owns-branch precondition, not a
-  CLI regression. Closing #300 as "no longer reproducible" was premature; the
-  fix is procedural (this skill), not waiting on upstream.
+  `gh pr merge --delete-branch` producing ghost remote refs. At the time the
+  root cause was hypothesised as a gh upstream bug. The Sprint 12 evidence
+  reframes it: the trigger was the worktree-owns-branch precondition. Closing
+  #300 as "no longer reproducible" was premature; the fix is procedural (this
+  skill), not waiting on upstream.
 
 ## Anti-Patterns
 
 - **Calling `gh pr merge --delete-branch` while the worktree is still attached.**
   100% failure on the remote-delete step. Symptoms: merge succeeds on GitHub,
   but `git ls-remote origin` still shows the feature branch ref days later.
+- **Merging the PR before harvesting hygiene files.** The worktree may contain
+  inbox drops or history.md appends the agent did not push. Once the PR is
+  merged and the worktree is removed, those files are unrecoverable from the
+  branch history.
 - **Removing the worktree but skipping the local branch delete.** Leaves a
   dangling local `squad/<N>-<slug>` ref that future `git checkout` or
   `git branch -a` listings will surface as noise. Ralph's EOS sweep cleans
@@ -143,12 +166,15 @@ the worktree first removes the precondition that trips the check.
 
 ## References
 
-- Issue #317 -- formalization request and 5-of-5 evidence
+- Issue #317 -- formalization request and 5-of-5 Sprint 12 evidence
+- Issue #383 -- Sprint 17 revision request (hygiene harvest + medium confidence)
 - Issue #300 -- earlier (closed) tracker of the same symptom
 - PR #295 -- Ralph EOS post-merge `git push origin --delete` fallback
 - `.squad/skills/worktree-isolation/SKILL.md` -- the agent-dispatch race
   condition that necessitates worktrees in the first place (a different
   concern; this skill covers the merge tail, that skill covers the spawn head)
+- `.squad/skills/gh-pr-base-develop/SKILL.md` -- companion skill: every
+  `gh pr create` must pass `--base develop` explicitly
 - `git worktree` man page
 
-**Last reviewed:** 2026-05-17
+**Last reviewed:** 2026-05-17 (Sprint 17, issue #383)
