@@ -8,6 +8,7 @@
 #   Check 3: Rogue path check under .squad/
 #   Check 4: Staged inbox file check
 #   Check 5: Protected branch refuse (develop/main/master)
+#   Check 7: history.md size gate (Issue #416)
 #   pre-push: Main push guard + advisory PSScriptAnalyzer exit-code
 #
 # Usage:
@@ -353,6 +354,63 @@ if sh "$HOOK" >/dev/null 2>&1; then
   pass "T5e: commit on pluto/* branch is allowed"
 else
   fail "T5e: commit on pluto/* branch is allowed"
+fi
+
+# ===========================================================================
+# Check 7 Tests: history.md size gate
+# ===========================================================================
+echo ""
+echo "=== Check 7: history.md size gate ==="
+
+# Helper: create N bytes of ASCII 'a' using awk (portable; no newlines so
+# autocrlf on Windows Git Bash does not inflate the byte count).
+make_bytes() {
+  awk -v n="$1" 'BEGIN{for(i=0;i<n;i++) printf "a"}'
+}
+
+# Test 7a: FAIL -- history.md staged at 15361 B (above 15360 hard limit)
+T7A_DIR="${TMPDIR_BASE}/t7a"
+setup_test_repo "$T7A_DIR"
+git checkout -q -b goofy/size-gate-reject
+mkdir -p .squad/agents/goofy
+make_bytes 15361 > .squad/agents/goofy/history.md
+git add .squad/agents/goofy/history.md
+if sh "$HOOK" >/dev/null 2>&1; then
+  fail "T7a: history.md 15361 B should be rejected"
+else
+  pass "T7a: history.md 15361 B is rejected (hard limit)"
+fi
+
+# Test 7b: PASS with WARN -- history.md staged at 14500 B (between 14336 and 15360)
+T7B_DIR="${TMPDIR_BASE}/t7b"
+setup_test_repo "$T7B_DIR"
+git checkout -q -b goofy/size-gate-warn
+mkdir -p .squad/agents/goofy
+make_bytes 14500 > .squad/agents/goofy/history.md
+git add .squad/agents/goofy/history.md
+hook_out=$(sh "$HOOK" 2>&1); hook_exit=$?
+if [ $hook_exit -ne 0 ]; then
+  fail "T7b: history.md 14500 B should pass (warn only)"
+elif echo "$hook_out" | grep -q "WARN"; then
+  pass "T7b: history.md 14500 B warns but passes"
+else
+  fail "T7b: history.md 14500 B should emit WARN (not found in output)"
+fi
+
+# Test 7c: PASS silently -- history.md staged at 1000 B (below warn threshold)
+T7C_DIR="${TMPDIR_BASE}/t7c"
+setup_test_repo "$T7C_DIR"
+git checkout -q -b goofy/size-gate-ok
+mkdir -p .squad/agents/goofy
+make_bytes 1000 > .squad/agents/goofy/history.md
+git add .squad/agents/goofy/history.md
+hook_out7c=$(sh "$HOOK" 2>&1); hook_exit7c=$?
+if [ $hook_exit7c -ne 0 ]; then
+  fail "T7c: history.md 1000 B should pass silently"
+elif echo "$hook_out7c" | grep -q "WARN\|ERROR"; then
+  fail "T7c: history.md 1000 B should pass without WARN/ERROR output"
+else
+  pass "T7c: history.md 1000 B passes silently"
 fi
 
 # ===========================================================================
