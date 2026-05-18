@@ -15,6 +15,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.9.8] - 2026-05-19
+
+### Added
+- Mandatory hygiene tail template (`.squad/templates/spawn-prompt-hygiene.md`) and `routing.md` section enforcing 6-item discipline at every spawn (#397/#401)
+- Two new hygiene skills formalized: `history-md-pre-size-check` and `changelog-fold-completeness` (#398/#399/#402)
+- Sprint label vocabulary standardized: `sprint:17`, `sprint:18`, `release:shipped-0.9.7` introduced and backfilled across S17 work (#400/#403)
+- Test G in `tests/test_sprint_end_labels.ps1` -- CRLF regression coverage via function-override shim (#403)
+- Sprint 18 decision archive at `.squad/decisions/sprint-18.md` (#408)
+
+### Changed
+- `scripts/sprint-end-labels.sh`: combined `gh issue list` + `gh pr list` queries (issue-list silently excludes PRs); pipe jq through `tr -d '\r'` for Windows CRLF safety (#403)
+- `.squad/agents/donald/history.md`, `.squad/agents/ralph/history.md`, `.squad/agents/scribe/history.md` compressed under 15360 B gate per `history-md-pre-size-check` SKILL (#404)
+
+### Fixed
+- `gh issue list --search` PR-exclusion bug in sprint-end-labels automation -- script now correctly processes both issues and PRs (#403)
+- Windows jq CRLF idempotency-guard bypass in sprint-end-labels script -- already-labeled items no longer re-labeled on subsequent runs (#403)
+- Sprint 18 attribution trail gaps via fixup PRs #406 (Pluto) + #407 (Donald)
+
 ## [0.9.7] - 2026-05-17 -- Sprint 17: Hygiene gate restoration + label automation + skill formalization
 
 ### Added
