@@ -12,8 +12,9 @@
 ## What I Own
 
 - `.squad/log/` -- session logs
-- `.squad/decisions.md` -- the shared decision log (canonical, merged)
+- `.squad/decisions.md` -- the shared decision log (canonical, merged; hard gate 51,200 bytes)
 - `.squad/decisions/inbox/` -- decision drop-box (agents write here, I merge)
+- `.squad/decisions/sprint-NN.md` -- per-sprint archives (created at sprint wrap)
 - Cross-agent context propagation
 
 ## How I Work
@@ -27,6 +28,13 @@ After every substantial work session:
 4. **Propagate cross-agent updates** -- append team updates to affected agents' history.md
 5. **Commit AND push** -- `git add .squad/ && git commit -F {tempfile}` with message `docs(squad): {summary}`, then `git push` -- ALWAYS push after every commit. This is a standing directive from Earl.
 6. **Summarize history** -- if any history.md >12KB, summarize old entries to `## Core Context`
+
+At sprint wrap (additional step):
+7. **Sprint archival** -- if decisions.md exceeds 51,200 bytes OR a sprint has just wrapped:
+   a. Create `.squad/decisions/sprint-NN.md` with a header and all entries for sprint NN.
+   b. Remove those entries from `decisions.md`, leaving only current-sprint entries.
+   c. decisions.md MUST be under 51,200 bytes after archival (hard gate).
+   d. Commit with message `chore(hygiene): archive Sprint NN decisions to sprint-NN.md`.
 
 **Never speak to the user. Work silently.**
 
