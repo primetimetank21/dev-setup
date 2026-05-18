@@ -194,3 +194,51 @@ wildcard/escape issues with the marker strings (which contain parens and dots).
 
 Confidence: medium -- 1 observation; pattern may need revision once CI gate
 (Phase 3, out of scope here) is implemented and the full marker set is battle-tested.
+
+---
+
+# Decision: Per-Runner Exclusions for Orphan Tests (Issue #424)
+
+**Date:** 2026-05-18  
+**Author:** Chip  
+**Issue:** #424  
+**PR:** #426  
+
+## Context
+
+Wired 10 orphan tests from `tests/` into `.github/workflows/validate.yml`. Not all tests are suitable for all runners.
+
+## Decisions
+
+### macOS Exclusions
+
+Skipped 3 .sh tests on validate-macos job:
+- `test_nvm_bootstrap.sh` - refs `scripts/linux/tools/nvm.sh`, `scripts/linux/tools/squad-cli.sh`, `scripts/linux/tools/copilot-cli.sh`
+- `test_shared_logging.sh` - refs `scripts/linux/lib/log.sh` (Linux-specific logging library)
+- `test_precommit_hygiene.sh` - refs `hooks/pre-commit` (Linux-specific hook behavior)
+
+### Linux Inclusions
+
+Promoted `test_tool_versions.sh` from macOS-only to Linux (it's platform-agnostic, tests `.tool-versions` parsing via `scripts/lib/read-tool-version.sh`).
+
+### Windows Inclusions
+
+All 4 orphan .ps1 tests were wired and verified locally:
+- `test_changelog_fold.ps1` - 5/5 passed
+- `test_squad_spawn.ps1` - 5/5 passed
+- `test_spawn_prompt_lint.ps1` - 5/5 passed
+- `test_sprint_end_labels.ps1` - 7/7 passed
+
+### Non-Runnable Tests
+
+All `test_*.sh` and `test_*.ps1` files in `tests/` were confirmed as standalone entry-points (not sourced libraries). No files were excluded for being non-runnable.
+
+## Rationale
+
+- Linux-specific path references make macOS runs fail or produce false negatives
+- Platform-agnostic tests (idempotency, spawn tooling, tool version parsing) run on all applicable runners
+- Git hooks config (`git config core.hooksPath hooks`) was added before `test_precommit_hygiene.sh` on Linux (matches existing pattern for Windows git hooks tests)
+
+## Follow-up
+
+None required. All orphan tests are now wired or explicitly excluded with documented reason.

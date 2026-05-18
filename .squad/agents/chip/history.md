@@ -106,3 +106,5 @@ Lessons preserved verbatim in Learnings section above (CP1252 encoding, PSVersio
 - Baseline failures (8: Copilot CLI live check + O-1..O-7 alias overrides) are environmental and pre-existed on develop @ 66930c6. Verified by stash + re-run before adding Group FF.
 - No Linux uninstall test file added: `tests/test_linux_setup.sh` does not exist; static-source parity in FF-4/FF-5 catches structural divergence between the two uninstall scripts without needing a separate functional bash harness.
 - Diff: +335 lines in `tests/test_windows_setup.ps1`. Pure ASCII (pre-commit clean). All 10 new tests pass locally; tally rose from 119 -> 129 passing (8 skipped, 8 pre-existing failures unchanged).
+
+**2026-05-18 (Sprint 19):** Issue #424 -- wired 10 orphan tests into validate.yml (Linux: +7, macOS: +3, Windows: +4). Skipped 3 .sh tests on macOS (Linux-specific paths: scripts/linux/lib/, scripts/linux/tools/). All 4 Windows .ps1 tests verified locally. PR #426.
