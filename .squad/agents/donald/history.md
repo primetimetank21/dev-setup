@@ -110,3 +110,11 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 - **Tests:** 6 -> 7 (new Test G: CRLF regression, function-override shim).
 - **PR:** #403 (squash-merged to develop @ c03b2d2)
 - **Lesson:** `gh issue list --search` is issues-only even with the search API; must pair with `gh pr list` for combined automation. Windows jq CRLF is a latent trap in any bash script that reads jq TSV output on Windows.
+
+### Sprint 19 Wave 2 -- PR #432 (closes #429): Repair setup.sh idempotency bugs
+
+- **What:** Fixed 4 pre-existing idempotency bugs in setup.sh (2 zsh entries in /etc/shells, 6x NVM_DIR + 2x .local/bin + 2x nvm.sh in ~/.zshrc) caught by tests/test_idempotency.sh after it was wired into CI in PR #426.
+- **Root causes:** (1) zsh.sh appended to /etc/shells inside a SHELL != ZSH_PATH check, which re-ran on second execution before the user logged out to refresh $SHELL; (2) append_managed_block in dotfiles/install.sh ran grep on a file that might not exist, causing the idempotency marker check to fail silently.
+- **Fixes:** (1) Moved /etc/shells check outside the shell comparison, using grep -qxF for exact line match; (2) Added touch before marker check to ensure file exists.
+- **Strategy chosen:** Per-line idempotency guards (grep checks) over block-marker deletion+rewrite -- simpler, safer, proven pattern.
+- **PR:** #432 (commit a1b4e12, branch squad/429-setup-idempotency)

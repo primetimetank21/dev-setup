@@ -107,7 +107,7 @@ append_managed_block() {
 
   if [[ "$DRY_RUN" == true ]]; then
     if grep -qF "$marker" "$dest" 2>/dev/null; then
-      dry "$label (dev-setup block already present — would skip)"
+      dry "$label (dev-setup block already present -- would skip)"
     else
       dry "Would append dev-setup block to $label"
     fi
