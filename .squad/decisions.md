@@ -5,11 +5,78 @@
 (Sprint archives -- see .squad/decisions/ for per-sprint history:
   sprint-12.md -- Sprint 12 decisions (2026-05-14 to 2026-05-16) + Sprint 12 Wave 2 fold
   sprint-15.md -- Sprint 15 dispatch and retrospective (2026-05-17)
+  sprint-17.md -- Sprint 17 decisions (2026-05-18+)
   decisions-archive.md -- pre-Sprint 12 archive (entries dated <= 2026-05-04)
 Policy: at each sprint wrap, Scribe moves all entries for that sprint to
   .squad/decisions/sprint-NN.md and resets the live file to Sprint 16+ content.
 Hard gate: 51200 bytes (50 KB). Gate checked at each commit via pre-commit hook.
 Active: Sprint 16+ entries below.)
+
+## Sprint 17 Decisions (2026-05-18+)
+
+### Skill Formalization Wave -- worktree-remove-first + gh-pr-base-develop (Issues #383, #384)
+
+**Date:** 2026-05-17  
+**Author:** Pluto (Copilot, Sprint 17 Wave 1)  
+**PR:** #386 (merged @ 17c940b)  
+
+#### Skills formalized
+
+**worktree-remove-first (update)**
+- Confidence: medium (29+ applications across Sprints 12-16, lifecycle rules)
+- Primary rationale: hygiene harvest (step 1) first, gh CLI quirk (step 4) second
+- New citations: Sprint 15 PRs #357-360, Sprint 16 PRs #368-370
+
+**gh-pr-base-develop (new)**
+- Confidence: high (binary rule: flag either present or absent)
+- Trigger: every gh pr create by squad agents
+- Rule: always pass --base develop unless release cut (develop->main)
+- Pre-flight: echo target base before gh pr create; verify with gh pr view <N> --json baseRefName after
+- Recovery: git merge origin/main --no-ff --no-verify + chore(merge) type
+- Citing: Sprint 16 PR #368 incident (Pluto-5 --base main mishap)
+
+#### routing.md update
+
+Added "Spawn-Prompt Hygiene" section. Coordinators must include --base develop snippet in every spawn that creates a PR.
+
+#### Decision standing
+
+Both skills now active team standards. Mandatory in every spawn prompt that invokes gh pr create. worktree-remove-first remains mandatory for all squad PR merge sequences.
+
+---
+
+### Sprint-End Label Automation with Verification-Retry Pattern (Issue #382)
+
+**Date:** 2026-05-17  
+**PR:** #389 (merged @ 400f9ac)  
+**Author:** Donald (Copilot, Sprint 17 Wave 1)  
+
+#### Delivery
+
+Hybrid (script + workflow + SKILL):
+- `scripts/sprint-end-labels.sh` -- runnable locally; --dry-run, --repo, --sprint, --release-label flags; idempotent via pre-fetched label-list keying
+- `.github/workflows/sprint-end-labels.yml` -- workflow_dispatch with dry_run input (default true)
+- `.squad/skills/gh-label-verify-retry/SKILL.md` -- write-then-verify pattern with retry backoff (1s, 2s, 4s) and reusable bash snippet
+- `tests/test_sprint_end_labels.ps1` -- 6 tests, 2 exercise retry loop via function override
+
+#### Verification approach
+
+1. Pre-fetch candidate issues' labels in one gh issue list call
+2. For each issue, drive has_label / verify_with_retry per operation
+3. On mismatch, re-query only (not re-write) with exponential backoff
+4. On final failure, print actual label set and exit 1
+
+#### SKILL status
+
+`gh-label-verify-retry` now formal SKILL (high confidence). Reusable for future label/state automations.
+
+#### Follow-ups
+
+- sprint:N labels not yet in use; retire release:backlog as de facto search key once adopted
+- Consider workflow_run trigger on release PR merge if Mickey standardizes release workflow name
+- squad-history-check workflow expects squad:donald PRs to modify .squad/agents/donald/history.md; #389 deferred append to follow-up per task spec
+
+---
 ## 2026-05-17 Sprint 16 wrap (decisions fold)
 
 ### Sprint 16 EOS Audit Summary
