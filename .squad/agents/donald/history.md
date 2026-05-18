@@ -102,5 +102,5 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 - **Verification:** All 17 adds verified on first read (0 retries). Earl directive satisfied.
 - **Idempotency:** Confirmed on 3rd run: `total=17 changed=0 already-correct=17`.
 - **Tests:** 6 -> 7 (new Test G: CRLF regression, function-override shim).
-- **PR:** #N (closes #400)
+- **PR:** #403 (squash-merged to develop @ c03b2d2)
 - **Lesson:** `gh issue list --search` is issues-only even with the search API; must pair with `gh pr list` for combined automation. Windows jq CRLF is a latent trap in any bash script that reads jq TSV output on Windows.
