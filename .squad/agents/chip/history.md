@@ -56,6 +56,7 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 - PS 5.1 CI step runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so the test file itself must be ASCII-clean (no emojis, em dashes, arrows, or any non-ASCII chars)
 - shellcheck `-s bash` flag is needed for sourced dotfiles like `.aliases` that have no shebang -- tells shellcheck the dialect without requiring SC2148 fix
 - `config/dotfiles/.aliases` passes shellcheck clean as of issue #193 -- no directives needed, no SC1090/SC2034/SC2148 violations
+- Issue #424: when wiring `tests/test_precommit_hygiene.sh` into `validate.yml`, set `git config --global init.defaultBranch master` before the hook-path step. The test creates `main` later; runners whose `git init` default is already `main` make that scenario fail before the hook is exercised.
 
 ---
 
