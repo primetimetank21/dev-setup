@@ -13,6 +13,14 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 
+# Source nvm if available, to get node/npm on PATH in this subshell.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+# shellcheck source=/dev/null
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh" --no-use
+  nvm use default 2>/dev/null || true
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COPILOT_CLI_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" copilot-cli)"
 
