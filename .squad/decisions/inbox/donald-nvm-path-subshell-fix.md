@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-26  
 **Author:** Donald (Copilot)  
-**PR:** pending  
+**PR:** #436  
 **Branch:** squad/fix-npm-path-nvm-subshell
 
 ## Decision
