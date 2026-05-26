@@ -60,6 +60,7 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 - Set-Alias -Force insufficient for AllScope aliases -- must Remove-Item first
 - Registry SetEnvironmentVariable for PATH persists across terminal sessions: `[System.Environment]::SetEnvironmentVariable('PATH', ..., 'User')`
 - Em dash fix pattern (PR #198): When PS 5.1 CI fails with TerminatorExpectedAtEndOfString, scan ALL .ps1 files on the branch for non-ASCII (bytes > 0x7F). Replace em dashes and other non-ASCII with ASCII equivalents in both comments and string literals. Use a byte-level scan (not just grep) to catch multi-byte UTF-8 sequences.
+- Cross-platform parity audits apply to top-level `scripts/*.{sh,ps1}` utilities and every file in `tests/`, but not platform installers under `scripts/linux/` or `scripts/windows/`. For function-exporting PowerShell libs, parity smoke tests should dot-source the file and call the function, and skip cleanly when `pwsh` is unavailable.
 
 ---
 
