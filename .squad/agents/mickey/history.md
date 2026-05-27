@@ -126,3 +126,4 @@ Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05
   The cd '\' && prefix ensures bash inherits the sandbox's
   git repo rather than whatever CWD the test runner happens to be in.
 - **Files**: tests/test_changelog_fold.ps1
+- 2026-05-27 -- Grilled #441 profile-path plan (architecture lens). Verdict: REVISE ($PROFILE.CurrentUserAllHosts contradiction + scope mismatch).

@@ -240,3 +240,11 @@ Accept all Sprint 16 work as complete. Acknowledge decisions.md gate breach (#37
 - No retroactive changes to past sprints (no history rewriting)
 - This memory should be stored for future sessions
 
+---
+
+## 2026-05-27 -- Formalized grill ceremony as a SKILL (Issue #441)
+
+**By:** Pluto (Copilot, Grill Wave 1)
+
+Formalized grill ceremony as a SKILL on 2026-05-27. The "grill" skill (`.squad/skills/grill/SKILL.md`) documents the adversarial pre-implementation plan review pattern observed informally in prior sprints and applied formally for the first time on issue #441 (2026-05-27). The skill captures triggers, roles, lockout rule, spawn pattern, output convention, verdict synthesis rules, and anti-patterns. Canonical example: issue #441, four participants (Goofy as plan author, Mickey/Chip/Doc as parallel grillers). Confidence: low -- bumps to medium on next independent application.
+

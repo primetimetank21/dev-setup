@@ -130,3 +130,5 @@ Both SKILLs use YAML frontmatter (name/description/domain/confidence/source), Co
 **Status:** Complete.
 
 Added 2-3 line clarification to routing.md "Pre-Spawn Worktree Creation" section: coordinators must pre-create N isolated worktrees BEFORE dispatching N parallel agents. Cross-references worktree-isolation SKILL (no duplication). Surfaces pattern already implicit in worktree-isolation/SKILL.md and issue-lifecycle.md.
+
+- 2026-05-27 -- #441 -- formalized grill SKILL (.squad/skills/grill/SKILL.md). First formal capture of the adversarial plan-review ceremony. Canonical example: issue #441, Goofy plan + Mickey/Chip/Doc parallel grillers. Confidence: low.
