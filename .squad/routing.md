@@ -11,7 +11,7 @@ How to decide who handles what for the dev-setup project.
 | PowerShell scripts, Windows installs, OS detection | Goofy | `setup.ps1`, `detect-os.ps1`, winget/scoop installs |
 | Dotfiles, tool configs, environment setup | Pluto | `.gitconfig`, `.zshrc` templates, VS Code settings, env vars |
 | Tests, CI, edge cases, idempotency | Chip | Validate scripts work, CI workflows, "does it break on re-run?" |
-| Code review | Mickey | All PRs reviewed by Mickey before merge |
+| Code review | Domain reviewer; Mickey on escalation | Single-domain PRs go to the owning agent; Mickey reviews architecture, governance, and 3+ domain PRs |
 | Testing & validation | Chip | Write tests, find edge cases, verify fixes |
 | Squad hygiene, process audit | Jiminy | Untracked files, uncommitted histories, rogue paths, branch ancestry, label hygiene |
 | Verification, fact-checking, claim audits | Doc | Verify research, double-check assertions, run counter-hypotheses, audit external references |
@@ -30,6 +30,22 @@ How to decide who handles what for the dev-setup project.
 | "Team, ..." | Mickey + Donald + Goofy + Pluto in parallel |
 | "Verify the research" / "fact-check this" | Doc (verification) |
 | "Before we ship..." | Doc + Mickey (verify + review) |
+
+## PR Review Routing
+
+Single-domain PRs may be approved by the owning domain reviewer. Mickey remains the architecture-level reviewer for cross-cutting concerns, governance, and unclear ownership.
+
+| Path / Change Pattern | Primary Reviewer | Mickey Escalation |
+|-----------------------|------------------|-------------------|
+| `scripts/**/*.sh`, `setup.sh`, `scripts/linux/**`, `scripts/macos/**` | Donald | Escalate if routing contracts, cross-platform behavior, or 3+ domains are touched. |
+| `setup.ps1`, `scripts/windows/**`, `scripts/**/*.ps1`, OS/environment detection | Goofy | Escalate if architecture, shared routing contracts, or 3+ domains are touched. |
+| `config/dotfiles/**`, `*.template`, config defaults, package/version pins | Pluto | Escalate if install control flow, architecture, or 3+ domains are touched. |
+| `tests/**`, `tests/README.md`, `.github/workflows/*test*.yml`, `.github/workflows/validate.yml`, `.github/workflows/e2e-install.yml` | Chip | Escalate if production behavior, release/governance workflows, or 3+ domains are touched. |
+| `README.md`, `CHANGELOG.md`, `docs/**`, documentation-only markdown | Doc | Escalate if docs define policy, architecture, governance, or 3+ domains are touched. |
+| `.squad/**`, `.github/agents/**`, reviewer policy, squad process | Mickey | Always Mickey; governance changes are not delegated. |
+| Any PR touching three or more domains, or with no clear owner | Mickey | Always Mickey. |
+
+For two-domain PRs, request both domain reviewers when practical; either may be the primary approver only if the other domain is incidental. If reviewers disagree on ownership or risk, escalate to Mickey before merge.
 
 ## Issue Routing
 
@@ -143,6 +159,6 @@ issues have entries.
 4. **Cross-platform tasks** -- Donald owns bash side, Goofy owns PowerShell side. Both can run in parallel.
 5. **"Team, ..." -> fan-out.** Mickey + Donald + Goofy + Pluto in parallel as `mode: "background"`.
 6. **Test alongside build.** When Donald or Goofy write a script, spawn Chip to write test cases simultaneously.
-7. **Mickey reviews before merge.** All work goes through Mickey for final review.
+7. **Domain-aligned review before merge.** Single-domain PRs go to their domain reviewer; Mickey reviews governance, architecture, unclear ownership, and PRs touching 3+ domains.
 8. **Jiminy auto-runs** before coordinator returns control to user, after multi-agent batches (3+ spawns), and at session-end. Manual trigger: "Jiminy, check" / "Jiminy, audit". Reports clean state in one line, dirty state with fix-offer.
 9. **Doc auto-runs** on tasks tagged `review`, `verify`, `fact-check`, `audit`, or when a user says "fact-check this", "verify this", "double-check". Reports a verification report inline; only blocks merges if explicitly escalated to a gate.
