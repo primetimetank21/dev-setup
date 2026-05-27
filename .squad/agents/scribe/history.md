@@ -58,3 +58,7 @@
 - **Comment on #441:** Posted link to #442 + implementation gate reminder.
 - **Inbox drain:** 14 inbox files drained to decisions.md (2026-05-27 #441 ceremony section). Combined 26437 B + 11583 B = 38020 B < 51200 B gate -- drained.
 - **Key lessons:** (1) Local develop can diverge from origin/develop when commits land directly on develop (worktree/background sessions). Rebase feature branch onto local develop before commit to satisfy ancestry hook; flag divergence to Earl. (2) Non-ASCII output from agent sessions (arrows, checkmarks) triggers ASCII pre-commit hook -- must sanitize staged .md files before commit. (3) history.md size gate fires on staged blob bytes, not working-tree bytes; compress before re-staging.
+
+## 2026-05-27 PR #457 Follow-Up -- Grill Ceremony Description Restoration
+
+- 2026-05-27: PR #457 follow-up restore. Initial "dedupe" deletion for #455 was a misread -- the line removed was the entire body of the decision entry, not a duplicated phrase. Lesson: when an acceptance criterion says "dedupe", verify the matches are actual duplicates (not heading + body + cross-refs) BEFORE deleting. Read the surrounding structure first.
