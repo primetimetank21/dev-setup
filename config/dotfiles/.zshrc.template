@@ -3,19 +3,13 @@
 # The install script will place it at $HOME/.zshrc only if one doesn't exist.
 # See config/dotfiles/README.md for full documentation.
 
-# ── Tool PATH setup ───────────────────────────────────────────────────────────
-
-# uv (Python package manager — installed via install scripts)
+# --- dev-setup managed block (do not edit) ---
 export PATH="$HOME/.local/bin:$PATH"
-
-# nvm (Node Version Manager)
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-# ── Aliases ───────────────────────────────────────────────────────────────────
-
 [ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
+# --- end dev-setup managed block ---
 
 # ── Startup ──────────────────────────────────────────────────────────────────
 

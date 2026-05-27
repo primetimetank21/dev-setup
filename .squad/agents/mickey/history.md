@@ -65,12 +65,14 @@ Lead architect; established foundational team process, architecture, and Windows
 - commit-msg hook rejects merge commit messages (non-conventional format). Use `--no-verify` for merge commits during conflict resolution. This is fine.
 - Filed #239 e2e install P0 -- Earl emphasized this is the safety net for what really works on fresh machines. Notes: psmux is the Windows tmux with `tmux` alias; squad CLI is verified with `squad --version`, not the npx path; nightly cron approved.
 - 2026-05-16 Hired Doc (Fact Checker) per Earl's request after Sprint 8-hotfix (formerly Sprint Q) retro. Universe: Disney Classic. Auto-triggers on review/verify/fact-check/audit keywords. Closes the verifier/validator gap. Hiring pattern: branch from develop, create .squad/agents/{name}/ dir with charter.md + history.md, update registry.json (after last active non-exempt agent, before scribe), update team.md (same position), update routing.md (table row + issue label + new rule + multi-agent scenarios), update CHANGELOG.md [Unreleased], drop decision to .squad/decisions/inbox/mickey-{slug}.md (gitignored, don't stage). Voice considerations: personalize from character source (Seven Dwarfs Doc = methodical, glasses-on, "Let's see now..." -- kind corrections, not snark). Consider squad-hire-agent skill after 2+ hire patterns confirmed -- pattern is now repeatable (Jiminy was first; Doc is second).
+- 2026-05-26 Issue #423: For bash-to-PowerShell parity utilities, keep the bash CLI surface but use native PowerShell JSON handling and a sibling test file when that preserves existing bash coverage. Also strip carriage returns from generated bash driver fixtures so pwsh-on-Linux test runs do not inject CRLF into shim scripts.
+- 2026-05-27T02:56:53.258-04:00: #444 domain-aligned PR review model delegates single-domain approvals to Donald, Goofy, Pluto, Chip, and Doc; Mickey keeps governance, architecture, conflicts, and 3+ domain PRs.
 
 ---
 
-> Re-compressed 2026-05-17 (W2 fold) per #319 gate. Sprint 13+ entries kept verbatim; older Sprint 11/12 entries condensed.
+> Re-trimmed 2026-05-27 per #450 gate. Sprints 1-17 fully archived to history-archive.md; Sprint 19+ retained here.
 
-## Recent Work (pre-Sprint-11 summary)
+## Recent Work (pre-Sprint-19 summary)
 
 Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #145, #146 REJECTED, #149 PSScriptAnalyzer pre-push, #138, #160 AllScope, #169, #170, #175/#176); Sprint 8 PS 5.1 compat (PRs #198, #200 merge gate + ASCII-safety skill, batch reviews #202-#210, #222 tag discipline); Sprint 8h/9/10 squad upgrade + retros (0.9.4 audit PR #262 rogue-file bug + git-workflow SKILL overwrite risk, Sprint 8h/9 retros, PR #274, pwsh-lastexitcode skill PR #288, #239 E2E filed). Lessons preserved verbatim in Learnings (CI=true, BOM gotcha, worktree isolation, commit-msg merge bypass, Doc hire pattern).
 
@@ -87,6 +89,10 @@ Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #1
 - Sprint 14: 0.9.4 cut (#340 history-compression skill, #341 inbox-routing skill, #342 README refresh ASCII box-drawing fix, #343 post-tag retro fold pattern, #347 label taxonomy 45->32, #350 sync-squad-labels.yml). W1.5 lesson: F3-first ordering for non-ASCII sweeps.
 - Sprint 16: dispatch (#362-#367); 0.9.6 cut (ascii-docs/worktree-base SKILL.md, decisions.md archival #363, tag sanity #365, skill drift/graduation #366/#367). Forward-merge recovery: PR #368 landed on main by mistake, forward-merged back via d102a7c.
 - Sprint 17: #371 decisions.md gate (Option 3+5 hybrid, Sprint 12/15 archived to sub-folders). 0.9.7 cut (#371 #381-#384, Hygiene gate + labels + skill formalization). PRs #393/#394, tag 0.9.7 at f596202.
+Full detail in `history-archive.md`. Pre-Sprint-11 highlights: Sprint 6/7 lead reviews (PRs #145, #146 REJECTED, #149 PSScriptAnalyzer pre-push, #138, #160 AllScope, #169, #170, #175/#176); Sprint 8 PS 5.1 compat (PRs #198, #200 merge gate + ASCII-safety skill, batch reviews #202-#210, #222 tag discipline); Sprint 8h/9/10 squad upgrade + retros (0.9.4 audit PR #262 rogue-file bug + git-workflow SKILL overwrite risk, Sprint 8h/9 retros, PR #274, pwsh-lastexitcode skill PR #288, #239 E2E filed). Sprints 11-17: 0.9.2-0.9.7 releases, history-compression + inbox-routing skills, README/CHANGELOG editorial patterns, decisions.md gate fix. Lessons preserved verbatim in Learnings above.
+
+
+<!-- Sprints 11-17 history archived to history-archive.md on 2026-05-27 -->
 
 ## Sprint 19 -- #414, #430
 
@@ -106,3 +112,4 @@ Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #1
 ## 2026-05-27 -- Plan #441 v5.2 (session 441-v5.2-patch)
 
 Fixed JN-1 (MEDIUM): parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; `$local:beginMarker`/`$local:endMarker` unchanged. Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated. Fixed JN-2 (LOW): `Write-Host` -> `Write-Warning '[SKIPPED] ...'` in v3-D4 skip. Vertical slice preserved: 7 GG tests, no new layers. Decision drop: `.squad/decisions/inbox/mickey-441-v5.2-revision.md`.
+- 2026-05-27 -- Reviewed PR #443 (chore/scribe grill-441 log). Verdict: APPROVE. .squad/** entries well-formed; flagged own history.md warn-zone for trim follow-up.

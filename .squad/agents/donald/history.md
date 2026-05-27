@@ -54,6 +54,10 @@ Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 - `script(1)` PTY is right tool for isatty-gated CLIs but not when parent pipe may close early (e.g., container lifecycle hooks)
 - Directory existence check for Copilot binary: `~/.local/share/gh/copilot` (not exit code probe)
 - sed -i 's/\r//' chosen over dos2unix for POSIX portability
+- `timeout 10 <cmd>` is the correct guard for any version-probe that might hit a network-dependent binary in Codespace; treat non-zero exit / timeout as unknown version, not an error
+- In Codespaces, always check `gh copilot --version` (via timeout) before falling through to `npm install -g` -- the gh extension already provides copilot capability, and the npm postinstall can deadlock without a TTY
+- `CI=true` + `--no-fund --no-audit` is the minimum npm non-interactive guard; mirrors the `is_non_interactive()` pattern already in `auth.sh`
+- Any npm-dependent tool script that runs under `setup.sh` must source `~/.nvm/nvm.sh` in its own process and `nvm use default` before `command -v npm`; sibling `bash "${tool_script}"` subprocesses do not inherit nvm PATH changes from `nvm.sh`
 
 ---
 > Compressed 2026-05-18 (Jiminy S17 audit): pre-Sprint-12 entries archived to history-archive.md.

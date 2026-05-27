@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# scripts/linux/tools/zsh.sh — Install and configure zsh
+# scripts/linux/tools/zsh.sh -- Install and configure zsh
 #
 # Called by: scripts/linux/setup.sh
 # Owner:     Donald (#7)
-# Idempotent: yes — checks if zsh is already installed before acting
+# Idempotent: yes -- checks if zsh is already installed before acting
 
 set -euo pipefail
 
@@ -18,7 +18,7 @@ fi
 PLATFORM="$(uname -s)"
 if [[ "$PLATFORM" == "Darwin" ]]; then
   if ! command -v brew &>/dev/null; then
-    log_warn "Homebrew not found — skipping zsh install via brew"
+    log_warn "Homebrew not found -- skipping zsh install via brew"
     exit 0
   fi
   brew install zsh
@@ -27,11 +27,11 @@ else
   sudo apt-get install -y zsh
 fi
 
-# Set zsh as default shell (idempotent — check current shell first)
+# Set zsh as default shell (idempotent -- check current shell first)
 ZSH_PATH="$(command -v zsh)"
 
-# Ensure zsh is in /etc/shells (idempotent check)
-if ! grep -qxF "$ZSH_PATH" /etc/shells 2>/dev/null; then
+# Ensure zsh is in /etc/shells -- check for any zsh variant (handles /bin/zsh vs /usr/bin/zsh)
+if ! grep -qE "^[^ ]*/?zsh$" /etc/shells 2>/dev/null; then
   log_info "Adding $ZSH_PATH to /etc/shells..."
   echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
 fi

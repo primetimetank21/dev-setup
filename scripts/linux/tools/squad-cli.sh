@@ -10,6 +10,14 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 
+# Source nvm if available, to get node/npm on PATH in this subshell.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+# shellcheck source=/dev/null
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh" --no-use
+  nvm use default 2>/dev/null || true
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQUAD_CLI_VERSION="$(sh "${SCRIPT_DIR}/../../lib/read-tool-version.sh" squad-cli)"
 
@@ -31,11 +39,8 @@ else
 fi
 
 if ! command -v npm &>/dev/null; then
-  log_error "npm not found after nvm install. Possible causes:"
-  log_error "  1. PATH refresh failed -- close this terminal and open a new one, then re-run setup"
-  log_error "  2. nvm install failed silently -- check 'nvm list' and try 'nvm install <version>' manually"
-  log_error "  3. Node is installed elsewhere but not on PATH"
-  exit 1
+  log_warn "npm not found -- cannot install squad-cli; run 'npm install -g @bradygaster/squad-cli@${SQUAD_CLI_VERSION}' once Node is available"
+  exit 0
 fi
 
 npm install -g "@bradygaster/squad-cli@${SQUAD_CLI_VERSION}"

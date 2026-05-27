@@ -47,9 +47,8 @@ if [ -n "$ASCII_STAGED" ]; then
   ASCII_FAIL=0
   for file in $ASCII_STAGED; do
     # Use staged content (not working tree) via git show
-    # grep -P with hex range works in git-bash (ships GNU grep with PCRE)
-    # Do NOT set LC_ALL=C with -P (breaks on git-bash). Default UTF-8 locale is fine.
-    NON_ASCII=$(git show ":$file" | grep -nP '[^\x00-\x7f]' 2>/dev/null || true)
+    # perl -ne is used for non-ASCII detection (grep -P is GNU-only; macOS BSD grep lacks PCRE)
+    NON_ASCII=$(git show ":$file" | perl -ne 'print "$.: $_" if /[^\x00-\x7f]/' 2>/dev/null || true)
     if [ -n "$NON_ASCII" ]; then
       if [ "$ASCII_FAIL" -eq 0 ]; then
         echo ""
