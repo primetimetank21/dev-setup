@@ -311,7 +311,7 @@ set -e
 DIR=`$(CDPATH= cd -- "`$(dirname -- "`$0")" && pwd)
 exec "$PowerShellPath" -NoProfile -ExecutionPolicy Bypass -File "`$DIR/gh.ps1" "`$@"
 "@
-    Write-AsciiFile -Path $launcherPath -Content $launcher
+    Write-AsciiFile -Path $launcherPath -Content ($launcher.Replace("`r", ''))
 
     $cmdPath = Join-Path $dir 'gh.cmd'
     $cmdContent = "@echo off`r`n`"$PowerShellPath`" -NoProfile -ExecutionPolicy Bypass -File `"%~dp0gh.ps1`" %*`r`n"
