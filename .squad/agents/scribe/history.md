@@ -47,3 +47,13 @@
 - **What:** Consolidated 16 orphans into .squad/decisions/decisions-legacy.md (85661 B, 0 non-ASCII), deleted orphans, per-sprint archives (sprint-12/15/18) untouched.
 - **Decisions archived:** changelog-retro-placement, copilot-directive-2026-05-17-label-automation-live-run, doc-356-ascii-sweep, doc-and-jiminy-automation, doc-readme-audit-2026-05-17, goofy-ascii-sweep, label-taxonomy-2026-05-17, mickey-architecture-entry-point, mickey-hook-policy, mickey-release-process, pluto-dotfiles, pluto-skill-drift-2026-05-17, readme-edit-decisions-2026-05-17, release-094-2026-05-17, scribe-history-compression, sync-workflow-followups-2026-05-17.
 - **Outcome:** .squad/decisions/ now contains 4 canonical files (sprint-12.md, sprint-15.md, sprint-18.md, decisions-legacy.md). ASCII verified 0 non-ASCII bytes in archive.
+
+## 2026-05-27 Sprint 19 -- #441 Planning Ceremony Commit
+
+- **Scope:** Batch commit + push + issue creation for #441 profile-path planning ceremony. Branch: squad/441-profile-path-fix.
+- **Commit:** 47b16b83c02a06f3128a8a9cad5dd3c135015b5c -- 22 files (15 grill reports, plan v5.2, grill SKILL, 5 agent history appends). Rebased onto local develop (954d8a5) to satisfy branch-ancestry hook. ASCII-fix applied to 5 files (non-ASCII arrows/checkmarks from agent outputs). chip/history.md compressed (17648 B -> 13557 B; removed duplicate Sprint 12 FF full-detail block since compressed version existed at line 110-114).
+- **Push:** squad/441-profile-path-fix -> origin (new branch). Tracking set.
+- **Issue #442:** Created "[IMPL] #441 profile path fix -- v5.2 plan implementation" with plan summary, IN-scope list, acceptance criteria checklist, known limitations table, and review-gate note. Labels: type:enhancement, platform:windows.
+- **Comment on #441:** Posted link to #442 + implementation gate reminder.
+- **Inbox drain:** 14 inbox files drained to decisions.md (2026-05-27 #441 ceremony section). Combined 26437 B + 11583 B = 38020 B < 51200 B gate -- drained.
+- **Key lessons:** (1) Local develop can diverge from origin/develop when commits land directly on develop (worktree/background sessions). Rebase feature branch onto local develop before commit to satisfy ancestry hook; flag divergence to Earl. (2) Non-ASCII output from agent sessions (arrows, checkmarks) triggers ASCII pre-commit hook -- must sanitize staged .md files before commit. (3) history.md size gate fires on staged blob bytes, not working-tree bytes; compress before re-staging.
