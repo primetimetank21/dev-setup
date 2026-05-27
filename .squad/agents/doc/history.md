@@ -163,3 +163,17 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - **PR shipped:** #358. Branch: squad/356-md-ascii-sweep off develop @ caf5c64.
 - **Verification:** Pre-commit hook passes; `git grep "[^\\x00-\\x7F]"` returns 0 matches on tracked .md files.
 - **Learnings:** Worktree setup requires explicit CWD tracking in multi-worktree environments; file I/O via PowerShell [System.IO] can appear to succeed but not persist (use Python pathlib or direct git commands for reliability). UTF-8 byte counting (where multi-byte chars count as N bytes) differs from Unicode character counting -- use Python's `ord(ch) > 127` for accurate non-ASCII detection.
+
+---
+
+## Team Update: 2026-05-27 -- Domain-Aligned PR Reviewers (Issue #444, PR #445)
+
+**Status:** Doc now authorized to approve PRs wholly within the documentation domain.
+
+**What:** Implemented domain-aligned PR reviewers model to parallelize review and unblock the single-reviewer bottleneck on Mickey. Agents with domain expertise are now authorized to approve PRs that are wholly inside their review lane, with Mickey retained for governance, architecture, and cross-domain reviews.
+
+**Doc's domain:** documentation-only and factual-claim maintenance (.md documentation files, README, CONTRIBUTING, guides)
+
+**Operating rule:** Use `.squad/routing.md` as the source of truth for path-based PR review routing. Rejections follow the existing lockout rule: original author may not revise rejected artifact; next revision requires a different agent.
+
+**Related:** PR #440 (idempotency fix) approved by Mickey; PR #445 implements the new model.

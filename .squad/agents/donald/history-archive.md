@@ -1,6 +1,7 @@
 # Donald History Archive
 
 > Archived 2026-05-18 by Jiminy (S17 audit). Pre-Sprint-12 entries moved here to keep history.md under 15360-byte gate.
+> Updated 2026-05-27 by Scribe: Sprint 12 Wave 2 entry compressed and moved.
 
 ---
 
@@ -15,6 +16,15 @@ Compressed; full detail dropped in favor of preserved lessons in Learnings.
 - **2026-05-04** Issue #173 / PR #176 shell aliases for shutdown control. Post-sprint Linux shell audit (2026-05-16).
 
 Lessons preserved verbatim in Learnings section of history.md (gh built-in `--` passthrough, CI=true non-interactive trigger, exec 2>&1 for ordered output, CRLF onCreateCommand guard, directory check over exit-code probe).
+
+---
+
+## Sprint 12 Wave 2 (archived 2026-05-27)
+
+**Issue:** #240 (pre-commit hygiene checks)  
+**PR:** TBD (documented via decision inbox entry)  
+
+Documented the bash test harness convention in CONTRIBUTING.md as a new `Test Harness Pattern` top-level section. Convention: tests in `tests/*.sh` use `set -uo pipefail` (NOT `-euo`) so individual assertion failures do not abort the suite; PASS/FAIL state tallied via counters and script exits non-zero only when `FAIL > 0`. Covered the gotcha: a well-meaning `-e` addition to a tally suite breaks it silently. Provided copy-paste skeleton for new `tests/test_<thing>.sh` files. Authored `.squad/skills/test-harness-pattern/SKILL.md` (confidence: medium). Cross-linked in CONTRIBUTING.md between Parallel Agent Work and Group Letter Assignment. Lesson: `-e` under tally counters is a hidden killer pattern.
 
 ---
 

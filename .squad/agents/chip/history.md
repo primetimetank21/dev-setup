@@ -57,6 +57,7 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 - shellcheck `-s bash` flag is needed for sourced dotfiles like `.aliases` that have no shebang -- tells shellcheck the dialect without requiring SC2148 fix
 - `config/dotfiles/.aliases` passes shellcheck clean as of issue #193 -- no directives needed, no SC1090/SC2034/SC2148 violations
 - Issue #424: when wiring `tests/test_precommit_hygiene.sh` into `validate.yml`, set `git config --global init.defaultBranch master` before the hook-path step. The test creates `main` later; runners whose `git init` default is already `main` make that scenario fail before the hook is exercised.
+- 2026-05-27T02:54:29.760-04:00 PR #438/#443 CI diagnosis: both PRs and develop tip fail `Validate Setup Script` in `tests/test_idempotency.sh` after #437 wired orphan tests into CI. Linux fails duplicate `/etc/shells` zsh plus duplicate `NVM_DIR`, `.local/bin`, and `nvm.sh` in `~/.zshrc`; macOS fails the three `.zshrc` duplicate checks. Classify as develop broken, not PR-specific or flaky.
 
 ---
 
@@ -107,3 +108,17 @@ Lessons preserved verbatim in Learnings section above (CP1252 encoding, PSVersio
 - Baseline failures (8: Copilot CLI live check + O-1..O-7 alias overrides) are environmental and pre-existed on develop @ 66930c6. Verified by stash + re-run before adding Group FF.
 - No Linux uninstall test file added: `tests/test_linux_setup.sh` does not exist; static-source parity in FF-4/FF-5 catches structural divergence between the two uninstall scripts without needing a separate functional bash harness.
 - Diff: +335 lines in `tests/test_windows_setup.ps1`. Pure ASCII (pre-commit clean). All 10 new tests pass locally; tally rose from 119 -> 129 passing (8 skipped, 8 pre-existing failures unchanged).
+
+---
+
+## Team Update: 2026-05-27 -- Domain-Aligned PR Reviewers (Issue #444, PR #445)
+
+**Status:** Chip now authorized to approve PRs wholly within the test/CI-validation domain.
+
+**What:** Implemented domain-aligned PR reviewers model to parallelize review and unblock the single-reviewer bottleneck on Mickey. Agents with domain expertise are now authorized to approve PRs that are wholly inside their review lane, with Mickey retained for governance, architecture, and cross-domain reviews.
+
+**Chip's domain:** test-only and CI-validation-only changes (tests/*, .github/workflows/*, validation scripts)
+
+**Operating rule:** Use `.squad/routing.md` as the source of truth for path-based PR review routing. Rejections follow the existing lockout rule: original author may not revise rejected artifact; next revision requires a different agent.
+
+**Related:** PR #440 (idempotency fix) approved by Mickey; PR #445 implements the new model.

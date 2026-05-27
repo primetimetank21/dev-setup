@@ -106,6 +106,30 @@ Lessons preserved verbatim in Learnings section above (CP1252 trap, AllScope ali
 - Coordinated with Mickey (parallel worktree, hooks/pre-commit patch -- Issue #322 part B). No overlap; only CHANGELOG.md is a predicted rebase conflict (Changed vs Fixed sections).
 - Lessons: fence-aware sweep is essential -- naive global replace would mangle ARCHITECTURE.md tree diagrams. Script generalizable -> candidate skill if applied a second time.
 
+## 2026-05-17 Sprint 13 Wave 2 -- Issue #322 part A: ASCII sweep all .md files
+
+- Scope: 163 .md files scanned; 124 edited; 2,501 non-ASCII chars replaced.
+- Outside fenced code blocks: 0 remaining (verified). Inside fences: ~1,686 preserved intentionally (tree diagrams, raw-byte tables, code samples that need literal glyphs).
+- Tool: scripts/lib/ascii-sweep.py -- preserves ``` and ~~~ fences; maps em/en dashes, smart quotes, arrows, math ops, box-drawing (U+2500..U+257F), status emoji, and circled digits to ASCII. Rerunnable + idempotent.
+- Biggest offenders: .squad/decisions-archive.md (359), .github/agents/squad.agent.md (315), .squad/templates/squad.agent.md (293), .squad/agents/mickey/history-archive.md (177).
+- Intentional preservation: code fences (per repo policy). Checkmarks U+2705 -> [x], crosses U+274C -> [ ] across team.md and status tables to preserve task-list semantics.
+- Coordinated with Mickey (parallel worktree, hooks/pre-commit patch -- Issue #322 part B). No overlap; only CHANGELOG.md is a predicted rebase conflict (Changed vs Fixed sections).
+- Lessons: fence-aware sweep is essential -- naive global replace would mangle ARCHITECTURE.md tree diagrams. Script generalizable -> candidate skill if applied a second time.
+
 ## Sprint 19
 
 - **2026-05-18 -- Sprint 19 (PR #419, issue #416): pre-commit history.md size gate.** Added Check 7 to hooks/pre-commit: rejects staged .squad/agents/*/history.md blobs > 15360 B, warns > 14336 B. 29/29 tests pass (3 new Check 7 cases). Updated SKILL.md with Layered enforcement section + corrected Check 4 -> Check 7 reference.
+
+---
+
+## Team Update: 2026-05-27 -- Domain-Aligned PR Reviewers (Issue #444, PR #445)
+
+**Status:** Goofy now authorized to approve PRs wholly within the Windows PowerShell/OS detection domain.
+
+**What:** Implemented domain-aligned PR reviewers model to parallelize review and unblock the single-reviewer bottleneck on Mickey. Agents with domain expertise are now authorized to approve PRs that are wholly inside their review lane, with Mickey retained for governance, architecture, and cross-domain reviews.
+
+**Goofy's domain:** Windows PowerShell, OS detection, and cross-platform routing (scripts/windows/*, setup.ps1, OS detection logic, platform-specific configuration)
+
+**Operating rule:** Use `.squad/routing.md` as the source of truth for path-based PR review routing. Rejections follow the existing lockout rule: original author may not revise rejected artifact; next revision requires a different agent.
+
+**Related:** PR #440 (idempotency fix) approved by Mickey; PR #445 implements the new model.

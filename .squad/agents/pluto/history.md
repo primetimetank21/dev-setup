@@ -130,3 +130,17 @@ Both SKILLs use YAML frontmatter (name/description/domain/confidence/source), Co
 **Status:** Complete.
 
 Added 2-3 line clarification to routing.md "Pre-Spawn Worktree Creation" section: coordinators must pre-create N isolated worktrees BEFORE dispatching N parallel agents. Cross-references worktree-isolation SKILL (no duplication). Surfaces pattern already implicit in worktree-isolation/SKILL.md and issue-lifecycle.md.
+
+---
+
+## Team Update: 2026-05-27 -- Domain-Aligned PR Reviewers (Issue #444, PR #445)
+
+**Status:** Pluto now authorized to approve PRs wholly within the dotfile configs/templates domain.
+
+**What:** Implemented domain-aligned PR reviewers model to parallelize review and unblock the single-reviewer bottleneck on Mickey. Agents with domain expertise are now authorized to approve PRs that are wholly inside their review lane, with Mickey retained for governance, architecture, and cross-domain reviews.
+
+**Pluto's domain:** dotfile configs, templates, and config defaults (dotfiles/*, template files, shell-specific config management)
+
+**Operating rule:** Use `.squad/routing.md` as the source of truth for path-based PR review routing. Rejections follow the existing lockout rule: original author may not revise rejected artifact; next revision requires a different agent.
+
+**Related:** PR #440 (idempotency fix) approved by Mickey; PR #445 implements the new model.
