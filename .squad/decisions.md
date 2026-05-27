@@ -325,3 +325,148 @@ APPROVE verdict on PR #438 (test_sprint_end_labels_pwsh.ps1). One-line bugfix: s
 
 APPROVE verdict on PR #443 (session log for grill ceremony #441). All .squad/** governance entries (session log, 5 orchestration logs, 5 history appends, decisions.md update) pass checklist. Notes: mickey/history.md in warning zone (14794 B, over 14336 B warn threshold but under 15360 B hard gate). Trim planned separately under issue #450. Grill reports and SKILL.md correctly deferred to impl PR. Pre-existing decisions/inbox directory created as part of review. Routing: governance match per routing.md section on .squad/** changes.
 
+---
+
+## 2026-05-27 -- Audit Report: squad/441 Branch Safety Assessment (Issue #441)
+
+**By:** Doc (Fact Checker)  
+**Date:** 2026-05-27  
+**Counter-hypothesis tested:** "There IS something on squad/441-profile-path-fix worth saving before deletion -- an actual fix, a high-confidence reusable skill, a critical decision record, or a non-duplicate audit finding."  
+
+### Executive Summary
+
+**Counter-hypothesis verdict: CONFIRMED** (with qualification)
+
+The branch contains TWO high-value, NON-DUPLICATE artifacts worth preserving before deletion:
+
+1. **`.squad/skills/grill/SKILL.md`** -- A formalized, operational skill document for adversarial plan reviews. Ready for immediate team adoption. Not present on develop.
+
+2. **`#441 Plan Ceremony Decisions` section in `.squad/decisions.md`** -- Strategic decisions + lesson records from a multi-round, multi-agent grill ceremony. Currently only on this branch; provides decision rationale for future maintainers.
+
+The prior triage verdict (DISCARD) correctly identified that **no implementation code changes exist** (scripts/, setup.ps1, setup.sh, tests/, lib/, hooks/ are all untouched). However, the prior audit did not fully assess the durable team-facing artifacts (SKILL.md and decisions.md entries).
+
+**Recommended action:** MERGE (not delete). Route the branch as a documentation-only PR to develop.
+
+### Key Findings
+
+#### No Implementation Changes
+Branch contains all changes in `.squad/` (history, decisions, agents, logs, skills), `docs/plans/`, `.github/` (workflow logs). ZERO changes in `scripts/`, `tests/`, `setup.ps1`, `setup.sh`, `lib/`, `hooks/`, or top-level config. Verdict: CONFIRMED.
+
+#### Grill Skill Salvage
+`.squad/skills/grill/SKILL.md` (250 lines) is exceptionally complete: definition, triggers (4 objective), required roles, lockout rule, spawn pattern, output convention, verdict synthesis rules (3 outcomes), anti-patterns table (6 patterns), worked example (#441 itself), related-skills references, changelog. Confidence: low (first formal application; pattern observed informally in prior sprints). Appropriate conservative stance. **Recommendation: SALVAGE: YES**.
+
+#### Decisions.md & Decisions Records
+Two net-new, mission-critical decision sections NOT on develop:
+- Formalized Grill Ceremony as a SKILL (Issue #441) -- documents the formalization of the grill ceremony pattern
+- #441 Plan Ceremony Decisions (Sprint 19 Drain) -- strategic decisions from 16 grill rounds across v2-v5.2 cycles; decision rationale for future implementers on issue #442. Inbox check confirms all 15 items drained into decisions.md. **Recommendation: SALVAGE: YES**.
+
+#### History.md Cross-Check
+8 history.md files updated (chip, doc, donald, goofy, jiminy, mickey, pluto, scribe) with ceremony participation records (75-120 lines per agent). All entries are ceremony records dated 2026-05-27, not duplicates of develop entries. **Recommendation: PRESERVE: YES**.
+
+#### Plan Docs Archive
+19 plan files on branch, including `441-profile-path.md` v5.2-FINAL (canonical spec referenced by issue #442). 14 grill reports (`441-grill-*.md`) are evidence of multi-round ceremony; each is the authoritative record for that griller's angle. Deleting the branch severs the PR #442 link. **Recommendation: SALVAGE: YES for both plan spec and grill reports**.
+
+#### Issue #441 Cross-Reference
+Issue #441 is the planning-phase issue; issue #442 is the implementation-tracking issue. #442 explicitly links to the plan file on this branch. Do NOT delete without ensuring: (1) plan file accessible on develop, (2) #442 can link to canonical plan, (3) grill reports archived for audit/learning.
+
+### Conclusion
+
+**REJECT the prior DISCARD verdict.** The branch is **NOT SAFE TO DELETE** without preserving: (1) `.squad/skills/grill/SKILL.md` (team asset; no duplicate), (2) `docs/plans/441-profile-path.md` v5.2 (referenced by #442; canonical spec), (3) `.squad/decisions.md` new sections (decision rationale for #442 implementer), (4) grill reports (audit trail for ceremony precedent).
+
+**Recommended next step:** Route as a documentation PR to develop (Option A: full merge). Then #442 can proceed with full context preserved.
+
+---
+
+## 2026-05-27 -- PR #453 Review Decision (Grill Skill + Plan Doc + Decisions)
+
+**Date:** 2026-05-27T05:30:24-04:00
+**By:** Mickey (Lead, governance reviewer)
+**PR:** #453 -- docs(#441): formalize grill skill + v5.2 profile-path plan + grill audit trail
+**Branch:** squad/441-profile-path-fix -> develop
+
+### Verdict: REQUEST CHANGES (merge blockers)
+
+#### Blocking Issues
+
+**B1: Merge Conflict (CONFLICTING/DIRTY)**
+PR is not mergeable. Conflicting `.squad/**` paths:
+- `.squad/decisions.md`
+- `.squad/agents/chip/history.md`
+- `.squad/agents/doc/history.md`
+- `.squad/agents/donald/history.md`
+- `.squad/agents/goofy/history.md`
+- `.squad/agents/mickey/history.md`
+- `.squad/agents/pluto/history.md`
+
+Resolution: Branch must be rebased onto current develop and conflicts resolved before merge.
+
+**B2: mickey/history.md will breach 15360 B hard gate post-merge**
+- develop: 15236 B (124 B below gate)
+- branch adds: new "Plan #441 v5.2" section (~350 B not on develop)
+- projected post-merge: ~15586 B -- OVER gate
+
+Resolution: issue #450 (trim) must land on develop BEFORE this PR merges mickey/history.md changes. Alternative: defer mickey/history.md append to follow-up after #450.
+
+#### Conflict Resolution Guidance
+
+**decisions.md:**
+- "Formalized grill ceremony as a SKILL (#441)" is DUPLICATE (already on develop via #443). Keep one copy.
+- "#441 Plan Ceremony Decisions (Sprint 19 Drain)" is NEW. Include.
+- "PR #443 Review" entry on develop is NOT on branch. Retain from develop side.
+
+**history.md compression:**
+- Branch has Sprints 14-17 compression on mickey/history.md; develop has the full content.
+- Conflict resolver should take develop's version as the base and ADD only new appends.
+
+#### Warnings (non-blocking)
+
+| Agent | Projected | Status |
+|-------|-----------|--------|
+| chip | 14596 B | WARN (above 14336) |
+| donald | 14757 B | WARN (above 14336) |
+
+Flag at next sprint EOS audit.
+
+#### Passing Reviews
+
+- SKILL.md: well-formed, confidence=low accurate, all claims grounded in #441 example. PASS.
+- session log: identical to develop's version (shipped via #443). PASS.
+- jiminy, doc, goofy, pluto, scribe history.md: all PASS.
+- "#441 Plan Ceremony Decisions" decisions.md entry: substantive, non-duplicate. PASS.
+
+#### Next Steps
+
+1. Earl resolves merge conflicts (rebase branch onto current develop).
+2. Issue #450 merges first OR mickey/history.md append deferred to post-#450 follow-up.
+3. After conflict resolution: re-check sizes; verify decisions.md has no duplicate grill-skill entry.
+4. Both Mickey + Doc sign off -> squash merge with --admin.
+
+---
+
+## 2026-05-27 -- PR #452 Review Decision (Scribe Session Log)
+
+**Date:** 2026-05-27T09:30:00Z
+**By:** Mickey (Lead, governance reviewer)
+**PR:** #452 -- chore(scribe): log domain-reviewer first-run session (#445)
+**Author:** Scribe
+
+### Verdict: APPROVE
+
+### Summary
+
+PR #452 merges 3 inbox decision records to decisions.md (NVM Bootstrap, PR #438 review, PR #443 review) and drains the decisions/inbox. Single-file diff (+34 lines). Content is correct, non-duplicate, and under all size gates.
+
+### Concerns Noted (non-blocking)
+
+1. decisions.md "after" size overstated in PR body (~14447 B actual vs 14989 B claimed). Gate compliance unaffected (file under 20480 B hard gate).
+2. mickey-review-443 orchestration log (on develop, not in this PR) has unfilled `{issue-number}` placeholder. Pre-existing defect from #449 commit. Recommend cleanup.
+3. Session log omits PR #440 from merged list (5 merged, 4 listed). Minor narrative gap.
+
+### Routing
+
+Governance match per `.squad/routing.md`: PR modifies `.squad/**` only.
+
+### Note on Mickey history.md
+
+NOT appending to mickey/history.md this round. File at 15106 B (warn zone, hard gate 15360 B). Deliberate trim tracked under Issue #450.
+
