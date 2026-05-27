@@ -74,6 +74,21 @@ Lead architect; established foundational team process, architecture, and Windows
 
 ## Recent Work (pre-Sprint-19 summary)
 
+Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #145, #146 REJECTED, #149 PSScriptAnalyzer pre-push, #138, #160 AllScope, #169, #170, #175/#176); Sprint 8 PS 5.1 compat (PRs #198, #200 merge gate + ASCII-safety skill, batch reviews #202-#210, #222 tag discipline); Sprint 8h/9/10 squad upgrade + retros (0.9.4 audit PR #262 rogue-file bug + git-workflow SKILL overwrite risk, Sprint 8h/9 retros, PR #274, pwsh-lastexitcode skill PR #288, #239 E2E filed). Lessons preserved verbatim in Learnings (CI=true, BOM gotcha, worktree isolation, commit-msg merge bypass, Doc hire pattern).
+
+## Sprint 11-13 entries
+
+- 2026-05-17: Sprint 11-12 -- PRs #288 (pwsh-lastexitcode skill + CONTRIBUTING), #289/#290 (Doc worktree + Jiminy dispatch, replaces dual-fold), #229 (ARCH refresh: lib/, auth.ps1, .tool-versions), #308 (sprint rename T3: 21 files, Q->8h/R->9/S->10/T->11/U->12), #314 (Script Conventions rewrite), #321 (Windows Dep Order 12-step chain), #324 (README W3: 9->11 tree entries, 9 agents); 0.9.2 cut (9 issues, 10 PRs). CWD-pin lesson: #310 violated, #306 corrected, codified.
+- 2026-05-17: Sprint 13 W1 -- #325/#326 doc fixes (ARCH auth.ps1 path, README hooks count three->four) batched off develop @ 38e9c79. W2 -- #322B pre-commit extended .ps1->.ps1|.md|.sh (26/26 PASS); dogfood incident: new hook blocked history.md staging (60 pre-existing non-ASCII bytes) -- correct behavior, append deferred.
+- 2026-05-17: 0.9.3 release fold -- [Unreleased]->[0.9.3] (8 entries: 1 Added, 4 Changed, 3 Fixed). Scribe PR #339 retro landed post-tag -> Sprint 14 W1 fold.
+- 2026-05-17: Sprint 14 W1 -- #343 CHANGELOG editorial: retroactive fold of Scribe retro (PR #339) into [0.9.3] ### Added; 0.9.3 tag immutable. Codified in `.squad/decisions/changelog-retro-placement.md`: fold post-tag retros, never re-tag, Lead owns call. Pattern: "post-tag retro fold".
+- 2026-05-17: Sprint 14 W1.5 -- #342 README refresh on `squad/342-readme-edit`. **F3-first ordering critical:** 645 non-ASCII bytes in fenced file-tree block (box-drawing U+251C/U+2502/U+2514/U+2500 + U+2014 em-dashes); ascii-sweep.py skips fences by design; pre-commit scans full staged content regardless. Hand-converted to `+--` / `\--` ASCII patterns via PowerShell substitution table. Then F1 (6-check pre-commit table), F2 (ascii-sweep.py docs + --dry-run), F4 (tree entry), F5 (one-liner expanded). README.md: 11015->13039 B. CHANGELOG.md: +1 ### Changed. Every write: `[System.IO.File]` ASCII encoding + byte-scan + CWD-pin re-check.
+
+## Sprints 14-17 (compressed 2026-05-27)
+
+- Sprint 14: 0.9.4 cut (#340 history-compression skill, #341 inbox-routing skill, #342 README refresh ASCII box-drawing fix, #343 post-tag retro fold pattern, #347 label taxonomy 45->32, #350 sync-squad-labels.yml). W1.5 lesson: F3-first ordering for non-ASCII sweeps.
+- Sprint 16: dispatch (#362-#367); 0.9.6 cut (ascii-docs/worktree-base SKILL.md, decisions.md archival #363, tag sanity #365, skill drift/graduation #366/#367). Forward-merge recovery: PR #368 landed on main by mistake, forward-merged back via d102a7c.
+- Sprint 17: #371 decisions.md gate (Option 3+5 hybrid, Sprint 12/15 archived to sub-folders). 0.9.7 cut (#371 #381-#384, Hygiene gate + labels + skill formalization). PRs #393/#394, tag 0.9.7 at f596202.
 Full detail in `history-archive.md`. Pre-Sprint-11 highlights: Sprint 6/7 lead reviews (PRs #145, #146 REJECTED, #149 PSScriptAnalyzer pre-push, #138, #160 AllScope, #169, #170, #175/#176); Sprint 8 PS 5.1 compat (PRs #198, #200 merge gate + ASCII-safety skill, batch reviews #202-#210, #222 tag discipline); Sprint 8h/9/10 squad upgrade + retros (0.9.4 audit PR #262 rogue-file bug + git-workflow SKILL overwrite risk, Sprint 8h/9 retros, PR #274, pwsh-lastexitcode skill PR #288, #239 E2E filed). Sprints 11-17: 0.9.2-0.9.7 releases, history-compression + inbox-routing skills, README/CHANGELOG editorial patterns, decisions.md gate fix. Lessons preserved verbatim in Learnings above.
 
 
@@ -93,4 +108,8 @@ Full detail in `history-archive.md`. Pre-Sprint-11 highlights: Sprint 6/7 lead r
   git repo rather than whatever CWD the test runner happens to be in.
 - **Files**: tests/test_changelog_fold.ps1
 - 2026-05-27 -- Grilled #441 profile-path plan (architecture lens). Verdict: REVISE ($PROFILE.CurrentUserAllHosts contradiction + scope mismatch).
+
+## 2026-05-27 -- Plan #441 v5.2 (session 441-v5.2-patch)
+
+Fixed JN-1 (MEDIUM): parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; `$local:beginMarker`/`$local:endMarker` unchanged. Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated. Fixed JN-2 (LOW): `Write-Host` -> `Write-Warning '[SKIPPED] ...'` in v3-D4 skip. Vertical slice preserved: 7 GG tests, no new layers. Decision drop: `.squad/decisions/inbox/mickey-441-v5.2-revision.md`.
 - 2026-05-27 -- Reviewed PR #443 (chore/scribe grill-441 log). Verdict: APPROVE. .squad/** entries well-formed; flagged own history.md warn-zone for trim follow-up.

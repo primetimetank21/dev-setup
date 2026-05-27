@@ -248,6 +248,49 @@ Accept all Sprint 16 work as complete. Acknowledge decisions.md gate breach (#37
 
 Formalized grill ceremony as a SKILL on 2026-05-27. The "grill" skill (`.squad/skills/grill/SKILL.md`) documents the adversarial pre-implementation plan review pattern observed informally in prior sprints and applied formally for the first time on issue #441 (2026-05-27). The skill captures triggers, roles, lockout rule, spawn pattern, output convention, verdict synthesis rules, and anti-patterns. Canonical example: issue #441, four participants (Goofy as plan author, Mickey/Chip/Doc as parallel grillers). Confidence: low -- bumps to medium on next independent application.
 
+
+---
+
+## 2026-05-27 -- #441 Plan Ceremony Decisions (Sprint 19 Drain)
+
+**Drained by:** Scribe
+**Files:** 15 inbox items (14 grill/revision drops + 1 Scribe ceremony record)
+**Context:** Issue #441 profile-path fix -- 6 plan revisions, 5 grill rounds, v5.2 SHIP verdict
+
+### Round Summary
+
+| Round | Griller(s) | Verdict | Key Finding |
+|-------|-----------|---------|-------------|
+| v2 grill | Jiminy | REVISE | GG-6 direction bug (Select-Object -First 1 -> -Last 1); GG-7 added ($LASTEXITCODE check) |
+| v3 plan | Doc | PROCEED | 10 factual claims verified; Section 4 algorithm structurally sound |
+| v3 plan | Mickey | REVISE | $PROFILE.CurrentUserAllHosts contradiction; 5 test spec gaps |
+| v3 plan | Chip | REVISE | 4 test gaps (GG-7 HIGH false-green, C-2/C-3 skip-as-pass) |
+| v4 grill | Pluto | SHIP | v3 blockers resolved; A-1 MEDIUM: $ps51/$ps7Fallback undefined under StrictMode |
+| v4 grill | Chip | REVISE | 2 MEDIUMs: GG-7 exe unspecified; TestDrive/real-$HOME write risk |
+| v4 grill | Donald | REVISE | F-1 HIGH: -Encoding ASCII missing (silent UTF-16 corruption on PS5.1) |
+| v4 -> v5 | Jiminy (revision) | -- | P1-P7 patched: foreach stub, scope wrap, GG-7 mock, C-2/C-3 skip, mock isolation, GG-4 dedup, $PROFILE read-only note |
+| v5 -> v5 | Donald (revision) | -- | H1-H5 + F-4/F-5: -Encoding ASCII, LASTEXITCODE reset, TestDrive removed, GG-7 exe spec, StrictMode fallbacks |
+| v5.1 grill | Pluto | SHIP | A-1 resolved; no new blockers |
+| v5.1 grill | Chip | SHIP | C-1/C-2/F-3 resolved; 4 new LOWs (non-blocking) |
+| v5.1 grill | Jiminy | REVISE | JN-1 MEDIUM: $local vars shadow test overrides; GG-1/4/5 write to real $HOME |
+| v5.1 -> v5.2 | Mickey (revision) | -- | JN-1: parameterized Write-PowerShellProfile (-Ps51Fallback/-Ps7Fallback); JN-2: Write-Warning |
+| v5.2 grill | Pluto | SHIP | JN-1 resolved; mechanism sound; 1 LOW (GG-3 invocation target) |
+| v5.2 grill | Chip | SHIP | All MEDIUMs resolved; 4 carry-forward LOWs (non-blocking); impl-ready YES |
+| v5.2 grill | Jiminy (verify) | SHIP | JN-1/JN-2 resolved; no new MEDIUMs; v5.2 approved |
+
+### Final Verdict: v5.2 SHIP (Pluto, Chip, Jiminy consensus)
+
+- Tracking issue: #442 "[IMPL] #441 profile path fix -- v5.2 plan implementation"
+- Implementation gate: #442 review approval required before coding starts
+- Plan file: docs/plans/441-profile-path.md (branch squad/441-profile-path-fix)
+
+### Key Standing Decisions from Ceremony
+
+- **$PROFILE scope:** Use `$PROFILE` (CurrentUserCurrentHost), not AllHosts. Earl ratified 2026-05-27.
+- **Test harness:** Existing `Test-Scenario` + `Invoke-HostQuery` mock pattern. No Pester (scope creep).
+- **Write-PowerShellProfile parameter contract (v5.2-D1):** Optional `-Ps51Fallback`/`-Ps7Fallback` params with production defaults. Tests pass temp paths; production callsites unchanged.
+- **Inline uninstall resolver:** `uninstall.ps1` inlines the path resolver (~30 lines). Self-contained.
+- **Scribe ceremony note:** Local develop (954d8a5) is 1 commit ahead of origin/develop and not in remote ancestry. Earl to address before #442 implementation PR.
 ---
 
 ## 2026-05-26 -- NVM Bootstrap in Tool Scripts (Issue #436)

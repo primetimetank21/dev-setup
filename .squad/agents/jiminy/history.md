@@ -29,78 +29,58 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **Recurring incident references preserved:** worktree-isolation (Sprint 4 race condition + Sprint 12 W2 CWD-resolution variant), ASCII scope gap (#322, `*.ps1`-only pre-commit), CP1252 byte 0x94 trap in PowerShell string literals, `autocrlf` and `AllScope` alias hazards, atomic-drain (PR #323 bug).
 - **2026-05-18 -- Sprint 17 Wave 1 post-batch audit.** AUTO-FIXED: (1) donald/history.md 15860B over gate -- compressed to 10236B + archive; (2) .gitignore em-dash U+2014 from PR #389 -- replaced with `--`. All other lanes clean.
 
-## 2026-05-17 Sprint 13 Wave 1
+## Sprint 13-16 Audits (compressed 2026-05-27 -- gate breach prevention)
 
-- **2026-05-17 -- Sprint 13 Wave 1: formalized worktree-remove-FIRST as a Squad skill (issue #317).** Created `.squad/skills/worktree-remove-first/SKILL.md` (full frontmatter: `confidence: high`, `source: earned (issue #317)`, `domain: repo-meta, release-flow`) capturing the five-step merge sequence proven 5-of-5 in Sprint 12 Wave 2: harvest -> `git worktree remove --force` -> `git branch -D` -> `gh pr merge --admin --squash --delete-branch` -> verify. Documented the `--merge` swap for release PRs (PRs #328 / 0.9.2), the recovery path for "forgot and merged with worktree attached" (Ralph EOS fallback from PR #295), and the precise reason the order matters (gh's local pre-flight aborts the remote-delete step when a worktree owns the branch). Cited 5 successful applications: PRs #320, #321, #323, #324, #327 plus release #328. Cross-linked to the existing `worktree-isolation` skill (spawn-head concern) and to issue #300 (the prematurely-closed earlier tracker -- this skill is the actual fix).
-- **Decision: new skill over extending `worktree-isolation`.** Reviewed `.squad/skills/worktree-isolation/SKILL.md` -- it documents the Sprint 4 agent-dispatch race condition (spawn-time concern). The merge tail is a distinct teardown-time concern with a different trigger surface, different mitigation, and different audience (coordinator/Ralph vs spawning dispatcher). Separate skills stay tightly scoped and independently citeable; the new skill's References section cross-links back. Format follows the `label-hygiene` SKILL convention (YAML frontmatter + Context/Patterns/Examples/Anti-Patterns sections) since `worktree-isolation` predates the template.
-- **Companion doc edits:** appended a 2-line "Merging Squad PRs from worktrees" subsection to CONTRIBUTING.md under "Parallel Agent Work" pointing readers at the new skill (full content stays in the skill file, not duplicated). CHANGELOG `[Unreleased]` -> `### Added` notes the skill addition.
-- **Hygiene tail:** this history entry + decision drop at `.squad/decisions/inbox/jiminy-w1-2026-05-17-issue-317-skill.md`. No code changed (skill formalization is pure docs). Stayed in custodian voice -- codifying a proven pattern is hygiene formalization, not feature work.
-
-## 2026-05-17 Sprint 13 Wave 1 Post-Batch Audit (summary)
-
-- **Scope:** PRs #330 (Mickey #325+#326), #331 (Jiminy #317), #332 (Scribe #319). Develop @ 114ea63.
-- **Result:** 0 auto-fixes, 3 flags (doc roster gap, jiminy/history.md over-gate at 19852 B, stale remote `origin/squad/319-history-archival`). All 4-label sets full. All 3 hygiene-tails compliant. GO recommendation for Wave 2 (#322 fan-out).
-- **Skill drift watch:** Mickey "batch narrow doc fixes" 2nd application (not yet formalized); Scribe "history-compression heuristic" 1st application.
-- **Forward-fix:** Scribe history W1 entry re-confirmed PR #323 atomic-rm pattern. (Superseded by W2 audit below.)
-
-## 2026-05-17 Sprint 13 Wave 2 Post-Batch Audit (summary)
-
-- **Scope:** PRs #335 (Goofy #322A ASCII sweep) + #334 (Mickey #322B hook glob extension). Develop @ ed3f4cb.
-- **Findings:** 3 histories OVER 15 KB gate (goofy 15158, scribe 15076, mickey 15034 post-catch-up) -- flagged for Scribe W2 fold. Stale `origin/squad/319-history-archival` (Ralph EOS scope). ASCII outside fences = 0 across swept `.md`. `.copilot/skills/*/SKILL.md` NOT swept (e.g., external-comms 158 hits); hook now guards `.md` so future edits block -- Sprint 14 candidate. `scripts/lib/ascii-sweep.py` not yet CONTRIBUTING-linked (defer until 2nd application).
-- **Mickey dogfood incident:** own pre-commit hook blocked own commit on legacy non-ASCII debt; Mickey deferred history-tail per PR #334 body. Jiminy auto-fix: appended Mickey W2 catch-up entry post-Goofy-sweep (1230 B sourced from PR #334 body per charter scope).
-- **Recurring-incident references preserved:** worktree-isolation, ASCII-scope gap, atomic-drain, CP1252 trap, autocrlf, AllScope, dogfood, abstraction-threshold.
-- **Verdict:** 1 auto-fix, 6 flags, GO recommendation for 0.9.3 (deferred to coordinator post-Scribe-W2-fold).
-
-## 2026-05-17 Sprint 13 Session-End Audit (compressed)
-
-- post-0.9.3 close. main @ edc67e2, develop @ a930540. 9 PRs merged, 5 issues closed. All 8 sections PASS (1 CONCERN: stale remote branch Ralph EOS scope). 1 auto-fix commit (prune + inbox drain + compress + tail). Verdict: GO.
-
-## 2026-05-17 Sprint 14 Session-End Audit
-
-- **Scope:** post-0.9.4 release. main @ 008f166, develop @ 331c99b.
-- **Sec 1 (inbox):** Empty. PASS.
-- **Sec 2 (history sizes):** Doc 13023B NEAR -- compressed to 12200B. All others OK. PASS (after fix).
-- **Sec 3 (ASCII gate):** 60+ .md files carry non-ASCII (legacy debt pre-dating #334 hook expansion). ARCHITECTURE.md 1368B worst. CONCERN -- dedicated sweep needed Sprint 15.
-- **Sec 4 (decisions):** All 6 Sprint 14 drops present. 13 canonical total. decisions.md 57096B. PASS.
-- **Sec 5 (labels):** 32 total. priority:p3, platform:{linux,macos,windows} all present. PASS.
-- **Sec 6 (worktree/branches):** Single worktree (develop). Local: develop + main only. 2 stale remote (release/0.9.4, squad/sprint14-retro) -- Ralph EOS scope. PASS with CONCERN.
-- **Sec 7 (tag/release):** 0.9.4 tag exists, release published 2026-05-17. PASS.
-- **Sec 8 (CHANGELOG):** [Unreleased] present, [0.9.4] - 2026-05-17 present. PASS.
-- **Auto-fixes:** (1) Doc history compression 13023->12200B, (2) Sprint 13 EOS entry compressed.
-- **CONCERNs (not auto-fixed):** (a) 60+ legacy non-ASCII .md files -- Sprint 15 sweep candidate, (b) 2 stale remote branches -- Ralph EOS.
-- **Verdict:** PASS with CONCERNs (no blockers).
-
-
-
-## 2026-05-17 Sprint 15 Session-End Audit
-
-- **Scope:** post-0.9.5 release. main @ 49545ad, develop @ 2dadf58.
-- **Sec 1 (inbox):** 1 file (scribe-sprint-15-retro-2026-05-17.md, 1457 B). Drained to decisions.md chronological journal. PASS.
-- **Sec 2 (history sizes):** scribe 14491B NEAR gate (869B headroom, under 14800 threshold -- monitor only). Doc 13420B, Donald 12688B. All others under 12.5 KB. PASS.
-- **Sec 3 (rogue files):** No _tmp_*, *.tmp, or leftover artifacts at repo root. git status clean. PASS.
-- **Sec 4 (branches):** Local: develop + main only. Remote: origin/develop + origin/main only. No stale squad/* branches. PASS (clean).
-- **Sec 5 (decisions.md size):** 60270 B post-drain. Over 60 KB threshold -- recommend archival next sprint. CONCERN.
-- **Sec 6 (skill candidates):** 2 NEW flagged for Pluto follow-up: ascii-docs-about-non-ascii (medium, 2 apps), worktree-base-refresh (low, 1 app). No Jiminy action needed.
-- **Auto-fixes:** (1) Inbox drain to decisions.md.
-- **CONCERNs:** (a) decisions.md at 60270 B exceeds 60 KB -- archival recommended Sprint 16, (b) scribe history.md at 14491 B (869 B headroom) -- monitor next session.
-- **Verdict:** PASS with CONCERNs (no blockers). Sprint 15 hygiene state is clean.
-
-### Sprint 16 EOS Audit (2026-05-17T20:08:00-04:00)
-
-- **Scope:** post-0.9.6 release. main @ 10d203f, develop @ aba8332. Tag 0.9.6 @ 38c0942.
-- **Manifest:** 8 spawns (mickey-10, scribe-6, pluto-3/4/5, mickey-11/12, scribe-7).
-- **Sec 1 (inbox):** 3 undrained files (mickey-s16-dispatch, mickey-s16-wrap, scribe-363-archival). FAIL -- Scribe drain needed.
-- **Sec 2 (history sizes):** pluto 15694B OVER 15360B HARD GATE. All others pass. FAIL.
-- **Sec 3 (rogue files):** None. Working tree clean. PASS.
-- **Sec 4 (branches):** 3 stale remote squad/* branches (367-skill-drift-audit, s16-retro, scribe-s16-history-append). Ralph cleanup needed. CONCERN.
-- **Sec 5 (orchestration-log):** No Sprint 16 entries. Only Sprint 15 log exists. CONCERN.
-- **Sec 6 (git):** develop in sync. Tag correct. #373 regular merge confirmed. #368 on main = documented recovery. PASS.
-- **Sec 7 (process):** 0 open PRs. Issue #371 labels correct. PASS.
-- **Sec 8 (squash policy):** Charter says no squash on develop. Sprint 16 used squash for 6 PRs. Mismatch. FINDING (no auto-fix, history rewrite forbidden).
-- **Auto-fixes:** (1) Wrote jiminy-s16-eos.md to inbox. (2) History append via branch PR.
-- **Verdict:** DIRTY -- 2 blockers (inbox undrained, pluto gate breach). Session close BLOCKED pending Scribe action.
-
+- **S13 W1 (2026-05-17):** Formalized `worktree-remove-first` skill (#317, PR #331). 5-of-5 proven merge sequence. CONTRIBUTING.md + CHANGELOG updated. Clean.
+- **S13 W1 Post-Batch:** PRs #330-#332. 0 auto-fixes, 3 flags (doc roster, jiminy history over-gate 19852B, stale remote). GO for W2.
+- **S13 W2 Post-Batch:** PRs #334-#335 (ASCII sweep + hook glob). 3 histories over gate -- Scribe fold. Mickey dogfood incident (hook blocked own commit). 1 auto-fix, 6 flags. GO for 0.9.3.
+- **S13 EOS:** main @ edc67e2, develop @ a930540. 9 PRs, 5 issues. PASS (1 stale-remote CONCERN). GO.
+- **S14 EOS:** 0.9.4, main @ 008f166. Doc history compressed 13023->12200B. 60+ legacy non-ASCII .md CONCERNs. PASS.
+- **S15 EOS:** 0.9.5, main @ 49545ad. Inbox drained. decisions.md 60270B over threshold. PASS with CONCERNs.
+- **S16 EOS:** 0.9.6, main @ 10d203f. DIRTY -- pluto history 15694B over gate, 3 undrained inbox files, squash policy mismatch (6 PRs). Blocked pending Scribe action.
 
 ### Sprint 18 W1 Post-Batch Audit (jiminy-6, 2026-05-18)
 
 - Compressed ralph/history.md 15006->9312 B + scribe/history.md 14449->13606 B. PR #404 -> develop. Flagged: pluto+donald missing inbox drops + history trail entries for #402/#403. All other checks PASS.
+
+- **2026-05-27 -- Grill #441 v2:** REVISE (AC#1/3 missing, $PROFILE unescalated, cleanup untested).
+
+### 441-v4-revision (jiminy-7, 2026-05-27)
+
+- **Session:** 441-v4-revision
+- **Task:** Revise plan #441 from v3 to v4; patch 6 holes surfaced in Pluto/Chip/Doc grills.
+- **Patches applied:**
+  - P1 (Pluto BLOCKING): Filled foreach loop body with explicit strip regex + `Set-Content` + `Write-Info` log.
+  - P2 (Pluto BLOCKING): Wrapped all algorithm code in `Write-PowerShellProfile { }` with dot-source safety comment.
+  - P3 (Chip HIGH): GG-7 mock now uses `& $env:ComSpec /c "exit 1"` to propagate `$LASTEXITCODE = 1` at global scope.
+  - P4 (Chip SS-2): `skip` replaced with `if/Write-Host/return`; `$PROFILE = $path` moved inside Test-Scenario body.
+  - P5 (Chip MEDIUM): Section 5 header documents mock-per-test redefinition and Test-Scenario child-scope model.
+  - P6 (Chip MEDIUM): GG-4 row now explicitly states both mocks return same OneDrive path; dedup -> 1 entry.
+  - P7 (Doc cosmetic): v3-D4 updated: `$PROFILE` is conceptually (not technically) read-only per MS Learn.
+- **Word count:** v3 ~830 words -> v4 ~1020 words (+190; within ~1100 target).
+- **Vertical slice:** No new scope added. No new tests beyond GG-1..GG-7. No new options or architecture layers.
+- **Files written:** `docs/plans/441-profile-path.md` (overwrite), `.squad/decisions/inbox/jiminy-441-v4-revision.md` (new).
+- **History compressed:** S13-S16 entries compressed (14390B -> within gate). Post-append size: ~13900B.
+
+### 441-v5-grill (jiminy-8, 2026-05-27)
+
+- **Session:** 441-grill-v5
+- **Task:** Final quality grill of plan #441 v5.1 (Donald revision) before implementation handoff.
+- **Verdict:** REVISE (1 MEDIUM new finding).
+- **Convergence:** All v4 HIGH/MEDIUM findings resolved (Donald F-1..F-5, Chip C-1/C-2, Pluto A-1). One LOW open (NF-3v4 Write-Skip).
+- **New finding JN-1 [MEDIUM]:** H5 `$local:ps51Fallback`/`$local:ps7Fallback` inside `Write-PowerShellProfile` cannot be overridden from test scope. H3 "override `$ps51Fallback`/`$ps7Fallback` to temp paths" is inoperable -- PowerShell function-local bindings shadow calling-scope variables. GG-1/GG-4/GG-5 disk-writing tests will target REAL `$HOME` profile paths, not temp paths. Fix: parameterize `Write-PowerShellProfile` with optional fallback params (recommended Option A) or move fallback defs to file scope.
+- **New finding JN-2 [LOW]:** NF-3v4 (Chip) still open -- `Write-Host` skip in v3-D4 should be `Write-Skip` for correct skip-counter.
+- **Vertical slice:** CLEAN. 7 GG tests only. No scope creep across 6 revisions.
+- **Files written:** `docs/plans/441-grill-jiminy-v5.md` (new), `.squad/decisions/inbox/jiminy-441-v5-grill.md` (new).
+- **History size:** 8653B pre-append; no compression needed (gate = 14000B).
+
+### 441-v5.2-verify (jiminy-9, 2026-05-27)
+
+- **Session:** 441-grill-v5.2
+- **Task:** Verify Mickey's v5.2 patch resolves JN-1 (function-local shadow bug) and JN-2 (Write-Host skip).
+- **Verdict:** SHIP.
+- **JN-1 [RESOLVED]:** `Write-PowerShellProfile` parameterized with `-Ps51Fallback`/`-Ps7Fallback`. Defaults match production lines 17-18 verbatim. No `$local:ps51Fallback`/`$local:ps7Fallback` in function body. GG-1/GG-4/GG-5 all invoke with explicit named temp-path params. v5.2-D1 states contract. All 6 JN-1 checklist items pass.
+- **JN-2 [RESOLVED/PARTIAL]:** `Write-Warning '[SKIPPED] C-2: ...'` explicit in v3-D4; `[SKIPPED]` prefix present; D2 (no Pester) preserved. C-3 implied by prose but no explicit `Write-Warning '[SKIPPED] C-3: ...'` example -- LOW gap (NF-J4).
+- **New findings:** NF-J3 [LOW] -- v5 H5 changelog entry lacks "superseded by v5.2/JN-1" note (cosmetic). NF-J4 [LOW] -- C-3 skip example missing from v3-D4 (implementer must infer from C-2 pattern).
+- **Files written:** `docs/plans/441-grill-jiminy-v5.2.md` (new), `.squad/decisions/inbox/jiminy-441-v5.2-verify.md` (new).
+- **History size:** ~10900B pre-append; no compression needed (gate = 14000B).
