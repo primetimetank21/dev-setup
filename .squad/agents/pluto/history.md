@@ -50,66 +50,87 @@ Summary: Label taxonomy cleanup completed (13 deletions, 3 renames). sync-squad-
 
 ---
 
-## Sprint 16 W1 -- Issue #367: Skill drift watchlist audit
+## Sprints 16-19 (compressed 2026-05-27 per history-compression SKILL)
 
-**Branch:** `squad/367-skill-drift-audit`
-**PR:** #368
-**Status:** Complete.
-
-### What I did
-
-Audited 30 .copilot/skills/ + 0 .squad/skills/ for confidence freshness, application counts, and graduation candidates. Extracted per-skill metadata via git log timestamps and grep scanning of .squad/agents/*/history.md.
-
-**Findings:**
-- 0 skills eligible for low->medium promotion
-- 0 skills eligible for medium->high promotion
-- 27 skills with zero observed applications (monitoring phase)
-- 3 skills with unknown/inconsistent confidence frontmatter (cli-wiring, model-selection, personal-squad, nap)
-
-**Methodology:** Extracted skill name (folder), confidence (frontmatter field), last update (git log -1 --format=%ai), and mention count (grep across agent history). Applied drift thresholds: low->medium if 3+ applications, medium->high if 5+ applications, stale if >90 days old + 0 mentions, never-applied if 0 mentions anywhere.
-
-All 30 skills updated 2026-05-17 (fresh worktree) with high confidence (22 high, 2 medium, 3 low, 3 unknown). Most skills not yet deployed in active agent workflows; report recommends continued monitoring as history accumulates.
-
-Audit feeds issue #366 (graduation audit) for executing actual promotions once thresholds met.
-
-Decision drop: `.squad/decisions/pluto-skill-drift-2026-05-17.md`
+- 2026-05-27 #367 PR #368: skill-drift audit; 30 skills; 0 promotions; 27 zero-app; decisions drop pluto-skill-drift-2026-05-17.md
+- 2026-05-27 #362 squad/362-ascii-docs-skill: ascii-docs-about-non-ascii SKILL.md; Unicode codepoint-name-only rule; 13-char mapping table; .copilot/skills/
+- 2026-05-27 #364 squad/364-worktree-base-refresh-skill: worktree-base-refresh SKILL.md; stale-sprint recovery recipe; confidence low; detail in history-archive.md
+- 2026-05-27 #383/#384 PR #386 @ 17c940b: worktree-remove-first high->medium; gh-pr-base-develop SKILL new; routing.md Spawn-Prompt Hygiene
+- 2026-05-27 #398/#399 PR #402 @ a546421: history-md-pre-size-check SKILL (14336 B threshold); changelog-fold-completeness SKILL; both .copilot/skills/
+- 2026-05-27 #417 PR #418: routing.md pre-spawn worktree clarification (2-3 lines); cross-ref worktree-isolation SKILL
 
 ---
 
-## Sprint 16 W1 -- Issue #362: ascii-docs-about-non-ascii SKILL.md
+## Sprint 20 -- Issue #441: v4 Architecture Grill
 
-**Branch:** `squad/362-ascii-docs-skill`
-**Issue:** #362
+**Plan:** docs/plans/441-profile-path.md (v4, Jiminy revision)
+**Date:** 2026-05-27
 **Status:** Complete.
 
-Drafted and committed `.copilot/skills/ascii-docs-about-non-ascii/SKILL.md` formalizing the "self-documenting non-ASCII" discipline at medium confidence. The pattern: when any agent writes documentation about non-ASCII characters, they must reference the character by its Unicode codepoint name only (e.g., "em-dash U+2014") and never include the literal character anywhere in the committed file -- not in prose, not in parens, not in a code fence, not in a table column. The skill includes a full ASCII substitution mapping table covering 13 common characters and a pre-commit verification command. Confidence is medium because two independent incidents demonstrated the same failure mode: Sprint 14 #340 (Doc audit notes with literal arrow chars) and Sprint 15 #356/#359 (decision file for the ASCII sweep whose own mapping table contained the literal chars being mapped). Both required Coordinator recovery. The SKILL.md file itself was verified at 0 non-ASCII bytes before commit -- the skill must follow the rule it teaches. Skill placed in `.copilot/skills/` (not `.squad/skills/` as originally suggested) to match the existing 30-skill convention. Decision drop at `.squad/decisions/inbox/pluto-362-ascii-docs-skill.md`.
+### v3 Blocking Regression Check
+
+P1 (foreach stub empty): RESOLVED. Loop body now contains explicit strip code with
+regex, Set-Content, and Write-Info log. No stub comment remains.
+
+P2 (scope ambiguity): RESOLVED. Algorithm wrapped in Write-PowerShellProfile with an
+explicit comment confirming dot-source does not execute resolution or writes.
+
+### New Findings
+
+A-1 [MEDIUM]: $ps51Fallback and $ps7Fallback referenced in Write-PowerShellProfile body
+without being defined as parameters or local variables. Under Set-StrictMode -Version
+Latest (active, production line 6) this throws VariableIsUndefined at runtime. Must be
+defined as local constants at the top of the function before Resolve-ProfilePath calls
+(consistent with production lines 17-19). Implementation note; no plan revision required.
+
+A-2 [LOW]: Write-loop shown as comment stub pointing to "existing logic." Variable name
+alignment ($profilePaths) is structurally correct; mutual exclusivity with legacy cleanup
+verified. Documentation gap only.
+
+A-3 [LOW]: Regex divergence between legacy cleanup strip and production writer-loop strip.
+Missing \\r?\\n prefix before BEGIN marker; .+? vs .*?. May leave orphaned blank line
+for non-end-of-file blocks. Post-#441 deferral acceptable.
+
+A-4 [LOW]: No empty-$profilePaths guard; contingent on A-1 resolution (subsumed).
+
+### Verdict: SHIP
+
+Architecture is sound. One entry point, dot-source safe, idempotent, correct fallback,
+mutually exclusive cleanup paths, clean mockability seam. No global-state leakage.
+No conflict with production writer loop at lines 262-309.
+
+Decision drop: .squad/decisions/inbox/pluto-441-v4-grill.md
 
 ---
 
-## Sprint 16 W1 -- Issue #364: worktree-base-refresh SKILL.md (detailed version in archive)
+## Sprint 20 -- Issue #441: v5.1 Architecture Grill (final)
 
-**Branch:** `squad/364-worktree-base-refresh-skill`
-**Issue:** #364
-**Status:** Complete.
+**Date:** 2026-05-27 | **Verdict:** SHIP.
 
-Drafted and landed `.copilot/skills/worktree-base-refresh/SKILL.md` -- the first formal writeup of the stale-sprint-branch recovery pattern that surfaced in Sprint 15 PR #359. Skill documents branch-ancestry hook behavior, git reset --soft pitfalls, 3-phase recovery recipe, acceptance checks, and anti-patterns. Confidence set to low (1 application: Sprint 15 #359, recovery commit d3229c8). Will graduate to medium on second observation.
+A-1 RESOLVED (H5+F-5): all four $local: vars defined at top of Write-PowerShellProfile,
+values match production lines 12-13/17-18, no other StrictMode gaps. H1-H5/F-4/F-5 all
+land correctly; no regressions, no scope leaks, no production global mutations.
+PV-1 [LOW carry-over]: C-2/C-3 skip-as-pass (Chip NF-3v4); not blocking.
 
-Full documentation archived to `.squad/agents/pluto/history-archive.md`.
-
-Decision drop: `.squad/decisions/inbox/pluto-364-worktree-base-refresh.md`
-
----
-
-## Sprint 17 W1 -- Issues #383 + #384: skill formalization wave
-
-**PRs:** #386 (squash-merged to develop @ 17c940b)
-**Status:** Complete.
-
-Updated `worktree-remove-first` SKILL.md (confidence high->medium, harvest as primary ordering rationale, Sprint 15+16 citations). Created `gh-pr-base-develop` SKILL.md (new -- codifies --base develop rule from PR #368 incident). Updated `routing.md` with Spawn-Prompt Hygiene section.
+Decision drop: .squad/decisions/inbox/pluto-441-v5-grill.md
 
 ---
 
-## Sprint 18 W1 -- Issues #398 + #399: history-md-pre-size-check + changelog-fold-completeness SKILLs
+## Sprint 20 -- Issue #441: v5.2 Architecture Grill
+
+**Date:** 2026-05-27 | **Verdict:** SHIP.
+
+JN-1 RESOLVED: Mickey's `-Ps51Fallback`/`-Ps7Fallback` params fix the $local: shadow
+bug I missed in v5.1. Parameters are optional with production-matching defaults; zero-arg
+production call unchanged; test temp-path injection now works correctly. JN-2 RESOLVED
+(Write-Warning applied). All BLOCKING/HIGH/MEDIUM items now closed.
+
+PV-2 [INFO]: `Ps51`/`Ps7` casing non-idiomatic (vs `PS51`/`PS7`); harmless.
+PV-3 [INFO]: GG-5 mock setup unspecified; implementer can infer; not a hole.
+
+Lesson: I audited H5 in isolation in v5.1 but did not cross-check it against H3's
+test-override language. The $local: shadow in test scope was a known PS scoping
+subtlety -- I should have caught it. Applied here.
 
 **PR:** #402 (squash-merged to develop @ a546421)
 **Branch:** squad/398-399-skill-formalizations
@@ -132,3 +153,4 @@ Both SKILLs use YAML frontmatter (name/description/domain/confidence/source), Co
 Added 2-3 line clarification to routing.md "Pre-Spawn Worktree Creation" section: coordinators must pre-create N isolated worktrees BEFORE dispatching N parallel agents. Cross-references worktree-isolation SKILL (no duplication). Surfaces pattern already implicit in worktree-isolation/SKILL.md and issue-lifecycle.md.
 
 - 2026-05-27 -- #441 -- formalized grill SKILL (.squad/skills/grill/SKILL.md). First formal capture of the adversarial plan-review ceremony. Canonical example: issue #441, Goofy plan + Mickey/Chip/Doc parallel grillers. Confidence: low.
+Decision drop: .squad/decisions/inbox/pluto-441-v5.2-grill.md

@@ -1,455 +1,233 @@
 # Fix Plan: #441 -- profile.ps1 writes to wrong path on OneDrive/KFM systems
 
-**Author:** Goofy (Cross-Platform Developer)
+**Author:** Goofy (v1), Mickey (v2), Donald (v3), Jiminy (v4 -- quality audit revision), Donald (v5 -- hole-patch revision), Donald (v5.1 -- F-4/F-5 patch), Mickey (v5.2 -- JN-1/JN-2 patch)
 **Date:** 2026-05-27
 **Issue:** https://github.com/primetimetank21/dev-setup/issues/441
 **Branch:** squad/441-profile-path-fix
-**Status:** Draft -- pending grilling by Mickey (architecture), Chip (testing), Doc (fact-checking)
+**Status:** Ready for re-grill (v5.2)
 
 ---
 
-## 1. Problem Statement
+## v5 Changes (Donald revision)
 
-`scripts/windows/tools/profile.ps1` builds profile paths by concatenating `$HOME`,
-`Documents`, and either `WindowsPowerShell` or `PowerShell` using
-`[System.IO.Path]::Combine`. On systems where Windows Known Folder Move (KFM)
-redirects Documents to OneDrive, or where a user or policy has relocated `$PROFILE`
-to a custom path, the path PowerShell actually sources on startup does NOT match
-the hardcoded construction. The dev-setup block is written to a file that is never
-dot-sourced, so aliases (`pn`, `cdg`, `ep`, `gpl`, etc.) silently fail to appear in
-new terminals. The user-visible symptom is: setup reports success but aliases are
-absent; the user must diagnose by inspecting `$PROFILE` and comparing it to what
-the script actually wrote.
+| # | Hole | Griller | Sev | Patch |
+|---|------|---------|-----|-------|
+| H1 | `Set-Content` in foreach body missing `-Encoding ASCII` | Donald F-1 | HIGH | Added `-Encoding ASCII` to orphan-strip `Set-Content` (matches production line 28) |
+| H2 | GG-7 exit-1 leaves stale `$LASTEXITCODE`; contaminates success-path tests | Donald F-3 | MEDIUM | Section 5 header: each test resets `$global:LASTEXITCODE = 0` before mock redefinition |
+| H3 | `TestDrive` in GG-4 contradicts Section 3 D2 (Pester rejected as scope creep) | Donald F-2 + Chip C-2 | MEDIUM | Replaced `TestDrive` with `Join-Path $env:TEMP "gg-test-441-$(New-Guid)"` temp-path language in GG-4; temp-dir cleanup sentence added to Section 5 header |
+| H4 | GG-7 exe unspecified; false green on PS5.1-only runner | Chip C-1 | MEDIUM | GG-7 row: `$HostExe = 'powershell'` (guaranteed on Windows); note that `'pwsh'` would mask the not-installed early-exit |
+| H5 | `$ps51Fallback`/`$ps7Fallback` undefined inside `Write-PowerShellProfile` under `Set-StrictMode -Version Latest` | Pluto A-1 | MEDIUM | Two `$local:` definitions added at top of `Write-PowerShellProfile` in Section 4 (mirror production lines 17-19) |
 
----
+## v5.2 Changes (Mickey revision)
 
-## 2. Root Cause Analysis
+| # | Hole | Griller | Sev | Patch |
+|---|------|---------|-----|-------|
+| JN-1 | `$local:ps51Fallback`/`$local:ps7Fallback` inside `Write-PowerShellProfile` shadow calling scope; test-scope assignment inoperable; GG-1/GG-4/GG-5 would write to real `$HOME` paths | Jiminy JN-1 | MEDIUM | Parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated |
+| JN-2 | C-2/C-3 PS7+ skip uses `Write-Host`; increments pass counter instead of skip counter on PS7+ CI | Jiminy JN-2 / Chip NF-3v4 | LOW | `Write-Host 'SKIP C-2: ...'` -> `Write-Warning '[SKIPPED] C-2: ...'` in Section 3 v3-D4; warning stream is visually distinct in PS output; no Pester dependency (D2 preserved) |
 
-### The broken assumption
+## v5.1 Changes (Donald patch)
 
-The current code builds paths like:
-
-    [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1')
-    [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell',        'Microsoft.PowerShell_profile.ps1')
-
-This assumes `$HOME\Documents` is the Documents folder. That assumption fails in
-the following Windows scenarios:
-
-### Scenario A -- OneDrive Known Folder Move (KFM) sync policy
-
-When a user enables "Back up my Documents folder" in OneDrive settings, or when
-an organization deploys KFM via Intune/GPO, Windows silently redirects the
-Documents special folder to:
-
-    C:\Users\<user>\OneDrive\Documents\   (personal)
-    C:\Users\<user>\OneDrive - Contoso\Documents\   (business tenant)
-
-`$HOME` stays `C:\Users\<user>`, but `[Environment]::GetFolderPath('MyDocuments')`
-returns the OneDrive path. PowerShell resolves `$PROFILE` against the redirected
-Documents folder, not `$HOME\Documents`. The hardcoded path
-`$HOME\Documents\...` points to a directory that may not even exist.
-
-### Scenario B -- Shell folder redirect via registry or folder redirect policy
-
-Group Policy / MDM can redirect the `{My Documents}` CSIDL via registry key
-`HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders`.
-The redirect target can be any UNC path or local path that differs from
-`$HOME\Documents`.
-
-### Scenario C -- User manually moved Documents or used `mklink`
-
-A user may have moved their Documents folder to `D:\Documents` using the
-"Location" tab in the Documents Properties dialog, or created a symlink/junction.
-`$HOME\Documents` may be a junction pointing elsewhere, or may not exist at all.
-
-### Scenario D -- $HOME overridden
-
-If the `HOME` environment variable is set explicitly (some corporate images,
-Docker, or WSL-adjacent setups set this), `$HOME` may differ from
-`[Environment]::GetFolderPath('UserProfile')`. PowerShell itself uses the
-special folder API when constructing `$PROFILE`, not the `HOME` env var.
-
-### Scenario E -- Custom $PROFILE location set at PS startup
-
-A user or administrator can override `$PROFILE` at shell startup by calling:
-
-    $PROFILE = 'D:\my-profiles\Microsoft.PowerShell_profile.ps1'
-
-Or a corporate PS profile bootstrap script may redirect `$PROFILE` before
-user profile loading. In this case, asking the host at runtime is the only
-correct strategy.
-
-### Why $PROFILE is the truth
-
-PowerShell sets `$PROFILE` using `[Environment]::GetFolderPath('MyDocuments')`
-(PS 5.1) or the equivalent SHGetKnownFolderPath for `{Personal}` KNOWNFOLDERID
-(PS 7+). Both honor the OS folder redirect, OneDrive KFM, and shell folder
-registry overrides. Constructing from `$HOME` bypasses all of this.
-
-The correct approach is: ask each PowerShell host what its `$PROFILE` is, and
-write there.
+- F-4: Orphan-strip regex matches production line 27 (`\r?\n` prefix added; `.+?` -> `.*?`)
+- F-5: `$local:beginMarker`/`$local:endMarker` defined in `Write-PowerShellProfile` (mirrors production lines 12-13)
 
 ---
 
-## 3. Proposed Approach
+## v4 Changes (Jiminy revision)
 
-### Algorithm
+| # | Griller | Sev | Patch |
+|---|---------|-----|-------|
+| P1 | Pluto | BLOCKING | Section 4 foreach loop body filled -- explicit strip regex + log; no stub comment |
+| P2 | Pluto | BLOCKING | Section 4 algorithm wrapped explicitly in `Write-PowerShellProfile`; comment explains dot-source safety |
+| P3 | Chip | HIGH | GG-7 mock calls `& $env:ComSpec /c "exit 1"` -- propagates `$LASTEXITCODE = 1` via native-command global semantics |
+| P4 | Chip | SS-2 | Section 3 v3-D4 guard: `skip` replaced with `if/Write-Host/return`; guard + `$PROFILE = $path` moved INSIDE Test-Scenario body |
+| P5 | Chip | MEDIUM | Section 5 header: mock isolation pattern documented -- mock redefined before each GG test; Test-Scenario child-scope model stated |
+| P6 | Chip | MEDIUM | GG-4 row: both mock calls return same `$oneDrivePath`; dedup -> 1 entry; both legacy paths confirmed orphaned |
+| P7 | Doc | cosmetic | Section 3 v3-D4: `$PROFILE` is conceptually (not technically) read-only, per MS Learn |
 
-For each host that is installed (PS 5.1 `powershell.exe`, PS 7+ `pwsh.exe`):
+---
 
-1. Detect whether the host binary exists on PATH.
-2. Ask the host to report its own `$PROFILE` value via `-NoProfile -Command`.
-3. Use the reported path as the write target.
-4. Fall back to the hardcoded construction ONLY if the host binary is absent
-   (meaning the profile for that host will never load anyway -- write is a no-op
-   in that case, but we preserve the fallback so the behavior is unchanged for
-   fresh installs where the host just hasn't been used yet).
+## 1. Problem
 
-### Pseudo-code
+`profile.ps1` hardcodes `$HOME\Documents\...` as the profile path. On OneDrive KFM systems, PowerShell's actual `$PROFILE` resolves to `OneDrive\Documents\...`. The dev-setup block is written to a file that is never sourced; aliases silently fail to appear in new terminals.
 
-    function Resolve-ProfilePath {
-        param(
-            [string]$HostExe,         # 'powershell' or 'pwsh'
-            [string]$FallbackPath     # hardcoded path as before
-        )
+---
 
-        $hostCmd = Get-Command $HostExe -ErrorAction SilentlyContinue
-        if (-not $hostCmd) {
-            Write-Info "$HostExe not found -- using fallback path: $FallbackPath"
+## 2. Decision: Scope
+
+**IN (this PR):**
+1. Query each host for its `$PROFILE` and write there
+2. Fallback to hardcoded path when host absent
+3. Case-insensitive deduplication for Windows paths
+4. Legacy cleanup of orphaned blocks at old hardcoded paths
+5. Test coverage proving the fix via mocked `Invoke-HostQuery`
+
+**OUT (file as follow-up if reported):**
+- CLM, UNC paths, long paths > 260 chars, Unicode usernames, partial/corrupt blocks -- file issue if reported
+- `pwsh` not on PATH after same-session install -- existing #251 pattern applies
+- PS preview/daily-build variants (`pwsh-preview`) -- known limitation
+
+---
+
+## 3. Decisions Made
+
+**1. `$PROFILE` (CurrentUserCurrentHost) vs `$PROFILE.CurrentUserAllHosts`**
+
+Decision: Use `$PROFILE` (CurrentUserCurrentHost). Host-specific aliases belong in host-specific profiles. VSCode terminal runs pwsh.exe directly and is covered by CurrentHost. Earl ratified 2026-05-27.
+
+**2. Test harness: Pester vs existing `Test-Scenario`**
+
+Decision: Use the existing `Test-Scenario` harness with the `Invoke-HostQuery` mock pattern. `$PROFILE` is read-only in PS 7+ and `$TestDrive` is Pester-specific. Adding Pester is scope creep.
+
+**3. Uninstall lib dependency**
+
+Decision: Inline the resolver in `uninstall.ps1` (Option A). `uninstall.ps1` must work even if the user deletes the repo after install. Resolver is ~30 lines inlined -- acceptable for self-containment.
+
+**4. `Invoke-HostQuery` wrapper**
+
+Decision: Mandate `Invoke-HostQuery` in production code. Testability requires a seam. Mock must be defined AFTER dot-sourcing `profile.ps1` or the dot-source overwrites it.
+
+**v3-D1. GG-6 direction -- Select-Object -Last 1 with -NoLogo**
+
+Decision: Change to `-Last 1`; add `-NoLogo`. Verified: `powershell -NoProfile -NonInteractive -Command '$PROFILE'` emits path-only (no banner). `-NoLogo` explicit suppression; `-Last 1` defense-in-depth for edge-case preamble. GG-6 assertion upgraded to `$result -eq $expectedMockPath`.
+
+**v3-D2. $LASTEXITCODE check**
+
+Decision: Check `$LASTEXITCODE -ne 0` after `Invoke-HostQuery`. `& $Exe` exits non-zero without throwing; `try/catch` does not fire. Fallback now logs the exit code explicitly. GG-7 added.
+
+**v3-D3. GG-4 expands to dual-orphan test**
+
+Decision: GG-4 seeds BOTH legacy paths simultaneously and asserts BOTH stripped. One-path test cannot catch a loop-break bug after the first match.
+
+**v3-D4. C-2/C-3 guarded in PS7+** *(updated v4 -- Doc/Chip)*
+
+Decision: Guard C-2 and C-3 with proper skip. The `$PROFILE` automatic variable is conceptually read-only in PowerShell (per Microsoft Learn); assigning to it is unsupported and may cause issues in test contexts. Full refactor deferred; behavior these tests cover is superseded by this PR. Concrete mechanism: move the `$PROFILE = $path` assignment INSIDE the Test-Scenario body (it was erroneously outside as setup code), then open with `if ($PSVersionTable.PSVersion.Major -ge 7) { Write-Warning '[SKIPPED] C-2: PS7+ -- $PROFILE conceptually read-only; covered by GG tests'; return }`. This ensures the assignment never fires on PS7+ and the skip reason is logged.
+
+**v3-D5. Sort-Object dedup -- confirmed correct, no change**
+
+Decision: `Sort-Object { $_.ToLower() } -Unique` is confirmed correct: `-Unique` keys on the script block output; equal `.ToLower()` values are deduplicated. GG-3 confirms empirically. No algorithm change.
+
+**v5.2-D1. `Write-PowerShellProfile` parameter contract**
+
+Decision: `Write-PowerShellProfile` accepts optional `-Ps51Fallback`/`-Ps7Fallback` parameters. Defaults equal production lines 17-18. Production: call with no arguments (defaults apply; zero callsite changes). Tests: pass explicit temp-dir paths to redirect all disk writes away from real `$HOME` profile files. `$beginMarker`/`$endMarker` require no test override and remain `$local:` constants inside the function.
+
+---
+
+## 4. Algorithm
+
+```powershell
+# In profile.ps1 (and inlined in uninstall.ps1):
+
+function Invoke-HostQuery {
+    param([string]$Exe)
+    & $Exe -NoProfile -NonInteractive -NoLogo -Command '$PROFILE' 2>$null
+}
+
+function Resolve-ProfilePath {
+    param([string]$HostExe, [string]$FallbackPath)
+
+    if (-not (Get-Command $HostExe -EA SilentlyContinue)) {
+        Write-Info "$HostExe not found -- fallback: $FallbackPath"
+        return $FallbackPath
+    }
+    try {
+        $raw = Invoke-HostQuery -Exe $HostExe
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "$HostExe exited $LASTEXITCODE -- fallback: $FallbackPath"
             return $FallbackPath
         }
+        $resolved = ($raw.Trim() -split '\r?\n' | Where-Object { $_ } | Select-Object -Last 1).Trim()
+        if ([string]::IsNullOrEmpty($resolved)) { return $FallbackPath }
+        if ($resolved -notmatch '^[A-Za-z]:\\') { return $FallbackPath }
+        Write-Info "Resolved $HostExe profile: $resolved"
+        return $resolved
+    } catch {
+        Write-Warn "Query failed for $HostExe -- fallback: $FallbackPath"
+        return $FallbackPath
+    }
+}
 
-        try {
-            # Ask the host for its CurrentUser CurrentHost profile path.
-            # -NoProfile: don't let any existing profile interfere.
-            # -NonInteractive: no prompts.
-            $resolved = & $HostExe -NoProfile -NonInteractive -Command '$PROFILE' 2>$null
-            $resolved = $resolved.Trim()
+function Write-PowerShellProfile {
+    param(
+        # v5.2-JN-1: optional params allow test override; defaults mirror production lines 17-18
+        [string]$Ps51Fallback = [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),
+        [string]$Ps7Fallback  = [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
+    )
+    # ALL path-resolution and write logic lives inside this function.
+    # Dot-sourcing profile.ps1 only defines the three functions above; it does NOT
+    # execute resolution or writes. Tests define mock Invoke-HostQuery AFTER
+    # dot-sourcing and BEFORE calling Write-PowerShellProfile.
+    $local:beginMarker = '# BEGIN dev-setup profile'  # v5.1-F5: mirrors production line 12
+    $local:endMarker   = '# END dev-setup profile'    # v5.1-F5: mirrors production line 13
 
-            if ([string]::IsNullOrEmpty($resolved)) {
-                Write-Warn "$HostExe returned empty PROFILE -- falling back to: $FallbackPath"
-                return $FallbackPath
-            }
+    $profilePaths = @(
+        (Resolve-ProfilePath 'powershell' $Ps51Fallback),
+        (Resolve-ProfilePath 'pwsh' $Ps7Fallback)
+    ) | Sort-Object { $_.ToLower() } -Unique
 
-            Write-Info "Resolved $HostExe profile: $resolved"
-            return $resolved
-
-        } catch {
-            Write-Warn "Could not query $HostExe for PROFILE ($_) -- falling back to: $FallbackPath"
-            return $FallbackPath
+    $legacyPaths = @($Ps51Fallback, $Ps7Fallback)
+    foreach ($legacy in $legacyPaths) {
+        $isOrphan = ($profilePaths | Where-Object { $_.ToLower() -eq $legacy.ToLower() }).Count -eq 0
+        if ($isOrphan -and (Test-Path $legacy) -and
+            (Select-String -Path $legacy -Pattern $beginMarker -Quiet)) {
+            $content = Get-Content $legacy -Raw
+            $stripped = $content -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''  # v5.1-F4: matches production line 27
+            Set-Content $legacy $stripped.TrimEnd() -NoNewline -Encoding ASCII  # v5-H1: matches production line 28
+            Write-Info "Stripped orphaned block from legacy path: $legacy"
         }
     }
 
-    $ps51Fallback = [System.IO.Path]::Combine(
-        $HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'
-    )
-    $ps7Fallback  = [System.IO.Path]::Combine(
-        $HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1'
-    )
-
-    $profilePaths = @(
-        Resolve-ProfilePath -HostExe 'powershell' -FallbackPath $ps51Fallback,
-        Resolve-ProfilePath -HostExe 'pwsh'       -FallbackPath $ps7Fallback
-    )
-
-    # Deduplicate in case both hosts resolve to the same file
-    # (rare but possible if a user has configured a shared profile location)
-    $profilePaths = $profilePaths | Select-Object -Unique
-
-    # ... existing strip+re-inject logic unchanged below ...
-
-### Key decisions in the algorithm
-
-- Use `$PROFILE` (CurrentUser CurrentHost), not `$PROFILE.CurrentUserAllHosts`.
-  The issue title and user report concern host-specific profiles; AllHosts is a
-  separate file that runs for ALL hosts and carries different semantics.
-  CurrentHost is the right target for host-specific aliases.
-
-- Deduplicate. Two hosts resolving to the same physical file must not cause a
-  double-write (the strip+re-inject is idempotent, but duplicate entries would
-  still be added in the current append loop).
-
-- Preserve fallback. If a host is absent, the fallback path is used. This
-  matches existing behavior for systems that haven't installed PS 7+ yet.
-
-- Diagnostic log lines must show the RESOLVED path, not the constructed one.
-  This is required by issue #441 acceptance criterion 4.
-
----
-
-## 4. Edge Cases
-
-The following configurations must be handled correctly (or explicitly documented
-as out-of-scope with a warning emitted):
-
-| # | Scenario | Expected behavior |
-|---|----------|-------------------|
-| E1 | OneDrive KFM -- personal OneDrive | Resolve-ProfilePath returns OneDrive path; write there |
-| E2 | OneDrive KFM -- business tenant path with spaces | Path with spaces must be quoted; PowerShell handles this natively |
-| E3 | Only PS 5.1 installed (no pwsh) | Fallback used for PS 7+ path (write is benign no-op if dir absent) |
-| E4 | Only PS 7+ installed (no powershell.exe) | Fallback used for PS 5.1 path; emit Write-Info noting host absent |
-| E5 | Neither host on PATH (exotic env) | Both fallbacks used; warn loudly |
-| E6 | $PROFILE query returns multi-line output | Trim() + take first non-empty line; guard against garbage output |
-| E7 | $PROFILE is a UNC path (network-mapped Documents) | Use path as-is; New-Item -Force handles UNC dirs if accessible |
-| E8 | $PROFILE dir is inaccessible (permissions, offline drive) | Catch block + Write-Err + continue (existing pattern) |
-| E9 | Both hosts resolve to identical path | Deduplicate before write loop |
-| E10 | $HOME overridden via env var | Fallback still uses $HOME env var (consistent with existing behavior); resolved path comes from host query, bypassing $HOME entirely |
-| E11 | ConstrainedLanguage mode (CLM) | `& pwsh -NoProfile -Command '$PROFILE'` launches a NEW process outside CLM; resolution works. Writing the file may fail if CLM also locks filesystem writes -- emit Write-Warn and proceed |
-| E12 | System-level $PROFILE redirect (corporate bootstrap) | Host query captures the final resolved value post-redirect; correct |
-| E13 | PS 7 installed but not on PATH (e.g., installed via winget to non-PATH location) | Get-Command fails; emit info about pwsh not found on PATH; fallback used |
-| E14 | $PROFILE returns a path with a trailing newline or CRLF | Trim() + TrimEnd([char]0x0D, [char]0x0A) handles this |
-| E15 | Headless / non-interactive context (CI, Dev Container) | -NoProfile -NonInteractive flags prevent prompts; process launch still works |
-| E16 | Documents folder is a symlink/junction to another drive | Test-Path and New-Item resolve symlinks transparently on Windows |
-| E17 | Profile path contains non-ASCII characters (Unicode username) | Do NOT enforce ASCII on the resolved PATH itself; ASCII guard applies only to file CONTENT written inside the block |
-| E18 | Execution policy = Restricted or AllSigned | Launching child process with -NoProfile -NonInteractive still works (no script file executed, inline command only); profile WRITE still works; load failure is a separate warning (existing behavior) |
-| E19 | setup.ps1 run from a UNC path (\\server\share\...) | $PSScriptRoot is UNC; Resolve-ProfilePath does not depend on $PSScriptRoot |
-| E20 | WSL interop calling setup.ps1 | powershell.exe / pwsh.exe exist as Windows binaries; host query works |
+    # Write to each resolved path (existing strip+re-inject logic)
+}
+```
 
 ---
 
 ## 5. Test Plan
 
-### Unit tests (Pester, tests/test_windows_setup.ps1 -- new Group)
+Tests added to `test_windows_setup.ps1` as Group GG. Dot-source `profile.ps1` once at the top of the GG group to define functions; redefine mock `Invoke-HostQuery` in file scope immediately before each Test-Scenario call (not a `BeforeEach` block -- Test-Scenario has none) so no mock state leaks. Before each redefinition, reset `$global:LASTEXITCODE = 0` so GG-7's native-command exit-1 does not contaminate subsequent success-path tests (v5-H2). GG tests that write to disk (GG-1, GG-4, GG-5) create a unique temp dir via `Join-Path $env:TEMP "gg-test-441-$(New-Guid)"` and pass temp paths to `Write-PowerShellProfile` via `-Ps51Fallback`/`-Ps7Fallback` parameters; clean up in a `finally` block (v5.2-JN-1). `Test-Scenario` runs its block in a child scope -- mocks defined in the enclosing (file) scope are visible inside but are reset between tests by explicit redefinition.
 
-Tests will be added as a new Group (proposed: Group GG, appended after existing
-highest group).
-
-#### Test infrastructure: mocking $PROFILE
-
-`$PROFILE` is an automatic variable set by the PowerShell engine. To mock it in
-tests, use one of two patterns:
-
-**Pattern A -- Override in child scope before calling the function:**
-
-    # In the test harness (before dot-sourcing profile.ps1 or calling the SUT):
-    function global:Resolve-ProfilePath {
-        param([string]$HostExe, [string]$FallbackPath)
-        # Return a temp path under $TestDrive
-        if ($HostExe -eq 'powershell') { return "$TestDrive\ps51\Microsoft.PowerShell_profile.ps1" }
-        if ($HostExe -eq 'pwsh')       { return "$TestDrive\ps7\Microsoft.PowerShell_profile.ps1" }
-        return $FallbackPath
-    }
-
-**Pattern B -- Mock the child process launch:**
-
-If `Resolve-ProfilePath` is tested in isolation, mock `Get-Command` to return
-a fake command object and mock the `& $HostExe` invocation via a wrapper
-function `Invoke-HostQuery` that can be overridden:
-
-    # Wrapper in production code:
-    function Invoke-HostQuery { param([string]$Exe) & $Exe -NoProfile -NonInteractive -Command '$PROFILE' }
-
-    # In tests:
-    function global:Invoke-HostQuery { param([string]$Exe)
-        if ($Exe -eq 'powershell') { return 'C:\Users\TestUser\OneDrive\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1' }
-        if ($Exe -eq 'pwsh')       { return 'C:\Users\TestUser\OneDrive\Documents\PowerShell\Microsoft.PowerShell_profile.ps1' }
-    }
-
-Pattern B is preferred because it avoids spawning real child processes in tests
-and allows injecting arbitrary paths without touching the filesystem.
-
-#### Test cases (Group GG)
-
-| ID    | Name | What it proves |
-|-------|------|----------------|
-| GG-1  | Resolved path used when host returns valid path | Write goes to the mocked OneDrive path, not $HOME\Documents\... |
-| GG-2  | Fallback used when host binary absent | Get-Command returns $null; fallback path used |
-| GG-3  | Fallback used when host returns empty string | Invoke-HostQuery returns ''; fallback path used |
-| GG-4  | Fallback used when host invocation throws | Invoke-HostQuery throws; catch branch taken; fallback used |
-| GG-5  | Deduplication -- two hosts same path | $profilePaths after dedup has length 1 |
-| GG-6  | Only PS 7+ present -- PS 5.1 fallback emitted as Write-Info | Verify Write-Info called with 'not found' substring |
-| GG-7  | Profile content written to resolved path | After calling Write-PowerShellProfile with mocked resolver, file exists at mocked path and contains BEGIN sentinel |
-| GG-8  | Trailing CRLF in host output trimmed | Invoke-HostQuery returns "path\r\n"; resolved value equals "path" |
-| GG-9  | Diagnostic log shows resolved path, not constructed path | Write-Info output contains the mocked OneDrive path |
-| GG-10 | Both host-resolved paths get the dev-setup block | Both mocked paths contain BEGIN..END block after Write-PowerShellProfile |
-
-#### Static assertion tests
-
-Add one static test (Group GG-S1) verifying that `profile.ps1` does NOT contain
-the literal string `$HOME, 'Documents'` outside of the fallback variable
-assignment. This prevents regression to the hardcoded construction.
+| ID | Name | Input | Expected | Assertion |
+|----|------|-------|----------|-----------|
+| GG-1 | Resolved path used | Mock returns OneDrive path; call `Write-PowerShellProfile -Ps51Fallback $tempPath51 -Ps7Fallback $tempPath7` (temp paths, not real `$HOME`) | Block at OneDrive path | `Test-Path $mockPath` and contains BEGIN marker |
+| GG-2 | Fallback when host absent | Absent exe name (`'powershell-notexist'`) | Fallback path used | `$result -eq $FallbackPath` |
+| GG-3 | Case-insensitive dedup | Mock returns same path different case | One path in array | `$profilePaths.Count -eq 1` |
+| GG-4 | Legacy cleanup -- dual orphan | Both `Invoke-HostQuery` mock calls return the SAME `$oneDrivePath`; dedup produces 1 entry in `$profilePaths`; call `Write-PowerShellProfile -Ps51Fallback $tempPath51 -Ps7Fallback $tempPath7` where both are `Join-Path $env:TEMP "gg-test-441-$(New-Guid)"` temp paths (not real `$HOME`), both seeded with BEGIN marker (v5.2-JN-1) | Both legacy files stripped; OneDrive file has BEGIN marker | Neither legacy file has BEGIN marker; OneDrive file has BEGIN marker |
+| GG-5 | Idempotency (3 runs) | `Write-PowerShellProfile -Ps51Fallback $tempPath51 -Ps7Fallback $tempPath7` 3x same temp file | One block | `(Select-String ... -AllMatches).Matches.Count -eq 1` |
+| GG-6 | Multi-line output (defense) | Mock returns `"banner`n$mockPath"` | Path extracted | `$result -eq $mockPath` (exact-equals) |
+| GG-7 | Non-zero exit fallback | `$HostExe = 'powershell'` (guaranteed present on Windows; `'pwsh'` is unsuitable -- not-installed early-exit would mask the mock invocation and produce a false green on PS5.1-only runners (v5-H4)); mock calls `& $env:ComSpec /c "exit 1"` then returns empty string; native-command sets `$LASTEXITCODE = 1` at global scope | Fallback returned; warning logged | `$result -eq $FallbackPath` |
 
 ---
 
-## 6. Backward Compatibility
+## 6. Migration
 
-### Systems with the block already at the WRONG location
+**Single strategy:** On install, `Write-PowerShellProfile`:
+1. Resolves correct paths from hosts
+2. Probes legacy hardcoded paths
+3. If legacy differs from resolved AND contains sentinel: strips the block
+4. Writes block to resolved paths
 
-If setup.ps1 was run on a KFM system before this fix, the dev-setup block now
-exists at:
-
-    $HOME\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1   (PS 5.1)
-    $HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1           (PS 7+)
-
-After the fix, `Write-PowerShellProfile` will write to the CORRECT (resolved)
-path. The old file at the hardcoded path is orphaned.
-
-### Cleanup strategy
-
-On install (not uninstall), `Write-PowerShellProfile` should:
-
-1. Resolve the correct path (new behavior).
-2. Also probe the OLD hardcoded paths.
-3. If the old hardcoded path exists AND contains the dev-setup sentinel, strip
-   the block from that file (using the existing strip regex).
-4. Emit a Write-Info noting the cleanup.
-
-This is safe and idempotent: if the old path and the new path are the same
-(stock Windows, no KFM), the strip happens on the same file before re-injection,
-which is already the existing behavior.
-
-Pseudo-code for cleanup pass in `Write-PowerShellProfile`:
-
-    # Cleanup: remove block from old hardcoded paths if they differ from resolved
-    $legacyPaths = @(
-        [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),
-        [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
-    )
-
-    foreach ($legacy in $legacyPaths) {
-        if ($profilePaths -notcontains $legacy) {
-            # This path is NOT one we are about to write to -- clean up stale block
-            if ((Test-Path $legacy) -and (Select-String -Path $legacy -Pattern $beginMarker -Quiet)) {
-                Write-Info "Removing stale dev-setup block from legacy path: $legacy"
-                # ... strip regex, same as in Remove-DevSetupProfileBlock ...
-            }
-        }
-    }
+Uninstall: same logic -- probe both resolved and legacy paths, strip all that contain the sentinel.
 
 ---
 
-## 7. Uninstall Mirror
+## 7. Acceptance Criteria
 
-`scripts/windows/uninstall.ps1` has the same hardcoded path construction at
-lines 107-110. It must be updated to use the same resolution logic.
-
-### Changes required in uninstall.ps1
-
-1. Extract `Resolve-ProfilePath` (or a simplified equivalent) into a shared
-   helper. Two options:
-
-   **Option A -- Duplicate the resolver inline in uninstall.ps1.**
-   Pros: uninstall.ps1 is standalone (no dot-source chain); simpler.
-   Cons: logic duplication.
-
-   **Option B -- Extract to `scripts/windows/lib/profile-path.ps1` and
-   dot-source from both profile.ps1 and uninstall.ps1.**
-   Pros: single source of truth.
-   Cons: uninstall.ps1 gains a dependency on lib/; must verify lib path is
-   accessible at uninstall time.
-
-   Recommendation: Option B. The lib/ directory is already a dependency
-   (logging.ps1 pattern is established). A `profile-path.ps1` lib is the
-   right home for `Resolve-ProfilePath`.
-
-2. Update the `$profilePaths` array (lines 107-110) to call
-   `Resolve-ProfilePath` for each host, same as the install side.
-
-3. Add the legacy-cleanup behavior: when uninstalling, also probe the hardcoded
-   fallback paths for a stale block and remove it. This handles the case where
-   a user installed with the old code and is now uninstalling with the new code.
-
-4. Emit diagnostic lines showing the resolved path being targeted.
-
-### Proposed uninstall path resolution
-
-    # Resolve actual profile paths for removal
-    $ps51Fallback = [System.IO.Path]::Combine(
-        $HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'
-    )
-    $ps7Fallback  = [System.IO.Path]::Combine(
-        $HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1'
-    )
-
-    $resolvedPaths = @(
-        Resolve-ProfilePath -HostExe 'powershell' -FallbackPath $ps51Fallback,
-        Resolve-ProfilePath -HostExe 'pwsh'       -FallbackPath $ps7Fallback
-    ) | Select-Object -Unique
-
-    # Also probe legacy hardcoded paths in case install was done with old code
-    $allTargets = ($resolvedPaths + $legacyFallbacks) | Select-Object -Unique
-
-    foreach ($p in $allTargets) {
-        Remove-DevSetupProfileBlock -ProfilePath $p
-    }
+Per issue #441:
+- [ ] Aliases load on OneDrive/KFM systems after fresh install
+- [ ] Aliases load after re-running setup on a system with old orphaned block
+- [ ] Uninstall removes block from all locations (resolved + legacy)
+- [ ] Diagnostic log shows resolved path, not hardcoded path
+- [ ] Test added under `tests/` that mocks `$PROFILE` resolution
+- [ ] C-2 and C-3 guarded against PS7+ `$PROFILE` assignment error (skip with logged reason)
 
 ---
 
-## 8. Files Touched
+## 8. Known Limitations (Post-Ship)
 
-| File | Change | Reason |
-|------|--------|--------|
-| `scripts/windows/tools/profile.ps1` | Add `Resolve-ProfilePath` call; replace hardcoded `$profilePaths` construction; add legacy-cleanup pass; update diagnostic log lines | Core bug fix |
-| `scripts/windows/uninstall.ps1` | Replace hardcoded `$profilePaths` construction; add legacy-cleanup probe; dot-source or inline `Resolve-ProfilePath` | Mirror uninstall fix (issue #441 acceptance criterion) |
-| `scripts/windows/lib/profile-path.ps1` | NEW FILE -- `Resolve-ProfilePath` helper function | Shared resolver to avoid duplication; follows existing lib/ pattern |
-| `tests/test_windows_setup.ps1` | Add Group GG (10 behavior tests + 1 static test) | Acceptance criterion: test added under tests/ that mocks $PROFILE |
-
-No changes needed to:
-- `scripts/windows/setup.ps1` (orchestrator -- calls `Write-PowerShellProfile`, no path logic)
-- `scripts/windows/lib/logging.ps1` (no changes to logging contract)
-- Root `setup.ps1` (OS detection layer, unaffected)
-
----
-
-## 9. Open Questions / Known Unknowns
-
-1. **`$PROFILE` vs `$PROFILE.CurrentUserCurrentHost` vs `$PROFILE.CurrentUserAllHosts`:**
-   The issue proposes using `$PROFILE.CurrentUserAllHosts`. This plan recommends
-   `$PROFILE` (= CurrentUserCurrentHost). The correct choice depends on whether
-   dev-setup aliases should load for ALL hosts (ISE, VSCode, custom hosts) or
-   only the default terminal host. Decision needed from Mickey/Earl before
-   implementation.
-
-2. **PS 7 installed but not on PATH:**
-   `Get-Command pwsh` fails if `pwsh` was installed by winget to a location
-   not in the current PATH. We may need to probe known install paths (e.g.,
-   `C:\Program Files\PowerShell\7\pwsh.exe`) as a secondary check. The
-   threshold for this complexity is unknown.
-
-3. **Race condition on first install of PS 7:**
-   If `Install-Nvm` or another installer causes a new PS 7 install during the
-   same setup run, PATH may not be updated until terminal restart. `pwsh` may
-   not be found on PATH even though it was just installed. Is this a real
-   scenario in our install order? Setup.ps1 installs pwsh via winget in
-   `Install-*` functions before `Write-PowerShellProfile` -- need to confirm
-   the PATH refresh (Issue #251 pattern) happens before profile write.
-
-4. **UNC path behavior with `New-Item -Force`:**
-   `New-Item -ItemType Directory -Path \\server\share\... -Force` behavior
-   on disconnected network drives is not fully tested. Should we add an
-   explicit connectivity check for UNC paths before attempting to create
-   the directory?
-
-5. **CLM (ConstrainedLanguage mode) -- child process launch:**
-   Does `& powershell -NoProfile -Command '$PROFILE'` succeed under CLM
-   imposed on the PARENT process? Likely yes (new process, new language mode),
-   but not verified in our test environment.
-
-6. **Uninstall.ps1 dot-source dependency:**
-   If we extract `Resolve-ProfilePath` to `lib/profile-path.ps1`, uninstall.ps1
-   must dot-source from a known relative path. Currently uninstall.ps1 does NOT
-   dot-source any lib files (it redefines Write-Ok etc. inline). This would be
-   the first lib dependency. Is that acceptable? Alternative is to inline the
-   resolver in uninstall.ps1.
-
-7. **Test harness compatibility:**
-   Our current test pattern calls `Write-PowerShellProfile` after dot-sourcing
-   profile.ps1 inside a `Test-Scenario` / `Invoke-Expression` block. Mocking
-   `Invoke-HostQuery` as a global function must be done BEFORE the dot-source.
-   Verify this works with the existing Group scaffold before finalizing the
-   test design.
-
----
-
-## 10. Risks
-
-| # | Risk | Likelihood | Impact | Mitigation |
-|---|------|------------|--------|------------|
-| R1 | Child process launch (`& pwsh -NoProfile ...`) is slow -- adds 1-3 seconds per host to setup run time | Medium | Low | Acceptable tradeoff; one-time setup cost |
-| R2 | `& powershell -NoProfile -Command '$PROFILE'` inherits caller's execution policy; if Restricted, child may fail to launch | Low | Medium | Test with Restricted policy; -Command (not -File) should work even under Restricted |
-| R3 | Legacy cleanup on install removes a user's custom content if they manually placed content between the same sentinel lines as another tool | Very low | High | The sentinel is unique to dev-setup; collision is only possible if another tool uses the exact same BEGIN/END markers |
-| R4 | Deduplication collapses two genuinely different profile paths to one if they resolve to the same string but differ in case | Low | Low | Use case-insensitive compare for dedup on Windows paths |
-| R5 | Introducing `lib/profile-path.ps1` breaks uninstall.ps1 if the lib path is wrong at uninstall time (user may have moved dev-setup repo) | Medium | Medium | Inline the resolver in uninstall.ps1 (Option A fallback) if lib dependency is rejected |
-| R6 | PS 7 preview or daily-build variants install as `pwsh-preview` not `pwsh` -- resolver misses them | Low | Low | Out of scope; document as known limitation |
-| R7 | Fix resolves correctly at install time but a KFM policy is applied AFTER install; block is now at the right OneDrive path but a future uninstall runs on a machine where KFM has since been removed -- hardcoded fallback plus legacy probe should cover this | Low | Medium | The all-targets union in uninstall covers both resolved + fallback; this risk is mitigated by design |
-| R8 | ASCII guard -- the resolved $PROFILE path itself may contain non-ASCII chars (Unicode username) -- if we log it via Write-Info and Write-Info uses ASCII encoding, the path may be mangled in the log | Low | Low | Write-Info uses Write-Host which handles Unicode; the ASCII guard applies only to file CONTENT, not log output |
+| Scenario | What we tell the user |
+|----------|----------------------|
+| CLM blocks child process | "Run setup from an unrestricted shell" |
+| UNC path inaccessible | "Ensure network drive is connected" |
+| Path > 260 chars | "Enable LongPathsEnabled registry key" |
+| `pwsh-preview` not detected | "Install stable pwsh or add aliases manually" |
+| Block written to wrong path before fix | "Re-run setup; legacy cleanup handles this"
