@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/test_idempotency.sh — Idempotency test suite for dev-setup
+# tests/test_idempotency.sh -- Idempotency test suite for dev-setup
 #
 # Validates that all setup scripts are safe to run more than once:
 #   - Each tool script exits cleanly on second run and detects existing install
@@ -12,13 +12,13 @@
 # Assumes: tools are already installed (run after setup.sh).
 #
 # Environment notes:
-#   - uv installs to ~/.local/bin — not on PATH by default in non-login shells
-#   - nvm is a shell function, not a binary — must be sourced from $NVM_DIR/nvm.sh
+#   - uv installs to ~/.local/bin -- not on PATH by default in non-login shells
+#   - nvm is a shell function, not a binary -- must be sourced from $NVM_DIR/nvm.sh
 #   - copilot-cli.sh skips install (exit 0) when gh is not authenticated
 #
 # Exit codes:
-#   0 — all tests passed
-#   1 — one or more tests failed
+#   0 -- all tests passed
+#   1 -- one or more tests failed
 
 set -uo pipefail
 
@@ -29,17 +29,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RESET='\033[0m'
 
-pass() { echo -e "${GREEN}✅ PASS${RESET}: $1"; PASS=$((PASS + 1)); }
-fail() { echo -e "${RED}❌ FAIL${RESET}: $1"; FAIL=$((FAIL + 1)); }
-info() { echo -e "${YELLOW}ℹ  INFO${RESET}: $1"; }
+pass() { echo -e "${GREEN}PASS PASS${RESET}: $1"; PASS=$((PASS + 1)); }
+fail() { echo -e "${RED}FAIL FAIL${RESET}: $1"; FAIL=$((FAIL + 1)); }
+info() { echo -e "${YELLOW}INFO  INFO${RESET}: $1"; }
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
+# -- Paths ---------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TOOLS_DIR="${REPO_ROOT}/scripts/linux/tools"
 
-# ── Test helpers ─────────────────────────────────────────────────────────────
+# -- Test helpers -------------------------------------------------------------
 
 assert_command_exists() {
   local cmd="$1"
@@ -54,9 +54,10 @@ assert_command_exists() {
 assert_no_duplicate_lines() {
   local file="$1"
   local pattern="$2"
+  # shellcheck disable=SC2016
   local description="${3:-No duplicate '$pattern' in $file}"
   if [[ ! -f "$file" ]]; then
-    info "$file not found — skipping duplicate check"
+    info "$file not found -- skipping duplicate check"
     return
   fi
   local count
@@ -64,7 +65,7 @@ assert_no_duplicate_lines() {
   if [[ "$count" -le 1 ]]; then
     pass "$description (found ${count} occurrence)"
   else
-    fail "$description (found ${count} occurrences — expected ≤1)"
+    fail "$description (found ${count} occurrences -- expected <=11)"
   fi
 }
 
@@ -111,23 +112,23 @@ assert_idempotent_tool_script() {
   fi
 
   if echo "$output" | grep -qi "already installed\|already configured\|already set\|skipping"; then
-    pass "$tool_name: idempotent — detected existing install on second run"
+    pass "$tool_name: idempotent -- detected existing install on second run"
   else
-    # Exited 0 but no "already installed" marker — still acceptable (e.g. copilot-cli
+    # Exited 0 but no "already installed" marker -- still acceptable (e.g. copilot-cli
     # skips silently when gh is not authenticated), but flag it for visibility.
     info "$tool_name: exited 0 on second run (no 'already installed' marker; output: ${output:0:120})"
     pass "$tool_name: no error on second run"
   fi
 }
 
-# ── Test sections ─────────────────────────────────────────────────────────────
+# -- Test sections -------------------------------------------------------------
 
 echo ""
 echo "=== dev-setup Idempotency Test Suite ==="
 echo "    Repo root: ${REPO_ROOT}"
 echo ""
 
-# ── 1. Tool script existence ──────────────────────────────────────────────────
+# -- 1. Tool script existence --------------------------------------------------
 info "--- Tool script existence ---"
 assert_file_exists "${TOOLS_DIR}/zsh.sh"        "zsh.sh exists"
 assert_file_exists "${TOOLS_DIR}/uv.sh"         "uv.sh exists"
@@ -135,18 +136,18 @@ assert_file_exists "${TOOLS_DIR}/nvm.sh"        "nvm.sh exists"
 assert_file_exists "${TOOLS_DIR}/gh.sh"         "gh.sh exists"
 assert_file_exists "${TOOLS_DIR}/copilot-cli.sh" "copilot-cli.sh exists"
 
-# ── 2. Tool PATH verification ─────────────────────────────────────────────────
+# -- 2. Tool PATH verification -------------------------------------------------
 echo ""
 info "--- Tool installation verification ---"
 
 assert_command_exists "zsh" "zsh is on PATH"
 assert_command_exists "gh"  "gh CLI is on PATH"
 
-# uv installs to ~/.local/bin — add it to PATH for this session if needed
+# uv installs to ~/.local/bin -- add it to PATH for this session if needed
 export PATH="$HOME/.local/bin:$PATH"
 assert_command_exists "uv" "uv is on PATH (~/.local/bin)"
 
-# nvm is a shell function — must be sourced; it is not a binary on PATH
+# nvm is a shell function -- must be sourced; it is not a binary on PATH
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 if [[ -s "$NVM_DIR/nvm.sh" ]]; then
   # shellcheck source=/dev/null
@@ -161,7 +162,7 @@ fi
 assert_command_exists "node" "node is on PATH"
 assert_command_exists "npm"  "npm is on PATH"
 
-# ── 3. Tool script idempotency (second-run) ────────────────────────────────────
+# -- 3. Tool script idempotency (second-run) ------------------------------------
 echo ""
 info "--- Tool script idempotency (second-run) ---"
 assert_idempotent_tool_script "${TOOLS_DIR}/zsh.sh"         "zsh.sh"
@@ -170,30 +171,29 @@ assert_idempotent_tool_script "${TOOLS_DIR}/nvm.sh"         "nvm.sh"
 assert_idempotent_tool_script "${TOOLS_DIR}/gh.sh"          "gh.sh"
 assert_idempotent_tool_script "${TOOLS_DIR}/copilot-cli.sh" "copilot-cli.sh"
 
-# ── 4. Config file integrity ───────────────────────────────────────────────────
+# -- 4. Config file integrity ---------------------------------------------------
 echo ""
 info "--- Config file integrity ---"
 
-# /etc/shells must not have duplicate zsh entries
+# /etc/shells: capture baseline count; verified idempotent in section 5 (count must not grow)
 ZSH_PATH="$(command -v zsh 2>/dev/null || echo '/usr/bin/zsh')"
 if [[ -f /etc/shells ]]; then
-  COUNT="$(grep -cF "$ZSH_PATH" /etc/shells 2>/dev/null || echo 0)"
-  if [[ "$COUNT" -le 1 ]]; then
-    pass "/etc/shells: no duplicate zsh entry (count: ${COUNT})"
-  else
-    fail "/etc/shells: duplicate zsh entries for ${ZSH_PATH} (count: ${COUNT})"
-  fi
+  SHELLS_COUNT_BEFORE="$(grep -cF "$ZSH_PATH" /etc/shells 2>/dev/null || echo 0)"
+  info "/etc/shells: ${ZSH_PATH} appears ${SHELLS_COUNT_BEFORE} time(s) (idempotency verified in section 5)"
 else
-  info "/etc/shells not found — skipping"
+  SHELLS_COUNT_BEFORE=0
+  info "/etc/shells not found -- skipping"
 fi
 
-# ~/.zshrc must not have duplicate NVM_DIR or PATH/.local/bin blocks
+# ~/.zshrc must not have duplicate managed blocks
+# Each correct nvm block has exactly one 'export NVM_DIR' line; check for that
+# rather than all NVM_DIR occurrences (which appear 3 times per block).
 if [[ -f "$HOME/.zshrc" ]]; then
-  assert_no_duplicate_lines "$HOME/.zshrc" "NVM_DIR"    "No duplicate NVM_DIR in ~/.zshrc"
-  assert_no_duplicate_lines "$HOME/.zshrc" "\.local/bin" "No duplicate .local/bin in ~/.zshrc"
-  assert_no_duplicate_lines "$HOME/.zshrc" "nvm\.sh"    "No duplicate nvm.sh source line in ~/.zshrc"
+  assert_no_duplicate_lines "$HOME/.zshrc" "export NVM_DIR" "No duplicate NVM_DIR export in ~/.zshrc"
+  assert_no_duplicate_lines "$HOME/.zshrc" "\.local/bin"    "No duplicate .local/bin in ~/.zshrc"
+  assert_no_duplicate_lines "$HOME/.zshrc" "nvm\.sh"        "No duplicate nvm.sh source line in ~/.zshrc"
 else
-  info "~/.zshrc not found — skipping .zshrc duplicate checks"
+  info "$HOME/.zshrc not found -- skipping .zshrc duplicate checks"
 fi
 
 # NVM directory itself should not be duplicated (just existence check)
@@ -203,7 +203,7 @@ else
   fail "NVM_DIR not found: $NVM_DIR"
 fi
 
-# ── 5. Full setup.sh second-run integration test ──────────────────────────────
+# -- 5. Full setup.sh second-run integration test ------------------------------
 echo ""
 info "--- Full setup.sh second-run integration test ---"
 if [[ ! -f "${REPO_ROOT}/setup.sh" ]]; then
@@ -215,13 +215,23 @@ else
   else
     fail "setup.sh: second run exited with a non-zero exit code"
   fi
+
+  # /etc/shells must not grow after a second run (idempotency)
+  if [[ -f /etc/shells ]]; then
+    SHELLS_COUNT_AFTER="$(grep -cF "$ZSH_PATH" /etc/shells 2>/dev/null || echo 0)"
+    if [[ "$SHELLS_COUNT_AFTER" -le "$SHELLS_COUNT_BEFORE" ]]; then
+      pass "/etc/shells: no new zsh entries added by second run (${SHELLS_COUNT_BEFORE} -> ${SHELLS_COUNT_AFTER})"
+    else
+      fail "/etc/shells: second run added zsh entries (${SHELLS_COUNT_BEFORE} -> ${SHELLS_COUNT_AFTER})"
+    fi
+  fi
 fi
 
-# ── Summary ────────────────────────────────────────────────────────────────────
+# -- Summary --------------------------------------------------------------------
 echo ""
-echo "═══════════════════════════════════════"
+echo "======================================="
 printf " Results: %s passed, %s failed\n" "$PASS" "$FAIL"
-echo "═══════════════════════════════════════"
+echo "======================================="
 
 if [[ "$FAIL" -gt 0 ]]; then
   exit 1
