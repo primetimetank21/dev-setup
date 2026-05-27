@@ -43,20 +43,13 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ---
 
-## Learnings
+## Learnings (summarized)
 
-! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
-
-- Hook bypass pattern: use `case "$STRIPPED" in "Merge "*|"Revert "*) exit 0 ;; esac` to skip validation for git auto-generated messages. Must go BEFORE the regex check so these messages never hit the conventional-commits filter. Position matters -- if the case block is after the regex, the hook rejects before reaching it.
-
-- CP1252 encoding trap: Em dash `--` (U+2014) encodes as UTF-8 E2 80 94; byte 0x94 is RIGHT DOUBLE QUOTATION MARK in CP1252, PS 5.1 treats as string terminator
-- Invoke-Expression for function loading: Load functions at Group scope before Test-Scenario calls; `& ([scriptblock]::Create(...))` creates child scope where functions vanish after test
-- PowerShell 5.1 validation requires explicit source-level guards, not runtime version checks -- test suite requirements > runtime logic correctness
-- Test suite can check one pattern (e.g., PSVersion guards) but code implements different valid pattern -- tests must be updated in sync
-- PS 5.1 CI step runs `tests/test_windows_setup.ps1` directly via `powershell -File`, so the test file itself must be ASCII-clean (no emojis, em dashes, arrows, or any non-ASCII chars)
-- shellcheck `-s bash` flag is needed for sourced dotfiles like `.aliases` that have no shebang -- tells shellcheck the dialect without requiring SC2148 fix
-- `config/dotfiles/.aliases` passes shellcheck clean as of issue #193 -- no directives needed, no SC1090/SC2034/SC2148 violations
-- Issue #424: when wiring `tests/test_precommit_hygiene.sh` into `validate.yml`, set `git config --global init.defaultBranch master` before the hook-path step. The test creates `main` later; runners whose `git init` default is already `main` make that scenario fail before the hook is exercised.
+- **Sprints 1-11 patterns:** PowerShell 5.1 requires explicit source-level guards, ASCII-only literals (CP1252 encoding trap documented in ps51-ascii-safety SKILL). Test framework uses `Test-Scenario` wrapper with conditional skip pattern. `shell: powershell` = PS 5.1; `shell: pwsh` = PS 7+. Nested 2-arg Join-Path for PS 5.1 compat.
+- **#239 E2E testing:** Separate CI jobs per OS (not matrix); fresh-shell spawning (`bash -lc` Unix, `pwsh -NoProfile` Windows); `continue-on-error: true` initially, flip to blocking after stabilization. Squad-cli + psmux assertions deferred to PATH-persistence baseline.
+- **#252 Node version:** Bumped to 22.11.0 for squad-cli >=22.5.0 requirement. Single-point read via read-tool-version tools.
+- **#224 git hooks:** 6 scenarios (Group X) for pre-commit ASCII, rogue path, pre-push logic; extended test_precommit_hygiene.sh with 5 pre-push scenarios. Gotcha: Git for Windows adds `sh` to PATH on CI (not local).
+- **Sprint 12 #238 gotchas captured:** Never name fake HOME `$home` (collides with Constant `$HOME`). Set `$ErrorActionPreference = 'Continue'` in child scopes. Sentinel .gitconfig must be valid INI. Use `& powershell -File` not `Start-Process` (argument quoting).
 
 ---
 
@@ -79,22 +72,13 @@ Lessons preserved verbatim in Learnings section above (CP1252 encoding, PSVersio
 
 ## Issue #239 P0 E2E Install Testing (summary)
 
-- **2026-05-16 framing.** P0 enhancement, squad:chip, area:ci. Full tool-verification workflow across Linux/macOS/Windows fresh runners (not just OS routing): squad-cli bootstrap (`squad --version`), psmux (Windows tmux alias), all tool installs (zsh, uv, nvm, gh, GitHub Copilot CLI). Fresh-runner baseline per-PR + nightly cron approved. Cost note: dev-setup is PUBLIC repo (free runners).
-- **2026-05-16 -- Retro CI gate (squad-history-check.yml).** Hard gate: any PR carrying `squad:*` label MUST modify matching agent's `.squad/agents/{name}/history.md` (verified via `gh pr diff --name-only`). No override. Dogfood test: workflow's own PR uses `squad:chip` and validates the new gate.
-- **2026-05-23 -- E2E implementation.** Created `.github/workflows/e2e-install.yml` with 3 independent jobs (Linux/macOS/Windows), `continue-on-error: true` initially (flip to blocking after 2-3 green nightlies). Fresh-shell assertions: bash -lc on Unix, `pwsh -NoProfile -Command` on Windows. Squad-cli and psmux assertions deferred until PATH-persistence baseline green.
+P0 enhancement, squad:chip, area:ci. Full tool-verification E2E workflow across Linux/macOS/Windows fresh runners (squad-cli bootstrap, psmux, tool installs). CI gate pattern (squad-history-check.yml): any PR with `squad:*` label MUST modify matching agent's history.md. E2E implementation: `.github/workflows/e2e-install.yml` with 3 independent jobs per OS, `continue-on-error: true` initially (flip to blocking after 2-3 green nightlies). Fresh-shell assertions: bash -lc on Unix, `pwsh -NoProfile -Command` on Windows. Squad-cli + psmux assertions deferred until PATH-persistence baseline green.
 
-## Learnings (pre-Sprint-12 summary)
+### Sprint 12 Issue #238: Group FF -- uninstall idempotency (compressed)
 
-- **#239 workflow design choices.** Separate jobs per OS (not matrix) -- step sequences diverge too much (different shells, assertion patterns, PATH refresh). Fresh-shell spawning: `bash -lc` (Unix), `pwsh -NoProfile -Command` (Windows). `continue-on-error: true` initially; flip to blocking after 2-3 green nightlies. No new non-interactive flags needed (`$CI=true` auto-set; auth scripts already detect it; `DEBIAN_FRONTEND=noninteractive`). Retry deferred to stabilization phase. squad-cli + psmux assertions deferred until PATH-persistence baseline green. Key insight: `pwsh -NoProfile` tests system PATH, not profile-added PATH -- correct test for automation (nvm.ps1 #221 bug was exactly this class).
-- **#225 macOS validate-linux parity.** Added nvm + Node.js validation step to validate-macos mirroring validate-linux. No macOS-specific differences (NVM_DIR == HOME/.nvm, bash 3.2 supports same sourcing). ASCII-only echo to match existing macOS job style.
-- **#252 Node version pinned at 20.11.0, squad-cli needs >=22.5.0.** Bumped `.tool-versions` nodejs to 22.11.0 (Node 22 LTS). Both `nvm.sh` and `nvm.ps1` read via `read-tool-version.sh` / `Read-ToolVersion.ps1` -- single-line fix. Added Node-version-gate assertion (`node --version | major >= 22`) to e2e fresh-shell steps. v2: added `nvm alias default $PINNED_NODE` (fresh `bash -lc` falls back to system Node otherwise -- same root cause as #255). v3: bumped stale test_tool_versions.sh expectation.
-- **#224 hook behavioral coverage.** Group X (6 scenarios) in test_windows_setup.ps1: pre-commit ASCII rejection (em-dash bytes 0xE2 0x80 0x94 via `WriteAllBytes`), rogue path rejection, pre-push main hard-reject, develop/feature allow, advisory PSScriptAnalyzer block doesn't fail. Extended test_precommit_hygiene.sh with 5 pre-push scenarios (Tpp1-Tpp5). Decision: extend hygiene.sh rather than new test_git_hooks.sh (one bash file for hook tests). Local-vs-CI gotcha: `sh` not on PATH locally (skips correctly); Git for Windows puts `sh` on PATH on CI runner.
+Added 10 new scenarios (FF-1 through FF-10) to `tests/test_windows_setup.ps1` for uninstall idempotency + restore coverage. FF-1..FF-3: static checks on uninstall.ps1 (dotfile list, newest-wins backup, Move-Item); FF-4..FF-5: Linux uninstall.sh parity (same pattern via ls -t); FF-6..FF-10: functional sandbox tests (newest-wins backup, legacy fallback, idempotency, block-strip with user content preserved, skip on no-block). Functional sandbox pattern: New-FfSandbox + Invoke-UninstallIsolated with fake HOME env vars; child process runs uninstall.ps1 in isolated context. Key gotchas captured: (1) PowerShell variable `$home` collides with Constant `$HOME` -- use `$fakeHome`; (2) ErrorActionPreference Stop wraps native stderr -- set Continue in child scope; (3) git config sentinel must be valid INI; (4) Start-Process -ArgumentList doesn't quote spaces -- use `& powershell -File` directly. +335 lines pure ASCII. Tally: 119 -> 129 passing tests.
 
-### Sprint 12 Issue #238: Group FF -- uninstall idempotency + restore coverage (compressed)
-- 10 new scenarios in `tests/test_windows_setup.ps1`: FF-1..FF-3 static checks on `uninstall.ps1` (dotfile list, newest-wins backup, Move-Item); FF-4..FF-5 Linux `uninstall.sh` parity; FF-6..FF-10 functional sandbox tests (newest-wins backup, legacy fallback, idempotency, block-strip with user content preserved, no-block skip).
-- Functional sandbox: `New-FfSandbox` + `Invoke-UninstallIsolated` -- fake HOME via env vars, Push-Location to tmp git repo, restore in `finally`. Use `& powershell -NoProfile -File $path` not `Start-Process` (spaces in path cause arg splitting).
-- Gotchas: `$home` local var collides with Constant `$HOME` (use `$fakeHome`); set `$ErrorActionPreference = 'Continue'` in `Invoke-UninstallIsolated` or native stderr wraps as terminating error; sentinel .gitconfig content must be valid INI.
-- +335 lines, pure ASCII. Tally: 119 -> 129 passing (8 skipped, 8 pre-existing failures unchanged).
+
 
 ## Issue #441 Plan Grill (Chip v4) -- 2026-05-27 [compressed]
 
