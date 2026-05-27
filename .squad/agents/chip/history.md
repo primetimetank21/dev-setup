@@ -108,3 +108,7 @@ Lessons preserved verbatim in Learnings section above (CP1252 encoding, PSVersio
 - No Linux uninstall test file added: `tests/test_linux_setup.sh` does not exist; static-source parity in FF-4/FF-5 catches structural divergence between the two uninstall scripts without needing a separate functional bash harness.
 - Diff: +335 lines in `tests/test_windows_setup.ps1`. Pure ASCII (pre-commit clean). All 10 new tests pass locally; tally rose from 119 -> 129 passing (8 skipped, 8 pre-existing failures unchanged).
 - 2026-05-27 -- Grilled #441 profile-path plan (test & idempotency lens). Verdict: REVISE (idempotency holes, incomplete test plan).
+
+## PR #438 Review -- 2026-05-27
+
+- Reviewed PR #438 (feat/scripts: sprint-end-labels.ps1 PowerShell parity) under domain-aligned reviewer model (PR #445). Single-file change: tests/test_sprint_end_labels_pwsh.ps1. Verdict: APPROVE. Fix strips CRLF from bash launcher here-string before ASCII write -- consistent with peer test pattern (lines 209, 264 of test_sprint_end_labels.ps1). Three pre-existing parity gaps noted as follow-up items.

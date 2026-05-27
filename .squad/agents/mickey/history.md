@@ -127,3 +127,4 @@ Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05
   git repo rather than whatever CWD the test runner happens to be in.
 - **Files**: tests/test_changelog_fold.ps1
 - 2026-05-27 -- Grilled #441 profile-path plan (architecture lens). Verdict: REVISE ($PROFILE.CurrentUserAllHosts contradiction + scope mismatch).
+- 2026-05-27 -- Reviewed PR #443 (chore/scribe grill-441 log). Verdict: APPROVE. .squad/** entries well-formed; flagged own history.md warn-zone for trim follow-up.
