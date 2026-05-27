@@ -126,3 +126,4 @@ Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05
   The cd '\' && prefix ensures bash inherits the sandbox's
   git repo rather than whatever CWD the test runner happens to be in.
 - **Files**: tests/test_changelog_fold.ps1
+- 2026-05-27 -- Reviewed PR #443 (chore/scribe: grill session log for #441 orphan recovery). Verdict: APPROVE. All .squad/** entries well-formed; gate notice: mickey/history.md at 14794 B warn zone, trim pass warranted.
