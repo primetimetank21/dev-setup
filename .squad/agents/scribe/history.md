@@ -12,6 +12,7 @@
 - git add .squad/ stages everything under .squad/ including pre-existing untracked rogue files. Before staging, run git status --porcelain -- .squad/ and confirm only intended files appear. If rogues exist, escalate to coordinator (do not auto-commit them).
 - Decision inbox path (.squad/decisions/inbox/) is gitignored by design (.gitignore:4). Inbox files are drop-box drains, never committed. Drain by reading, merging content into decisions.md, then deleting the inbox file.
 - Canonical squad write locations only: gents/{name}/charter.md|history.md, decisions.md|decisions-archive.md, decisions/inbox/*.md, orchestration-log/*.md, log/*.md, skills/{name}/SKILL.md, 	emplates/*.md, casting/*.json, identity/*.md, plugins/*.json, 	eam.md|routing.md|ceremonies.md|config.json. Any other path is rogue; flag to Jiminy.
+- 2026-05-27 dual-governance chore batching: when Mickey pre-reviews disjoint .squad-only chores with the same executor/reviewer, one branch + one PR is acceptable if each issue keeps independent verification and closing keywords.
 
 ## 2026-05-17 Sprint 15 -- Release 0.9.5
 
