@@ -900,3 +900,45 @@ Reviewed PRs #243, #245, #246. Skipped #244 (self-authored).
   confirmed they work in practice -- Group letter SOP held through Z, AA, BB, CC, DD,
   T6-T11 reservations; CHANGELOG strategy held through 4 separate `[Unreleased]`
   conflict resolutions; Ralph develop-commit ban was honored throughout.
+
+
+---
+
+<!-- Appended 2026-05-27: Sprints 11-17 archived from history.md per issue #450 -->
+
+## Sprint 11-13 entries
+
+- 2026-05-17: Sprint 11-12 -- PRs #288 (pwsh-lastexitcode skill + CONTRIBUTING), #289/#290 (Doc worktree + Jiminy dispatch, replaces dual-fold), #229 (ARCH refresh: lib/, auth.ps1, .tool-versions), #308 (sprint rename T3: 21 files, Q->8h/R->9/S->10/T->11/U->12), #314 (Script Conventions rewrite), #321 (Windows Dep Order 12-step chain), #324 (README W3: 9->11 tree entries, 9 agents); 0.9.2 cut (9 issues, 10 PRs). CWD-pin lesson: #310 violated, #306 corrected, codified.
+- 2026-05-17: Sprint 13 W1 -- #325/#326 doc fixes (ARCH auth.ps1 path, README hooks count three->four) batched off develop @ 38e9c79. W2 -- #322B pre-commit extended .ps1->.ps1|.md|.sh (26/26 PASS); dogfood incident: new hook blocked history.md staging (60 pre-existing non-ASCII bytes) -- correct behavior, append deferred.
+- 2026-05-17: 0.9.3 release fold -- [Unreleased]->[0.9.3] (8 entries: 1 Added, 4 Changed, 3 Fixed). Scribe PR #339 retro landed post-tag -> Sprint 14 W1 fold.
+- 2026-05-17: Sprint 14 W1 -- #343 CHANGELOG editorial: retroactive fold of Scribe retro (PR #339) into [0.9.3] ### Added; 0.9.3 tag immutable. Codified in `.squad/decisions/changelog-retro-placement.md`: fold post-tag retros, never re-tag, Lead owns call. Pattern: "post-tag retro fold".
+- 2026-05-17: Sprint 14 W1.5 -- #342 README refresh on `squad/342-readme-edit`. **F3-first ordering critical:** 645 non-ASCII bytes in fenced file-tree block (box-drawing U+251C/U+2502/U+2514/U+2500 + U+2014 em-dashes); ascii-sweep.py skips fences by design; pre-commit scans full staged content regardless. Hand-converted to `+--` / `\--` ASCII patterns via PowerShell substitution table. Then F1 (6-check pre-commit table), F2 (ascii-sweep.py docs + --dry-run), F4 (tree entry), F5 (one-liner expanded). README.md: 11015->13039 B. CHANGELOG.md: +1 ### Changed. Every write: `[System.IO.File]` ASCII encoding + byte-scan + CWD-pin re-check.
+
+## 2026-05-17 Sprint 14 wrap -- 0.9.4 release cut
+
+6 issues shipped: #340 (history-compression skill formalized: confidence medium, 4-step heuristic, 13 KB target / 2 KB headroom / 15360 B hard gate), #341 (per-topic inbox routing skill formalized: confidence medium, routing decision tree, atomic-rm model, dual-model coexistence), #342 (README refresh, 5 Doc audit findings applied -- see W1.5 entry), #343 (CHANGELOG editorial: Sprint 13 retro folded retroactively into [0.9.3] via "post-tag retro fold" pattern), #347 (label taxonomy 45->32: drop 8 GH-default dupes + 4 stale version labels + 1 status label; rename area:* -> platform:*; 84 issues migrated), #350 (sync-squad-labels.yml: priority:p3 + platform:* added, dead hasCopilot code removed).
+
+CHANGELOG [Unreleased] folded to [0.9.4] - 2026-05-17 (2 Added, 3 Changed). New empty [Unreleased] boilerplate at top. PR #1: release/0.9.4 -> develop (squash). Decision drop: `.squad/decisions/release-094-2026-05-17.md`. History compressed: Sprint 11-13 + W1.5 to dated bullets per history-compression skill.
+
+Coordinator next: develop -> main (regular merge), tag 0.9.4 on main, `gh release create --target main`. Sprint 14 retro: dispatch before release-cut per `.squad/decisions/changelog-retro-placement.md` (fold post-tag retros pattern).
+
+## 2026-05-17 Sprint 16 dispatch
+
+Filed 6 GitHub issues for Sprint 16: #363 (Scribe decisions.md archival), #362/#364 (Pluto ascii-docs/worktree-base-refresh SKILL.md drafts), #367/#366 (Pluto skill drift + graduation audits), #365 (Mickey tag sanity). Proposed wave shape: Wave A (#363, #362, #364, #365 parallel) then Wave B (#367 -> #366 serialized). Decision drop: `.squad/decisions/inbox/mickey-s16-dispatch.md`.
+
+## 2026-05-17 Sprint 16 wrap -- 0.9.6 release cut
+
+6 issues closed: #362 (PR #369, ascii-docs-about-non-ascii SKILL.md, medium confidence), #363 (direct push 5f07514, decisions.md archival -- 1 stale entry moved, hard gate not met mid-sprint, follow-up #371), #364 (PR #370, worktree-base-refresh SKILL.md, low confidence), #365 (comment-close, tag sanity 14/14 pass), #366 (comment-close, skill graduation audit -- 0 candidates), #367 (PR #368, skill drift watchlist -- 30 skills audited, 0 graduations).
+
+Forward-merge recovery context: PR #368 (skill drift audit) landed on main by mistake at 128218a. Forward-merged back to develop via merge commit d102a7c. develop is an ancestor of main; develop->main release merge brought main forward via regular merge PR #373 (merge commit 10d203f).
+
+CHANGELOG [Unreleased] folded to [0.9.6] - 2026-05-17 (3 Added, 2 Changed). New empty [Unreleased] boilerplate at top. PR #372: release/0.9.6 -> develop (squash, merge commit 7172ae7). PR #373: develop -> main (regular merge, merge commit 10d203f). Tag 0.9.6 (bare X.Y.Z) at 38c0942. GitHub release: https://github.com/primetimetank21/dev-setup/releases/tag/0.9.6. Decision drop: `.squad/decisions/inbox/mickey-s16-wrap.md`.
+
+## Sprint 17 Wave 1 -- #371
+
+Issue #371: decisions.md hard gate policy review. decisions.md was 65,737 bytes, over the 51,200 byte (50 KB) hard gate. Chose Option 3+5 hybrid: per-sprint sub-folders with auto-archive on sprint wrap. Archived Sprint 12 decisions (2026-05-14 to 2026-05-16) to .squad/decisions/sprint-12.md (55,958 bytes) and Sprint 15 content (dispatch + retro) to .squad/decisions/sprint-15.md (3,337 bytes). decisions.md trimmed to Sprint 16+ content (7,228 bytes, PASS). Updated Jiminy charter (added decisions.md gate check) and Scribe charter (added sprint archival step 7). Decision drop: .squad/decisions/inbox/copilot-directive-20260517203933-decisions-gate-policy.md. PR: squad/371-decisions-gate -> develop.
+
+
+## Sprint 17 release cut -- 0.9.7
+
+Cut release/0.9.7 from develop@792646e. Folded [Unreleased] to [0.9.7] - 2026-05-17 (3 Added, 3 Changed, 1 Fixed) covering #371 #381 #382 #383 #384 (Sprint 17: Hygiene gate restoration + label automation + skill formalization). PR #393: release/0.9.7 -> develop (squash). PR #394: develop -> main (regular merge, fe83af3). Tag 0.9.7 bare at f596202. GitHub release: https://github.com/primetimetank21/dev-setup/releases/tag/0.9.7.
