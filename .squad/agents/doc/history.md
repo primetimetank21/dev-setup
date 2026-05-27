@@ -163,3 +163,4 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - **PR shipped:** #358. Branch: squad/356-md-ascii-sweep off develop @ caf5c64.
 - **Verification:** Pre-commit hook passes; `git grep "[^\\x00-\\x7F]"` returns 0 matches on tracked .md files.
 - **Learnings:** Worktree setup requires explicit CWD tracking in multi-worktree environments; file I/O via PowerShell [System.IO] can appear to succeed but not persist (use Python pathlib or direct git commands for reliability). UTF-8 byte counting (where multi-byte chars count as N bytes) differs from Unicode character counting -- use Python's `ord(ch) > 127` for accurate non-ASCII detection.
+- 2026-05-27 -- Grilled #441 profile-path plan (fact-check lens). Verdict: PROCEED (10 factual claims verified; all PowerShell behaviors + sentinel patterns + profile load order confirmed).
