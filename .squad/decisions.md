@@ -248,3 +248,37 @@ Accept all Sprint 16 work as complete. Acknowledge decisions.md gate breach (#37
 
 Formalized grill ceremony as a SKILL on 2026-05-27. The "grill" skill (`.squad/skills/grill/SKILL.md`) documents the adversarial pre-implementation plan review pattern observed informally in prior sprints and applied formally for the first time on issue #441 (2026-05-27). The skill captures triggers, roles, lockout rule, spawn pattern, output convention, verdict synthesis rules, and anti-patterns. Canonical example: issue #441, four participants (Goofy as plan author, Mickey/Chip/Doc as parallel grillers). Confidence: low -- bumps to medium on next independent application.
 
+---
+
+## 2026-05-26 -- NVM Bootstrap in Tool Scripts (Issue #436)
+
+**By:** Donald (Copilot)
+
+Formalized nvm sourcing pattern in npm-dependent installer scripts. Both `scripts/linux/tools/copilot-cli.sh` and `scripts/linux/tools/squad-cli.sh` now bootstrap nvm in a subshell-safe manner using the standard non-interactive block:
+
+```bash
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh" --no-use
+  nvm use default 2>/dev/null || true
+fi
+```
+
+Also changed `squad-cli.sh` missing-npm behavior from hard failure to graceful skip with warning. Rationale: `setup.sh` launches each tool in its own subshell, so nvm.sh PATH mutations don't propagate across siblings. Each tool must source nvm independently. Tested via shellcheck and functional subshell verification. Confidence: high (pattern replicates existing npm-install idempotency model).
+
+---
+
+## 2026-05-27 -- PR #438 Review (Sprint-End Labels PowerShell Test)
+
+**By:** Chip (Tester, domain-aligned reviewer)
+
+APPROVE verdict on PR #438 (test_sprint_end_labels_pwsh.ps1). One-line bugfix: strip CRLF from bash launcher shim before writing (here-strings on Windows emit CRLF; bash requires LF). Fix uses established pattern from peer bash test. T1-T6 scenarios match bash A-G tests with appropriate implementation diffs. Flagged pre-existing parity gaps for follow-up (missing coverage for --release-label edge cases and CRLF regression test). Routing: domain match (tests/**) per routing.md line 43. Comment posted to PR.
+
+---
+
+## 2026-05-27 -- PR #443 Review (Governance Log & Grill SKILL)
+
+**By:** Mickey (Lead, governance reviewer)
+
+APPROVE verdict on PR #443 (session log for grill ceremony #441). All .squad/** governance entries (session log, 5 orchestration logs, 5 history appends, decisions.md update) pass checklist. Notes: mickey/history.md in warning zone (14794 B, over 14336 B warn threshold but under 15360 B hard gate). Trim planned separately under issue #450. Grill reports and SKILL.md correctly deferred to impl PR. Pre-existing decisions/inbox directory created as part of review. Routing: governance match per routing.md section on .squad/** changes.
+
