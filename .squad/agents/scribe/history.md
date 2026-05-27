@@ -12,6 +12,7 @@
 - git add .squad/ stages everything under .squad/ including pre-existing untracked rogue files. Before staging, run git status --porcelain -- .squad/ and confirm only intended files appear. If rogues exist, escalate to coordinator (do not auto-commit them).
 - Decision inbox path (.squad/decisions/inbox/) is gitignored by design (.gitignore:4). Inbox files are drop-box drains, never committed. Drain by reading, merging content into decisions.md, then deleting the inbox file.
 - Canonical squad write locations only: gents/{name}/charter.md|history.md, decisions.md|decisions-archive.md, decisions/inbox/*.md, orchestration-log/*.md, log/*.md, skills/{name}/SKILL.md, 	emplates/*.md, casting/*.json, identity/*.md, plugins/*.json, 	eam.md|routing.md|ceremonies.md|config.json. Any other path is rogue; flag to Jiminy.
+- 2026-05-27 dual-governance chore batching: when Mickey pre-reviews disjoint .squad-only chores with the same executor/reviewer, one branch + one PR is acceptable if each issue keeps independent verification and closing keywords.
 
 ## 2026-05-17 Sprint 15 -- Release 0.9.5
 
@@ -57,3 +58,7 @@
 - **Comment on #441:** Posted link to #442 + implementation gate reminder.
 - **Inbox drain:** 14 inbox files drained to decisions.md (2026-05-27 #441 ceremony section). Combined 26437 B + 11583 B = 38020 B < 51200 B gate -- drained.
 - **Key lessons:** (1) Local develop can diverge from origin/develop when commits land directly on develop (worktree/background sessions). Rebase feature branch onto local develop before commit to satisfy ancestry hook; flag divergence to Earl. (2) Non-ASCII output from agent sessions (arrows, checkmarks) triggers ASCII pre-commit hook -- must sanitize staged .md files before commit. (3) history.md size gate fires on staged blob bytes, not working-tree bytes; compress before re-staging.
+
+## 2026-05-27 PR #457 Follow-Up -- Grill Ceremony Description Restoration
+
+- 2026-05-27: PR #457 follow-up restore. Initial "dedupe" deletion for #455 was a misread -- the line removed was the entire body of the decision entry, not a duplicated phrase. Lesson: when an acceptance criterion says "dedupe", verify the matches are actual duplicates (not heading + body + cross-refs) BEFORE deleting. Read the surrounding structure first.
