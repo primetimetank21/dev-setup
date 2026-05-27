@@ -324,3 +324,28 @@ APPROVE verdict on PR #438 (test_sprint_end_labels_pwsh.ps1). One-line bugfix: s
 
 APPROVE verdict on PR #443 (session log for grill ceremony #441). All .squad/** governance entries (session log, 5 orchestration logs, 5 history appends, decisions.md update) pass checklist. Notes: mickey/history.md in warning zone (14794 B, over 14336 B warn threshold but under 15360 B hard gate). Trim planned separately under issue #450. Grill reports and SKILL.md correctly deferred to impl PR. Pre-existing decisions/inbox directory created as part of review. Routing: governance match per routing.md section on .squad/** changes.
 
+---
+
+## 2026-05-27 -- Chore Plan: Issues #455 and #456 Governance
+
+**Prepared by:** Mickey (Lead)
+**Date:** 2026-05-27T06:19:33-04:00
+**Scope:** `.squad/**` governance chores (placeholder leak in orchestration-log + decisions.md dedup)
+
+### Summary
+
+Plan for two atomic chores:
+- **#456:** Fix `{issue-number}` placeholder in `.squad/orchestration-log/2026-05-27T05-25-33Z-mickey-review-443.md` (replace with `443`)
+- **#455:** Deduplicate "Formalized grill ceremony as a SKILL" phrase in `.squad/decisions.md` (rephrase body paragraph to remove echo of header)
+
+Both changes in single branch `squad/455-456-scribe-governance-chores`, single PR, reviewed by Mickey. Executor: Scribe (domain match per charter).
+
+### Decisions from Plan
+
+- **#456 replacement:** Use PR number `443` (best approximation; real comment ID unavailable)
+- **#455 rephrase:** Change body opening from "Formalized grill ceremony as a SKILL on 2026-05-27" to "Pluto formalized the grill ceremony pattern on 2026-05-27"
+- **Branch/PR strategy:** Single PR, both files, squash-merge to develop
+- **Risk gates:** decisions.md current size 17533 B (well under 51200 B hard gate); no gate breach expected
+
+Status: Plan prepared 2026-05-27T06:19:33-04:00; PR #457 merged 2026-05-27 (7bb05a0); this record retained for audit trail.
+

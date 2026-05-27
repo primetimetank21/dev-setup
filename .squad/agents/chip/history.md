@@ -162,24 +162,6 @@ $profilePaths entries = mock return values. On CI, no real OneDrive dir -> test 
 
 **Carry-forward LOWs:** NF-1 (encoding assertion), NF-2 (F-4 middle-of-file), NF-3/JN-2
 (skip counter), NF-4 (resolved-path identity). None blocking.
-### Sprint 12 Issue #238: Group FF -- uninstall idempotency + restore coverage- Coordinator pre-assigned **Group FF** in the spawn prompt (post-EE allocation per CONTRIBUTING.md "Group Letter Assignment"). Skipped BB/CC historically; FF is next free after EE (Issue #292 Sprint 11).
-- Added 10 scenarios to `tests/test_windows_setup.ps1`:
-  - FF-1..FF-3: static-source checks on `scripts/windows/uninstall.ps1` (dotfile list of 5, newest-wins backup selection via Get-ChildItem + Sort-Object LastWriteTime -Descending, Move-Item -Force on both branches)
-  - FF-4..FF-5: parity static checks on `scripts/linux/uninstall.sh` (same 5 dotfiles, `ls -t` newest-wins + `[[ -f .bak ]]` fallback)
-  - FF-6: functional -- two timestamped .bak.* backups present, newest wins; older preserved for manual recovery
-  - FF-7: functional -- legacy .bak fallback restored when no timestamped backup exists
-  - FF-8: functional -- second uninstall run is idempotent (size + content unchanged, "No backup found" SKIP marker emitted)
-  - FF-9: functional -- managed profile block stripped while user content before/after the block is preserved
-  - FF-10: functional -- re-running on a profile with no dev-setup block emits "No dev-setup block in" SKIP and does not rewrite the file
-- Functional sandbox pattern (`New-FfSandbox` + `Invoke-UninstallIsolated`): create tmp root + fake HOME + tmp git repo, override `$env:USERPROFILE` / `$env:HOMEDRIVE` / `$env:HOMEPATH` before invoking `powershell -NoProfile -File scripts\windows\uninstall.ps1` in a child process. Push-Location to tmp git repo so the script's `git config --unset-all core.hooksPath` cannot mutate the tester's real config. Restore env + ErrorActionPreference in `finally`.
-- **Gotcha (decision-worthy):** PowerShell variables are case-insensitive, so a local `$home = Join-Path $root 'home'` collides with the Constant automatic variable `$HOME` and throws "Cannot overwrite variable HOME because it is read-only or constant." Spent ~10 min debugging the wrong layer (env vars) before realizing the assignment was the cause. Always name the fake HOME local `$fakeHome` (or anything other than `home`). Captured to decisions inbox.
-- **Gotcha:** Test harness has `$ErrorActionPreference = "Stop"`. When invoking the child `powershell -File ... 2>$file`, native command stderr (e.g. git config error if `.gitconfig` is malformed) gets wrapped as ErrorRecord and the harness's Stop turns that into a terminating error before our test code can read the ExitCode. Fix: locally set `$ErrorActionPreference = 'Continue'` inside `Invoke-UninstallIsolated` and restore in `finally`.
-- **Gotcha:** Sentinel content for `.gitconfig.bak.*` must be valid git-config INI (used `# sentinel: ...` comment lines). Raw garbage strings like `original-new` cause `git config --unset-all core.hooksPath` (which the uninstall script always runs) to error out with "key does not contain a section: original-new" when it reads the now-restored user gitconfig.
-- **Gotcha:** `Start-Process -ArgumentList @('-File', $path)` does not quote args containing spaces -- the path `C:\Users\Earl Tankard\...` was split at the space and `powershell` got `-File 'C:\Users\Earl'`. Switched to direct invocation via `& powershell -NoProfile -ExecutionPolicy Bypass -File $path 2>$stderrFile` which uses PowerShell's argument quoting.
-- Baseline failures (8: Copilot CLI live check + O-1..O-7 alias overrides) are environmental and pre-existed on develop @ 66930c6. Verified by stash + re-run before adding Group FF.
-- No Linux uninstall test file added: `tests/test_linux_setup.sh` does not exist; static-source parity in FF-4/FF-5 catches structural divergence between the two uninstall scripts without needing a separate functional bash harness.
-- Diff: +335 lines in `tests/test_windows_setup.ps1`. Pure ASCII (pre-commit clean). All 10 new tests pass locally; tally rose from 119 -> 129 passing (8 skipped, 8 pre-existing failures unchanged).
-- 2026-05-27 -- Grilled #441 profile-path plan (test & idempotency lens). Verdict: REVISE (idempotency holes, incomplete test plan).
 
 ## PR #438 Review -- 2026-05-27
 
