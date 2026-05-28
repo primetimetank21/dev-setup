@@ -67,6 +67,7 @@ Lead architect; established foundational team process, architecture, and Windows
 - 2026-05-16 Hired Doc (Fact Checker) per Earl's request after Sprint 8-hotfix (formerly Sprint Q) retro. Universe: Disney Classic. Auto-triggers on review/verify/fact-check/audit keywords. Closes the verifier/validator gap. Hiring pattern: branch from develop, create .squad/agents/{name}/ dir with charter.md + history.md, update registry.json (after last active non-exempt agent, before scribe), update team.md (same position), update routing.md (table row + issue label + new rule + multi-agent scenarios), update CHANGELOG.md [Unreleased], drop decision to .squad/decisions/inbox/mickey-{slug}.md (gitignored, don't stage). Voice considerations: personalize from character source (Seven Dwarfs Doc = methodical, glasses-on, "Let's see now..." -- kind corrections, not snark). Consider squad-hire-agent skill after 2+ hire patterns confirmed -- pattern is now repeatable (Jiminy was first; Doc is second).
 - 2026-05-26 Issue #423: For bash-to-PowerShell parity utilities, keep the bash CLI surface but use native PowerShell JSON handling and a sibling test file when that preserves existing bash coverage. Also strip carriage returns from generated bash driver fixtures so pwsh-on-Linux test runs do not inject CRLF into shim scripts.
 - 2026-05-27T02:56:53.258-04:00: #444 domain-aligned PR review model delegates single-domain approvals to Donald, Goofy, Pluto, Chip, and Doc; Mickey keeps governance, architecture, conflicts, and 3+ domain PRs.
+- 2026-05-28T02:38:27-04:00: PR #462 (#451) lead review verdict CHANGES REQUESTED. In-scope plan items landed (T_C, T_D, T7, validate-ps51), tests count 6 -> 9, base/head correct, CI ultimately green; merge blocked on scope drift into `.squad/**` (Chip history, identity now, new skill) outside approved test/workflow/plan slice.
 
 ---
 
@@ -96,7 +97,6 @@ Lead architect; established foundational team process, architecture, and Windows
   4. **F4 (T7 shebang vagueness):** OK RESOLVED. Replaced vague "assert shebang valid" with two precise assertions: (1) no 0x0D bytes (CR regression invariant); (2) file starts with bytes 0x23 0x21 (#! header). Rationale documented; code sketch provided (lines 95-109).
 - **New concerns:** None. Revision is complete and consistent. Inline doc comment requirement for T7 (lines 90-92) is good practice. Effort estimate unchanged (30 min).
 - **Key learning (Grill Round 2 pattern):** Lockout-protocol revisions (grill-then-revise-then-re-grill) work well. Chip's v2 addressed all 4 blockers/majors directly with specificity. No scope creep, no workarounds, no new gaps. When a tester responds to architectural feedback with precision (line numbers, rationale, code sketches), re-grill confirms readiness quickly. Recommended pattern for future complex slices.
-
 ## 2026-05-28 -- Grill Review: Issue #451 Plan v3 Verification (Round 3)
 
 - **Verdict:** **APPROVE** -- Plan v3 ready for implementation
@@ -104,3 +104,8 @@ Lead architect; established foundational team process, architecture, and Windows
 - **Out-of-Scope boundary:** Clean. `$IsWindows` PS 5.1 hazard identified, filed #461, no scope creep. #451 scope tight: T_C, T_D, T7, validate.yml step.
 - **New concerns:** None. Revision history (lines 205-229) audit trail complete; no backtracking, no new gaps, no contradictions.
 - **Learning (R3 pattern):** Once grill panel issues are resolved in v2 and tracked with precision (line numbers, gates in Done Criteria), R3 verification is fast and confirms implementation readiness. Out-of-Scope sections are stronger scope-boundary tools than they appear.
+
+## Learnings
+
+- 2026-05-28T03:02:58-04:00: PR #462 (#451) re-grill after Goofy revision commits `8870abe` + `93b339f` verdict APPROVED (LEAD). Previous scope-drift blocker cleared: remote diff is strictly limited to `.github/workflows/validate.yml`, `docs/plans/451-pwsh-parity-gaps.md`, and `tests/test_sprint_end_labels_pwsh.ps1`; no `.squad/**`, scripts, src, or other workflow drift remains. T_C/T_D/T7 and validate-ps51 step remain present; CI green; final approval/merge remains Earl-human due reviewer lockout.
+
