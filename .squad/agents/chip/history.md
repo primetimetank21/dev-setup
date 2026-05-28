@@ -159,3 +159,6 @@ Learnings:
 - **Trailer fix:** Commits 461befc + b274cebe had Co-authored-by concatenated to body (no blank line); fixed via doc rebase to 72b80bb + 18f170a; verified via `git interpret-trailers --parse`.
 - **Implementation ready:** YES. Plan v3 at docs/plans/451-pwsh-parity-gaps.md with all acceptance criteria documented. Draft PR #462 opened. Follow-up #461 filed for PS 5.1 defensiveness (out-of-scope).
 
+## Learnings
+
+- 2026-05-28T02:38:27-04:00 -- #451/#462: PS sprint-end parity now T1-T7+T_C/T_D (9 pass); validate-ps51 runs it. T7 uses ReadAllBytes: no 0x0D + shebang 0x23/0x21. Surprise: PS5.1 stub capture needs Write-Output and Win32NT guard.
