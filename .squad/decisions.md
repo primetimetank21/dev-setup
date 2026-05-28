@@ -565,3 +565,374 @@ Earl should perform final human approval and merge PR #462.
 
 ---
 
+## 2026-05-28 -- Session: #468 Customizable Install Plan v1->v9 Revision Chain
+
+### Session Summary
+
+**Issues:** #466, #467, #468 (new), #461 (deferred, now closed)  
+**Primary Focus:** #468 customizable-install plan iterated v1->v9 on PR #470  
+**Secondary:** #461 verification research (closed -- already fixed by PR #462)  
+**Total Rounds:** 9 plan revisions + 2 parallel triage + 1 upstream closure  
+
+### #461 (Closed)
+
+**Author:** Goofy (Cross-Platform Dev)  
+**Finding:** Issue #461 asked for `$IsWindows` PS 5.1 defensiveness. PR #462 commit 31aa228 already fixed the only concrete bug (bare `if (-not $IsWindows)` in test_sprint_end_labels_pwsh.ps1). All other references correctly guarded. Documented in `docs/research/461-iswindows-detection.md` and decision inbox. PR #471 merged.
+
+### #468 Plan Revision Consensus (v1->v9)
+
+**Plan file:** `docs/plans/468-customizable-install.md`  
+**Branch:** `squad/468-customizable-install`  
+**PR:** #470 (draft)
+
+| Rev | Author | Verdict | Key Decision | Commit |
+|-----|--------|---------|--------------|--------|
+| v1 | Mickey (Lead) | Rejected: 3 grill axes found blockers | Flags-first architecture (--list, --only, --skip) | N/A |
+| v2 | Goofy | Rejected: Duck found architecture gaps | 3-concept model (AvailableTools/DefaultTools/SelectableTools) | N/A |
+| v3 | Chip (Tester) | Rejected: 4 new edges from AlwaysRun | AlwaysRun classification (4th concept) + --tools-dir mock seam | N/A |
+| v4 | Pluto (Config) | Rejected: Coherence gaps | Dropped AlwaysRun; all phases as DefaultTools | N/A |
+| v5 | Donald (Shell Dev) | Rejected: Baseline format & safety | Bare names (no RAN: prefix); git-hook self-guard | 863671e |
+| v6 | Pluto (retry) | Rejected: 1 blocker | Safe --check mode; CI workflow fixes | d2bdf72 |
+| v7 | Jiminy (Hygiene) | Rejected: 1 blocker | Fixture Provenance order corrections | 894d1bb |
+| v8 | Pluto | Rejected: 1 blocker | winget-check coherence (map to $DefaultTools) | e9ef239 |
+| v9 | Mickey + Jiminy + Doc grills | APPROVED | Invoke-WingetGate wrapper (void return, exit 1 on missing winget) | f4bea92 |
+
+### Grill Panel Composition Evolution
+
+- **v1-v3:** Mickey (Lead), Donald (Shell Dev), Chip (Tester), Duck (Blindspots)
+- **v4-v5:** Pluto (Config), Donald, Chip, Duck
+- **v6:** Pluto, Duck, Jiminy (Hygiene)
+- **v7:** Jiminy, Duck, Pluto
+- **v8:** Jiminy, Duck, Pluto
+- **v9:** Duck, Jiminy, **Doc (Fact Checker, NEW)** -- caught 2 factual errors no other axis found
+
+### Critical Finding: Doc Panel Addition (v9)
+
+**Doc Grill Verdict:** REQUEST CHANGES (2 factual errors)
+
+1. **Error 1:** Plan references `scripts/windows/tools/git-hook.ps1` but function actually lives in `scripts/windows/setup.ps1`
+2. **Error 2:** Plan claims Windows squad-cli silently skips on npm-absent, but it actually exits 1
+
+**Earl Directive:** Every future #468 plan re-grill MUST include Doc as a mandatory reviewer axis.
+
+### Lockout State (v9 Final)
+
+Authors locked out from future revisions:
+- Mickey (v1, v9 author)
+- Goofy (v2 author)
+- Chip (v3 author)
+- Pluto (v4, v6, v8 author)
+- Donald (v5 author)
+- Jiminy (v7 author)
+
+**Eligible for v10:** Doc (first-time reviewer, issue-finder)
+
+### Outstanding Work
+
+- v10 execution: fix Doc's 2 factual errors + re-grill with full panel (Duck + Jiminy + Doc)
+- Deferred to post-merge: manifest support (#468 slice 5) and interactive mode
+
+---
+
+## 2026-05-28 -- #468 Detailed Decision Records
+
+### Mickey v1: Flags-First Architecture Pick
+
+**Author:** Mickey (Lead)  
+**Plan section:** Install Shape  
+**Key decision:** Adopt flags-first approach with `--list`, `--only=a,b,c`, `--skip=a,b,c`.
+
+**Rejected alternatives:**
+- Interactive prompt (breaks CI/headless)
+- Manifest file (indirection; poor discoverability)
+- Full hybrid (unjustified surface area)
+
+**Constraints:**
+- Backward compat: no-arg = full install
+- Mutual exclusion: `--only` and `--skip` cannot combine
+- Parity: identical semantics bash vs PowerShell
+- Dispatch: Linux reuses `run_tool()`; Windows introduces `$ToolRegistry`
+
+**Future path:** Manifest and interactive mode deferred; can layer non-breakingly.
+
+---
+
+### Donald v1 Grill: Bash Dispatch Gaps
+
+**Date:** 2026-05-28  
+**Verdict:** REQUEST CHANGES
+
+**TOP BLOCKERS:**
+
+1. **[HIGH-1] `--list` sed command wrong**
+   - Current: `ls scripts/linux/tools/*.sh | sed 's/\.sh$//'` (keeps directory prefix)
+   - Fix: `for f in "${TOOLS_DIR}"/*.sh; do basename "$f" .sh; done`
+
+2. **[HIGH-2] Default list order unspecified**
+   - Plan never states: hardcoded array vs filesystem scan
+   - Risk: alphabetical order breaks implicit dependencies (nvm before npm-tools, gh before auth)
+   - Fix: explicitly declare hardcoded array in current declaration order
+
+3. **[HIGH-3] Opt-in mechanism absent**
+   - Plan says delta/lazygit "NOT added to default" but provides no enforcement
+   - If default loop is filesystem scan, adding delta.sh auto-includes it
+   - Fix: array gate must be explicitly stated
+
+**MEDIUM:**
+- [M4] No DAG documentation (copilot-cli/squad-cli gracefully degrade if npm absent)
+- [M5] Bash arg-parsing unspecified (getopts doesn't support --long; must use case loop)
+
+---
+
+### Chip v1 Grill: Test/CI Infrastructure Gaps
+
+**Date:** 2026-05-28  
+**Verdict:** REVISE
+
+**BLOCKERS:**
+
+- **B-1:** PS 5.1 CI absent from Done Criteria (validate-ps51 missing; only validate-powershell/validate-linux)
+- **B-2:** Filename conflict (test_setup_list_{linux,pwsh} vs test_setup_flags_{linux,pwsh})
+- **B-3:** Slices 2-4 have no named test cases (only prose; CI wiring unverifiable)
+- **B-4:** Backward-compat baseline undefined (no snapshot, no invariant list)
+- **B-5:** e2e-install.yml silent (new flags never exercised in e2e; at minimum --list should be added)
+
+**MEDIUM:**
+- M1: Idempotency invariants not listed
+- M2: _linux suffix breaks naming convention
+- M3: $ToolRegistry.Keys unordered; non-determinism not acknowledged
+
+---
+
+### Goofy v2: 3-Concept Architectural Model
+
+**Author:** Goofy (Cross-Platform Dev)  
+**Context:** Addressing Donald HIGH-2/HIGH-3 + Duck architecture gaps
+
+**Architectural Picks:**
+
+1. **Default Order: Hardcoded Array**
+   - `DEFAULT_TOOLS` bash array + `$DefaultTools` PowerShell array
+   - Filesystem scan produces alphabetical order -> breaks dependencies
+   - Array is append-only; adding file to tools/ doesn't change no-arg behavior
+
+2. **Windows Dispatch: Explicit Registry + 3-Line Extension**
+   - `$ToolRegistry = [ordered]@{...}` with documented 3-line addition pattern
+   - NOT auto-discovery (would require naming convention refactor)
+   - Iteration order from `$DefaultTools`, NOT `$ToolRegistry.Keys`
+
+3. **Baseline Fixture: Committed Text Files**
+   - `tests/fixtures/baseline-tools-{linux,windows}.txt` pre-committed
+   - Slice 1 test diffs no-arg output against fixture
+
+4. **PowerShell Grammar: Quoted Comma-String**
+   - `-Only "a,b"` with `[string]` param, split internally
+   - Rejects unquoted `-Only a,b` (allows repeated flag, breaks comma rule)
+   - Rejects double-dash (not idiomatic PS)
+
+5. **--help + Baseline in Slice 1** (not Slice 4)
+   - Help text + baseline-diff test establish contract early
+
+**Standing:** Pending re-grill by Donald (dispatch) + Chip (test naming, CI).
+
+---
+
+### Chip v3: AlwaysRun Classification + --tools-dir Seam
+
+**Author:** Chip (Test/QA)  
+**Date:** 2026-05-29
+
+**Decisions Made:**
+
+1. **AlwaysRun as 4th Concept**
+   - Linux AlwaysRun: prerequisites, dotfiles, git-hook
+   - Windows AlwaysRun: winget check, git-hook
+   - Windows reclassification: dotfiles moved to AlwaysRun (infrastructure, not selectable tool)
+   - Rationale: dotfiles are lightweight, idempotent, foundational
+
+2. **Mock Harness: Hidden --tools-dir CLI Flag**
+   - Dispatch seam for test injection
+   - Alternatives rejected: env var (leaks to children), function override (not portable), symlink (race conditions)
+   - Trade-off: hidden parameter; acceptable (not in --help)
+
+3. **Baseline Regeneration: Makefile + --dry-extract-defaults**
+   - `make baseline-fixtures` + `--dry-extract-defaults` seam
+   - Prevents fixture staleness; documented regeneration command
+
+4. **Root Entrypoint Forwarding**
+   - setup.sh: `run_linux_setup "$@"`
+   - setup.ps1: `param()` block + `@PSBoundParameters` splatting (PS 5.1 safe)
+
+5. **Blank CSV Rejection**
+   - Exit 1 + specific error message (no whitespace trimming)
+   - Trimming hides user errors; strict validation safer
+
+6. **Windows AvailableTools Source-of-Truth**
+   - Linux = files in tools/
+   - Windows = $ToolRegistry.Keys
+   - Remove "adding file = selectable" for Windows; replace with "registering in hashtable = selectable"
+
+---
+
+### Pluto v4: Full Rewrite (AlwaysRun Dropped)
+
+**Date:** 2026-05-30
+
+**Key Decisions:**
+
+1. **AlwaysRun: DROPPED** -- All phases (prereqs, dotfiles, git-hook) become normal DefaultTools, dispatched through same --tools-dir seam
+   - Resolves Duck finding #2 + Chip #4 blockers
+
+2. **PowerShell: Sanitized Hashtable** -- No `$PSBoundParameters` splatting; explicit forward-hash (user-facing params only)
+   - Resolves Duck finding #3
+
+3. **Baseline Script (not Makefile)** -- `scripts/dev/regenerate-baseline-fixtures.sh`
+   - No Makefile exists in repo
+   - Resolves Duck finding #4
+
+4. **Pre-Split CSV Validation** -- Bash regex guards before IFS read
+   - Resolves Duck finding #3 (blank token handling)
+
+5. **Hidden Flag Negative Assertions** -- T_help_no_toolsdir proves hidden flags excluded from help
+   - Resolves Duck finding #5
+
+**Trade-offs:**
+- --only=nvm won't auto-install prereqs (user opted into exactly what they asked for)
+- Prereqs/dotfiles/git-hook appear in --list output (correct; they are selectable steps)
+
+---
+
+### Donald v5: Polish Pass (Baseline Format & Safety)
+
+**Author:** Donald  
+**Date:** 2026-05-30  
+**Commit:** 863671e
+
+**Decisions:**
+
+1. **Baseline Format: Bare Tool Names**
+   - Stubs log tool name only (no prefix)
+   - `defaults.txt` is both dispatch input and expected test output
+   - Zero transform at assert time (simplest option)
+
+2. **Git-Hook Self-Guard in Tool Script**
+   - `command -v git` / `Get-Command git` at top of git-hook script
+   - Works regardless of invocation path
+   - Simpler than flag-combo disallow rules
+
+3. **--skip Validates Against AvailableTools** (silent no-op for opt-in tools)
+   - Matches POSIX semantics
+   - Documented in UX Caveats
+
+4. **Real-Defaults Drift Test via --check Mode**
+   - Extends `scripts/dev/regenerate-baseline-fixtures.sh` with --check / diff-and-exit-1
+   - No new tooling; runs in CI alongside mock-dispatcher test
+
+---
+
+### Pluto v6: Polish (CI Workflow Fixes)
+
+**Author:** Pluto  
+**Scope:** Surgical polish on Donald's v5
+
+**Covered:**
+- Duck/Jiminy review items: safe baseline --check, correct CI workflow/job names (including macOS selective install)
+- Missing flag-combo tests
+- Pre-refactor fixture provenance
+- No-selection-persistence test
+- Git-hook skip-path safety
+
+---
+
+### Jiminy v7: Fixture Provenance Correction
+
+**Author:** Jiminy (Squad Hygiene)
+
+**Changes:**
+- Corrected Fixture Provenance current Linux order: prereqs before tool dispatch; dotfiles/git-hook after
+- Corrected Fixture Provenance current Windows order: winget availability gate before function-call sequence through git-hook
+- Scope limited to one v6 blocker; no architecture/tests/slices changed
+
+---
+
+### Pluto v8: winget-Check Coherence
+
+**Date:** 2025-07-25
+
+**Issue:** Fixture Provenance listed Windows winget-check but $DefaultTools/$ToolRegistry omitted it -> T_baseline_real_defaults can't pass
+
+**Decision (Path A):** Add 'winget-check' as dispatchable Windows phase in $DefaultTools + $ToolRegistry, mapping to Test-WingetAvailable
+
+**Rationale:**
+- Path B (remove from Fixture Provenance) would re-open AlwaysRun discussion settled in v4
+- Test-WingetAvailable already self-guards (exits/warns if winget absent)
+- Preserves "all phases are normal DefaultTools entries" invariant
+- No cascade changes needed
+
+**Commit:** e9ef239
+
+---
+
+### Mickey v9: Invoke-WingetGate Wrapper
+
+**Author:** Mickey (v9 author)
+
+**Context:** v8 mapped 'winget-check' = { Test-WingetAvailable }. Dispatcher invokes scriptblocks and discards return values -> $false return was silently swallowed.
+
+**Decision:** Introduce Invoke-WingetGate wrapper
+- Void return, exit-on-failure
+- Preserves original Write-Err + exit 1 semantics from setup.ps1 lines 50-55
+- Convention: any future hard-prerequisite tool must wrap predicate in exit-on-failure function (not return Boolean)
+
+**Status:** Committed v9 (f4bea92)
+
+---
+
+### Doc v9 Grill: Fact-Checking (2 Bugs Found)
+
+**Author:** Doc (Fact Checker, first appearance in panel)  
+**Verdict:** REQUEST CHANGES (2 factual errors)
+
+**Error 1:** Plan references `scripts/windows/tools/git-hook.ps1` but function actually lives in `scripts/windows/setup.ps1`
+
+**Error 2:** Plan claims Windows squad-cli silently skips on npm-absent, but it actually exits 1
+
+**Impact:** No other reviewer axis (design/process/test) found these across v1-v8.
+
+**Earl Directive:** Every future #468 plan re-grill MUST include Doc as mandatory reviewer.
+
+---
+
+### Goofy #461 Research: $IsWindows PS 5.1 Platform Detection
+
+**Author:** Goofy (Cross-Platform Dev)  
+**Issue:** #461 -- Replace `$IsWindows` check with explicit POSIX detection  
+**Status:** Research complete; issue closed
+
+**Canonical Patterns:**
+
+**For test fixtures / one-off checks:**
+```powershell
+$isPosix = [System.Environment]::OSVersion.Platform -ne [System.PlatformID]::Win32NT
+```
+- Works PS 5.1 and 7+
+- Type-safe enum comparison
+- Already adopted by PR #462 (commit 31aa228)
+
+**For production (setup.ps1-style):**
+```powershell
+$isWin = ($PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows) -or `
+          ($PSVersionTable.PSVersion.Major -lt 6 -and $env:OS -eq 'Windows_NT')
+$isLin = $PSVersionTable.PSVersion.Major -ge 6 -and $IsLinux
+$isMac = $PSVersionTable.PSVersion.Major -ge 6 -and $IsMacOS
+```
+- PSVersion short-circuit prevents RHS evaluation on PS 5.1
+- Already in setup.ps1 (do not change)
+
+**What NOT to use:**
+- `if (-not $IsWindows)` -- $IsWindows is $null on PS 5.1; -not $null = $true (bug)
+- Any bare `$IsLinux`, `$IsMacOS`, `$IsWindows` -- undefined on PS 5.1
+
+**Current #461 Status:** Only concrete bug (bare $IsWindows in test_sprint_end_labels_pwsh.ps1) fixed in PR #462 (commit 31aa228). All other references correctly guarded. May be closed.
+
+---

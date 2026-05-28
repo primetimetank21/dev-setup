@@ -1,64 +1,88 @@
 ---
-updated_at: 2026-05-28T03:26:31-04:00
-focus_area: "[TARGET] Triage new issues #466/#467/#468 (flag framework first, then delta + lazygit in parallel). #461 deferred behind these."
+updated_at: 2026-05-28T05:30:00-04:00
+focus_area: "[TARGET] PR #470 (#468 plan) at v10 pending. Doc raised 2 factual blockers on v9. Next session: spawn v10 + final grill panel MUST include Doc."
 active_issues:
   - 468
   - 466
   - 467
-  - 461
-pending_prs: []
+pending_prs:
+  - 470
+  - 471
 ---
 
 # What's Next (Next Session)
 
-## [TARGET] Primary work -- triage + sequence
+## [TARGET] Primary work -- finalize #468 plan, then implement Slice 1
 
-Three new issues filed this session. Recommended order is **#468 first, then #466 + #467 in parallel, then #461**.
+### Step 1 -- Spawn v10 of #468 plan (BLOCKER)
 
-### Step 1 -- Grill #468 first (architectural prerequisite)
-**Issue #468** -- Customizable install: pick-and-choose tools (flags vs interactive prompt vs manifest file vs hybrid).
-- Owners: Mickey (Lead -- architectural decision) + Goofy (cross-platform: bash + pwsh parity).
-- Labels: `squad`, `squad:goofy`, `squad:mickey`, `go:needs-research`.
-- Why first: doing the flag framework first means #466 + #467 land cleanly inside it instead of being bolted on and refactored later.
-- Open design question -- needs to be grilled and recorded in `decisions.md` before any code:
-  - **Flags** (`--only=`, `--skip=`) -- CI-friendly, terse, poor discovery.
-  - **Interactive prompt** (`select` / `Out-GridView`) -- best human UX, breaks headless.
-  - **Manifest file** (`tools.manifest`) -- reproducible, indirect.
-  - **Hybrid** -- flags for CI + prompt for humans + optional manifest. Likely answer but most surface area.
-- Backward-compat gate: default behavior (no flags) MUST match current behavior.
-- Suggested dispatch: `Mickey, scope #468 -- write a v1 plan picking one of flags / prompt / manifest / hybrid, with bash + pwsh parity in mind. Grill before implementation.`
+**PR #470** -- `docs/plans/468-customizable-install.md` is at v9 (commit `f4bea92`, by Mickey).
+- Duck: APPROVE
+- Jiminy: APPROVE
+- **Doc: REQUEST CHANGES** -- 2 factual errors all 9 prior rounds missed:
+  1. Plan references `scripts/windows/tools/git-hook.ps1` for the Windows git-hook function -- **actual location is `scripts/windows/setup.ps1`** (no separate tools file). Verify and correct every reference.
+  2. Plan claims Windows `squad-cli` silently skips on npm-absent -- **actual behavior is `exit 1`**. Linux `squad-cli` is the one that silent-skips. Verify and correct the plan's behavior table / parity claims.
 
-### Step 2 -- Independent tools in parallel (after #468 lands)
-**Issue #466** -- Install delta (git-delta) as an opt-in tool.
-- Owners: Goofy + Chip.
-- New `scripts/{linux,windows}/tools/delta.{sh,ps1}` installers + post-install global git config:
-  ```
-  git config --global core.pager delta
-  git config --global interactive.diffFilter 'delta --color-only'
-  git config --global delta.navigate true
-  git config --global delta.dark true
-  git config --global merge.conflictStyle zdiff3
-  ```
-- Suggested dispatch: `Goofy, pick up #466 -- delta installer + global git config wiring, parity test pair.`
+**Lockout state at session end:**
+- Locked out as past authors of #468 plan: Mickey (v1, v9), Goofy (v2), Chip (v3), Pluto (v4 + v6 + v8), Donald (v5), Jiminy (v7)
+- Doc has NOT authored -- eligible for v10 ownership. He found the bugs; narrow factual edits.
+- Alternative: relax lockout for any prior author. Mickey (v9 author) is most natural since v10 is 2 corrections to his v9.
 
-**Issue #467** -- Install lazygit as an opt-in tool.
-- Owners: Goofy + Chip.
-- New `scripts/{linux,windows}/tools/lazygit.{sh,ps1}` installers. No config needed.
-- Suggested dispatch: `Goofy, pick up #467 -- lazygit installer + parity test pair.`
+**Recommended dispatch:**
+```
+Doc, author v10 -- narrow factual fix on v9. Two corrections:
+  (1) Replace all references to scripts/windows/tools/git-hook.ps1 with scripts/windows/setup.ps1
+      (verify the actual function name in setup.ps1 first)
+  (2) Update Windows squad-cli npm-absent behavior claim from "silent skip" to "exit 1"
+      (parity table, behavior docs, any Test-Scenario notes)
+Preserve all v9 architecture, slicing, concepts, fixture provenance, Invoke-WingetGate spec.
+Add v10 changelog with 2 bullets citing Doc's v9 review.
+```
 
-### Step 3 -- Deferred follow-up
-**Issue #461** -- replace `$IsWindows` check with explicit POSIX platform detection (PS 5.1 defensiveness).
-- Owners: Goofy + Chip. Filed during #451 grill cycle (out-of-scope hazard).
-- Why it matters: `$IsWindows` is `$null` (falsy) on PS 5.1, which can silently mis-branch platform-specific code paths.
-- Labels: `squad`, `squad:goofy`, `squad:chip`, `go:needs-research`.
-- Status: needs-research first; deferred behind #466-#468 because the tool-install work touches more of the same scripts.
+### Step 2 -- Final grill panel for v10 (MUST INCLUDE Doc)
+
+**! Earl directive (2026-05-28): every #468 plan re-grill from v10 onward MUST include Doc.**
+
+The fact-checker axis was missing from rounds v1-v8 and only added at v9 -- Doc immediately surfaced 2 real bugs no other reviewer caught. Future regrills need:
+
+- **Duck** (rubber-duck: architecture + blindspot detection)
+- **Jiminy** (process/quality auditor: vertical slicing, CI integration, scope discipline)
+- **Doc** (fact checker: file paths, function names, line numbers, behavior claims, error message text)
+
+Optional add-ons depending on what's touched in the revision:
+- Donald (bash specifics) -- if bash dispatcher or `--list` parsing changes
+- Pluto (config/registry) -- if `$ToolRegistry` or `$DefaultTools` changes
+- Chip (test/CI) -- if Test-Scenario list or CI matrix changes
+
+### Step 3 -- After v10 approved: merge PR #470 + implement Slice 1
+
+Slice 1 (per v9 plan): `--list` + `--help` + root entrypoint arg forwarding + mock-tools-dir harness + baseline fixtures.
+- Implementation owners: Goofy (cross-platform) + Donald (bash) + Pluto (registry + config).
+- Chip writes/verifies tests.
+- Doc fact-checks final implementation against the merged plan.
+
+### Step 4 -- After Slice 1 lands: #466 + #467 in parallel
+
+**#466** delta installer + git config wiring -- Goofy + Chip. New `scripts/{linux,windows}/tools/delta.{sh,ps1}` + post-install git globals.
+
+**#467** lazygit installer (no config) -- Goofy + Chip. New `scripts/{linux,windows}/tools/lazygit.{sh,ps1}`.
+
+Both land via the `$ToolRegistry` extension contract (3-line pattern) from the v9 plan. Tools are opt-in -- present in `AvailableTools` but absent from `DEFAULT_TOOLS`.
+
+## Recently Shipped (this session)
+
+- **PR #471** (open) -- `docs/research/461-iswindows-detection.md` by Goofy. #461 forward-looking audit; PS 5.1 platform-detection landmines documented.
+- **Issue #461** closed (verified fix in commit `31aa228` / PR #462; no remaining unguarded `$IsWindows*` refs in executable paths).
+- **PR #470** (draft) -- #468 plan, 9 revisions completed in one session (Mickey -> Goofy -> Chip -> Pluto -> Donald -> Pluto -> Jiminy -> Pluto -> Mickey), pending v10 + final grill.
+- **`.squad/skills/`** -- new skills written: `install-plan-grill/`, `ps51-platform-detection-audit/`.
+
+## Open PRs at session end
+
+- **#470** -- #468 plan (v9). Awaiting v10 (Doc-flagged factual fixes).
+- **#471** -- #461 research doc. Already-fixed verification. Goofy approve + merge.
 
 ## Backlog
-- (none beyond #461, #466, #467, #468)
 
-## Recently Shipped
-- PR #462 -> 31aa228: close pwsh parity gaps in `test_sprint_end_labels_pwsh.ps1` (closed #451) -- 6 -> 9 tests, T_C/T_D/T7 added, validate.yml PS 5.1 step.
-- PR #463 -> 9aea27d: Scribe hygiene -- #451 grill-cycle decisions + logs fold.
-- PR #464 -> ff85502: hygiene -- folded stranded Goofy/Mickey grill-review history appends.
+- (none beyond #466, #467 -- both blocked on #470 merge)
 
-Updated by Coordinator at 2026-05-28T03:15:03-04:00 -- Earl directive: "add 461 to now.md for next session".
+Updated by Coordinator at 2026-05-28T05:30:00-04:00 -- Earl directive: "document this in now.md that next review should be doc. then wrap session".

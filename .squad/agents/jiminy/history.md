@@ -123,3 +123,4 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - 2026-05-30 #470 v6: REQUEST CHANGES -- Linux Fixture Provenance omits current prereqs/dotfiles/git-hook no-arg behavior; other v5 blockers verified fixed.
 - 2026-05-30 #470 v7: PUSHED Fixture Provenance order fix -- Linux prereqs/tools/dotfiles/git-hook and Windows winget-check/tools/git-hook verified from setup scripts.
 - 2026-05-30 -- #470 v8 grill: REQUEST CHANGES; winget-check registry must preserve missing-winget exit gate and document -Skip winget-check foot-gun.
+- **2026-05-30 -- #470 v9 verification:** APPROVE -- Invoke-WingetGate preserves missing-winget Write-Err + exit 1 semantics, foot-gun documented, no v9 scope creep.
