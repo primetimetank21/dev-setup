@@ -1,32 +1,28 @@
 ---
-updated_at: 2026-05-28T02:45:28Z
-focus_area: "[QUEUED] Merge PR #460 (this now.md update) + start #451 (Chip -- pwsh parity gaps)"
+updated_at: 2026-05-28T03:15:03-04:00
+focus_area: "[TARGET] Start #461 (Goofy + Chip -- replace `$IsWindows` with explicit POSIX detection for PS 5.1)"
 active_issues:
-  - 451
-pending_prs:
-  - 460
+  - 461
+pending_prs: []
 ---
 
 # What's Next (Next Session)
 
-## [PIN] Pending admin-merges (handle first)
-- **PR #460** -- `chore/scribe-now-md-451` -- this very now.md update. Admin squash + delete branch:
-  `gh pr merge 460 --squash --admin --delete-branch`
-
 ## [TARGET] Primary work
-**Issue #451** -- close pwsh parity gaps in `tests/test_sprint_end_labels_pwsh.ps1`.
-- Owner: Chip (squad:chip label already set)
-- Scope: missing C/D test cases + CRLF regression coverage
-- Type: tests-only (Chip's review-authority domain)
-- Labels: squad:chip, go:needs-research
-- Suggested dispatch: `Chip, pick up #451`
-- Worktree path: `C:\Users\Earl Tankard\Coding\dev-setup-451` on branch `squad/451-pwsh-parity-gaps`
+**Issue #461** -- replace `$IsWindows` check with explicit POSIX platform detection (PS 5.1 defensiveness).
+- Owners: Goofy (cross-platform) + Chip (tests). Both labels set.
+- Origin: filed during #451 grill cycle (out-of-scope hazard surfaced by Mickey/Goofy review of `tests/test_sprint_end_labels_pwsh.ps1`).
+- Why it matters: `$IsWindows` is `$null` (falsy) on PS 5.1, which can silently mis-branch platform-specific code paths.
+- Labels: `squad`, `squad:goofy`, `squad:chip`, `go:needs-research`
+- Status: needs-research first -- no implementation until scope is grilled.
+- Suggested dispatch: `Goofy, scope out #461 -- audit every $IsWindows reference in the repo and propose an explicit POSIX detection pattern.`
 
 ## Backlog
-- (none beyond #451)
+- (none beyond #461)
 
 ## Recently Shipped
-- PR #458 -> fe64139: v5.2 profile-path fix (closed #441 + #442)
-- PR #459 -> 995c502: session wrap (re-review artifacts, 2 new SKILLs)
+- PR #462 -> 31aa228: close pwsh parity gaps in `test_sprint_end_labels_pwsh.ps1` (closed #451) -- 6 -> 9 tests, T_C/T_D/T7 added, validate.yml PS 5.1 step.
+- PR #463 -> 9aea27d: Scribe hygiene -- #451 grill-cycle decisions + logs fold.
+- PR #464 -> ff85502: hygiene -- folded stranded Goofy/Mickey grill-review history appends.
 
-Updated by Scribe at 2026-05-27T22:45:28-04:00 -- Earl directive: "update that into now.md too so i can handle that next session".
+Updated by Coordinator at 2026-05-28T03:15:03-04:00 -- Earl directive: "add 461 to now.md for next session".
