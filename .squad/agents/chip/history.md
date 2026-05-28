@@ -167,3 +167,7 @@ $profilePaths entries = mock return values. On CI, no real OneDrive dir -> test 
 ## PR #438 Review -- 2026-05-27
 
 - Reviewed PR #438 (feat/scripts: sprint-end-labels.ps1 PowerShell parity) under domain-aligned reviewer model (PR #445). Single-file change: tests/test_sprint_end_labels_pwsh.ps1. Verdict: APPROVE. Fix strips CRLF from bash launcher here-string before ASCII write -- consistent with peer test pattern (lines 209, 264 of test_sprint_end_labels.ps1). Three pre-existing parity gaps noted as follow-up items.
+
+## 2026-05-27 -- PR #458 Review (In Flight)
+
+- Reviewing PR #458 (v5.2 profile-path fix, closes #441/#442). Focus: acceptance criteria, test coverage (136 passed, 8 pre-existing baseline failures). Pluto's implementation on branch squad/442-profile-path-impl delivered Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile parameterization, legacy cleanup, uninstall resolver integration. Mickey reviewing architecture/cross-cutting in parallel.

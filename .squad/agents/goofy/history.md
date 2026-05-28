@@ -113,3 +113,7 @@ Lessons preserved verbatim in Learnings section above (CP1252 trap, AllScope ali
 ## Sprint 20
 
 - **2026-05-27 -- Drafted plan for #441 (profile-path-fix).** Authored docs/plans/441-profile-path.md on branch squad/441-profile-path-fix. Plan covers root cause (OneDrive KFM / hardcoded \C:\Users\Earl Tankard path), Resolve-ProfilePath algorithm, 20 edge cases, 10-test Group GG plan, backward-compat legacy cleanup, uninstall mirror, and 8 risks. Pending grilling by Mickey, Chip, Doc. Grill ceremony completed 2026-05-27; verdicts: Mickey REVISE, Chip REVISE, Doc PROCEED.
+
+## 2026-05-27 -- Team Update
+
+- Pluto shipped v5.2 profile-path fix in PR #458; review in flight.

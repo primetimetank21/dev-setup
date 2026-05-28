@@ -133,3 +133,7 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 
 - F-4: Orphan-strip regex updated to match production line 27 (\r?\n prefix added; .+? -> .*?); no stray blank line risk.
 - F-5: $local:beginMarker/$local:endMarker defined at top of Write-PowerShellProfile alongside H5 fallbacks, mirroring production lines 12-13; resolves VariableIsUndefined under Set-StrictMode.
+
+## 2026-05-27 -- Team Update
+
+- Pluto shipped v5.2 profile-path fix in PR #458; review in flight.

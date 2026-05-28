@@ -113,3 +113,7 @@ Full detail in `history-archive.md`. Pre-Sprint-11 highlights: Sprint 6/7 lead r
 
 Fixed JN-1 (MEDIUM): parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; `$local:beginMarker`/`$local:endMarker` unchanged. Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated. Fixed JN-2 (LOW): `Write-Host` -> `Write-Warning '[SKIPPED] ...'` in v3-D4 skip. Vertical slice preserved: 7 GG tests, no new layers. Decision drop: `.squad/decisions/inbox/mickey-441-v5.2-revision.md`.
 - 2026-05-27 -- Reviewed PR #443 (chore/scribe grill-441 log). Verdict: APPROVE. .squad/** entries well-formed; flagged own history.md warn-zone for trim follow-up.
+
+## 2026-05-27 -- PR #458 Review (In Flight)
+
+- Reviewing PR #458 (v5.2 profile-path fix, closes #441/#442). Focus: architecture, cross-cutting concerns. Pluto's implementation on branch squad/442-profile-path-impl delivered Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile parameterization, legacy cleanup, uninstall resolver integration. Tests: 136 passed, 8 pre-existing baseline failures. Chip reviewing acceptance criteria/tests in parallel.
