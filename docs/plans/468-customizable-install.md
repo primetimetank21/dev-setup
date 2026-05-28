@@ -1,9 +1,25 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix); Doc -- v12 (Windows example syntax fix)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v12 Changelog (Doc -- Windows example syntax fix, 2026-05-28)
+
+> **Source:** Duck v11 verdict (no `.squad/decisions/inbox/duck-468-v11-regrill.md` on
+> disk; finding communicated inline). The two Windows npm-absent example bullets at
+> lines 778-780 used Linux flag syntax (`--only=`) and the Linux tool name (`copilot-cli`).
+> Windows uses PowerShell syntax (`-Only 'X'`) and the registry key is `copilot`
+> (not `copilot-cli`), per grammar table lines 720-724 and registry lines 263-274 / 320-331.
+
+1. **Windows npm-absent example bullets corrected (Verified):** Lines 778 and 780
+   updated. `--only=copilot-cli` Windows -> `-Only 'copilot'`; `--only=squad-cli`
+   Windows -> `-Only 'squad-cli'`. Single-quote style matches all existing `-Only '...'`
+   usages throughout the plan. Registry key `copilot` confirmed at `$DefaultTools` line
+   273 and `$ToolRegistry` line 330.
 
 ---
 
@@ -775,9 +791,9 @@ Tools are NOT fully independent. Known chains:
 
 **npm-absent examples (fresh machine without Node):**
 - `--only=copilot-cli` Linux: `exit 0`, tool non-functional until Node available.
-- `--only=copilot-cli` Windows: `return` (non-hard-stop), tool non-functional until Node available.
+- `-Only 'copilot'` Windows: `return` (non-hard-stop), tool non-functional until Node available.
 - `--only=squad-cli` Linux: `exit 0`, tool non-functional until Node available.
-- `--only=squad-cli` Windows: `exit 1` (hard stop) -- actionable error guides PATH refresh / nvm troubleshooting.
+- `-Only 'squad-cli'` Windows: `exit 1` (hard stop) -- actionable error guides PATH refresh / nvm troubleshooting.
 
 Documented behavior. Future DAG (out of scope) could warn.
 
