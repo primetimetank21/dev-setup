@@ -1,9 +1,19 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v8 Changelog (Pluto -- coherence reconciliation)
+
+1. **v8 (Pluto):** Fixture Provenance includes Windows `winget-check` (lines 535-549), but
+   `$DefaultTools` and `$ToolRegistry` omitted it -- making `T_baseline_real_defaults`
+   impossible to pass coherently. Reconciled via path (A): added `'winget-check'` as first
+   entry in Windows `$DefaultTools` and `$ToolRegistry`, paralleling Linux `prereqs` as
+   the prerequisite-check phase. Preserves 2-concept model; AlwaysRun stays dropped.
 
 ---
 
@@ -196,6 +206,7 @@ DEFAULT_TOOLS=(
 
 ```powershell
 $DefaultTools = @(
+  'winget-check'   # prerequisite gate (parallels Linux 'prereqs')
   'git'
   'uv'
   'nvm'
@@ -235,6 +246,7 @@ requires appending to the `DEFAULT_TOOLS` constant (deliberate commit).
 
 ```powershell
 $ToolRegistry = [ordered]@{
+    'winget-check' = { Test-WingetAvailable }   # prerequisite gate (parallels Linux 'prereqs')
     'git'       = { Install-Git }
     'uv'        = { Install-Uv }
     'nvm'       = { Install-Nvm }
@@ -549,7 +561,10 @@ profile
 git-hook
 ```
 
-Windows maps to the `Test-WingetAvailable` gate first, then `Install-*` / `Invoke-*` function calls through `Install-GitHook` in `Main`.
+Windows maps to the `Test-WingetAvailable` gate first, then `Install-*` / `Invoke-*`
+function calls through `Install-GitHook` in `Main`. Note: `winget-check` is now a
+normal `$DefaultTools` entry (paralleling Linux `prereqs`), so Fixture Provenance,
+`$DefaultTools`, and `$ToolRegistry` are coherent and `T_baseline_real_defaults` passes.
 
 > **Implementation note:** `scripts/dev/regenerate-baseline-fixtures.sh` must NOT be run
 > as part of implementation. Fixtures are hand-verified from the current pre-change
