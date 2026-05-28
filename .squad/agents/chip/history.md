@@ -162,6 +162,8 @@ Reviewed PR #458 (feat(profile): #442 v5.2 profile-path fix -- host-queried PROF
 
 **Self-approve blocked on Copilot-authored PRs:** GitHub blocks 'addPullRequestReview' approve action when the reviewer is the same bot identity as the PR author. Use --comment with a clear APPROVED verdict header instead. Flag this to coordinator for routing -- Earl or a human reviewer must click Approve in the GitHub UI.
 
+**PowerShell parity-gap test patterns (Issue #451 research):** Three gaps identified in test_sprint_end_labels_pwsh.ps1 vs. bash peer test_sprint_end_labels.ps1: (1) Missing --release-label alone validation (Test C), (2) Bad --release-label prefix validation (Test D), (3) No CRLF-in-launcher regression test (T7). Bash peer has Tests A-G (7 total); PowerShell needs T1-T7 + T_C + T_D (9 total) for parity. T7 requires binary byte inspection via `[System.IO.File]::ReadAllBytes()` (not Get-Content, which applies encoding), asserting no 0x0D (CR) bytes in launcher shim. Test isolation uses existing New-TestEnv fixture with minimal state. Effort: T_C/T_D simple (~5 min each, no setup), T7 more involved (~20 min, careful encoding handling). Key risk: T7's byte-level assertion must avoid encoding transforms; use ASCII-only Write-AsciiFile pattern (established in chip/history.md PS51-safety notes).
+
 ## PR #438 Review -- 2026-05-27
 
 - Reviewed PR #438 (feat/scripts: sprint-end-labels.ps1 PowerShell parity) under domain-aligned reviewer model (PR #445). Single-file change: tests/test_sprint_end_labels_pwsh.ps1. Verdict: APPROVE. Fix strips CRLF from bash launcher here-string before ASCII write -- consistent with peer test pattern (lines 209, 264 of test_sprint_end_labels.ps1). Three pre-existing parity gaps noted as follow-up items.
