@@ -198,3 +198,8 @@ not a production scenario.
 ### Test outcome
 
 Passed: 136 (+7), Skipped: 8, Failed: 8 (all pre-existing: D-4 live Copilot, O-1 to O-7 alias override)
+
+- 2026-05-30: Authored #468 plan v4 (full rewrite). Dropped AlwaysRun, 4 vertical slices, resolved all 9 blockers from Donald+Duck reviews.
+- 2026-05-30: Authored #468 plan v6 final polish (PR #470). Fixed Duck/Jiminy blockers: safe fixture check, CI names/macOS, flag combos, provenance, idempotency, git-hook skip path.
+
+- 2025-07-25: #468 v8 coherence reconciliation -- added winget-check to Windows DefaultTools/ToolRegistry (commit e9ef239)

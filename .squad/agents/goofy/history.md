@@ -103,3 +103,41 @@ Sprints 11-20 moved to history-archive.md per hygiene gate 2026-05-27. Key patte
 - **R2 verdict:** APPROVE-WITH-MINOR-CAVEATS. Caveat: True undefined on PS 5.1 causes -not $null = $true, chmod fails silently on Windows. Acceptable (PS 5.1 is Windows-only). Offered two mitigation options; recommended clarifying comment or OS-platform check during impl.
 - **R3 verdict:** APPROVE. Caveat fully addressed by plan v3 out-of-scope section + filed #461. Scope boundary clean; plan ready for implementation.
 - **Key learning:** Cross-platform caveats should be explicitly acknowledged and tracked separately (#461) rather than blocking the implementation slice (#451). Deferred defensiveness improvements are sustainable when documented.
+
+## 2026-05-28 -- PR #470: #468 Plan v2 (Grill Revision)
+
+- **Role:** v2 author (Mickey locked out per reviewer protocol)
+- **Commit:** 7e284de -- docs(plan): #468 v2
+- **Findings addressed:** 12 (3 Duck, 3 Donald, 2 Chip, 4 synthesis)
+
+## Learnings
+
+- **Default order encoding:** Hardcoded arrays (bash DEFAULT_TOOLS, pwsh $DefaultTools) are the only safe mechanism for tool execution order. Filesystem scan is alphabetical and breaks implicit dependency chains (nvm before npm-tools, gh before auth). The array IS the opt-in gate.
+- **Registry contract pick:** Chose explicit $ToolRegistry with 3-line extension pattern over auto-discovery. Reason: Windows tool files have no naming convention mapping filename -> function (Install-Git vs Invoke-GhAuth vs Write-PowerShellProfile). Auto-discovery would require a refactor that's out of scope.
+- **Baseline fixture strategy:** Committed text files (tests/fixtures/baseline-tools-{platform}.txt) as the regression contract. Slice 0 captures them; Slice 1's first test diffs against them. This is the backward-compat enforcement that v1 lacked.
+- **PowerShell grammar pick:** `-Only "a,b"` (quoted comma-string, [string] param type) over unquoted (becomes [string[]], allows -Only a -Only b which breaks comma-canonical rule) and double-dash (breaks tab-completion, not idiomatic PS). Split internally with .Split(',') -- parity with bash IFS split.
+
+## 2026-05-30 -- Sprint 19: #468 Plan v12 Cross-Platform Syntax Regrill
+
+- **Role:** Cross-platform reviewer (Goofy lane)
+- **Verdict:** APPROVE (commit 8dfb9b4 vs f212ef1)
+- **Duck finding addressed:** Windows npm-absent bullets at lines 793-796 now use correct PowerShell syntax (`-Only 'copilot'` / `-Only 'squad-cli'`) and correct Windows registry key (`copilot` not `copilot-cli`). Single-quote convention consistent with all `-Only '...'` usages.
+- **Full sweep clean:** No Windows code/test blocks use `--only=` / `--skip=` Linux syntax. No Linux examples use PowerShell flags. Tool names consistent across platforms (Windows: `copilot`, Linux: `copilot-cli`).
+- **Pre-existing non-blockers noted:** Grammar table (line 739) uses double-quote `-Only "a,b,c"` (valid PS, predates v12); prose line 803 omits quotes around `git-hook` in flowing text (predates v12, not a code block).
+
+## 2026-05-30 -- Sprint 19: #468 Plan v14 Authoring (PowerShell Quoting Nits)
+
+- **Role:** v14 author (nano-fix per Earl directive)
+- **Source:** Doc-2 v13 fact-check findings on 2 pre-existing quoting nits from v5
+- **Fixed line 831** (formerly ~815): `` `-Only git-hook` `` -> `` `-Only 'git-hook'` `` (bare token quoted)
+- **Fixed line 1124** (formerly ~1108): `` `-Only "gh"` `` -> `` `-Only 'gh'` `` (double-quote -> single-quote)
+- **Final sweep result:** All `-Only 'X'` / `-Skip 'X'` usages in Windows prose/tests use single-quote convention. Grammar table (lines 767-768) and Syntax Rules (line 778) and Summary synopsis (line 182) retain double-quote for spec-level comma-string syntax -- intentional (pre-doc grammar convention). Additional bare-token occurrences `` `-Skip winget-check` `` at lines 104-106 (v7 changelog) and 860 (foot-gun docs) noted and reported; NOT fixed per scope discipline (mandate was 2 lines only). `--only=` / `--skip=` usages confirmed Linux/bash contexts only.
+- **Scope confirmation:** Surgical 2-line fix + author line + v14 changelog. No structural changes, no slice changes.
+
+### Addendum (v14 Amend, 2026-05-30)
+
+- **Amend SHA:** b5cb3dc (was fe8c3f1)
+- **Scope expansion approved by Earl:** 3 bare `` `-Skip winget-check` `` occurrences (lines 104, 106, 860) -- same class as v14 nits, surfaced during v14 sweep and reported at the time.
+- **Fixes:** Lines 104, 106 (v7 changelog) and 860 (foot-gun docs): `` `-Skip winget-check` `` -> `` `-Skip 'winget-check'` ``
+- **Note:** Task brief said 4 occurrences; 3 actual occurrences existed. No 4th found.
+- **Final sweep (post-amend):** All value-bearing `-Only`/`-Skip` in Windows prose/tests use single-quote convention. Grammar-spec double-quote forms remain intentional. `--only=`/`--skip=` all Linux/bash. Clean.

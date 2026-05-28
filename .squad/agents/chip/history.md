@@ -78,107 +78,53 @@ pattern -- destructive writes to real $HOME in CI; fix: $env:TEMP + New-Guid + f
 Two LOWs: C-2/C-3 skip-as-pass; BeforeEach reference. Impl-ready: NO. Key lesson: document
 the input exe -- mock mechanism correctness doesn't protect against env-fragile setup.
 
-## Issue #441 Plan Grill (Chip v5) -- 2026-05-27
+## Issue #441 Plan Grill (Chip v5/v5.2) -- 2026-05-27 [compressed]
 
-Grilled plan #441 v5.1 (Donald revision -- H1-H5 + F-4/F-5 patches). Verdict: SHIP.
+v5.1 (Donald H1-H5 + F-4/F-5): SHIP. C-1/C-2/F-3 all resolved. Four non-blocking LOWs (encoding assertion, middle-of-file, skip counter, mockPath identity).
 
-**C-1/C-2/F-3 status:**
-- C-1 (GG-7 exe spec): RESOLVED -- GG-7 Input now says '$HostExe = 'powershell'' with rationale
-  about 'pwsh' masking the not-installed early-exit on PS5.1-only runners.
-- C-2 (TestDrive -> real temp path): RESOLVED -- Section 5 documents Join-Path $env:TEMP +
-  New-Guid + finally cleanup for GG-1/GG-4/GG-5; $ps51Fallback/$ps7Fallback overrides stated
-  in GG-4 row; $TestDrive removed entirely.
-- F-3 (LASTEXITCODE reset positioning): RESOLVED -- Section 5 says "Before each redefinition,
-  reset $global:LASTEXITCODE = 0"; ordering is explicitly before mock redefinition.
+v5.2 (Mickey JN-1/JN-2): SHIP. Parameterization resolved ($HOME temp paths via -Ps51Fallback/-Ps7Fallback + New-Guid + finally). JN-2 partial (skip counter LOW). No destructive writes in GG-2/3/6/7. Implementation-ready: YES for both.
 
-**Regression check (H1-H5, F-4, F-5):** All HOLD. Algorithm correct. BeforeEach reference
-fixed (now says "not a BeforeEach block -- Test-Scenario has none").
+## PR #458 Review -- 2026-05-27 [compressed]
 
-**New LOWs (non-blocking):**
-- NF-1: H1 has no encoding assertion in GG-4 (ASCII encoding on Set-Content not verified).
-- NF-2: F-4 middle-of-file case not exercised (GG-4 doesn't specify content after the block).
-- NF-3: NF-3v4 carry-forward -- C-2/C-3 skip-as-pass; Write-Host not Write-Skip; still LOW.
-- NF-4: GG-1 $mockPath identity implicit (row says 'OneDrive path'; temp path only in Section 5).
+Reviewed PR #458 (feat(profile): #442 v5.2 profile-path fix). Verdict: APPROVED. 136 passed / 8 skipped / 8 pre-existing failures. All 7 GG gates PASS, all 6 AC met. ASCII clean. Stream purity confirmed (Resolve-ProfilePath uses Write-Host). Carry-forward LOWs: NF-1/NF-2/NF-3/NF-4 non-blocking.
 
-**Implementation-ready: YES.** No MEDIUM+ concerns open. Four LOWs acceptable for vertical slice.
-Engineer can implement GG-1..GG-7 straight from v5.1 without false-green or destructive-path risk.
+## PR #438 Review -- 2026-05-27 [compressed]
 
-## Issue #441 Plan Grill (Chip v5.2) -- 2026-05-27
+Approved PR #438 (sprint-end-labels.ps1 parity). CRLF-strip fix consistent with peer pattern. Three pre-existing parity gaps noted as follow-up.
 
-Grilled plan #441 v5.2 (Mickey revision -- JN-1/JN-2 patch). Verdict: SHIP.
+## 2026-05-27 -- PR #458/#462 Review Cycle [compressed]
 
-**JN-1 (parameterization):** RESOLVED. `Write-PowerShellProfile` now accepts
-`-Ps51Fallback`/`-Ps7Fallback` params with $HOME-derived defaults. Parameters feed both
-`Resolve-ProfilePath` fallback args AND `$legacyPaths` (orphan-strip targets). GG-1/4/5
-all pass both params with temp paths. Temp path pattern (`Join-Path $env:TEMP
-"gg-test-441-$(New-Guid)"`) explicit in Section 5 header + GG-4 row. `finally` cleanup
-documented. No disk writes to real $HOME. Mechanism sound.
+- PR #458 re-review: CI 11/11 green; allowlist patch (Invoke-HostQuery:windows, Resolve-ProfilePath:windows) correctly scoped; posted VERIFY OK.
+- PR #462 grill-cycle: Goofy revised (scope cleanup + tightened assertions). Both reviewers approved re-review round. Earl final approver.
 
-**GG-2/3/6/7 destructive write risk: NO.** Section 5 explicitly marks GG-1/4/5 as
-"write to disk" tests. GG-2/6/7 test Resolve-ProfilePath return values (no disk writes).
-GG-3 tests dedup logic in isolation (`$profilePaths.Count -eq 1` from Sort-Object
-expression -- not callable via Write-PowerShellProfile from test scope).
+## 2026-05-28 -- #468 Plan Grill (PR #470, Chip v1)
 
-**JN-2 (Write-Warning + [SKIPPED] tag):** PARTIAL. Visibility resolved -- warning stream
-visible, [SKIPPED] grep-able in CI logs, D2 preserved. Skip counter gap remains: Write-Warning
-does not call Write-Skip (harness skip-counter function); C-2/C-3 on PS7+ still do not
-increment TestsSkipped. LOW residual.
+Grilled Mickey's #468 customizable-install plan v1 from test/parity angle. Verdict: REVISE. Mickey locked out; revision assigned to Goofy or Donald.
 
-**Implementation-ready: YES.** GG-3 invocation target (dedup in isolation) mildly ambiguous
-(LOW). GG-1 $mockPath + GG-4 $oneDrivePath not explicitly stated as temp paths (LOW -- CI
-failure reveals, not silent destruction).
+**Five blocking findings:**
+- B-1: validate-ps51 not mentioned in Done Criteria -- new param() block + $ToolRegistry need PS 5.1 syntax check AND functional test run, not just PS 7+ validate-powershell job.
+- B-2: Filename conflict -- Slice 1 names test_setup_list_{linux,pwsh}.* but parity table names test_setup_flags_{linux,pwsh}.*. Two different filenames; implementer has no canonical source.
+- B-3: Slices 2-4 have prose-only test plans with no named Test-Scenario / bash function names. Seven parity matrix rows need test-case names before implementation.
+- B-4: Backward-compat baseline (Slice 4) is undefined -- no marker list, no snapshot mechanism, no invariant spec. The gate is cosmetic without these.
+- B-5: e2e-install.yml never exercises new flags. --list at minimum should be a smoke step on Linux + macOS + Windows e2e jobs.
 
-**New finding (NF-4-v5.2, LOW):** Resolved-path write target in GG-1/GG-4 (mock return
-value) not redirected to temp by -Ps51Fallback/-Ps7Fallback. Write loop writes to
-$profilePaths entries = mock return values. On CI, no real OneDrive dir -> test failure
-(observable); not silent destruction. One sentence in GG-1/4 Input cells would close.
+**Key lesson:** Slice test plans that name test FILES but not test CASES are incomplete for Chip's purposes. A named file with unnamed cases still produces zero contractual obligations for CI coverage.
 
-**Carry-forward LOWs:** NF-1 (encoding assertion), NF-2 (F-4 middle-of-file), NF-3/JN-2
-(skip counter), NF-4 (resolved-path identity). None blocking.
+**Naming convention confirmed:** Bash test files in tests/ carry no platform suffix (test_squad_spawn.sh, not test_squad_spawn_linux.sh). PowerShell parity files use _pwsh suffix (test_sprint_end_labels_pwsh.ps1). The _linux suffix proposed in S1 breaks this.
 
-## PR #458 Review -- 2026-05-27T20:09:59-04:00
+## 2026-05-28 -- #468 Plan Grill (PR #470, Chip v2)
 
-Reviewed PR #458 (feat(profile): #442 v5.2 profile-path fix -- host-queried PROFILE + legacy cleanup). Verdict: APPROVED (comment; GitHub blocked self-approve on Copilot-authored PRs).
+Re-grilled Goofy's v2. Verdict: REQUEST CHANGES. v1 concerns resolved (named scenarios, PS 5.1 Done Criteria, real validate-ps51 job), but blockers remain for mocked-vs-live install boundaries and regenerable baseline fixture mechanics.
 
-**Tests run locally (PS 5.1):** 136 passed / 8 skipped / 8 failed. All 7 GG gates PASS. The 8 failures are pre-existing (D-4 live Copilot, O-1..O-7 alias override).
+## 2026-05-29 -- #468 Plan v3 Authored (PR #470, Chip v3 owner)
 
-**All 6 acceptance criteria met:**
-- AC-1: GG-1 confirms block written to mock OneDrive path (not hardcoded)
-- AC-2: GG-4 dual-orphan legacy cleanup strips both fallback files
-- AC-3: uninstall.ps1 inlines resolver + unions resolved+legacy paths
-- AC-4: [INFO] Resolved ... path emitted in GG-1/3/4/5/6 output
-- AC-5: Group GG (7 tests) mocks Invoke-HostQuery
-- AC-6: C-2/C-3 have Write-Warning '[SKIPPED]...' + return guards
+Mickey + Goofy locked out. Authored full v3 rewrite addressing all 6 v2 re-grill findings:
 
-**ASCII check:** All 3 touched .ps1 files clean (profile.ps1, uninstall.ps1, test_windows_setup.ps1).
+1. **Root entrypoint forwarding** (Duck): Added `setup.sh`/`setup.ps1` to Slice 1 files-touched. Forward `"$@"` and `@PSBoundParameters`. Root-forwarding test scenarios added.
+2. **AlwaysRun classification** (Duck): 4th concept introduced. Audit: Linux AlwaysRun = prerequisites + dotfiles + git-hooks; Windows = winget-check + git-hooks. Dotfiles reclassified from DefaultTools -> AlwaysRun on Windows for cross-platform parity.
+3. **Windows AvailableTools single source-of-truth** (Duck): Table now says "registered callable installers" for Windows. Per-platform invariant clarified.
+4. **Mock/stub harness** (Chip): `--tools-dir` / `-ToolsDir` hidden CLI flag as dispatch seam. Stub tools dir + RUN_LOG marker pattern. Dynamic registry for Windows stubs. Justification table vs alternatives.
+5. **Baseline fixture regeneration** (Chip): `make baseline-fixtures` + `--dry-extract-defaults` seam. Baseline-diff test proves order+set without real installs.
+6. **Blank CSV token tests** (Donald): Reject empty tokens (exit 1). No trimming. Test scenarios in Slices 2+3.
 
-**Stream purity:** Resolve-ProfilePath (value-returning) uses Write-Host directly for all 4 log calls -- consistent with the lesson captured in pluto/history.md. GG-2/GG-7 empirically confirm no stream pollution ($result == fallback path only).
-
-**Carry-forward LOWs (non-blocking, accepted in v5.2 grill):** NF-1 (GG-4 no encoding assertion), NF-2 (middle-of-file strip), NF-3/JN-2 (skip counter gap), NF-4 (resolved-path write identity).
-
-## Learnings
-
-**OneDrive/KFM profile path testing pattern:** Mock Invoke-HostQuery at script scope (not inside Test-Scenario) to override the host-query seam. Pass temp paths via -Ps51Fallback/-Ps7Fallback to Write-PowerShellProfile. Reset $global:LASTEXITCODE = 0 before each mock definition to prevent GG-7's native-command exit-1 from contaminating subsequent success-path tests. Seed idempotency test files with pre-existing content -- the strip regex requires a preceding \r?\n before BEGIN marker (position-0 blocks not a production scenario but break GG-5 if file starts empty).
-
-**Self-approve blocked on Copilot-authored PRs:** GitHub blocks 'addPullRequestReview' approve action when the reviewer is the same bot identity as the PR author. Use --comment with a clear APPROVED verdict header instead. Flag this to coordinator for routing -- Earl or a human reviewer must click Approve in the GitHub UI.
-
-## PR #438 Review -- 2026-05-27
-
-- Reviewed PR #438 (feat/scripts: sprint-end-labels.ps1 PowerShell parity) under domain-aligned reviewer model (PR #445). Single-file change: tests/test_sprint_end_labels_pwsh.ps1. Verdict: APPROVE. Fix strips CRLF from bash launcher here-string before ASCII write -- consistent with peer test pattern (lines 209, 264 of test_sprint_end_labels.ps1). Three pre-existing parity gaps noted as follow-up items.
-
-## 2026-05-27 -- PR #458 Review (In Flight)
-
-- Reviewing PR #458 (v5.2 profile-path fix, closes #441/#442). Focus: acceptance criteria, test coverage (136 passed, 8 pre-existing baseline failures). Pluto's implementation on branch squad/442-profile-path-impl delivered Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile parameterization, legacy cleanup, uninstall resolver integration. Mickey reviewing architecture/cross-cutting in parallel.
-- 2026-05-27 -- #442/#458 re-review -- CI 11/11 green; allowlist patch (Invoke-HostQuery:windows, Resolve-ProfilePath:windows) correctly scoped with :windows suffix and #441/#442 reference; all 6 AC met; posted VERIFY OK comment per co-author lockout protocol.
-
-## 2026-05-27 -- Grill Ceremony: Issue #451 Vertical Slice Plan (v1->v3)
-
-- **Plan author role:** Authored vertical slice plan for PowerShell test parity gaps (T_C, T_D, T7 + CI YAML step). v1 received 4 blocking/major findings; revised to v2 (all findings resolved); revised to v3 (added out-of-scope tracking for $IsWindows caveat, filed #461).
-- **Grill panel feedback (v1->v2->v3):** Mickey R1 REVISE (CI gap, PS 5.1 coverage, error-msg coupling, T7 vagueness); Goofy R1 REVISE ($IsWindows fragility); Jiminy R1 DIRTY (plan location); Mickey R2 APPROVE (all 4 blockers resolved); Goofy R2 APPROVE-W/-CAVEATS (caveat tracked); Jiminy R2 CLEAN; Mickey R3 APPROVE (R2 conditions tracked); Goofy R3 APPROVE (scope boundary sound); Jiminy R4 CLEAN (trailers verified).
-- **Trailer fix:** Commits 461befc + b274cebe had Co-authored-by concatenated to body (no blank line); fixed via doc rebase to 72b80bb + 18f170a; verified via `git interpret-trailers --parse`.
-- **Implementation ready:** YES. Plan v3 at docs/plans/451-pwsh-parity-gaps.md with all acceptance criteria documented. Draft PR #462 opened. Follow-up #461 filed for PS 5.1 defensiveness (out-of-scope).
-
-## 2026-05-28 -- PR #462 Grill-Cycle (Revision & Final Approval)
-
-PR #462 went through revision cycle: Goofy identified 2 IMPORTANT gaps (T_C/T_D exit-code contracts too loose); Mickey identified scope drift (.squad/** changes outside approved slice). Goofy revised with scope cleanup (8870abe) + tightened assertions (93b339f). Both reviewers approved in re-review round. Locked against self-approve; Earl remains final approver and merger.
-
+Key architectural decision: dotfiles moved to AlwaysRun on both platforms. Trade-off: users cannot `--skip=dotfiles`. Acceptable because dotfiles are idempotent infrastructure, not a "tool."

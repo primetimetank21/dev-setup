@@ -97,23 +97,20 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 
 ---
 
-## 2026-05-27 -- #451 Re-Audit Round 2
+## 2026-05-27/28 -- #451 Vertical Slice Plan Audits (Rounds 1-4, compressed)
 
-- Round 1 path-move finding resolved: Chip moved plan correctly.
-- Learned: check trailer blank-line separation -- concatenated trailers still parse but look sloppy.
-- Scope creep detection works: caught tests-only -> tests+CI expansion. Flag for Coordinator, not block.
-- Stale branches and inbox backlog: carry forward as non-blocking until Coordinator drains.
+- R1: DIRTY (plan wrong path, stale branches). R2: CLEAN (plan moved, trailer caveat). R3: DIRTY (trailer format broken -- #461). R4: CLEAN (trailers verified 72b80bb/18f170a).
+- **Lesson:** Trailer blank-line separation is a hygiene gate; verify via `git interpret-trailers --parse`.
 
-## 2026-05-27 -- #451 Quick Sweep Round 3
+## 2026-05-30 -- #470 Plan v5 Fresh-Eyes Grill
+- Verdict: REQUEST CHANGES. Blockers: CI/e2e wiring mismatch, incomplete public flag-combo/root tests, baseline fixture pre-change anchoring, and flag re-run idempotency test gap.
+- 2026-05-30 #470 v6: REQUEST CHANGES -- Linux Fixture Provenance omits current prereqs/dotfiles/git-hook no-arg behavior; other v5 blockers verified fixed.
+- 2026-05-30 #470 v7: PUSHED Fixture Provenance order fix -- Linux prereqs/tools/dotfiles/git-hook and Windows winget-check/tools/git-hook verified from setup scripts.
+- 2026-05-30 -- #470 v8 grill: REQUEST CHANGES; winget-check registry must preserve missing-winget exit gate and document -Skip winget-check foot-gun.
+- **2026-05-30 -- #470 v9 verification:** APPROVE -- Invoke-WingetGate preserves missing-winget Write-Err + exit 1 semantics, foot-gun documented, no v9 scope creep.
 
-- **R3 Verdict:** DIRTY -- Chip's claimed v4 trailer fix missed: commit 461befc still has Co-authored-by concatenated to body (no blank line). Worktree clean, issue #461 filed, inbox drift minimal. Need v4 redo with blank line.
+- 2026-05-30 #470 v12 regrill: APPROVE -- Duck's Windows syntax fix verified (--only= Linux, -Only Windows). Labels still missing (non-blocking carry-forward).
 
-- **2026-05-27 R4 #451:** Double-blank-line bug (no BL before trailer) leaves git interpret-trailers --parse seeing concatenated text, not trailer -- requires commit rebuild (reset --soft, sequential commits preserve contents), old SHAs become unreachable, doc coordination + final hygiene gate closes loop.
+- 2026-05-28 #470 v13 regrill: APPROVE -- Mickey's surgical 1-line fix (line 167 `--only=uv` -> `-Only 'uv'` in Windows context). Full line-by-line sweep: 40+ flag occurrences verified correct platform context. Self-improvement: acknowledged v12 surface-scan miss that Duck-2 caught. PR #470 labels still empty (carry-forward).
 
-## 2026-05-28 -- Hygiene Audit: Issue #451 Vertical Slice Plan (Rounds 1-4)
-
-- **R1 verdict:** DIRTY (2 findings + 1 rec). Domain scope PASS (tests/**). Plan file location CONCERN (wrong canonical home). Worktree/Branch state PASS. Main checkout drift DIRTY (stale branches, undrained inbox).
-- **R2 verdict:** CLEAN (caveats noted). Plan moved to docs/plans/ OK. Trailers CAVEAT (no blank line before Co-authored-by; git parses but violates conventional-commits).
-- **R3 verdict:** DIRTY. Trailer format STILL BROKEN. Need v4 commit with blank line before trailer.
-- **R4 verdict:** CLEAN (5-point checklist). Trailers verified (72b80bb, 18f170a). Old SHAs (461befc, b274cebe) orphaned. Worktree clean.
-- **Key learning:** Trailer format is a hygiene gate; verify via git interpret-trailers --parse. Cosmetic issues in R2/R3 escalate if not corrected before R4 verification.
+- 2026-05-30 #470 v14 regrill (amended): APPROVE -- Goofy's 2 quoting nits + 3 amended bare-token fixes (Earl-approved expansion). Full sweep: zero remaining bare tokens in Windows contexts, grammar-spec double-quotes intentional. PR #470 labels RESOLVED (squad:mickey + priority:p1 confirmed). Decision: `.squad/decisions/inbox/jiminy-468-v14-regrill.md`.

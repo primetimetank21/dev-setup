@@ -42,34 +42,7 @@ Implemented Linux/macOS tool installer scripts and cross-platform CLI tooling:
 - .gitignore updated to prevent future binary commits (*.tar.gz, *.zip, *.dll, *.exe)
 
 ---
-
-## Learnings
-
-! **TEAM REQUIREMENT:** Read `.squad/skills/ps51-ascii-safety/SKILL.md` before touching any `.ps1` file. This skill captures the CP1252 encoding trap, detection scripts, and fix patterns.
-
-- Never probe gh built-ins with `--help` alone -- use `gh copilot -- --help` to reach binary; `--` passes flag through unconditionally
-- Never use `gh extension list | grep` or `gh alias list | grep` as sole idempotency gate -- always probe actual command with `--help`
-- gh alias conflict blocks extension install silently (stdout, not stderr) -- guard with delete before install
-- `CI=true` is correct non-interactive trigger for any gh built-in that gates on `IsCI()`; never use `CanPrompt()` in postCreateCommand (no TTY)
-- `script(1)` PTY is right tool for isatty-gated CLIs but not when parent pipe may close early (e.g., container lifecycle hooks)
-- Directory existence check for Copilot binary: `~/.local/share/gh/copilot` (not exit code probe)
-- sed -i 's/\r//' chosen over dos2unix for POSIX portability
-- `timeout 10 <cmd>` is the correct guard for any version-probe that might hit a network-dependent binary in Codespace; treat non-zero exit / timeout as unknown version, not an error
-- In Codespaces, always check `gh copilot --version` (via timeout) before falling through to `npm install -g` -- the gh extension already provides copilot capability, and the npm postinstall can deadlock without a TTY
-- `CI=true` + `--no-fund --no-audit` is the minimum npm non-interactive guard; mirrors the `is_non_interactive()` pattern already in `auth.sh`
-- Any npm-dependent tool script that runs under `setup.sh` must source `~/.nvm/nvm.sh` in its own process and `nvm use default` before `command -v npm`; sibling `bash "${tool_script}"` subprocesses do not inherit nvm PATH changes from `nvm.sh`
-
----
-> Compressed 2026-05-18 (Jiminy S17 audit): pre-Sprint-12 entries archived to history-archive.md.
-
-## Pre-Sprint-12 Summary
-
-Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-#82 (stdout/stderr, CRLF, CI=true, Copilot CLI install); PR #146/#170 (test regressions, AllScope guard); #173/#176 (shell aliases); #178 (cross-platform prerequisites parity); #189 (uninstall scripts); #191 (Windows gh auth); verification batch V-2/V-4/V-10/V-12/V-14; rogue file cleanup; PR #244 review; #223 logging consolidation; hygiene retro.
-
-### Sprint 12 (compressed 2026-05-27) -- PRs #313, #N (closes #236, #237)
-
-- PR #313: Added bash/zsh-only header to `config/dotfiles/.aliases`; closes V-10 follow-up. README + CHANGELOG updated.
-- PR #N: Documented bash test harness convention in CONTRIBUTING.md (set -uo, PASS/FAIL tallying); authored `.squad/skills/test-harness-pattern/SKILL.md`.
+> **SUMMARIZED 2026-05-28:** Pre-Sprint-13 entries compressed. See history-archive.md for full details (Sprints 1-11, patterns, and early learnings).
 
 ### Sprint 19 -- PR #415: Codify changelog-fold-completeness as script
 
@@ -77,30 +50,10 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 - **CLI:** `--release-version` (required), `--last-tag`, `--release-date`, `--changelog-path`, `--dry-run` (default), `--apply`. Idempotency gate exits 1 if version already present.
 - **Key fixes:** (1) `[[ -n ]] &&` compound in `$()` with `set -e` aborts subshell -- replaced with unconditional `printf`. (2) PowerShell here-strings write CRLF, breaking bash stub shebangs in tests -- fixed via `[System.IO.File]::WriteAllText` with `($lines -join "\`n")`. (3) Scoop jq shim hits arg-length limit on large JSON -- pre-combined arrays via stdin instead of `--argjson`. Live dry-run against 0.9.8..HEAD: 104 PRs + 51 issues processed cleanly.
 
-### Sprint 17 -- PR #389 (closes #382): Sprint-end label automation with verification
+### Sprint 17-18 (compressed) -- label automation and production run
 
-- **What:** Hybrid (C) delivery -- standalone bash script `scripts/sprint-end-labels.sh` and matching workflow `.github/workflows/sprint-end-labels.yml`. For every issue/PR carrying a given sprint label, removes `release:backlog` (if present) and adds `release:shipped-X.Y.Z` (if missing). Never touches type/area/squad/priority labels.
-- **The Earl directive:** every `gh issue edit --add-label`/`--remove-label` is paired with a re-query (`gh issue view <N> --json labels`) that asserts the desired state. On mismatch, retry the **read** (never the write) on exponential backoff 1s/2s/4s, then fail loudly with the actual label set in the error. Implemented as `verify_with_retry` calling `has_label`. Skill formalized at `.squad/skills/gh-label-verify-retry/SKILL.md`.
-- **Tests:** `tests/test_sprint_end_labels.ps1` (6 PASS). The retry-loop tests do not use a fake `gh`; they source the script's helpers into a bash shim and override `has_label` directly. This was the second attempt: the first tried to plant a `gh` shim on PATH but Git Bash on Windows kept resolving the real `gh.exe`, so function override is more portable. Backoff wall-clock (1+2+4 + 1+2+4 = 14s) is observable in test timing.
-- **Idempotency:** double-checked by the skip-add/skip-remove branches that key on the **pre-fetched** label list (not on `gh edit` exit code). A second invocation reports `skip remove: ... not present` / `skip add: ... already present`.
-- **Workflow safety:** `dry_run` input defaults to `'true'` -- operator must consciously flip it. Workflow uses `permissions: issues: write, pull-requests: write, contents: read` (least privilege for the job).
-- **Sprint-16 dry-run probe:** `sprint:16` does not exist as a label in this repo (sprint labels weren't in use during S16). The script handled the empty result cleanly (`found 0 ... nothing to do`). Cross-validated the per-issue branch by running a dry-run with `release:backlog` as the search label, which produced clean DRY-RUN lines for 26 closed items.
-- **Gotcha caught locally:** `Get-Command bash` on Windows returned `C:\Windows\system32\bash.exe` (the WSL stub), which choked on the script with "no installed distributions." Test now prefers explicit Git Bash paths (`C:\Program Files\Git\bin\bash.exe`) and falls back to PATH lookup that skips `System32\bash.exe`. Lesson: any bash-via-PowerShell script should never `Get-Command bash` without filtering the WSL stub.
-- **Ancestry fixup:** branch was forked from a develop ancestor 4 commits behind tip; rebased onto `origin/develop` before commit to satisfy pre-commit ancestry check. `git stash push -u` + `rebase` + `stash pop` was needed because the new files were staged.
-- **Out of scope:** did NOT introduce live label writes during testing; did NOT add a `sprint:N` label vocabulary; did NOT modify any existing workflow.
-- **Lesson:** when a write API has any read-after-write delay, treat "the CLI returned 0" as a hint, not a guarantee. A 3-step exponential backoff costs ~7s in the worst case and removes a whole class of silent-miss bugs from batch automation.
-
-### Sprint 18 Wave 1 -- #400: sprint-end-labels.sh first live production run
-
-- **What:** First live production run of `scripts/sprint-end-labels.sh`. Chose input scheme (A): backfill `sprint:17` onto Sprint 17 closed issues (#371, #381, #382, #383, #384) and merged PRs (#385-#396), then ran the script live. Also created `sprint:17`, `sprint:18`, and `release:shipped-0.9.7` labels, establishing the sprint label scheme going forward.
-- **Bugs surfaced (2):**
-  1. **PRs excluded from query** -- `gh issue list --search` silently appends `is:issue`, excluding all PRs. Fix: query issues via `gh issue list --state closed` and PRs via `gh pr list --state merged` separately, then combine + deduplicate with `jq -n '$issues + $prs | unique_by(.number)'`.
-  2. **Windows jq CRLF breaks idempotency guard** -- Windows `jq` outputs `\r\n`. The trailing `\r` attached to the last label in the TSV field caused the grep match to fail, so already-labeled items appeared to need re-labeling. Fix: pipe jq output through `tr -d '\r'` before the `while read` loop.
-- **Verification:** All 17 adds verified on first read (0 retries). Earl directive satisfied.
-- **Idempotency:** Confirmed on 3rd run: `total=17 changed=0 already-correct=17`.
-- **Tests:** 6 -> 7 (new Test G: CRLF regression, function-override shim).
-- **PR:** #403 (squash-merged to develop @ c03b2d2)
-- **Lesson:** `gh issue list --search` is issues-only even with the search API; must pair with `gh pr list` for combined automation. Windows jq CRLF is a latent trap in any bash script that reads jq TSV output on Windows.
+- PR #389: Sprint-end label automation with read-after-write verification (`.squad/skills/gh-label-verify-retry/SKILL.md`).
+- PR #403: First production run, 17 issues labeled (0 retries). Discovered gh issue list excludes PRs, Windows jq CRLF breaks idempotency.
 
 ### Sprint 19 Wave 2 -- PR #432 (closes #429): Repair setup.sh idempotency bugs
 
@@ -137,3 +90,30 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 ## 2026-05-27 -- Team Update
 
 - Pluto shipped v5.2 profile-path fix in PR #458; review in flight.
+
+### #468 plan grill -- 2026-05-28 (PR #470)
+
+- **Verdict:** REQUEST CHANGES (3 HIGH, 2 MEDIUM)
+- **[HIGH-1]** `--list` sed pseudocode: `sed 's/\.sh$//'` strips extension but not path prefix. Bare tool names required for `--only=` matching. Fix: `basename "$f" .sh` loop.
+- **[HIGH-2]** Default list order unspecified. Filesystem scan = alphabetical = `auth` before `gh`, `copilot-cli` before `nvm` on fresh install. Both silently degrade. Default must be a hardcoded array in current declaration order (`zsh uv nvm gh auth copilot-cli squad-cli`).
+- **[HIGH-3]** Opt-in vs default tool distinction has no mechanism. Plan promises delta/lazygit are "not in default install" but no gate exists. Hardcoded default array is the gate -- must be stated explicitly.
+- **[MEDIUM-4]** "No DAG needed" is wrong. `copilot-cli.sh` and `squad-cli.sh` silently skip if npm not present; `auth.sh` silently skips if gh absent. Not independent -- gracefully degrading.
+- **[MEDIUM-5]** Bash arg-parsing mechanism unspecified. `getopts` doesn't support `--long-opts` and returns 1 at end of args (kills under `set -euo pipefail`). `case`-based loop is the correct pattern.
+- **Key lesson:** When a plan introduces a dynamic default list (filesystem scan), verify it preserves the existing tool ordering. Alphabetical != safe. Any plan asserting "tools are independent" must be tested against the actual tool scripts' early-exit guards.
+
+### #468 v2 plan re-grill -- 2026-05-28 (PR #470)
+- **Verdict:** APPROVE (comment-only). v2 concretely fixes `--list` basename output, explicit default order, and delta/lazygit opt-in gate; baseline now checks order.
+- **Implementation note:** add blank CSV token validation/tests (`--only=uv,`, `--only=uv,,nvm`) so Bash `read -ra` cannot silently accept malformed lists.
+
+### #468 v3 plan re-grill -- 2026-05-29 (PR #470)
+- **Verdict:** REQUEST CHANGES. Bash blockers: root forwarding must call `run_linux_setup "$@"`; `--tools-dir` doesn't mock AlwaysRun; trailing CSV comma is not caught by `IFS=',' read -ra`; baseline Makefile source/exit seam is inconsistent.
+
+### #468 v4 plan re-grill -- 2026-05-30 (PR #470)
+- **Verdict:** REQUEST CHANGES. V4 fixes D1-D3 and drops AlwaysRun cleanly, but the new stub baseline is inconsistent: defaults.txt holds tool names while RUN_LOG records RAN:<tool>, so direct diff cannot pass.
+
+
+### #468 v5 plan polish -- 2026-05-30 (PR #470)
+- **Action:** Authored v5 polish pass (863671e). Fixed baseline format mismatch (bare tool names), git-hook self-guard (DK4-bis), real-defaults drift test (Duck-2). Documented --skip caveats.
+
+### #468 v5 polish -- 2026-05-30 (PR #470, 863671e)
+Authored v5: fixed baseline format, git-hook self-guard, real-defaults drift test.
