@@ -1,9 +1,24 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v9 Changelog (Mickey -- semantic fix, closing Jiminy blocker)
+
+1. **`winget-check` registry entry is not behavior-preserving (Jiminy blocker):** v8 mapped
+   `'winget-check' = { Test-WingetAvailable }` -- the dispatcher invokes the scriptblock and
+   ignores the returned `$false`, so the missing-winget gate no longer exits. Fixed by
+   introducing `Invoke-WingetGate` wrapper function that preserves the original `Write-Err` +
+   `exit 1` semantics from `scripts/windows/setup.ps1` lines 50-55. Registry entry updated
+   to `'winget-check' = { Invoke-WingetGate }`.
+
+2. **Document `-Skip winget-check` foot-gun (Jiminy non-blocking):** Added parallel
+   documentation to the existing `--skip=prereqs` foot-gun note, calling out that
+   `-Skip winget-check` bypasses the App Installer availability gate on Windows.
 
 ---
 
@@ -244,9 +259,26 @@ requires appending to the `DEFAULT_TOOLS` constant (deliberate commit).
 
 **Explicit registry with 3-line extension contract.**
 
+**Invoke-WingetGate** -- wrapper preserving fail-fast gate semantics (v9 fix):
+```powershell
+function Invoke-WingetGate {
+    if (-not (Test-WingetAvailable)) {
+        Write-Err "winget not found. Please install App Installer from the Microsoft Store."
+        Write-Err "https://apps.microsoft.com/store/detail/app-installer/9NBLGGH4NNS1"
+        exit 1
+    }
+}
+```
+
+> **Convention:** Tools requiring "fail-fast on prerequisite missing" semantics must wrap
+> predicates in a void-returning, exit-on-failure function; e.g., `Invoke-WingetGate` wraps
+> `Test-WingetAvailable`. This prevents the dispatcher from swallowing a Boolean `$false`
+> return. Future additions (delta, lazygit per #466/#467) should follow this pattern if they
+> have hard prerequisites.
+
 ```powershell
 $ToolRegistry = [ordered]@{
-    'winget-check' = { Test-WingetAvailable }   # prerequisite gate (parallels Linux 'prereqs')
+    'winget-check' = { Invoke-WingetGate }       # prerequisite gate (parallels Linux 'prereqs')
     'git'       = { Install-Git }
     'uv'        = { Install-Uv }
     'nvm'       = { Install-Nvm }
@@ -725,6 +757,11 @@ This is simpler than flag-combination disallow rules and preserves the 2-concept
 - **`--skip=prereqs` is a foot-gun.** Later default tools may fail or degrade if their
   dependencies (installed by `prereqs`) are missing. This is documented intentional
   behavior; a future DAG could add warnings.
+
+- **`-Skip winget-check` is the Windows equivalent foot-gun.** Skipping the App Installer
+  availability gate means subsequent tools using `winget install` (git, uv, nvm, gh, vim,
+  etc.) will fail noisily if winget is absent. As with `--skip=prereqs`, this is allowed
+  (validated against AvailableTools) but intentionally unsupported.
 
 ---
 
