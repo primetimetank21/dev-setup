@@ -282,8 +282,6 @@ jobs:
       - name: Run sprint-end labels tests
         run: pwsh tests/test_sprint_end_labels.ps1
 
-      # TODO(issue #424): add the sibling PowerShell sprint-end-labels test here when it lands.
-
   validate-ps51:
     name: Validate PowerShell 5.1 Compatibility
     runs-on: windows-latest
@@ -367,3 +365,8 @@ jobs:
         shell: powershell
         run: |
           powershell -ExecutionPolicy Bypass -File tests\test_git_hooks.ps1
+
+      - name: Run sprint-end labels tests (PS 5.1)
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File tests\test_sprint_end_labels_pwsh.ps1

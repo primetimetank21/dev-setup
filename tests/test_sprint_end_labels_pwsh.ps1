@@ -5,10 +5,13 @@
 # Coverage:
 #   T1. --help exits 0 and prints usage.
 #   T2. Missing required flags exits non-zero with a usage hint.
+#   T_C. Missing --release-label exits non-zero.
+#   T_D. Bad --release-label prefix exits non-zero with guidance.
 #   T3. --dry-run performs no gh writes.
 #   T4. Running twice is idempotent; the second run is a no-op.
 #   T5. Verification retry loop re-queries stale label state and succeeds.
 #   T6. Verification retry loop fails loudly after 3 retries.
+#   T7. Launcher is LF-only and keeps shebang bytes.
 #
 # Usage:
 #   pwsh -File tests\test_sprint_end_labels_pwsh.ps1
@@ -191,7 +194,7 @@ switch ("$command $subcommand") {
                 }
             }
         }
-        Write-Host (ConvertTo-Json -InputObject @($items) -Depth 6 -Compress)
+        Write-Output (ConvertTo-Json -InputObject @($items) -Depth 6 -Compress)
         exit 0
     }
     'pr list' {
@@ -205,7 +208,7 @@ switch ("$command $subcommand") {
                 }
             }
         }
-        Write-Host (ConvertTo-Json -InputObject @($items) -Depth 6 -Compress)
+        Write-Output (ConvertTo-Json -InputObject @($items) -Depth 6 -Compress)
         exit 0
     }
     'issue view' {
@@ -227,7 +230,7 @@ switch ("$command $subcommand") {
                     $script:state.viewQueues.PSObject.Properties.Remove($number)
                 }
                 Save-State -Value $script:state
-                Write-Host (@{ labels = @(Convert-Labels -Labels $labels) } | ConvertTo-Json -Depth 6 -Compress)
+                Write-Output (@{ labels = @(Convert-Labels -Labels $labels) } | ConvertTo-Json -Depth 6 -Compress)
                 exit 0
             }
         }
@@ -236,7 +239,7 @@ switch ("$command $subcommand") {
         if ($null -eq $item) {
             exit 1
         }
-        Write-Host (@{ labels = @(Convert-Labels -Labels @($item.labels)) } | ConvertTo-Json -Depth 6 -Compress)
+        Write-Output (@{ labels = @(Convert-Labels -Labels @($item.labels)) } | ConvertTo-Json -Depth 6 -Compress)
         exit 0
     }
     'issue edit' {
@@ -294,7 +297,7 @@ switch ("$command $subcommand") {
         }
         $script:state.$collectionName = $updated
         Save-State -Value $script:state
-        Write-Host '{}'
+        Write-Output '{}'
         exit 0
     }
     default {
@@ -317,7 +320,8 @@ exec "$PowerShellPath" -NoProfile -ExecutionPolicy Bypass -File "`$DIR/gh.ps1" "
     $cmdContent = "@echo off`r`n`"$PowerShellPath`" -NoProfile -ExecutionPolicy Bypass -File `"%~dp0gh.ps1`" %*`r`n"
     Write-AsciiFile -Path $cmdPath -Content $cmdContent
 
-    if (-not $IsWindows) {
+    $isWindowsRuntime = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
+    if (-not $isWindowsRuntime) {
         & chmod +x $launcherPath 2>$null | Out-Null
     }
 
@@ -342,8 +346,10 @@ function Invoke-ScriptRun {
     $savedState    = $env:GH_STATE_PATH
     $savedWriteLog = $env:GH_WRITE_LOG
     $savedViewLog  = $env:GH_VIEW_LOG
+    $savedErrorActionPreference = $ErrorActionPreference
 
     try {
+        $ErrorActionPreference = 'Continue'
         if ($EnvDir -ne '') {
             $env:PATH = $EnvDir + [System.IO.Path]::PathSeparator + $env:PATH
             $env:GH_STATE_PATH = Join-Path $EnvDir 'state.json'
@@ -358,6 +364,7 @@ function Invoke-ScriptRun {
         }
     }
     finally {
+        $ErrorActionPreference = $savedErrorActionPreference
         $env:PATH = $savedPath
         if ($null -eq $savedState) {
             Remove-Item Env:GH_STATE_PATH -ErrorAction SilentlyContinue
@@ -409,6 +416,26 @@ Test-Scenario 'T2: missing required flags exits non-zero with usage hint' {
     }
     if ($result.Output -notmatch 'use --help for usage') {
         throw "expected usage hint; got: $($result.Output)"
+    }
+}
+
+Test-Scenario 'T_C: missing --release-label exits 2 with guidance' {
+    $result = Invoke-ScriptRun -Arguments @('--sprint', 'sprint:17')
+    if ($result.ExitCode -ne 2) {
+        throw "expected exit 2 for missing --release-label, got $($result.ExitCode); output: $($result.Output)"
+    }
+    if ($result.Output -notmatch '--release-label <label> is required') {
+        throw "expected missing --release-label guidance; got: $($result.Output)"
+    }
+}
+
+Test-Scenario 'T_D: bad release-label prefix exits 2 with guidance' {
+    $result = Invoke-ScriptRun -Arguments @('--sprint', 'sprint:17', '--release-label', 'type:bogus', '--dry-run')
+    if ($result.ExitCode -ne 2) {
+        throw "expected exit 2 from bad release label, got $($result.ExitCode); output: $($result.Output)"
+    }
+    if ($result.Output -notmatch 'release:shipped-') {
+        throw "expected guidance about release:shipped- prefix; got: $($result.Output)"
     }
 }
 
@@ -558,6 +585,34 @@ Test-Scenario 'T6: retry loop fails loudly after 3 retries' {
         }
         if ($result.Output -notmatch 'current labels:') {
             throw "expected current labels in failure output; got: $($result.Output)"
+        }
+    }
+    finally {
+        Remove-TestEnv -Dir $envDir
+    }
+}
+
+Test-Scenario 'T7: launcher is LF-only and keeps shebang bytes' {
+    $state = @{
+        sprintLabel = 'sprint:17'
+        issues = @()
+        prs = @()
+        viewQueues = @{}
+    }
+    $envDir = New-TestEnv -TestId 'launcher-lf' -State $state
+    try {
+        $launcherPath = Join-Path $envDir 'gh'
+        $bytes = [System.IO.File]::ReadAllBytes($launcherPath)
+        if ($bytes.Length -lt 2) {
+            throw "launcher too short to contain shebang bytes; length=$($bytes.Length)"
+        }
+        # Regression for PR #438: the POSIX launcher must be LF-only.
+        # Content is session-deterministic, not identical across machines.
+        if ($bytes -contains 0x0D) {
+            throw 'launcher contains CR bytes (0x0D); must be LF-only for POSIX bash'
+        }
+        if ($bytes[0] -ne 0x23 -or $bytes[1] -ne 0x21) {
+            throw 'launcher missing shebang bytes 0x23 0x21 (#!); file header may be corrupted'
         }
     }
     finally {
