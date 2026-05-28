@@ -61,6 +61,8 @@ Implemented Windows PowerShell setup, utility alias framework, and architectural
 - Registry SetEnvironmentVariable for PATH persists across terminal sessions: `[System.Environment]::SetEnvironmentVariable('PATH', ..., 'User')`
 - Em dash fix pattern (PR #198): When PS 5.1 CI fails with TerminatorExpectedAtEndOfString, scan ALL .ps1 files on the branch for non-ASCII (bytes > 0x7F). Replace em dashes and other non-ASCII with ASCII equivalents in both comments and string literals. Use a byte-level scan (not just grep) to catch multi-byte UTF-8 sequences.
 - Cross-platform parity audits apply to top-level `scripts/*.{sh,ps1}` utilities and every file in `tests/`, but not platform installers under `scripts/linux/` or `scripts/windows/`. For function-exporting PowerShell libs, parity smoke tests should dot-source the file and call the function, and skip cleanly when `pwsh` is unavailable.
+- 2026-05-28 -- PR #462 grill (#451): parity count reached 9 pwsh vs 7 bash and T7 byte checks are PS 5.1-safe; trap spotted: T_C/T_D used non-zero instead of exact exit 2 validation contracts.
+- 2026-05-28 -- PR #462 re-grill (#451): commit 93b339f tightened T_C to exit 2 plus missing-release-label text and T_D to exit 2 before the release:shipped- substring; verified PR-head pwsh test passes 9/0/0 in a clean worktree. Trap avoided: local dirty test file differed from PR head and failed unrelated dry-run/idempotency cases, so PR-head validation used a detached worktree.
 
 ---
 
