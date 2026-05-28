@@ -1,20 +1,25 @@
 ---
-updated_at: 2026-05-27T11:00:08Z
-focus_area: "[IMPL] Issue #442 -- Profile path fix (v5.2 plan implementation)"
-active_issues:
-  - 442
-  - 441
+updated_at: 2026-05-28T01:20:15Z
+focus_area: "Board clear -- #441/#442 shipped via PR #458 (fe64139). Awaiting next directive."
+active_issues: []
 ---
 
-# What We're Focused On
+# Status
 
-**Next up:** Implement issue #442 -- Profile path fix for Windows (v5.2 plan implementation).
-- Type: enhancement
-- Platform: Windows-specific (PowerShell profile management)
-- Plan: v5.2 SHIP verdict (Pluto, Chip, Jiminy consensus 2026-05-27)
-- Status: Implementation phase
-- Prerequisite: PR #457 (#455/#456 governance chores) merged 2026-05-27
+**Completed:** PR #458 (v5.2 profile-path fix) merged at fe64139 on 2026-05-28T01:20:15Z.
 
-Related plan: docs/plans/441-profile-path.md (branch squad/441-profile-path-fix)
+**Issues Closed:** #441, #442
 
-Updated by Scribe at session 2026-05-27 PR cleanup triage.
+**Features Delivered:**
+- Invoke-HostQuery
+- Resolve-ProfilePath
+- Write-PowerShellProfile parameterization
+- Legacy cleanup
+- Uninstall resolver integration
+- New SKILL: profile-host-query
+
+**Test Coverage:** 136 passed, 8 pre-existing baseline failures (no regressions).
+
+**Re-review & Orchestration:** Chip-1, Chip-2, Mickey-1 re-review cycles completed. CI fixes applied. 11/11 green. Admin merge by Earl.
+
+Updated by Scribe at 2026-05-28 -- PR #458 session wrap.
