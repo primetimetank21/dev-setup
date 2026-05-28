@@ -133,3 +133,11 @@ Sprints 11-20 moved to history-archive.md per hygiene gate 2026-05-27. Key patte
 - **Fixed line 1124** (formerly ~1108): `` `-Only "gh"` `` -> `` `-Only 'gh'` `` (double-quote -> single-quote)
 - **Final sweep result:** All `-Only 'X'` / `-Skip 'X'` usages in Windows prose/tests use single-quote convention. Grammar table (lines 767-768) and Syntax Rules (line 778) and Summary synopsis (line 182) retain double-quote for spec-level comma-string syntax -- intentional (pre-doc grammar convention). Additional bare-token occurrences `` `-Skip winget-check` `` at lines 104-106 (v7 changelog) and 860 (foot-gun docs) noted and reported; NOT fixed per scope discipline (mandate was 2 lines only). `--only=` / `--skip=` usages confirmed Linux/bash contexts only.
 - **Scope confirmation:** Surgical 2-line fix + author line + v14 changelog. No structural changes, no slice changes.
+
+### Addendum (v14 Amend, 2026-05-30)
+
+- **Amend SHA:** b5cb3dc (was fe8c3f1)
+- **Scope expansion approved by Earl:** 3 bare `` `-Skip winget-check` `` occurrences (lines 104, 106, 860) -- same class as v14 nits, surfaced during v14 sweep and reported at the time.
+- **Fixes:** Lines 104, 106 (v7 changelog) and 860 (foot-gun docs): `` `-Skip winget-check` `` -> `` `-Skip 'winget-check'` ``
+- **Note:** Task brief said 4 occurrences; 3 actual occurrences existed. No 4th found.
+- **Final sweep (post-amend):** All value-bearing `-Only`/`-Skip` in Windows prose/tests use single-quote convention. Grammar-spec double-quote forms remain intentional. `--only=`/`--skip=` all Linux/bash. Clean.
