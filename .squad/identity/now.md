@@ -1,6 +1,6 @@
 ---
-updated_at: 2026-05-28T05:30:00-04:00
-focus_area: "[TARGET] PR #470 (#468 plan) at v10 pending. Doc raised 2 factual blockers on v9. Next session: spawn v10 + final grill panel MUST include Doc."
+updated_at: 2026-05-28T07:45:00-04:00
+focus_area: "[TARGET] PR #470 (#468 plan) at v14-amended (commit d0b7852). 3-reviewer regrill split 1A/2R. Decision pending on v15 vs merge-as-is."
 active_issues:
   - 468
   - 466
@@ -12,77 +12,83 @@ pending_prs:
 
 # What's Next (Next Session)
 
-## [TARGET] Primary work -- finalize #468 plan, then implement Slice 1
+## [TARGET] Decision pending on PR #470 path forward
 
-### Step 1 -- Spawn v10 of #468 plan (BLOCKER)
+**Branch:** `squad/468-customizable-install` -- HEAD `d0b7852`
+- `d0b7852` (Goofy) -- history.md addendum (post-amend)
+- `b5cb3dc` (Goofy) -- v14 plan content (5 quoting fixes: `-Only 'git-hook'`, `-Only 'gh'`, 3x `-Skip 'winget-check'`)
+- `140feb4` (Mickey) -- v13 (line 167 fix)
+- `8dfb9b4` (Doc) -- v12 (Windows npm-absent matrix syntax fix)
+- `f212ef1` (Mickey) -- v11 (2x2 npm-absent matrix)
+- `d85993b` (Doc) -- v10 (git-hook path + squad-cli parity)
 
-**PR #470** -- `docs/plans/468-customizable-install.md` is at v9 (commit `f4bea92`, by Mickey).
-- Duck: APPROVE
-- Jiminy: APPROVE
-- **Doc: REQUEST CHANGES** -- 2 factual errors all 9 prior rounds missed:
-  1. Plan references `scripts/windows/tools/git-hook.ps1` for the Windows git-hook function -- **actual location is `scripts/windows/setup.ps1`** (no separate tools file). Verify and correct every reference.
-  2. Plan claims Windows `squad-cli` silently skips on npm-absent -- **actual behavior is `exit 1`**. Linux `squad-cli` is the one that silent-skips. Verify and correct the plan's behavior table / parity claims.
+### v14-amended regrill results (split decision)
 
-**Lockout state at session end:**
-- Locked out as past authors of #468 plan: Mickey (v1, v9), Goofy (v2), Chip (v3), Pluto (v4 + v6 + v8), Donald (v5), Jiminy (v7)
-- Doc has NOT authored -- eligible for v10 ownership. He found the bugs; narrow factual edits.
-- Alternative: relax lockout for any prior author. Mickey (v9 author) is most natural since v10 is 2 corrections to his v9.
+| Reviewer | Verdict | Notes |
+|----------|---------|-------|
+| Duck-4 | REQUEST CHANGES | 4 grammar-spec double-quote lines (188/773/774/784); flagged history.md in commit (NOT a real issue -- squad convention) |
+| Jiminy-5 | APPROVE | Labels resolved (`squad:mickey` + `priority:p1` added this session); treats grammar specs as intentional |
+| Doc-3 | REQUEST CHANGES | **Real factual error**: v14 changelog cites "v7 changelog" but bare `-Skip winget-check` lived in v9 changelog section. Plus same 4 grammar-spec lines (marked advisory) |
 
-**Recommended dispatch:**
-```
-Doc, author v10 -- narrow factual fix on v9. Two corrections:
-  (1) Replace all references to scripts/windows/tools/git-hook.ps1 with scripts/windows/setup.ps1
-      (verify the actual function name in setup.ps1 first)
-  (2) Update Windows squad-cli npm-absent behavior claim from "silent skip" to "exit 1"
-      (parity table, behavior docs, any Test-Scenario notes)
-Preserve all v9 architecture, slicing, concepts, fixture provenance, Invoke-WingetGate spec.
-Add v10 changelog with 2 bullets citing Doc's v9 review.
-```
+### Blockers for next session to resolve
 
-### Step 2 -- Final grill panel for v10 (MUST INCLUDE Doc)
+1. **REAL: v14 changelog factual misattribution** -- Goofy wrote "Lines ~104, ~106 (v7 changelog)" but the bare nits were actually in the v9 changelog section. Doc verified at source. Fix changelog text only.
+2. **STYLISTIC: 4 grammar-spec double-quotes** at lines 188/773/774/784 (e.g. `-Only "a,b,c"`). Duck says fix; Doc says advisory; Jiminy + Goofy treat as intentional grammar convention.
 
-**! Earl directive (2026-05-28): every #468 plan re-grill from v10 onward MUST include Doc.**
+### Path options (Earl to pick at session start)
 
-The fact-checker axis was missing from rounds v1-v8 and only added at v9 -- Doc immediately surfaced 2 real bugs no other reviewer caught. Future regrills need:
+**A.** Amend v14 again: fix changelog text (v7->v9) + normalize the 4 grammar-spec lines to single-quotes, one final regrill, then merge. (Most thorough; another cycle.)
 
-- **Duck** (rubber-duck: architecture + blindspot detection)
-- **Jiminy** (process/quality auditor: vertical slicing, CI integration, scope discipline)
-- **Doc** (fact checker: file paths, function names, line numbers, behavior claims, error message text)
+**B.** Amend v14 to fix ONLY the changelog factual error; leave grammar-spec lines as-is (intentional convention claim), regrill, merge. (Middle ground.)
 
-Optional add-ons depending on what's touched in the revision:
-- Donald (bash specifics) -- if bash dispatcher or `--list` parsing changes
-- Pluto (config/registry) -- if `$ToolRegistry` or `$DefaultTools` changes
-- Chip (test/CI) -- if Test-Scenario list or CI matrix changes
+**C.** Merge as-is -- file both as follow-up issues; ship the plan. The changelog is internal metadata, not the substance. (Fastest.)
 
-### Step 3 -- After v10 approved: merge PR #470 + implement Slice 1
+### Lockout state for v15 (if chosen)
 
-Slice 1 (per v9 plan): `--list` + `--help` + root entrypoint arg forwarding + mock-tools-dir harness + baseline fixtures.
-- Implementation owners: Goofy (cross-platform) + Donald (bash) + Pluto (registry + config).
-- Chip writes/verifies tests.
-- Doc fact-checks final implementation against the merged plan.
+- v14 author: **Goofy** -- locked out as v15 author
+- v13 author: Mickey -- eligible for v15
+- v12 author: Doc -- eligible for v15 BUT he's the standing required reviewer (Earl directive 2026-05-28). If Doc authors v15, regrill panel needs reconsidered.
+- Per-version-prior lockout interpretation has held throughout this session (only the immediate-prior author is locked).
+- Natural v15 candidates: **Mickey** (Lead, clean lockout state) or **Pluto** (config engineer, no recent authoring).
 
-### Step 4 -- After Slice 1 lands: #466 + #467 in parallel
+### Standing Earl directives (carry forward)
 
-**#466** delta installer + git config wiring -- Goofy + Chip. New `scripts/{linux,windows}/tools/delta.{sh,ps1}` + post-install git globals.
-
-**#467** lazygit installer (no config) -- Goofy + Chip. New `scripts/{linux,windows}/tools/lazygit.{sh,ps1}`.
-
-Both land via the `$ToolRegistry` extension contract (3-line pattern) from the v9 plan. Tools are opt-in -- present in `AvailableTools` but absent from `DEFAULT_TOOLS`.
+- **Every #468 regrill from v10 onward MUST include Doc** (fact-checker axis).
+- **Vertical slicing must remain intact** -- Slices 1/2/3 untouched in all post-v9 patches.
+- **Scope discipline** -- surgical fixes only; no "while I'm here" cleanups. Pattern of repeated regrills finding new same-class nits suggests pre-commit author should do a `-Only`/`-Skip`/`--only=`/`--skip=` full-file grep before each author commits.
+- **Squash to develop** -- standard merge for PR #470.
 
 ## Recently Shipped (this session)
 
-- **PR #471** (open) -- `docs/research/461-iswindows-detection.md` by Goofy. #461 forward-looking audit; PS 5.1 platform-detection landmines documented.
-- **Issue #461** closed (verified fix in commit `31aa228` / PR #462; no remaining unguarded `$IsWindows*` refs in executable paths).
-- **PR #470** (draft) -- #468 plan, 9 revisions completed in one session (Mickey -> Goofy -> Chip -> Pluto -> Donald -> Pluto -> Jiminy -> Pluto -> Mickey), pending v10 + final grill.
-- **`.squad/skills/`** -- new skills written: `install-plan-grill/`, `ps51-platform-detection-audit/`.
+- v10 (`d85993b`) -- Doc: Windows git-hook path + squad-cli parity
+- v11 (`f212ef1`) -- Mickey: 2x2 npm-absent matrix + parity clarifier (Earl-authorized deadlock break)
+- v12 (`8dfb9b4`) -- Doc: Windows npm-absent example syntax (Duck v11 finding)
+- v13 (`140feb4`) -- Mickey: line 167 Windows example syntax (Duck v12 finding)
+- v14 (`b5cb3dc` plain, amended in same SHA after force-push from `fe8c3f1`) -- Goofy: 5 PowerShell quoting normalizations (Doc-2 v13 advisory + Goofy self-surfaced amends)
+- **PR #470 labels added**: `squad:mickey` + `priority:p1` (resolves Jiminy carry-forward flag)
+- Session state persisted (`98b2702`) with donald/doc history compression
+- 5 sweep-and-regrill cycles completed; v11/v13 fully approved; v12/v14 found follow-on nits
 
 ## Open PRs at session end
 
-- **#470** -- #468 plan (v9). Awaiting v10 (Doc-flagged factual fixes).
-- **#471** -- #461 research doc. Already-fixed verification. Goofy approve + merge.
+- **#470** -- #468 plan, v14-amended pending decision (path A / B / C above)
+- **#471** -- #461 research doc by Goofy. APPROVED. Ready to merge.
 
-## Backlog
+## After PR #470 merges
 
-- (none beyond #466, #467 -- both blocked on #470 merge)
+1. Slice 1 implementation (per v14 plan): `--list` + `--help` + root entrypoint arg forwarding + mock-tools-dir harness + baseline fixtures.
+   - Owners: Goofy (cross-platform) + Donald (bash) + Pluto (registry + config).
+   - Chip writes/verifies tests. Doc fact-checks implementation against merged plan.
+2. **#466** delta installer + git config wiring (Goofy + Chip).
+3. **#467** lazygit installer (Goofy + Chip).
+   - Both via `$ToolRegistry` 3-line extension contract from the merged plan.
+   - Opt-in: present in `AvailableTools` but absent from `DEFAULT_TOOLS`.
 
-Updated by Coordinator at 2026-05-28T05:30:00-04:00 -- Earl directive: "document this in now.md that next review should be doc. then wrap session".
+## Process retrospective notes (for Scribe to fold)
+
+- 5 sweep-and-regrill cycles on a single plan revision suggests: authors should run a full `--only=`/`--skip=`/`-Only`/`-Skip` grep before each commit. Same-class nits keep slipping past per-version author sweeps. Add to spawn-prompt hygiene template?
+- Rubber-duck (Duck) consistently catches what general-purpose sweeps miss. Consider Duck as the "first reviewer" axis for any plan with code-syntax examples.
+- Jiminy + Goofy both reported "context consistency PASS" on v12 sweeps and both missed line 167. The bigger lesson: line-by-line is required; surface scan is insufficient. Jiminy-3/4 self-corrected.
+- 6 inbox drops accumulated this session for Scribe to fold: duck-468-v11/v12 (verbal only -- duck cannot write files), jiminy-468-v11/v12/v13/v14, doc-468-v11/v13/v14, goofy-468-v11/v12/v14 (+amend), mickey-468-v13/v14-not-applicable. Spawn Scribe to drain at next session start.
+
+Updated by Coordinator at 2026-05-28T07:45:00-04:00 -- Earl directive: "lets pause here. update now.md so we can pickup next session".

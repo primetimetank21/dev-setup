@@ -39,3 +39,39 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - **Impact:** No design/process/test reviewer axis found these across v1-v8. Fact-checking immediately caught 2 errors.
 - **Earl Directive:** Every future #468 plan re-grill MUST include Doc as mandatory reviewer (join Duck + Jiminy panel)
 - **Status:** Doc now mandatory on #468 plan re-grills for v10 onward
+
+## 2026-05-28 -- #468 Plan v12 Authoring (Windows example syntax fix)
+
+- **Role:** Author (v12 patch)
+- **Trigger:** Duck v11 verdict -- two Windows npm-absent example bullets used Linux flag syntax (`--only=`) and Linux tool name (`copilot-cli`); Windows uses `-Only 'X'` and registry key `copilot`.
+- **Fix:** Lines 793-796 corrected: `-Only 'copilot'` Windows and `-Only 'squad-cli'` Windows. Single-quote style verified against all existing `-Only '...'` usages in plan.
+- **Also updated:** Author line (v12 appended), v12 changelog section added above v11.
+- **Eligibility:** Doc authored v10 and approved v11 fact-check -- cleanly eligible, no rule relaxation.
+- **Commit:** 8dfb9b4 on `squad/468-customizable-install`
+
+## 2026-05-30 -- #468 Plan v13 Fact-Check (Sprint 19)
+
+- **Role:** Fact-checker (v13 authored by Mickey; Doc authored v12)
+- **Artifact:** `docs/plans/468-customizable-install.md` @ commit `140feb4`
+- **Verdict:** APPROVE
+- **v13 fix verified:** Line 179 (was line 167 in v12) -- DD-1 git-hook unsafety bullet corrected from `--only=uv` to `-Only 'uv'`; single-quote convention confirmed correct.
+- **Full sweep result:** No new Windows/Linux flag violations introduced. Two pre-existing issues noted: line 815 (`-Only git-hook` unquoted) and line 1108 (`-Only "gh"` double-quoted) -- both from v5, non-blocking.
+- **Tool names:** `copilot` (Windows $DefaultTools/registry) and `copilot-cli` (Linux) verified correct throughout.
+- **npm-absent 2x2 matrix:** Unchanged from v12; all 4 cells verified against source scripts.
+- **Source citations:** All file:line references verified against `squad/468-customizable-install` branch.
+- **Self-improvement:** Missed the DD-1 bullet during v12 authoring because it was outside the structured example/table sections I focused on. Future sweeps: explicit pass over ALL inline flag examples in prose sections.
+- **Decision drop:** `.squad/decisions/inbox/doc-468-v13-factcheck.md`
+
+## 2026-05-30 -- #468 Plan v14 Fact-Check (Sprint 19)
+
+- **Role:** Fact-checker (v14 authored by Goofy; Doc authored v12, fact-checked v13 -- eligible)
+- **Artifact:** `docs/plans/468-customizable-install.md` @ commit `b5cb3dc`
+- **Verdict:** REQUEST CHANGES (1 factual error in changelog; content fixes all correct)
+- **All 5 fixes verified:** `-Only 'git-hook'` (line 837), `-Only 'gh'` (line 1130), 3x `-Skip 'winget-check'` (lines 110, 112, 866).
+- **Changelog error found:** Item 3 attributes the two v9-changelog bare occurrences to "Lines ~104, ~106 (v7 changelog)". Actual v13 locations: lines 88, 90 in the **v9 changelog** section. Lines 104-106 in v13 are the v7 changelog header -- no winget-check content there at all.
+- **Required fix:** Line 24-25 of plan -- change "Lines ~104, ~106 (v7 changelog)" to "Lines ~88, ~90 (v9 changelog)".
+- **Full sweep result:** 4 pre-existing double-quote violations found at lines 188, 773, 774, 784 (grammar spec / intro text, all from v5 era). Not v14's fault; advisory only. Recommend dedicated v15 cleanup.
+- **v13 fix, tool names, npm-absent matrix, source citations:** All verified unchanged and correct.
+- **Self-improvement:** v13 sweep missed lines 188, 773, 774, 784 double-quotes. Future sweeps: explicit pass over grammar table AND intro/summary text, not just Windows-example sections.
+- **Decision drop:** `.squad/decisions/inbox/doc-468-v14-factcheck.md`
+
