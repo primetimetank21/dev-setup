@@ -1,25 +1,26 @@
 ---
-updated_at: 2026-05-28T01:20:15Z
-focus_area: "Board clear -- #441/#442 shipped via PR #458 (fe64139). Awaiting next directive."
-active_issues: []
+updated_at: 2026-05-28T02:42:47Z
+focus_area: "[NEXT] #451 -- Chip to close pwsh parity gaps in test_sprint_end_labels_pwsh.ps1"
+active_issues:
+  - 451
 ---
 
-# Status
+# What's Next
 
-**Completed:** PR #458 (v5.2 profile-path fix) merged at fe64139 on 2026-05-28T01:20:15Z.
+**Primary:** Issue #451 -- close pwsh parity gaps in `tests/test_sprint_end_labels_pwsh.ps1`.
+- Owner: Chip (squad:chip label already set)
+- Scope: missing C/D test cases + CRLF regression coverage
+- Type: tests-only (Chip's review-authority domain)
+- Labels: squad:chip, go:needs-research
 
-**Issues Closed:** #441, #442
+## Backlog
+- (none -- board clear after #451)
 
-**Features Delivered:**
-- Invoke-HostQuery
-- Resolve-ProfilePath
-- Write-PowerShellProfile parameterization
-- Legacy cleanup
-- Uninstall resolver integration
-- New SKILL: profile-host-query
+## Recently Shipped
+- PR #458 -> fe64139: v5.2 profile-path fix (closed #441 + #442)
+- PR #459 -> 995c502: session wrap (re-review artifacts, 2 new SKILLs)
 
-**Test Coverage:** 136 passed, 8 pre-existing baseline failures (no regressions).
+## Suggested Next Dispatch
+`Chip, pick up #451` -- single-agent Standard mode. Worktree path: `C:\Users\Earl Tankard\Coding\dev-setup-451` on branch `squad/451-pwsh-parity-gaps`.
 
-**Re-review & Orchestration:** Chip-1, Chip-2, Mickey-1 re-review cycles completed. CI fixes applied. 11/11 green. Admin merge by Earl.
-
-Updated by Scribe at 2026-05-28 -- PR #458 session wrap.
+Updated by Scribe at 2026-05-27T22:42:47-04:00 -- Earl directive: "update now.md with these next steps".
