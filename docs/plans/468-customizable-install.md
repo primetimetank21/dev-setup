@@ -1,9 +1,28 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v5 Changelog (Donald -- polish pass on Pluto's v4)
+
+1. **Baseline harness format mismatch (Donald review):** Stubs now log bare tool names
+   (e.g. `echo "prereqs" >> "$RUN_LOG"`) instead of `RAN:prereqs`. This eliminates the
+   impossible diff between `RUN_LOG` (prefixed) and `defaults.txt` (bare). Option (a)
+   chosen -- simplest, no transform step in tests.
+
+2. **Git-hook safety via flag paths (Duck DK4-bis):** `git-hook.sh` and `Install-GitHook`
+   are now self-guarding: early-return exit 0 with skip message when `git` is not on PATH.
+   New test `T_git_hook_no_git_safe` in Slice 2 confirms both platforms.
+
+3. **Real-defaults drift test (Duck-2):** Added `T_baseline_real_defaults` (bash + pwsh)
+   that extracts real `DEFAULT_TOOLS`/`$DefaultTools` arrays from source via
+   `scripts/dev/regenerate-baseline-fixtures.sh` and diffs against committed
+   `tests/fixtures/baseline-tools-{linux,windows}.txt`. Runs alongside (not replacing)
+   the mock-dispatcher baseline test.
 
 ---
 
@@ -290,22 +309,25 @@ Both platforms accept a hidden test-only flag that overrides the tools directory
 ```
 tests/fixtures/stub-tools/
 |-- linux/
-|   |-- prereqs.sh       # echo "RAN:prereqs" >> "$RUN_LOG"
-|   |-- alpha.sh         # echo "RAN:alpha" >> "$RUN_LOG"
-|   |-- bravo.sh         # echo "RAN:bravo" >> "$RUN_LOG"
-|   |-- charlie.sh       # echo "RAN:charlie" >> "$RUN_LOG"
-|   |-- dotfiles.sh      # echo "RAN:dotfiles" >> "$RUN_LOG"
-|   |-- git-hook.sh      # echo "RAN:git-hook" >> "$RUN_LOG"
-|   `-- delta.sh         # echo "RAN:delta" >> "$RUN_LOG" (opt-in)
+|   |-- prereqs.sh       # echo "prereqs" >> "$RUN_LOG"
+|   |-- alpha.sh         # echo "alpha" >> "$RUN_LOG"
+|   |-- bravo.sh         # echo "bravo" >> "$RUN_LOG"
+|   |-- charlie.sh       # echo "charlie" >> "$RUN_LOG"
+|   |-- dotfiles.sh      # echo "dotfiles" >> "$RUN_LOG"
+|   |-- git-hook.sh      # echo "git-hook" >> "$RUN_LOG"
+|   `-- delta.sh         # echo "delta" >> "$RUN_LOG" (opt-in)
 `-- windows/
-    |-- prereqs.ps1      # "RAN:prereqs" | Add-Content $env:RUN_LOG
-    |-- alpha.ps1        # "RAN:alpha" | Add-Content $env:RUN_LOG
-    |-- bravo.ps1        # "RAN:bravo" | Add-Content $env:RUN_LOG
-    |-- charlie.ps1      # "RAN:charlie" | Add-Content $env:RUN_LOG
-    |-- dotfiles.ps1     # "RAN:dotfiles" | Add-Content $env:RUN_LOG
-    |-- git-hook.ps1     # "RAN:git-hook" | Add-Content $env:RUN_LOG
-    `-- delta.ps1        # "RAN:delta" | Add-Content $env:RUN_LOG (opt-in)
+    |-- prereqs.ps1      # "prereqs" | Add-Content $env:RUN_LOG
+    |-- alpha.ps1        # "alpha" | Add-Content $env:RUN_LOG
+    |-- bravo.ps1        # "bravo" | Add-Content $env:RUN_LOG
+    |-- charlie.ps1      # "charlie" | Add-Content $env:RUN_LOG
+    |-- dotfiles.ps1     # "dotfiles" | Add-Content $env:RUN_LOG
+    |-- git-hook.ps1     # "git-hook" | Add-Content $env:RUN_LOG
+    `-- delta.ps1        # "delta" | Add-Content $env:RUN_LOG (opt-in)
 ```
+
+> **v5 note (fix #1):** Stubs log bare tool names -- no `RAN:` prefix. This makes
+> `RUN_LOG` directly diffable against `defaults.txt` without transformation.
 
 Stub `DEFAULT_TOOLS` for tests (when `--tools-dir` active):
 - Linux: `("prereqs" "alpha" "bravo" "charlie" "dotfiles" "git-hook")`
@@ -394,6 +416,41 @@ diff "$RUN_LOG" tests/fixtures/stub-tools/linux/defaults.txt
 
 The stub `defaults.txt` is the expected run-log output in order. The test proves that
 no-arg dispatch matches the declared default order exactly (order + set).
+
+### Real-Defaults Drift Test (v5 fix #3 -- Duck-2)
+
+The mock-dispatcher baseline test above proves the dispatch mechanism works, but does
+NOT protect against accidental edits to the real `DEFAULT_TOOLS` / `$DefaultTools` arrays
+in production scripts. A separate test closes this gap:
+
+```bash
+# T_baseline_real_defaults (bash):
+bash scripts/dev/regenerate-baseline-fixtures.sh --check
+# --check mode: regenerate to temp, diff against committed fixtures, exit 1 on mismatch
+```
+
+```powershell
+# T_baseline_real_defaults (pwsh):
+& bash scripts/dev/regenerate-baseline-fixtures.sh --check
+# Same script works cross-platform (uses pwsh internally for Windows extraction)
+```
+
+**`--check` mode** (added to `scripts/dev/regenerate-baseline-fixtures.sh`):
+```bash
+if [[ "${1:-}" == "--check" ]]; then
+  # Regenerate to temp files, diff against committed fixtures
+  diff "$REPO_ROOT/tests/fixtures/baseline-tools-linux.txt" <(echo "$linux_defaults") \
+    || { echo "DRIFT: Linux DEFAULT_TOOLS changed. Run: scripts/dev/regenerate-baseline-fixtures.sh"; exit 1; }
+  diff "$REPO_ROOT/tests/fixtures/baseline-tools-windows.txt" <(echo "$win_defaults") \
+    || { echo "DRIFT: Windows DefaultTools changed. Run: scripts/dev/regenerate-baseline-fixtures.sh"; exit 1; }
+  echo "OK: baseline fixtures match source arrays."
+  exit 0
+fi
+```
+
+This test catches real-vs-fixture drift (e.g. Windows `profile` or `git` added/removed
+from `$DefaultTools` without updating fixtures). It runs IN ADDITION TO the mock-dispatcher
+test -- both must pass.
 
 ---
 
@@ -518,6 +575,38 @@ Tools are NOT fully independent. Known chains:
 `--only=copilot-cli` on a fresh machine without nvm = exit 0, tool not functional.
 Documented behavior. Future DAG (out of scope) could warn.
 
+### Git-Hook Self-Guard (v5 fix #2 -- DK4-bis)
+
+`git-hook` is a normal selectable tool (AlwaysRun dropped). To prevent failures when
+selected without git present (e.g. `--skip=prereqs` on Linux, `-Only git-hook` on
+Windows), the git-hook scripts **self-guard** and exit 0 cleanly:
+
+**Linux (`scripts/linux/tools/git-hook.sh`):**
+```bash
+command -v git >/dev/null 2>&1 || { echo "git not present, skipping hooks"; exit 0; }
+```
+
+**Windows (`Install-GitHook` in `scripts/windows/tools/git-hook.ps1`):**
+```powershell
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Write-Host "git not present, skipping hooks"
+    return
+}
+```
+
+This is simpler than flag-combination disallow rules and preserves the 2-concept model.
+
+### UX Caveats (v5 -- non-blocking fixes)
+
+- **`--skip` validates against AvailableTools (not DefaultTools).** Consequently,
+  `--skip=delta` is accepted and silently no-ops when delta is opt-in and not in
+  DefaultTools. This matches POSIX-ish "skip what isn't there" semantics and is
+  intentional -- it avoids breaking scripts that defensively skip tools across platforms.
+
+- **`--skip=prereqs` is a foot-gun.** Later default tools may fail or degrade if their
+  dependencies (installed by `prereqs`) are missing. This is documented intentional
+  behavior; a future DAG could add warnings.
+
 ---
 
 ## Vertical Slices
@@ -560,6 +649,7 @@ T_help_output:       --help prints usage containing --list, --only, --skip
 T_help_exit:         --help exits 0
 T_help_no_toolsdir:  --help output does NOT contain 'tools-dir'
 T_baseline_noarg:    no-arg with --tools-dir produces run-log matching defaults.txt
+T_baseline_real_defaults: regenerate-baseline-fixtures.sh --check exits 0 (real arrays match fixtures)
 T_unknown_arg:       --foo exits 1 with error message
 T_root_list:         ./setup.sh --list = scripts/linux/setup.sh --list
 T_root_help:         ./setup.sh --help exits 0
@@ -571,6 +661,7 @@ T_help_output:       -Help prints usage containing -List, -Only, -Skip
 T_help_exit:         -Help exits 0
 T_help_no_toolsdir:  -Help output does NOT contain 'ToolsDir'
 T_baseline_noarg:    no-arg with -ToolsDir produces run-log matching defaults.txt
+T_baseline_real_defaults: regenerate-baseline-fixtures.sh --check exits 0 (real arrays match fixtures)
 T_param_ps51:        param() block parses without error under PS 5.1
 T_root_list:         .\setup.ps1 -List = scripts\windows\setup.ps1 -List
 T_root_help:         .\setup.ps1 -Help exits 0
@@ -581,6 +672,7 @@ T_root_help:         .\setup.ps1 -Help exits 0
 - [ ] `--help` / `-Help` prints usage, exit 0
 - [ ] Hidden flags absent from help output
 - [ ] No-arg run invokes exactly DefaultTools in order (baseline-diff via mock harness)
+- [ ] Real-defaults drift test passes (`regenerate-baseline-fixtures.sh --check`)
 - [ ] Root entrypoints forward flags correctly
 - [ ] Mock harness (`--tools-dir` / `-ToolsDir`) functional
 - [ ] All tests pass in `validate-linux`, `validate-powershell`, AND `validate-ps51`
@@ -616,6 +708,7 @@ T_only_blank_trailing:    --only=alpha, exits 1
 T_only_blank_consecutive: --only=alpha,,bravo exits 1
 T_only_blank_leading:     --only=,alpha exits 1
 T_only_space:             --only=' alpha' exits 1 (no trim)
+T_git_hook_no_git_safe:   --only=git-hook with git absent -> exit 0 + "skipping" message
 
 # PowerShell
 T_only_single:            -Only 'alpha' installs only alpha
@@ -628,6 +721,7 @@ T_only_blank_consecutive: -Only 'alpha,,bravo' exits 1
 T_only_blank_leading:     -Only ',alpha' exits 1
 T_only_space:             -Only ' alpha' exits 1
 T_only_ps51:              parsing works under PS 5.1
+T_git_hook_no_git_safe:   -Only 'git-hook' with git absent -> exit 0 + "skipping" message
 ```
 
 **Done Criteria:**
@@ -636,6 +730,7 @@ T_only_ps51:              parsing works under PS 5.1
 - [ ] Empty value -> exit 1
 - [ ] Blank CSV tokens -> exit 1
 - [ ] Spaces not trimmed
+- [ ] `git-hook` self-guards when git absent (exit 0 + skip message, both platforms)
 - [ ] All tests pass in `validate-linux`, `validate-powershell`, AND `validate-ps51`
 
 ---
@@ -787,5 +882,8 @@ entries (3-line pattern). NOT added to DefaultTools (opt-in only).
 | DK2 (mock harness doesn't cover AlwaysRun) | DD-1: single `--tools-dir` seam covers all phases uniformly |
 | DK3 (PS splat collision) | DD-4: sanitized forward-hashtable excludes internal params |
 | DK4 (git-hook unsafe when git absent) | DD-1: git-hook is a normal tool -- `--only=uv` never triggers it |
+| DK4-bis (git-hook via flag paths) | v5: git-hook self-guards (`command -v git` / `Get-Command git`), `T_git_hook_no_git_safe` |
 | DK5 (hidden flags unprotected) | Slice 1: `T_help_no_toolsdir` negative assertions on both platforms |
+| Donald-1 (baseline format mismatch) | v5: stubs log bare tool names -- `RUN_LOG` directly diffs against `defaults.txt` |
+| Duck-2 (real defaults drift unprotected) | v5: `T_baseline_real_defaults` + `--check` mode in regeneration script |
 
