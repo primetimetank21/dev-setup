@@ -1,25 +1,32 @@
 ---
-updated_at: 2026-05-28T01:20:15Z
-focus_area: "Board clear -- #441/#442 shipped via PR #458 (fe64139). Awaiting next directive."
-active_issues: []
+updated_at: 2026-05-28T02:45:28Z
+focus_area: "[QUEUED] Merge PR #460 (this now.md update) + start #451 (Chip -- pwsh parity gaps)"
+active_issues:
+  - 451
+pending_prs:
+  - 460
 ---
 
-# Status
+# What's Next (Next Session)
 
-**Completed:** PR #458 (v5.2 profile-path fix) merged at fe64139 on 2026-05-28T01:20:15Z.
+## [PIN] Pending admin-merges (handle first)
+- **PR #460** -- `chore/scribe-now-md-451` -- this very now.md update. Admin squash + delete branch:
+  `gh pr merge 460 --squash --admin --delete-branch`
 
-**Issues Closed:** #441, #442
+## [TARGET] Primary work
+**Issue #451** -- close pwsh parity gaps in `tests/test_sprint_end_labels_pwsh.ps1`.
+- Owner: Chip (squad:chip label already set)
+- Scope: missing C/D test cases + CRLF regression coverage
+- Type: tests-only (Chip's review-authority domain)
+- Labels: squad:chip, go:needs-research
+- Suggested dispatch: `Chip, pick up #451`
+- Worktree path: `C:\Users\Earl Tankard\Coding\dev-setup-451` on branch `squad/451-pwsh-parity-gaps`
 
-**Features Delivered:**
-- Invoke-HostQuery
-- Resolve-ProfilePath
-- Write-PowerShellProfile parameterization
-- Legacy cleanup
-- Uninstall resolver integration
-- New SKILL: profile-host-query
+## Backlog
+- (none beyond #451)
 
-**Test Coverage:** 136 passed, 8 pre-existing baseline failures (no regressions).
+## Recently Shipped
+- PR #458 -> fe64139: v5.2 profile-path fix (closed #441 + #442)
+- PR #459 -> 995c502: session wrap (re-review artifacts, 2 new SKILLs)
 
-**Re-review & Orchestration:** Chip-1, Chip-2, Mickey-1 re-review cycles completed. CI fixes applied. 11/11 green. Admin merge by Earl.
-
-Updated by Scribe at 2026-05-28 -- PR #458 session wrap.
+Updated by Scribe at 2026-05-27T22:45:28-04:00 -- Earl directive: "update that into now.md too so i can handle that next session".
