@@ -419,17 +419,20 @@ Test-Scenario 'T2: missing required flags exits non-zero with usage hint' {
     }
 }
 
-Test-Scenario 'T_C: missing --release-label exits non-zero' {
+Test-Scenario 'T_C: missing --release-label exits 2 with guidance' {
     $result = Invoke-ScriptRun -Arguments @('--sprint', 'sprint:17')
-    if ($result.ExitCode -eq 0) {
-        throw 'expected non-zero exit for missing --release-label'
+    if ($result.ExitCode -ne 2) {
+        throw "expected exit 2 for missing --release-label, got $($result.ExitCode); output: $($result.Output)"
+    }
+    if ($result.Output -notmatch '--release-label <label> is required') {
+        throw "expected missing --release-label guidance; got: $($result.Output)"
     }
 }
 
-Test-Scenario 'T_D: bad release-label prefix exits non-zero with guidance' {
+Test-Scenario 'T_D: bad release-label prefix exits 2 with guidance' {
     $result = Invoke-ScriptRun -Arguments @('--sprint', 'sprint:17', '--release-label', 'type:bogus', '--dry-run')
-    if ($result.ExitCode -eq 0) {
-        throw "expected non-zero exit for bad release label; output: $($result.Output)"
+    if ($result.ExitCode -ne 2) {
+        throw "expected exit 2 from bad release label, got $($result.ExitCode); output: $($result.Output)"
     }
     if ($result.Output -notmatch 'release:shipped-') {
         throw "expected guidance about release:shipped- prefix; got: $($result.Output)"
