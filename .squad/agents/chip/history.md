@@ -78,24 +78,9 @@ Lessons preserved verbatim in Learnings section above (CP1252 encoding, PSVersio
 
 ---
 
-## Issue #239 P0 E2E Install Testing (summary)
+## Issue #239 + Sprint 12 Work (compressed)
 
-- **2026-05-16 framing.** P0 enhancement, squad:chip, area:ci. Full tool-verification workflow across Linux/macOS/Windows fresh runners (not just OS routing): squad-cli bootstrap (`squad --version`), psmux (Windows tmux alias), all tool installs (zsh, uv, nvm, gh, GitHub Copilot CLI). Fresh-runner baseline per-PR + nightly cron approved. Cost note: dev-setup is PUBLIC repo (free runners).
-- **2026-05-16 -- Retro CI gate (squad-history-check.yml).** Hard gate: any PR carrying `squad:*` label MUST modify matching agent's `.squad/agents/{name}/history.md` (verified via `gh pr diff --name-only`). No override. Dogfood test: workflow's own PR uses `squad:chip` and validates the new gate.
-- **2026-05-23 -- E2E implementation.** Created `.github/workflows/e2e-install.yml` with 3 independent jobs (Linux/macOS/Windows), `continue-on-error: true` initially (flip to blocking after 2-3 green nightlies). Fresh-shell assertions: bash -lc on Unix, `pwsh -NoProfile -Command` on Windows. Squad-cli and psmux assertions deferred until PATH-persistence baseline green.
-
-## Learnings (pre-Sprint-12 summary)
-
-- **#239 workflow design choices.** Separate jobs per OS (not matrix) -- step sequences diverge too much (different shells, assertion patterns, PATH refresh). Fresh-shell spawning: `bash -lc` (Unix), `pwsh -NoProfile -Command` (Windows). `continue-on-error: true` initially; flip to blocking after 2-3 green nightlies. No new non-interactive flags needed (`$CI=true` auto-set; auth scripts already detect it; `DEBIAN_FRONTEND=noninteractive`). Retry deferred to stabilization phase. squad-cli + psmux assertions deferred until PATH-persistence baseline green. Key insight: `pwsh -NoProfile` tests system PATH, not profile-added PATH -- correct test for automation (nvm.ps1 #221 bug was exactly this class).
-- **#225 macOS validate-linux parity.** Added nvm + Node.js validation step to validate-macos mirroring validate-linux. No macOS-specific differences (NVM_DIR == HOME/.nvm, bash 3.2 supports same sourcing). ASCII-only echo to match existing macOS job style.
-- **#252 Node version pinned at 20.11.0, squad-cli needs >=22.5.0.** Bumped `.tool-versions` nodejs to 22.11.0 (Node 22 LTS). Both `nvm.sh` and `nvm.ps1` read via `read-tool-version.sh` / `Read-ToolVersion.ps1` -- single-line fix. Added Node-version-gate assertion (`node --version | major >= 22`) to e2e fresh-shell steps. v2: added `nvm alias default $PINNED_NODE` (fresh `bash -lc` falls back to system Node otherwise -- same root cause as #255). v3: bumped stale test_tool_versions.sh expectation.
-- **#224 hook behavioral coverage.** Group X (6 scenarios) in test_windows_setup.ps1: pre-commit ASCII rejection (em-dash bytes 0xE2 0x80 0x94 via `WriteAllBytes`), rogue path rejection, pre-push main hard-reject, develop/feature allow, advisory PSScriptAnalyzer block doesn't fail. Extended test_precommit_hygiene.sh with 5 pre-push scenarios (Tpp1-Tpp5). Decision: extend hygiene.sh rather than new test_git_hooks.sh (one bash file for hook tests). Local-vs-CI gotcha: `sh` not on PATH locally (skips correctly); Git for Windows puts `sh` on PATH on CI runner.
-
-### Sprint 12 Issue #238: Group FF -- uninstall idempotency + restore coverage (compressed)
-- 10 new scenarios in `tests/test_windows_setup.ps1`: FF-1..FF-3 static checks on `uninstall.ps1` (dotfile list, newest-wins backup, Move-Item); FF-4..FF-5 Linux `uninstall.sh` parity; FF-6..FF-10 functional sandbox tests (newest-wins backup, legacy fallback, idempotency, block-strip with user content preserved, no-block skip).
-- Functional sandbox: `New-FfSandbox` + `Invoke-UninstallIsolated` -- fake HOME via env vars, Push-Location to tmp git repo, restore in `finally`. Use `& powershell -NoProfile -File $path` not `Start-Process` (spaces in path cause arg splitting).
-- Gotchas: `$home` local var collides with Constant `$HOME` (use `$fakeHome`); set `$ErrorActionPreference = 'Continue'` in `Invoke-UninstallIsolated` or native stderr wraps as terminating error; sentinel .gitconfig content must be valid INI.
-- +335 lines, pure ASCII. Tally: 119 -> 129 passing (8 skipped, 8 pre-existing failures unchanged).
+#239 e2e-install.yml: 3 OS jobs, fresh-shell assertions, squad-history-check.yml gate (squad:* label -> history.md required). #225 macOS nvm parity. #252 Node 22.11.0 pinned + nvm alias default. #224 Group X hook behavioral tests (em-dash bytes, pre-push scenarios). #238 Group FF uninstall sandbox (New-FfSandbox/Invoke-UninstallIsolated, fake HOME via env vars, $fakeHome not $home). Key: `pwsh -NoProfile` tests system PATH not profile-added PATH; `sh` on PATH differs locally vs CI runner.
 
 ## Issue #441 Plan Grill (Chip v4) -- 2026-05-27 [compressed]
 
@@ -164,6 +149,32 @@ $profilePaths entries = mock return values. On CI, no real OneDrive dir -> test 
 **Carry-forward LOWs:** NF-1 (encoding assertion), NF-2 (F-4 middle-of-file), NF-3/JN-2
 (skip counter), NF-4 (resolved-path identity). None blocking.
 
+## PR #458 Review -- 2026-05-27T20:09:59-04:00
+
+Reviewed PR #458 (feat(profile): #442 v5.2 profile-path fix -- host-queried PROFILE + legacy cleanup). Verdict: APPROVED (comment; GitHub blocked self-approve on Copilot-authored PRs).
+
+**Tests run locally (PS 5.1):** 136 passed / 8 skipped / 8 failed. All 7 GG gates PASS. The 8 failures are pre-existing (D-4 live Copilot, O-1..O-7 alias override).
+
+**All 6 acceptance criteria met:**
+- AC-1: GG-1 confirms block written to mock OneDrive path (not hardcoded)
+- AC-2: GG-4 dual-orphan legacy cleanup strips both fallback files
+- AC-3: uninstall.ps1 inlines resolver + unions resolved+legacy paths
+- AC-4: [INFO] Resolved ... path emitted in GG-1/3/4/5/6 output
+- AC-5: Group GG (7 tests) mocks Invoke-HostQuery
+- AC-6: C-2/C-3 have Write-Warning '[SKIPPED]...' + return guards
+
+**ASCII check:** All 3 touched .ps1 files clean (profile.ps1, uninstall.ps1, test_windows_setup.ps1).
+
+**Stream purity:** Resolve-ProfilePath (value-returning) uses Write-Host directly for all 4 log calls -- consistent with the lesson captured in pluto/history.md. GG-2/GG-7 empirically confirm no stream pollution ($result == fallback path only).
+
+**Carry-forward LOWs (non-blocking, accepted in v5.2 grill):** NF-1 (GG-4 no encoding assertion), NF-2 (middle-of-file strip), NF-3/JN-2 (skip counter gap), NF-4 (resolved-path write identity).
+
+## Learnings
+
+**OneDrive/KFM profile path testing pattern:** Mock Invoke-HostQuery at script scope (not inside Test-Scenario) to override the host-query seam. Pass temp paths via -Ps51Fallback/-Ps7Fallback to Write-PowerShellProfile. Reset $global:LASTEXITCODE = 0 before each mock definition to prevent GG-7's native-command exit-1 from contaminating subsequent success-path tests. Seed idempotency test files with pre-existing content -- the strip regex requires a preceding \r?\n before BEGIN marker (position-0 blocks not a production scenario but break GG-5 if file starts empty).
+
+**Self-approve blocked on Copilot-authored PRs:** GitHub blocks 'addPullRequestReview' approve action when the reviewer is the same bot identity as the PR author. Use --comment with a clear APPROVED verdict header instead. Flag this to coordinator for routing -- Earl or a human reviewer must click Approve in the GitHub UI.
+
 ## PR #438 Review -- 2026-05-27
 
 - Reviewed PR #438 (feat/scripts: sprint-end-labels.ps1 PowerShell parity) under domain-aligned reviewer model (PR #445). Single-file change: tests/test_sprint_end_labels_pwsh.ps1. Verdict: APPROVE. Fix strips CRLF from bash launcher here-string before ASCII write -- consistent with peer test pattern (lines 209, 264 of test_sprint_end_labels.ps1). Three pre-existing parity gaps noted as follow-up items.
@@ -171,3 +182,4 @@ $profilePaths entries = mock return values. On CI, no real OneDrive dir -> test 
 ## 2026-05-27 -- PR #458 Review (In Flight)
 
 - Reviewing PR #458 (v5.2 profile-path fix, closes #441/#442). Focus: acceptance criteria, test coverage (136 passed, 8 pre-existing baseline failures). Pluto's implementation on branch squad/442-profile-path-impl delivered Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile parameterization, legacy cleanup, uninstall resolver integration. Mickey reviewing architecture/cross-cutting in parallel.
+- 2026-05-27 -- #442/#458 re-review -- CI 11/11 green; allowlist patch (Invoke-HostQuery:windows, Resolve-ProfilePath:windows) correctly scoped with :windows suffix and #441/#442 reference; all 6 AC met; posted VERIFY OK comment per co-author lockout protocol.

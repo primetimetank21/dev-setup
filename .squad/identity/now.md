@@ -1,26 +1,25 @@
 ---
-updated_at: 2026-05-27T20:09:59Z
-focus_area: "[REVIEW] PR #458 -- v5.2 profile-path fix awaiting Chip + Mickey verdicts"
-active_issues:
-  - 458
-  - 442
-  - 441
+updated_at: 2026-05-28T01:20:15Z
+focus_area: "Board clear -- #441/#442 shipped via PR #458 (fe64139). Awaiting next directive."
+active_issues: []
 ---
 
-# What We're Focused On
+# Status
 
-**Next up:** Review PR #458 -- Profile path fix for Windows (v5.2 profile-path implementation complete).
-- Type: enhancement
-- Platform: Windows-specific (PowerShell profile management)
-- Implementation: Pluto completed on branch squad/442-profile-path-impl
-- Status: Code review phase
-- Reviewers: Chip (acceptance criteria + tests), Mickey (architecture / cross-cutting)
-- Test results: 136 passed, 8 pre-existing baseline failures (no regressions)
+**Completed:** PR #458 (v5.2 profile-path fix) merged at fe64139 on 2026-05-28T01:20:15Z.
 
-**Closes:** #441, #442
+**Issues Closed:** #441, #442
 
-**PR:** #458 -> develop
+**Features Delivered:**
+- Invoke-HostQuery
+- Resolve-ProfilePath
+- Write-PowerShellProfile parameterization
+- Legacy cleanup
+- Uninstall resolver integration
+- New SKILL: profile-host-query
 
-Delivered features: Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile parameterization, legacy cleanup, uninstall resolver integration, new SKILL profile-host-query.
+**Test Coverage:** 136 passed, 8 pre-existing baseline failures (no regressions).
 
-Updated by Scribe at session 2026-05-27 -- Pluto #442 implementation PR #458 logging.
+**Re-review & Orchestration:** Chip-1, Chip-2, Mickey-1 re-review cycles completed. CI fixes applied. 11/11 green. Admin merge by Earl.
+
+Updated by Scribe at 2026-05-28 -- PR #458 session wrap.
