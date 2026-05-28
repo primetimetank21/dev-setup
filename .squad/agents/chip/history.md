@@ -124,6 +124,25 @@ Revised plan v2 per 3-reviewer grill panel (Mickey/Goofy/Jiminy). Four findings 
   docs/plans/451-pwsh-parity-gaps.md per PR #441 precedent. .squad/decisions/ is for sprint archives,
   not pre-implementation working plans.
 
+## Issue #451 Grill Response Round 2 -- 2026-05-27T23:47:00-04:00
+
+Revised plan v3 per Round 2 grill panel (Mickey/Goofy/Jiminy).
+
+- Mickey APPROVE (all R1 findings resolved): Done Criteria already covered both
+  implementation-phase notes (error-message contract at line 174, TODO removal at line 172).
+  No text change required.
+- Goofy APPROVE-WITH-MINOR-CAVEATS: $IsWindows PS 5.1 hazard (New-TestEnv line 320).
+  Decision: out of scope for #451 (pre-existing code). Filed issue #461. Added
+  Out-of-Scope Tracked Item section to plan.
+- Jiminy CLEAN (commit trailer cosmetic note): v3 commit uses blank-line-separated
+  Co-authored-by trailer per git interpret-trailers convention.
+
+Learnings:
+- When a grill surfaces a hazard in pre-existing code outside the slice, prefer filing a
+  follow-up issue over expanding slice scope. Keep slices tight.
+- Always verify Done Criteria before adding text -- R2 Mickey notes were already addressed
+  in v2. Checking first saves unnecessary plan churn.
+
 ## PR #438 Review -- 2026-05-27
 
 - Reviewed PR #438 (feat/scripts: sprint-end-labels.ps1 PowerShell parity) under domain-aligned reviewer model (PR #445). Single-file change: tests/test_sprint_end_labels_pwsh.ps1. Verdict: APPROVE. Fix strips CRLF from bash launcher here-string before ASCII write -- consistent with peer test pattern (lines 209, 264 of test_sprint_end_labels.ps1). Three pre-existing parity gaps noted as follow-up items.
