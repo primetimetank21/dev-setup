@@ -137,3 +137,30 @@ Full details in `.squad/agents/donald/history-archive.md`. Key work: Issues #68-
 ## 2026-05-27 -- Team Update
 
 - Pluto shipped v5.2 profile-path fix in PR #458; review in flight.
+
+### #468 plan grill -- 2026-05-28 (PR #470)
+
+- **Verdict:** REQUEST CHANGES (3 HIGH, 2 MEDIUM)
+- **[HIGH-1]** `--list` sed pseudocode: `sed 's/\.sh$//'` strips extension but not path prefix. Bare tool names required for `--only=` matching. Fix: `basename "$f" .sh` loop.
+- **[HIGH-2]** Default list order unspecified. Filesystem scan = alphabetical = `auth` before `gh`, `copilot-cli` before `nvm` on fresh install. Both silently degrade. Default must be a hardcoded array in current declaration order (`zsh uv nvm gh auth copilot-cli squad-cli`).
+- **[HIGH-3]** Opt-in vs default tool distinction has no mechanism. Plan promises delta/lazygit are "not in default install" but no gate exists. Hardcoded default array is the gate -- must be stated explicitly.
+- **[MEDIUM-4]** "No DAG needed" is wrong. `copilot-cli.sh` and `squad-cli.sh` silently skip if npm not present; `auth.sh` silently skips if gh absent. Not independent -- gracefully degrading.
+- **[MEDIUM-5]** Bash arg-parsing mechanism unspecified. `getopts` doesn't support `--long-opts` and returns 1 at end of args (kills under `set -euo pipefail`). `case`-based loop is the correct pattern.
+- **Key lesson:** When a plan introduces a dynamic default list (filesystem scan), verify it preserves the existing tool ordering. Alphabetical != safe. Any plan asserting "tools are independent" must be tested against the actual tool scripts' early-exit guards.
+
+### #468 v2 plan re-grill -- 2026-05-28 (PR #470)
+- **Verdict:** APPROVE (comment-only). v2 concretely fixes `--list` basename output, explicit default order, and delta/lazygit opt-in gate; baseline now checks order.
+- **Implementation note:** add blank CSV token validation/tests (`--only=uv,`, `--only=uv,,nvm`) so Bash `read -ra` cannot silently accept malformed lists.
+
+### #468 v3 plan re-grill -- 2026-05-29 (PR #470)
+- **Verdict:** REQUEST CHANGES. Bash blockers: root forwarding must call `run_linux_setup "$@"`; `--tools-dir` doesn't mock AlwaysRun; trailing CSV comma is not caught by `IFS=',' read -ra`; baseline Makefile source/exit seam is inconsistent.
+
+### #468 v4 plan re-grill -- 2026-05-30 (PR #470)
+- **Verdict:** REQUEST CHANGES. V4 fixes D1-D3 and drops AlwaysRun cleanly, but the new stub baseline is inconsistent: defaults.txt holds tool names while RUN_LOG records RAN:<tool>, so direct diff cannot pass.
+
+
+### #468 v5 plan polish -- 2026-05-30 (PR #470)
+- **Action:** Authored v5 polish pass (863671e). Fixed baseline format mismatch (bare tool names), git-hook self-guard (DK4-bis), real-defaults drift test (Duck-2). Documented --skip caveats.
+
+### #468 v5 polish -- 2026-05-30 (PR #470, 863671e)
+Authored v5: fixed baseline format, git-hook self-guard, real-defaults drift test.
