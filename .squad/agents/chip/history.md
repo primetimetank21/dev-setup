@@ -69,72 +69,13 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 **Full detail in `history-archive.md`.** Sprints 9-17 archived. Key learnings: CP1252 encoding, PSVersion guards, hook behavioral testing patterns, e2e-install gate, group X hook tests, group FF uninstall sandbox.
 
-## Issue #441 Plan Grill (Chip v4) -- 2026-05-27 [compressed]
+## Issue #441 Plan Grill (Chip v4-v5.2) -- 2026-05-27 [compressed]
 
-Grilled v4 (Jiminy revision). Verdict: REVISE. Two MEDIUMs: (1) GG-7 exe spec missing --
-if engineer uses 'pwsh' on PS5.1-only runner, false green via not-installed early-exit;
-fix: specify 'powershell'. (2) $TestDrive (Pester-only) in GG-1/4/5 with no temp-file
-pattern -- destructive writes to real $HOME in CI; fix: $env:TEMP + New-Guid + finally.
-Two LOWs: C-2/C-3 skip-as-pass; BeforeEach reference. Impl-ready: NO. Key lesson: document
-the input exe -- mock mechanism correctness doesn't protect against env-fragile setup.
-
-## Issue #441 Plan Grill (Chip v5) -- 2026-05-27
-
-Grilled plan #441 v5.1 (Donald revision -- H1-H5 + F-4/F-5 patches). Verdict: SHIP.
-
-**C-1/C-2/F-3 status:**
-- C-1 (GG-7 exe spec): RESOLVED -- GG-7 Input now says '$HostExe = 'powershell'' with rationale
-  about 'pwsh' masking the not-installed early-exit on PS5.1-only runners.
-- C-2 (TestDrive -> real temp path): RESOLVED -- Section 5 documents Join-Path $env:TEMP +
-  New-Guid + finally cleanup for GG-1/GG-4/GG-5; $ps51Fallback/$ps7Fallback overrides stated
-  in GG-4 row; $TestDrive removed entirely.
-- F-3 (LASTEXITCODE reset positioning): RESOLVED -- Section 5 says "Before each redefinition,
-  reset $global:LASTEXITCODE = 0"; ordering is explicitly before mock redefinition.
-
-**Regression check (H1-H5, F-4, F-5):** All HOLD. Algorithm correct. BeforeEach reference
-fixed (now says "not a BeforeEach block -- Test-Scenario has none").
-
-**New LOWs (non-blocking):**
-- NF-1: H1 has no encoding assertion in GG-4 (ASCII encoding on Set-Content not verified).
-- NF-2: F-4 middle-of-file case not exercised (GG-4 doesn't specify content after the block).
-- NF-3: NF-3v4 carry-forward -- C-2/C-3 skip-as-pass; Write-Host not Write-Skip; still LOW.
-- NF-4: GG-1 $mockPath identity implicit (row says 'OneDrive path'; temp path only in Section 5).
-
-**Implementation-ready: YES.** No MEDIUM+ concerns open. Four LOWs acceptable for vertical slice.
-Engineer can implement GG-1..GG-7 straight from v5.1 without false-green or destructive-path risk.
-
-## Issue #441 Plan Grill (Chip v5.2) -- 2026-05-27
-
-Grilled plan #441 v5.2 (Mickey revision -- JN-1/JN-2 patch). Verdict: SHIP.
-
-**JN-1 (parameterization):** RESOLVED. `Write-PowerShellProfile` now accepts
-`-Ps51Fallback`/`-Ps7Fallback` params with $HOME-derived defaults. Parameters feed both
-`Resolve-ProfilePath` fallback args AND `$legacyPaths` (orphan-strip targets). GG-1/4/5
-all pass both params with temp paths. Temp path pattern (`Join-Path $env:TEMP
-"gg-test-441-$(New-Guid)"`) explicit in Section 5 header + GG-4 row. `finally` cleanup
-documented. No disk writes to real $HOME. Mechanism sound.
-
-**GG-2/3/6/7 destructive write risk: NO.** Section 5 explicitly marks GG-1/4/5 as
-"write to disk" tests. GG-2/6/7 test Resolve-ProfilePath return values (no disk writes).
-GG-3 tests dedup logic in isolation (`$profilePaths.Count -eq 1` from Sort-Object
-expression -- not callable via Write-PowerShellProfile from test scope).
-
-**JN-2 (Write-Warning + [SKIPPED] tag):** PARTIAL. Visibility resolved -- warning stream
-visible, [SKIPPED] grep-able in CI logs, D2 preserved. Skip counter gap remains: Write-Warning
-does not call Write-Skip (harness skip-counter function); C-2/C-3 on PS7+ still do not
-increment TestsSkipped. LOW residual.
-
-**Implementation-ready: YES.** GG-3 invocation target (dedup in isolation) mildly ambiguous
-(LOW). GG-1 $mockPath + GG-4 $oneDrivePath not explicitly stated as temp paths (LOW -- CI
-failure reveals, not silent destruction).
-
-**New finding (NF-4-v5.2, LOW):** Resolved-path write target in GG-1/GG-4 (mock return
-value) not redirected to temp by -Ps51Fallback/-Ps7Fallback. Write loop writes to
-$profilePaths entries = mock return values. On CI, no real OneDrive dir -> test failure
-(observable); not silent destruction. One sentence in GG-1/4 Input cells would close.
-
-**Carry-forward LOWs:** NF-1 (encoding assertion), NF-2 (F-4 middle-of-file), NF-3/JN-2
-(skip counter), NF-4 (resolved-path identity). None blocking.
+v4 REVISE: GG-7 exe unspecified (false-green on PS5.1-only runner); $TestDrive -> real $HOME
+write risk. v5.1 SHIP: C-1/C-2/F-3 resolved; 4 carry-forward LOWs non-blocking; impl-ready.
+v5.2 SHIP: JN-1 (Write-PowerShellProfile parameterization) resolved; JN-2 (Write-Warning)
+partial (skip counter LOW); all MEDIUMs closed. Key lesson: document input exe -- mock
+mechanism correctness doesn't protect against env-fragile setup.
 
 ## PR #458 Review -- 2026-05-27T20:09:59-04:00
 
@@ -163,6 +104,25 @@ Reviewed PR #458 (feat(profile): #442 v5.2 profile-path fix -- host-queried PROF
 **Self-approve blocked on Copilot-authored PRs:** GitHub blocks 'addPullRequestReview' approve action when the reviewer is the same bot identity as the PR author. Use --comment with a clear APPROVED verdict header instead. Flag this to coordinator for routing -- Earl or a human reviewer must click Approve in the GitHub UI.
 
 **PowerShell parity-gap test patterns (Issue #451 research):** Three gaps identified in test_sprint_end_labels_pwsh.ps1 vs. bash peer test_sprint_end_labels.ps1: (1) Missing --release-label alone validation (Test C), (2) Bad --release-label prefix validation (Test D), (3) No CRLF-in-launcher regression test (T7). Bash peer has Tests A-G (7 total); PowerShell needs T1-T7 + T_C + T_D (9 total) for parity. T7 requires binary byte inspection via `[System.IO.File]::ReadAllBytes()` (not Get-Content, which applies encoding), asserting no 0x0D (CR) bytes in launcher shim. Test isolation uses existing New-TestEnv fixture with minimal state. Effort: T_C/T_D simple (~5 min each, no setup), T7 more involved (~20 min, careful encoding handling). Key risk: T7's byte-level assertion must avoid encoding transforms; use ASCII-only Write-AsciiFile pattern (established in chip/history.md PS51-safety notes).
+
+## Issue #451 Grill Response -- 2026-05-27T23:12:03-04:00
+
+Revised plan v2 per 3-reviewer grill panel (Mickey/Goofy/Jiminy). Four findings addressed:
+
+- CI gap (Mickey BLOCKING + Goofy #1): validate-ps51 job does not run test_sprint_end_labels_pwsh.ps1.
+  Added explicit YAML step (shell: powershell, line 369+) to plan; removed assumption of "no new CI changes."
+  Lesson: always audit the CI matrix when adding tests -- "existing jobs run expanded suite" is not a plan,
+  it is a wish.
+- T7 vagueness (Mickey MAJOR-2): "assert shebang valid" was undefined. Resolved to two concrete assertions:
+  no 0x0D bytes (regression invariant) + bytes[0]/[1] == 0x23/0x21 (shebang header intact). Both required
+  because the "no CR" check alone does not confirm the Replace call left the header uncorrupted.
+- Error message coupling (Mickey MAJOR-1 / Goofy T_C/T_D): T_C/T_D assertion strategy now explicit --
+  T_C is exit-code-only (mirrors bash Test C); T_D uses "release:shipped-" substring match (mirrors bash
+  Test D). Contract documented in Risk Assessment and Done Criteria. Lesson: "parity keeps both in sync"
+  is not a risk mitigation -- it is a description of the coupling.
+- Plan path (Jiminy MEDIUM): Plan moved from .squad/decisions/451-vertical-slice.md to
+  docs/plans/451-pwsh-parity-gaps.md per PR #441 precedent. .squad/decisions/ is for sprint archives,
+  not pre-implementation working plans.
 
 ## PR #438 Review -- 2026-05-27
 
