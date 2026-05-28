@@ -1,9 +1,21 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix); Doc -- v12 (Windows example syntax fix)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix); Doc -- v12 (Windows example syntax fix); Mickey -- v13 (Windows flag syntax fix)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v13 Changelog (Mickey -- Windows flag syntax fix, 2026-05-28)
+
+> **Source:** Duck-2 v12 regrill finding. Line 167 in DD-1 used Linux flag syntax
+> (`--only=uv`) inside an explicitly Windows example ("fresh Windows"). Bug missed by
+> Doc (v12 author), Jiminy, and Goofy on their sweeps; caught by Duck rubber-duck pass.
+
+1. **Line 167 Windows example corrected (Verified):** `--only=uv` on fresh Windows ->
+   `-Only 'uv'` on fresh Windows. Single-quote style matches all existing `-Only '...'`
+   usages throughout the plan. Surgical 1-line fix; no scope change.
 
 ---
 
@@ -164,7 +176,7 @@ of flags) introduced 4 edge-case blockers:
 
 - Registry overlap: dotfiles in both AvailableTools and AlwaysRun -> ambiguous `--skip`/`--only` behavior
 - Mock harness gap: `--tools-dir` didn't cover AlwaysRun phases -> CI pollution from real apt/brew/dotfiles
-- Git-hook unsafety: `--only=uv` on fresh Windows -> `Install-GitHook` hard-fails (git absent)
+- Git-hook unsafety: `-Only 'uv'` on fresh Windows -> `Install-GitHook` hard-fails (git absent)
 - Cross-platform asymmetry: dotfiles was AlwaysRun on Linux but selectable on Windows
 
 **Resolution:** ALL phases -- prerequisites, dotfiles, git-hook, tool installers -- go through
