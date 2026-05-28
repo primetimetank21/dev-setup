@@ -431,3 +431,137 @@ Status: Plan prepared 2026-05-27T06:19:33-04:00; PR #457 merged 2026-05-27 (7bb0
 
 ---
 
+## 2026-05-28 -- PR #462 Grill Cycle (Issue #451 Revision & Reviews)
+
+### Goofy Review #1 -- CHANGES REQUESTED
+
+**Date:** 2026-05-28T03:02:58-04:00 (posted)  
+**PR:** #462  
+**Issue:** #451  
+**Verdict:** CHANGES REQUESTED
+
+#### Findings
+
+1. **IMPORTANT** -- `tests/test_sprint_end_labels_pwsh.ps1:422-427` -- T_C only asserts "non-zero" for missing `--release-label`. The bash peer pins exit `2` and the production script emits a specific validation message. T_C would pass on any non-zero failure (gh missing, runtime error).
+   - **Fix:** Assert `ExitCode -eq 2` and output contains `--release-label <label> is required`.
+
+2. **IMPORTANT** -- `tests/test_sprint_end_labels_pwsh.ps1:429-436` -- T_D checks guidance but accepts any non-zero exit. Bash peer requires exit `2`; PowerShell script implements that.
+   - **Fix:** Change assertion to require `ExitCode -eq 2` before `release:shipped-` substring.
+
+#### Verified Good
+
+- PS 5.1 compatibility clean (no ternary/null-coalesce/AsByteStream/$IsWindows); 0 non-ASCII bytes
+- T7 byte-level correct (0x0D rejection, 0x23 0x21 shebang verification)
+- Fixture isolation preserved (New-TestEnv creates unique .test-tmp dirs; clean in finally blocks)
+- CI placement correct (validate-ps51 step after git-hooks PS 5.1 step)
+- Test parity count right: 9 pwsh vs 7 bash (semantic coverage aligned once T_C/T_D pin validation)
+- PR conventions correct (squash-merge, --base develop, Co-authored-by trailers)
+
+---
+
+### Mickey Review #1 (LEAD) -- CHANGES REQUESTED
+
+**Date:** 2026-05-28T02:38:27-04:00 (posted)  
+**PR:** #462  
+**Issue:** #451  
+**Verdict:** CHANGES REQUESTED (LEAD)
+
+#### Recommendation
+
+Remove out-of-scope `.squad/**` changes from PR #462 or move to separate hygiene PR. After cleanup, if Goofy's technical review passes and CI is green, Earl should approve and merge.
+
+#### Finding
+
+**Scope gate failed:** PR touches `.squad/agents/chip/history.md`, `.squad/identity/now.md`, and `.squad/skills/ps51-byte-launcher-regression/SKILL.md` (outside approved test/workflow/optional-plan slice).
+
+#### Verified Good
+
+- In-scope contract delivered: T_C, T_D, T7, validate-ps51 workflow step present
+- Test count verified: 6 -> 9 scenarios
+- Branch/base correct: squad/451-pwsh-parity-gaps -> develop
+- CI recheck: all checks passed
+- Reviewer lockout: comment-only lead review; Chip/Copilot cannot self-approve; Earl approval required
+
+---
+
+### Goofy Revision -- SCOPE DRIFT REMOVAL
+
+**Date:** 2026-05-28 (session timestamp)  
+**Branch:** squad/451-pwsh-parity-gaps  
+**Commits:** 8870abe (scope cleanup), 93b339f (T_C/T_D assertion pin)
+
+#### Scope Cleanup (8870abe)
+
+Removed:
+- `.squad/agents/chip/history.md` append
+- `.squad/identity/now.md` update
+- `.squad/skills/ps51-byte-launcher-regression/SKILL.md` creation
+
+Retained in-scope:
+- T_C, T_D, T7 test assertions
+- validate-ps51 workflow step
+- docs/plans/451-pwsh-parity-gaps.md
+
+#### Assertion Revision (93b339f)
+
+- T_C line 424: Assert exit 2 (not just non-zero)
+- T_C line 427: Assert output contains `--release-label <label> is required`
+- T_D line 434: Assert exit 2 (prior: any non-zero)
+- T_D line 437: Assert substring `release:shipped-` (unchanged; now after exit pin)
+
+**Evidence:** Clean detached worktree at PR head passed local test run: 9 passed, 0 failed, 0 skipped.
+
+---
+
+### Mickey Re-Review (LEAD) -- APPROVED
+
+**Date:** 2026-05-28T03:02:58-04:00 (session timestamp)  
+**PR:** #462  
+**Issue:** #451  
+**Verdict:** APPROVED (LEAD)
+
+#### Verification
+
+- `gh pr view 462` confirmed base develop, head squad/451-pwsh-parity-gaps, all checks passed
+- `git diff origin/develop...origin/squad/451-pwsh-parity-gaps --stat` showed exactly three paths:
+  - `.github/workflows/validate.yml`
+  - `docs/plans/451-pwsh-parity-gaps.md`
+  - `tests/test_sprint_end_labels_pwsh.ps1`
+- No `.squad/**`, `scripts/**`, `src/**` or unrelated workflow drift
+- T_C, T_D, T7 assertions intact
+- validate-ps51 step included
+- Goofy's revision tightened T_C/T_D to exit 2 + message/guidance assertions
+
+#### Reviewer Gate
+
+Lockout remains enforced. Chip (author) + Goofy (revision) + Mickey (lead review) + Goofy (re-review). Comment-only approvals posted; Earl/human final approver and merger.
+
+#### Recommendation
+
+Earl should perform final human approval and merge PR #462.
+
+---
+
+### Goofy Re-Review -- APPROVED
+
+**Date:** 2026-05-28T03:02:58-04:00 (session timestamp)  
+**PR:** #462  
+**Issue:** #451  
+**Verdict:** APPROVED
+
+#### Evidence
+
+- `tests/test_sprint_end_labels_pwsh.ps1` at PR head asserts T_C exit 2 + message at lines 424, 427
+- T_D asserts exit 2 at line 434 + substring at line 437
+- Production validation: `--release-label <label> is required` exit 2 at lines 114-117; bad prefix `release:shipped-` guidance exit 2 at lines 120-122
+- Bash peer: same exit-code contracts at C (130-135) and D (142-149)
+- Commit 93b339f touched only T_C/T_D assertion hunk; T7/CRLF logic unchanged
+- Clean detached worktree at PR head: 9 passed, 0 failed, 0 skipped
+
+#### Traps Avoided
+
+- Local working copy had unrelated dirty state (failed T3-T6); not used as PR-head evidence
+- Tightened assertions use only PS 5.1-safe constructs (-ne, -notmatch, strings); no PS 7+ syntax
+
+---
+

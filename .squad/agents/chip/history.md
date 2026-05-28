@@ -178,3 +178,7 @@ Reviewed PR #458 (feat(profile): #442 v5.2 profile-path fix -- host-queried PROF
 - **Trailer fix:** Commits 461befc + b274cebe had Co-authored-by concatenated to body (no blank line); fixed via doc rebase to 72b80bb + 18f170a; verified via `git interpret-trailers --parse`.
 - **Implementation ready:** YES. Plan v3 at docs/plans/451-pwsh-parity-gaps.md with all acceptance criteria documented. Draft PR #462 opened. Follow-up #461 filed for PS 5.1 defensiveness (out-of-scope).
 
+## 2026-05-28 -- PR #462 Grill-Cycle (Revision & Final Approval)
+
+PR #462 went through revision cycle: Goofy identified 2 IMPORTANT gaps (T_C/T_D exit-code contracts too loose); Mickey identified scope drift (.squad/** changes outside approved slice). Goofy revised with scope cleanup (8870abe) + tightened assertions (93b339f). Both reviewers approved in re-review round. Locked against self-approve; Earl remains final approver and merger.
+
