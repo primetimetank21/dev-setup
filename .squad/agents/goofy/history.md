@@ -103,3 +103,16 @@ Sprints 11-20 moved to history-archive.md per hygiene gate 2026-05-27. Key patte
 - **R2 verdict:** APPROVE-WITH-MINOR-CAVEATS. Caveat: True undefined on PS 5.1 causes -not $null = $true, chmod fails silently on Windows. Acceptable (PS 5.1 is Windows-only). Offered two mitigation options; recommended clarifying comment or OS-platform check during impl.
 - **R3 verdict:** APPROVE. Caveat fully addressed by plan v3 out-of-scope section + filed #461. Scope boundary clean; plan ready for implementation.
 - **Key learning:** Cross-platform caveats should be explicitly acknowledged and tracked separately (#461) rather than blocking the implementation slice (#451). Deferred defensiveness improvements are sustainable when documented.
+
+## 2026-05-28 -- PR #470: #468 Plan v2 (Grill Revision)
+
+- **Role:** v2 author (Mickey locked out per reviewer protocol)
+- **Commit:** 7e284de -- docs(plan): #468 v2
+- **Findings addressed:** 12 (3 Duck, 3 Donald, 2 Chip, 4 synthesis)
+
+## Learnings
+
+- **Default order encoding:** Hardcoded arrays (bash DEFAULT_TOOLS, pwsh $DefaultTools) are the only safe mechanism for tool execution order. Filesystem scan is alphabetical and breaks implicit dependency chains (nvm before npm-tools, gh before auth). The array IS the opt-in gate.
+- **Registry contract pick:** Chose explicit $ToolRegistry with 3-line extension pattern over auto-discovery. Reason: Windows tool files have no naming convention mapping filename -> function (Install-Git vs Invoke-GhAuth vs Write-PowerShellProfile). Auto-discovery would require a refactor that's out of scope.
+- **Baseline fixture strategy:** Committed text files (tests/fixtures/baseline-tools-{platform}.txt) as the regression contract. Slice 0 captures them; Slice 1's first test diffs against them. This is the backward-compat enforcement that v1 lacked.
+- **PowerShell grammar pick:** `-Only "a,b"` (quoted comma-string, [string] param type) over unquoted (becomes [string[]], allows -Only a -Only b which breaks comma-canonical rule) and double-dash (breaks tab-completion, not idiomatic PS). Split internally with .Split(',') -- parity with bash IFS split.
