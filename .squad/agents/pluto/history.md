@@ -154,3 +154,47 @@ Added 2-3 line clarification to routing.md "Pre-Spawn Worktree Creation" section
 
 - 2026-05-27 -- #441 -- formalized grill SKILL (.squad/skills/grill/SKILL.md). First formal capture of the adversarial plan-review ceremony. Canonical example: issue #441, Goofy plan + Mickey/Chip/Doc parallel grillers. Confidence: low.
 Decision drop: .squad/decisions/inbox/pluto-441-v5.2-grill.md
+
+---
+
+## Sprint 20 -- Issue #442: v5.2 Profile-Path Fix Implementation
+
+**Date:** 2026-05-28 | **Branch:** squad/442-profile-path-impl | **Status:** Complete.
+
+### What was built
+
+Implemented the v5.2 profile-path fix per docs/plans/441-profile-path.md:
+
+- **Invoke-HostQuery** (profile.ps1): spawns host exe as subprocess; returns its live $PROFILE
+- **Resolve-ProfilePath** (profile.ps1): wraps Invoke-HostQuery with LASTEXITCODE check,
+  last-non-empty-line extraction, and fallback to param-supplied path on any failure
+- **Write-PowerShellProfile** refactored with -Ps51Fallback/-Ps7Fallback optional params;
+  zero-arg production call unchanged; test injection via params (v5.2-D1)
+- **Dynamic $profilePaths**: Sort-Object -Unique dedup over resolved paths
+- **Legacy cleanup loop**: strips dev-setup managed block from fallback paths NOT in resolved set
+- **uninstall.ps1**: inlined Invoke-HostQuery/Resolve-ProfilePath; union of resolved + fallback paths
+- **tests**: PS7+ skip guards on C-2/C-3; Group GG (GG-1 through GG-7) all passing
+
+### Lessons learned
+
+**Write-Info pollutes return value**: Write-Info { Write-Output "[INFO]..." } in
+logging.ps1 writes to the success stream. Calling it inside a value-returning function
+like Resolve-ProfilePath causes callers capturing @(Resolve-ProfilePath ...) to receive
+both the path AND the log strings. Fix: use Write-Host directly in value-returning
+helper functions (does not write to success stream). Rule: in functions that RETURN a
+value via the pipeline, never call Write-Info/Write-Warn -- use Write-Host instead.
+
+**Sort-Object -Unique returns scalar on single match**: When dedup collapses to 1 item,
+@(,) | Sort-Object -Unique returns a string scalar, not an array. $scalar[0]
+returns the first CHARACTER (not the string). Use @()[0] and
+@().Count to force array semantics in diagnostics.
+
+**Strip regex requires preceding newline**: Regex (?s)\r?\n# BEGIN...# END\r?\n? cannot
+match a block that starts at byte 0 of a file (no preceding \r?\n). GG-5 hit this by
+starting with an empty file; fix: seed the file with pre-existing content before the
+idempotency runs (mirrors production reality). Regex unchanged -- position-0 blocks are
+not a production scenario.
+
+### Test outcome
+
+Passed: 136 (+7), Skipped: 8, Failed: 8 (all pre-existing: D-4 live Copilot, O-1 to O-7 alias override)
