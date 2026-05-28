@@ -103,11 +103,45 @@ function Remove-DevSetupProfileBlock {
     }
 }
 
-# Target both PS 5.1 and PS 7+ profile paths
+# Resolver functions (inlined for self-containment -- uninstall must work without the repo)
+function Invoke-HostQuery {
+    param([string]$Exe)
+    & $Exe -NoProfile -NonInteractive -NoLogo -Command '$PROFILE' 2>$null
+}
+
+function Resolve-ProfilePath {
+    param([string]$HostExe, [string]$FallbackPath)
+    if (-not (Get-Command $HostExe -ErrorAction SilentlyContinue)) {
+        Write-Info "$HostExe not found - fallback: $FallbackPath"
+        return $FallbackPath
+    }
+    try {
+        $raw = Invoke-HostQuery -Exe $HostExe
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warn "$HostExe exited $LASTEXITCODE - fallback: $FallbackPath"
+            return $FallbackPath
+        }
+        $resolved = ($raw.Trim() -split '\r?\n' | Where-Object { $_ } | Select-Object -Last 1).Trim()
+        if ([string]::IsNullOrEmpty($resolved)) { return $FallbackPath }
+        if ($resolved -notmatch '^[A-Za-z]:\\') { return $FallbackPath }
+        Write-Info "Resolved $HostExe profile: $resolved"
+        return $resolved
+    } catch {
+        Write-Warn "Query failed for $HostExe - fallback: $FallbackPath"
+        return $FallbackPath
+    }
+}
+
+# Target resolved profile paths (OneDrive/KFM-aware) plus legacy fallbacks (deduped)
+$ps51Fallback = [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1')
+$ps7Fallback  = [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
+
 $profilePaths = @(
-    [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),
-    [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
-)
+    (Resolve-ProfilePath 'powershell' $ps51Fallback),
+    (Resolve-ProfilePath 'pwsh' $ps7Fallback),
+    $ps51Fallback,
+    $ps7Fallback
+) | Sort-Object { $_.ToLower() } -Unique
 
 foreach ($p in $profilePaths) {
     Remove-DevSetupProfileBlock -ProfilePath $p
