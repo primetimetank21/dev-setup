@@ -122,3 +122,4 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - Verdict: REQUEST CHANGES. Blockers: CI/e2e wiring mismatch, incomplete public flag-combo/root tests, baseline fixture pre-change anchoring, and flag re-run idempotency test gap.
 - 2026-05-30 #470 v6: REQUEST CHANGES -- Linux Fixture Provenance omits current prereqs/dotfiles/git-hook no-arg behavior; other v5 blockers verified fixed.
 - 2026-05-30 #470 v7: PUSHED Fixture Provenance order fix -- Linux prereqs/tools/dotfiles/git-hook and Windows winget-check/tools/git-hook verified from setup scripts.
+- 2026-05-30 -- #470 v8 grill: REQUEST CHANGES; winget-check registry must preserve missing-winget exit gate and document -Skip winget-check foot-gun.
