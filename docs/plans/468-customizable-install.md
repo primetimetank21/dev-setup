@@ -1,9 +1,26 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v11 Changelog (Mickey -- 2x2 npm-absent matrix, 2026-05-28)
+
+> **Source:** Duck raised REQUEST CHANGES on v10 grill (PR #470). The Graceful Degradation
+> section grouped `copilot-cli` and `squad-cli` together, but real Windows behavior differs
+> between the two tools. Earl authorized Mickey as v11 author (narrow patch, deadlock break
+> per Reviewer Protocol step 7).
+
+1. **2x2 npm-absent matrix added (Verified):** Replaced the flat per-platform bullets with a
+   full tool x platform matrix distinguishing all four cells. Evidence verified against source:
+   `scripts/linux/tools/copilot-cli.sh:46-49`, `scripts/linux/tools/squad-cli.sh:41-43`,
+   `scripts/windows/tools/copilot.ps1:47-50`, `scripts/windows/tools/squad-cli.ps1:37-43`.
+
+2. **Parity clarifier added to Non-Negotiables #2 (Duck Suggestion #2):** One sentence
+   distinguishing selection-semantics parity from per-tool degradation behavior.
 
 ---
 
@@ -197,7 +214,7 @@ PowerShell: post-split loop checking each element for empty string.
 ## Non-Negotiables
 
 1. **Backward compatibility:** `setup.sh` (no args) === current full install. Enforced by baseline-diff test.
-2. **Cross-platform parity:** Every flag and its semantics work identically on bash and pwsh.
+2. **Cross-platform parity:** Every flag and its semantics work identically on bash and pwsh. Parity applies to selection semantics; individual installer degradation behavior is preserved as-is per platform.
 3. **Existing tool pattern preserved:** Individual tool scripts remain independently runnable.
 4. **PS 5.1 compatibility:** All `.ps1` changes must pass `validate-ps51`.
 5. **Root entrypoint transparency:** `./setup.sh <flags>` behaves identically to calling the platform script directly.
@@ -744,14 +761,24 @@ param(
 ### Graceful Degradation
 
 Tools are NOT fully independent. Known chains:
-- `copilot-cli`/`squad-cli` npm-absent behavior **differs by platform** (Verified):
-  - **Linux** (`scripts/linux/tools/squad-cli.sh`): emits `log_warn` and `exit 0` -- silent
-    skip; tool is non-functional until Node is available but the overall run continues.
-  - **Windows** (`scripts/windows/tools/squad-cli.ps1`): emits `Write-Err` diagnostics and
-    `exit 1` -- hard stop with actionable error (PATH refresh hints, nvm troubleshooting).
+- `copilot-cli` / `squad-cli` npm-absent behavior **differs by tool and platform** (Verified):
+
+  | Tool | Linux | Windows |
+  |------|-------|---------|
+  | `copilot-cli` | `log_warn` + `exit 0` -- warning, silent skip; run continues | `Write-Warn` + `return` -- warning, non-hard-stop; run continues |
+  | `squad-cli` | `log_warn` + `exit 0` -- warning, silent skip; run continues | `Write-Err` + `exit 1` -- hard stop with PATH/nvm diagnostics |
+
+  Sources: `scripts/linux/tools/copilot-cli.sh:46-49`, `scripts/linux/tools/squad-cli.sh:41-43`,
+  `scripts/windows/tools/copilot.ps1:47-50`, `scripts/windows/tools/squad-cli.ps1:37-43`.
+
 - `auth` silently skips if `gh` not installed
 
-`--only=copilot-cli` on a fresh machine without nvm = exit 0, tool not functional.
+**npm-absent examples (fresh machine without Node):**
+- `--only=copilot-cli` Linux: `exit 0`, tool non-functional until Node available.
+- `--only=copilot-cli` Windows: `return` (non-hard-stop), tool non-functional until Node available.
+- `--only=squad-cli` Linux: `exit 0`, tool non-functional until Node available.
+- `--only=squad-cli` Windows: `exit 1` (hard stop) -- actionable error guides PATH refresh / nvm troubleshooting.
+
 Documented behavior. Future DAG (out of scope) could warn.
 
 ### Git-Hook Self-Guard (v5 fix #2 -- DK4-bis)
