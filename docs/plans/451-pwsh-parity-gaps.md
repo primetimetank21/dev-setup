@@ -1,10 +1,10 @@
 # Plan: #451 Vertical Slice -- PowerShell Parity Gaps
 
 **Date:** 2026-05-28T02:56:01-04:00  
-**Revised:** 2026-05-27T23:12:03-04:00  
+**Revised:** 2026-05-27T23:47:00-04:00  
 **Author:** Chip (Tester)  
 **Issue:** #451  
-**Status:** v2 -- Post-Grill Revision
+**Status:** v3 -- Post-Grill Revision (Round 2)
 
 ---
 
@@ -175,6 +175,33 @@ preventing silent re-introduction of the bug.
 
 ---
 
+## Out-of-Scope Tracked Item (v3 addition -- resolves Goofy Round 2 caveat)
+
+**`$IsWindows` PS 5.1 hazard in `New-TestEnv` (line 320 of test file):**
+
+Existing code reads:
+
+```powershell
+if (-not $IsWindows) {
+    & chmod +x $launcherPath 2>$null | Out-Null
+}
+```
+
+`$IsWindows` is a PS 7+ automatic variable. On PS 5.1 it is undefined (`$null`).
+`-not $null` evaluates to `$true`, so the `chmod` branch always executes on PS 5.1.
+On Windows, `chmod` does not exist; the call fails silently (suppressed by `2>$null`).
+
+**Decision:** Keep #451 scope tight. This is pre-existing code, not introduced by T_C/T_D/T7.
+Filed as follow-up issue **#461**: "Replace `$IsWindows` check with explicit POSIX platform
+detection (PS 5.1 defensiveness)".
+
+**Acceptable for #451:** PS 5.1 is Windows-only; silent `chmod` failure causes no test
+corruption. The three new tests (T_C, T_D, T7) do not depend on the chmod path.
+Implementer does NOT need to fix this during #451 -- it is tracked and will be addressed
+in #461.
+
+---
+
 ## Revision History
 
 - **v1 (2026-05-28T02:56:01-04:00):** Initial plan committed to `.squad/decisions/451-vertical-slice.md`.
@@ -190,3 +217,12 @@ preventing silent re-introduction of the bug.
     in Risk Assessment and Done Criteria.
   - MEDIUM (Jiminy): Plan moved from `.squad/decisions/451-vertical-slice.md` to
     `docs/plans/451-pwsh-parity-gaps.md` per PR #441 precedent.
+- **v3 (2026-05-27T23:47:00-04:00):** Addressed Round 2 grill panel (Mickey/Goofy/Jiminy).
+  - Mickey APPROVE: All four R1 findings confirmed resolved. Done Criteria at lines 174/172
+    already cover both Mickey implementation-phase notes (error-message contract in PR
+    description; TODO removal). No plan text changes needed.
+  - Goofy APPROVE-WITH-MINOR-CAVEATS: `$IsWindows` PS 5.1 hazard at New-TestEnv line 320
+    noted. Decision: out of scope for #451 (pre-existing code, not introduced by this slice).
+    Filed follow-up issue #461. See "Out-of-Scope Tracked Item" section above.
+  - Jiminy CLEAN: Commit trailer formatting noted. v3 commit uses blank-line-separated
+    Co-authored-by trailer per git interpret-trailers convention.
