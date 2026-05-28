@@ -62,3 +62,16 @@
 ## 2026-05-27 PR #457 Follow-Up -- Grill Ceremony Description Restoration
 
 - 2026-05-27: PR #457 follow-up restore. Initial "dedupe" deletion for #455 was a misread -- the line removed was the entire body of the decision entry, not a duplicated phrase. Lesson: when an acceptance criterion says "dedupe", verify the matches are actual duplicates (not heading + body + cross-refs) BEFORE deleting. Read the surrounding structure first.
+
+## 2026-05-27 -- Session: #451 Vertical Slice Plan Grill + Inbox Merge
+
+- **Tasks completed:**
+  1. Stat decisions.md + count inbox files (18832 bytes pre-merge; 13 inbox files; no archival needed)
+  2. Merge all 13 inbox files to decisions.md under single session header
+  3. Deduplicate entries (grill rounds organized chronologically; parallel work noted)
+  4. Delete all inbox files
+  5. Write orchestration logs (5 files: chip, mickey, goofy, jiminy, doc)
+  6. Write session log (comprehensive summary of grill ceremony + deliverables)
+  7. Update history.md for affected agents (summarized Mickey's to 11580 bytes; added #451 notes)
+  8. Commit + push to develop (pending)
+- **Key learning:** Grill ceremony produces heavy decision traffic (13 files/round); batch consolidation under session header keeps decisions.md compact and audit trail clear.

@@ -349,3 +349,85 @@ Both changes in single branch `squad/455-456-scribe-governance-chores`, single P
 
 Status: Plan prepared 2026-05-27T06:19:33-04:00; PR #457 merged 2026-05-27 (7bb05a0); this record retained for audit trail.
 
+---
+
+## 2026-05-27 -- Session: #451 Vertical Slice Plan (Grill Rounds 1-4)
+
+### Planning Context
+
+**Issue:** #451 (PowerShell parity gaps -- sprint-end-labels tests on PS 5.1)  
+**Branch:** squad/451-pwsh-parity-gaps  
+**Final PR:** #462 (draft)  
+**Plan file:** docs/plans/451-pwsh-parity-gaps.md  
+**Follow-up issue:** #461 ($IsWindows PS 5.1 defensiveness)
+
+### Plan Evolution
+
+| Round | Author | Verdict | Status |
+|-------|--------|---------|--------|
+| R1 (v1) | Jiminy + Mickey + Goofy | 3x REVISE + APPROVE-W/-CHANGES | Blocking CI gap, PS 5.1 coverage unclar |
+| R2 (v2) | Mickey | APPROVE | CI gap resolved, caveat identified ($IsWindows fragility) |
+| R2 (v2) | Goofy | APPROVE-W/-MINOR-CAVEATS | $IsWindows check fragile but acceptable |
+| R3 (v3) | Mickey | APPROVE | All R2 notes tracked; implementation-ready |
+| R3 (v3) | Goofy | APPROVE | Caveat deferred to #461; scope boundary sound |
+| R4 | Jiminy | DIRTY->CLEAN | Trailer format fixed via doc commit rebase |
+
+### Key Plan Decisions
+
+- **Scope:** Add 3 tests (T_C, T_D, T7) + 1 YAML step to validate-ps51 job
+- **T_C:** `--release-label` alone, missing `--sprint` -> asserts exit != 0
+- **T_D:** Bad `--release-label` prefix (not "release:shipped-") -> asserts exit != 0 + substring match
+- **T7:** Regression test for PR #438 CRLF fix -> assert no 0x0D bytes + shebang 0x23 0x21
+- **CI:** Add step to `.github/workflows/validate.yml` validate-ps51 job (line 369+)
+- **$IsWindows caveat:** Pre-existing code at line 320; PS 5.1 fragility acknowledged and deferred to #461
+
+### Grill Panel Verdicts (Consensus)
+
+**Mickey (Architecture Lead):** APPROVE (all BLOCKING and MAJOR findings resolved in v2->v3)  
+**Goofy (Cross-Platform Dev):** APPROVE (PS 5.1 compatibility sound; caveat out-of-scope but tracked)  
+**Jiminy (Hygiene):** CLEAN (trailer format corrected; plan location moved to docs/plans/)  
+**Chip (Tester/Author):** SHIP-READY (all acceptance criteria met; v5.2 profile-path analog)
+
+### Implementation-Phase Tracking
+
+**Done Criteria Highlights:**
+- [ ] T_C/T_D/T7 added to `tests/test_sprint_end_labels_pwsh.ps1`
+- [ ] YAML step added to validate-ps51 job (remove TODO at line 285)
+- [ ] PR description documents "release:shipped-" error-message contract
+- [ ] Both validate-powershell and validate-ps51 jobs green in CI
+
+**Out-of-Scope (Tracked #461):**
+- Replace `$IsWindows` check with explicit `$PSVersionTable.Platform` check (PS 5.1 defensiveness)
+
+### Drained Inbox Files (13 total)
+
+| File | Verdict | Finder |
+|------|---------|--------|
+| goofy-451-grill.md | APPROVE-W/-CHANGES | Goofy R1 |
+| goofy-451-grill-r2.md | APPROVE-W/-MINOR-CAVEATS | Goofy R2 |
+| goofy-451-grill-r3.md | APPROVE | Goofy R3 |
+| mickey-451-grill.md | APPROVE-W/-CHANGES | Mickey R1 |
+| mickey-451-grill-r2.md | APPROVE | Mickey R2 |
+| mickey-451-grill-r3.md | APPROVE | Mickey R3 |
+| jiminy-451-grill.md | DIRTY | Jiminy R1 |
+| jiminy-451-grill-r2.md | CLEAN | Jiminy R2 |
+| jiminy-451-grill-r3.md | DIRTY | Jiminy R3 |
+| jiminy-451-grill-r4.md | CLEAN | Jiminy R4 |
+| chip-pr458-review.md | APPROVED | Chip (parallel to #451) |
+| donald-nvm-path-subshell-fix.md | APPROVED | Donald (parallel) |
+| mickey-pr458-review.md | APPROVE | Mickey (parallel) |
+
+### Related Parallel Work (Drained from Inbox)
+
+**PR #458 (Profile-Path Fix, #441/#442):**
+- Chip review: APPROVED (all 7 GG acceptance gates pass; 4 carry-forward LOWs non-blocking)
+- Mickey review: APPROVE (plan design elements verified; inline resolver pattern sound)
+- Status: Ready to merge (human approval required per Copilot self-review block)
+
+**PR #436 (NVM Bootstrap Fix):**
+- Donald decision: Formalized nvm sourcing in npm-dependent tool scripts
+- Pattern: subshell-safe via standard NVM_DIR bootstrap block + graceful npm-missing fallback
+- Confidence: high (matches existing npm-install idempotency model)
+
+---
+
