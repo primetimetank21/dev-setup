@@ -117,3 +117,8 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **R3 verdict:** DIRTY. Trailer format STILL BROKEN. Need v4 commit with blank line before trailer.
 - **R4 verdict:** CLEAN (5-point checklist). Trailers verified (72b80bb, 18f170a). Old SHAs (461befc, b274cebe) orphaned. Worktree clean.
 - **Key learning:** Trailer format is a hygiene gate; verify via git interpret-trailers --parse. Cosmetic issues in R2/R3 escalate if not corrected before R4 verification.
+
+## 2026-05-30 -- #470 Plan v5 Fresh-Eyes Grill
+- Verdict: REQUEST CHANGES. Blockers: CI/e2e wiring mismatch, incomplete public flag-combo/root tests, baseline fixture pre-change anchoring, and flag re-run idempotency test gap.
+- 2026-05-30 #470 v6: REQUEST CHANGES -- Linux Fixture Provenance omits current prereqs/dotfiles/git-hook no-arg behavior; other v5 blockers verified fixed.
+- 2026-05-30 #470 v7: PUSHED Fixture Provenance order fix -- Linux prereqs/tools/dotfiles/git-hook and Windows winget-check/tools/git-hook verified from setup scripts.

@@ -7,6 +7,12 @@
 
 ---
 
+## v7 Changelog (Jiminy -- fixture provenance polish)
+
+1. **v7 (Jiminy):** Fixture Provenance Linux/Windows order corrected to match real `setup.{sh,ps1}` execution including prereqs/dotfiles/git-hook phases absorbed into DefaultTools after AlwaysRun drop.
+
+---
+
 ## v6 Changelog (Pluto -- surgical polish on Donald's v5)
 
 1. **`--check` mode write-then-diff bug (Duck blocker):** Restructured
@@ -510,8 +516,9 @@ The committed fixture files (`tests/fixtures/baseline-tools-linux.txt` and
 the customizable-install refactor lands**. They represent the explicit current default
 tool order as verified by reading the pre-change source scripts.
 
-**Current Linux order** (from `scripts/linux/setup.sh` `run_tool` calls):
+**Current Linux order** (from `scripts/linux/setup.sh` `main` execution):
 ```
+prereqs
 zsh
 uv
 nvm
@@ -519,10 +526,15 @@ gh
 auth
 copilot-cli
 squad-cli
+dotfiles
+git-hook
 ```
 
-**Current Windows order** (from `scripts/windows/setup.ps1` function calls):
+Linux maps to `install_prerequisites` first, then the seven `run_tool` calls, then the dotfiles block, then git-hook config in `main`.
+
+**Current Windows order** (from `scripts/windows/setup.ps1` `Main` execution):
 ```
+winget-check
 git
 uv
 nvm
@@ -536,6 +548,8 @@ dotfiles
 profile
 git-hook
 ```
+
+Windows maps to the `Test-WingetAvailable` gate first, then `Install-*` / `Invoke-*` function calls through `Install-GitHook` in `Main`.
 
 > **Implementation note:** `scripts/dev/regenerate-baseline-fixtures.sh` must NOT be run
 > as part of implementation. Fixtures are hand-verified from the current pre-change
