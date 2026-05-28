@@ -8,15 +8,66 @@ $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
 
-function Write-PowerShellProfile {
-    $beginMarker = '# BEGIN dev-setup profile'
-    $endMarker   = '# END dev-setup profile'
+function Invoke-HostQuery {
+    param([string]$Exe)
+    & $Exe -NoProfile -NonInteractive -NoLogo -Command '$PROFILE' 2>$null
+}
 
-    # Write to BOTH PS 5.1 and PS 7+ profile paths explicitly
-    $profilePaths = @(
-        [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),  # PS 5.1
-        [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')          # PS 7+
+function Resolve-ProfilePath {
+    param([string]$HostExe, [string]$FallbackPath)
+
+    if (-not (Get-Command $HostExe -ErrorAction SilentlyContinue)) {
+        Write-Host "[INFO]  $HostExe not found - fallback: $FallbackPath"
+        return $FallbackPath
+    }
+    try {
+        $raw = Invoke-HostQuery -Exe $HostExe
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[WARN]  $HostExe exited $LASTEXITCODE - fallback: $FallbackPath"
+            return $FallbackPath
+        }
+        $resolved = ($raw.Trim() -split '\r?\n' | Where-Object { $_ } | Select-Object -Last 1).Trim()
+        if ([string]::IsNullOrEmpty($resolved)) { return $FallbackPath }
+        if ($resolved -notmatch '^[A-Za-z]:\\') { return $FallbackPath }
+        Write-Host "[INFO]  Resolved $HostExe profile: $resolved"
+        return $resolved
+    } catch {
+        Write-Host "[WARN]  Query failed for $HostExe - fallback: $FallbackPath"
+        return $FallbackPath
+    }
+}
+
+function Write-PowerShellProfile {
+    param(
+        # v5.2-D1: optional params allow test override; defaults mirror production paths
+        [string]$Ps51Fallback = [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),
+        [string]$Ps7Fallback  = [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
     )
+    # ALL path-resolution and write logic lives inside this function.
+    # Dot-sourcing profile.ps1 defines functions only; it does NOT execute
+    # resolution or writes. Tests define mock Invoke-HostQuery AFTER
+    # dot-sourcing and BEFORE calling Write-PowerShellProfile.
+    $local:beginMarker = '# BEGIN dev-setup profile'  # v5.1-F5
+    $local:endMarker   = '# END dev-setup profile'    # v5.1-F5
+
+    # Resolve actual profile paths by querying each host; deduplicate case-insensitively
+    $profilePaths = @(
+        (Resolve-ProfilePath 'powershell' $Ps51Fallback),
+        (Resolve-ProfilePath 'pwsh' $Ps7Fallback)
+    ) | Sort-Object { $_.ToLower() } -Unique
+
+    # Legacy cleanup: strip orphaned blocks at fallback paths not in the resolved set
+    $legacyPaths = @($Ps51Fallback, $Ps7Fallback)
+    foreach ($legacy in $legacyPaths) {
+        $isOrphan = @($profilePaths | Where-Object { $_.ToLower() -eq $legacy.ToLower() }).Count -eq 0
+        if ($isOrphan -and (Test-Path $legacy) -and
+            (Select-String -Path $legacy -Pattern $beginMarker -Quiet)) {
+            $legacyContent = Get-Content $legacy -Raw
+            $stripped = $legacyContent -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''  # v5.1-F4
+            Set-Content $legacy $stripped.TrimEnd() -NoNewline -Encoding ASCII  # v5-H1
+            Write-Info "Stripped orphaned block from legacy path: $legacy"
+        }
+    }
 
     foreach ($profilePath in $profilePaths) {
         # If the managed block already exists, strip it out so we can re-inject fresh
@@ -247,9 +298,13 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
 # END dev-setup profile
 '@
 
-    # Diagnostics: log both profile paths being targeted (PS 5.1 vs PS 7+)
-    Write-Info "PS 5.1 profile path: $($profilePaths[0])"
-    Write-Info "PS 7+  profile path: $($profilePaths[1])"
+    # Diagnostics: log resolved profile paths (may be deduplicated to one entry)
+    Write-Info "PS 5.1 profile path (resolved): $($profilePaths[0])"
+    if (@($profilePaths).Count -gt 1) {
+        Write-Info "PS 7+  profile path (resolved): $($profilePaths[1])"
+    } else {
+        Write-Info "PS 7+  profile path (resolved): (same as PS 5.1 after dedup)"
+    }
 
     # Diagnostics: log execution policy before writing - helps diagnose load failures on PS 5.1
     $execPolicy = Get-ExecutionPolicy -Scope CurrentUser

@@ -57,6 +57,7 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 - shellcheck `-s bash` flag is needed for sourced dotfiles like `.aliases` that have no shebang -- tells shellcheck the dialect without requiring SC2148 fix
 - `config/dotfiles/.aliases` passes shellcheck clean as of issue #193 -- no directives needed, no SC1090/SC2034/SC2148 violations
 - Issue #424: when wiring `tests/test_precommit_hygiene.sh` into `validate.yml`, set `git config --global init.defaultBranch master` before the hook-path step. The test creates `main` later; runners whose `git init` default is already `main` make that scenario fail before the hook is exercised.
+- Issue #441/#442 (v5.2): `tests/test_alias_parity.sh` scrapes ALL PowerShell `function` declarations from `profile.ps1` and treats them as aliases. Any new Windows-only PS helper function (e.g. `Invoke-HostQuery`, `Resolve-ProfilePath`) will appear as undocumented drift. Fix: add to `ALLOWED_ALIAS_DRIFT` with `windows` platform tag, OR add the function name to the exclusion grep in `extract_windows_aliases`. The allowlist is the right choice for user-visible helpers; the exclusion grep is right for purely internal plumbing. Future PS helpers added in Windows-only paths will trigger this test until one of those two options is applied.
 
 ---
 

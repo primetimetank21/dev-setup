@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/test_alias_parity.sh — Alias parity check between Linux and Windows
+# tests/test_alias_parity.sh -- Alias parity check between Linux and Windows
 #
 # Extracts alias/function names from:
 #   - config/dotfiles/.aliases          (Linux: alias X=..., function X() {...})
@@ -13,12 +13,12 @@
 #   bash tests/test_alias_parity.sh
 #
 # Exit codes:
-#   0 — all aliases in parity (or drift is documented)
-#   1 — undocumented alias drift detected
+#   0 -- all aliases in parity (or drift is documented)
+#   1 -- undocumented alias drift detected
 
 set -uo pipefail
 
-# ── Path setup ────────────────────────────────────────────────────────────────
+# -- Path setup ----------------------------------------------------------------
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LINUX_ALIASES="$REPO_ROOT/config/dotfiles/.aliases"
@@ -34,45 +34,49 @@ if [[ ! -f "$WINDOWS_PROFILE" ]]; then
     exit 1
 fi
 
-# ── Allowed drift ─────────────────────────────────────────────────────────────
+# -- Allowed drift -------------------------------------------------------------
 # Aliases that intentionally exist on one platform but not the other.
 # Format: "alias_name:platform" where platform is "linux" or "windows"
 # meaning the alias exists ONLY on that platform.
 
 ALLOWED_ALIAS_DRIFT=(
-    "gb:windows"          # git branch shortcut — Windows only (no Linux equivalent yet)
-    "..:linux"            # cd .. — navigation shortcut, not applicable on Windows
-    "...:linux"           # cd ../.. — navigation shortcut
-    "....:linux"          # cd ../../.. — navigation shortcut
-    "~:linux"             # cd ~ — navigation shortcut
-    "-:linux"             # cd - — navigation shortcut
-    "ls:linux"            # ls --color=auto — ls is not aliased on Windows
-    "ll:linux"            # ls -alF — ls variant
-    "la:linux"            # ls -A — ls variant
-    "l:linux"             # ls -CF — ls variant
-    "lh:linux"            # ls -alFh — ls variant
-    "path:linux"          # echo PATH — Linux-specific
-    "reload:linux"        # source ~/.zshrc — Linux-specific
-    "ports:linux"         # ss -tulnp — Linux-specific
-    "vb:linux"            # vim ~/.bashrc — Linux-specific
-    "sb:linux"            # source ~/.bashrc — Linux-specific
-    "vz:linux"            # vim ~/.zshrc — Linux-specific
-    "sz:linux"            # source ~/.zshrc — Linux-specific
-    "vv:linux"            # vim ~/.vimrc — Linux-specific
-    "va:linux"            # vim ~/.aliases — Linux-specific
-    "pip:linux"           # pip3 — handled differently on Windows
-    "dk:linux"            # docker — not aliased on Windows
-    "dkc:linux"           # docker-compose — not aliased on Windows
-    "dkps:linux"          # docker ps — not aliased on Windows
-    "dkpsa:linux"         # docker ps -a — not aliased on Windows
-    "rm:windows"          # Remove-CustomItem — Windows-specific override
-    "touch:windows"       # Set-FileTimestamp — Windows-specific override
-    "start_up:linux"      # shell startup function — Linux-specific
-    "create_tmux:linux"   # tmux session create — Linux uses tmux directly
+    "gb:windows"          # git branch shortcut -- Windows only (no Linux equivalent yet)
+    "..:linux"            # cd .. -- navigation shortcut, not applicable on Windows
+    "...:linux"           # cd ../.. -- navigation shortcut
+    "....:linux"          # cd ../../.. -- navigation shortcut
+    "~:linux"             # cd ~ -- navigation shortcut
+    "-:linux"             # cd - -- navigation shortcut
+    "ls:linux"            # ls --color=auto -- ls is not aliased on Windows
+    "ll:linux"            # ls -alF -- ls variant
+    "la:linux"            # ls -A -- ls variant
+    "l:linux"             # ls -CF -- ls variant
+    "lh:linux"            # ls -alFh -- ls variant
+    "path:linux"          # echo PATH -- Linux-specific
+    "reload:linux"        # source ~/.zshrc -- Linux-specific
+    "ports:linux"         # ss -tulnp -- Linux-specific
+    "vb:linux"            # vim ~/.bashrc -- Linux-specific
+    "sb:linux"            # source ~/.bashrc -- Linux-specific
+    "vz:linux"            # vim ~/.zshrc -- Linux-specific
+    "sz:linux"            # source ~/.zshrc -- Linux-specific
+    "vv:linux"            # vim ~/.vimrc -- Linux-specific
+    "va:linux"            # vim ~/.aliases -- Linux-specific
+    "pip:linux"           # pip3 -- handled differently on Windows
+    "dk:linux"            # docker -- not aliased on Windows
+    "dkc:linux"           # docker-compose -- not aliased on Windows
+    "dkps:linux"          # docker ps -- not aliased on Windows
+    "dkpsa:linux"         # docker ps -a -- not aliased on Windows
+    "rm:windows"          # Remove-CustomItem -- Windows-specific override
+    "touch:windows"       # Set-FileTimestamp -- Windows-specific override
+    "start_up:linux"      # shell startup function -- Linux-specific
+    "create_tmux:linux"   # tmux session create -- Linux uses tmux directly
     "New-PsmuxSession:windows"  # Windows equivalent of create_tmux
+    # v5.2 profile-path resolution helpers (issue #441/#442) -- Windows-only PS
+    # internal functions; they query $PROFILE on PS hosts and have no Linux equiv.
+    "Invoke-HostQuery:windows"      # Windows-only PS helper: resolves PS host type
+    "Resolve-ProfilePath:windows"   # Windows-only PS helper: resolves $PROFILE path
 )
 
-# ── Extract Linux aliases ─────────────────────────────────────────────────────
+# -- Extract Linux aliases -----------------------------------------------------
 
 extract_linux_aliases() {
     local file="$1"
@@ -86,7 +90,7 @@ extract_linux_aliases() {
         | sed -E 's/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\).*/\1/'
 }
 
-# ── Extract Windows aliases ───────────────────────────────────────────────────
+# -- Extract Windows aliases ---------------------------------------------------
 
 extract_windows_aliases() {
     local file="$1"
@@ -101,7 +105,7 @@ extract_windows_aliases() {
         | grep -vE '^(Write-Info|Write-Ok|Write-Warn|Write-Err|Write-PowerShellProfile|Remove-CustomItem|Set-FileTimestamp|Get-GitStatus|Invoke-GitCommit|Get-GitBranch|Add-GitFiles|Get-GitLogPretty|Get-GitLog|Invoke-GitFetch|Invoke-GitFetchPrune|Invoke-GitStash|Get-GitStashList|Add-GitAllFiles|Invoke-GitCommitMessage|New-GitBranch|Invoke-GitCheckout|Get-GitDiff|Get-GitDiffStaged|Invoke-GitStashPop|Invoke-GitPush|Invoke-GitPushForce|Invoke-GitPull|Invoke-GitRebase|Invoke-GitRebaseInteractive|Invoke-GitRestore|Invoke-GitRestoreStaged|New-GhPR|Get-GhPRList|Get-GhPRView|Get-GhIssueList|Get-GhIssueView|Invoke-UvRun|Invoke-UvSync|Invoke-NpmInstall|Invoke-NpmRun|Invoke-NpmRunDev|Invoke-NpmRunTest|Invoke-Python|Get-MyIp|Invoke-PingBing|Edit-Profile|Invoke-PsmuxList|Invoke-PsmuxKillServer|Invoke-PsmuxNewSession|Invoke-PsmuxAttach|Invoke-ShutdownNow|Invoke-TimedShutdown|Invoke-CancelTimedShutdown)$'
 }
 
-# ── Compare ───────────────────────────────────────────────────────────────────
+# -- Compare -------------------------------------------------------------------
 
 echo ""
 echo ">>> tests/test_alias_parity.sh -- Cross-platform alias parity check"
@@ -169,7 +173,7 @@ if [[ -n "$WINDOWS_ONLY" ]]; then
     echo ""
 fi
 
-# ── Result ────────────────────────────────────────────────────────────────────
+# -- Result --------------------------------------------------------------------
 
 if [[ "$UNDOCUMENTED_DRIFT" -eq 0 ]]; then
     if [[ -z "$LINUX_ONLY" && -z "$WINDOWS_ONLY" ]]; then
