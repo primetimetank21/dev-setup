@@ -1,9 +1,31 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix); Doc -- v12 (Windows example syntax fix); Mickey -- v13 (Windows flag syntax fix)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix); Doc -- v12 (Windows example syntax fix); Mickey -- v13 (Windows flag syntax fix); Goofy -- v14 (PowerShell quoting nits)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v14 Changelog (Goofy -- PowerShell quoting nits, 2026-05-30)
+
+> **Source:** Doc-2 v13 fact-check findings. Two pre-existing quoting-style nits from v5
+> survived all previous passes: one bare token and one double-quoted value in Windows prose
+> and Windows e2e spec contexts. Both were flagged by Doc-2 as inconsistent with the
+> single-quote convention used throughout the rest of the plan.
+
+1. **Line 815 Windows prose corrected (Verified):** `-Only git-hook` -> `-Only 'git-hook'`.
+   Bare token quoted to match single-quote convention. Surgical 1-line fix; no scope change.
+
+2. **Line 1108 Windows e2e spec corrected (Verified):** `-Only "gh"` -> `-Only 'gh'`.
+   Double-quote switched to single-quote to match single-quote convention. Surgical 1-line
+   fix; no scope change.
+
+3. **[Amend] 3 bare `-Skip winget-check` occurrences normalized (Verified):** Lines ~104,
+   ~106 (v7 changelog), and ~860 (foot-gun docs) each had bare `-Skip winget-check`; all
+   corrected to `-Skip 'winget-check'`. Same class as items 1-2 above, surfaced during v14
+   sweep. Earl approved scope expansion. (Note: task brief said 4 nits; 3 actual occurrences
+   found and fixed -- no 4th occurrence exists in the file.)
 
 ---
 
@@ -85,9 +107,9 @@
    `exit 1` semantics from `scripts/windows/setup.ps1` lines 50-55. Registry entry updated
    to `'winget-check' = { Invoke-WingetGate }`.
 
-2. **Document `-Skip winget-check` foot-gun (Jiminy non-blocking):** Added parallel
+2. **Document `-Skip 'winget-check'` foot-gun (Jiminy non-blocking):** Added parallel
    documentation to the existing `--skip=prereqs` foot-gun note, calling out that
-   `-Skip winget-check` bypasses the App Installer availability gate on Windows.
+   `-Skip 'winget-check'` bypasses the App Installer availability gate on Windows.
 
 ---
 
@@ -812,7 +834,7 @@ Documented behavior. Future DAG (out of scope) could warn.
 ### Git-Hook Self-Guard (v5 fix #2 -- DK4-bis)
 
 `git-hook` is a normal selectable tool (AlwaysRun dropped). To prevent failures when
-selected without git present (e.g. `--skip=prereqs` on Linux, `-Only git-hook` on
+selected without git present (e.g. `--skip=prereqs` on Linux, `-Only 'git-hook'` on
 Windows), the git-hook scripts **self-guard** and exit 0 cleanly:
 
 **Linux (`scripts/linux/tools/git-hook.sh`):**
@@ -841,7 +863,7 @@ This is simpler than flag-combination disallow rules and preserves the 2-concept
   dependencies (installed by `prereqs`) are missing. This is documented intentional
   behavior; a future DAG could add warnings.
 
-- **`-Skip winget-check` is the Windows equivalent foot-gun.** Skipping the App Installer
+- **`-Skip 'winget-check'` is the Windows equivalent foot-gun.** Skipping the App Installer
   availability gate means subsequent tools using `winget install` (git, uv, nvm, gh, vim,
   etc.) will fail noisily if winget is absent. As with `--skip=prereqs`, this is allowed
   (validated against AvailableTools) but intentionally unsupported.
@@ -1105,7 +1127,7 @@ E2E_only_linux:   job e2e-linux ("E2E - Linux"), step "Selective install only sm
 E2E_list_macos:   job e2e-macos ("E2E - macOS"), step "Selective install list smoke (macOS)": ./setup.sh --list exits 0
 E2E_only_macos:   job e2e-macos ("E2E - macOS"), step "Selective install only smoke (macOS)": ./setup.sh --only=gh exits 0 and gh available
 E2E_list_win:     job e2e-windows ("E2E - Windows"), step "Selective install list smoke (Windows)": .\setup.ps1 -List exits 0
-E2E_only_win:     job e2e-windows ("E2E - Windows"), step "Selective install only smoke (Windows)": .\setup.ps1 -Only "gh" exits 0 and gh available
+E2E_only_win:     job e2e-windows ("E2E - Windows"), step "Selective install only smoke (Windows)": .\setup.ps1 -Only 'gh' exits 0 and gh available
 ```
 
 **Validate workflow scenarios (in `.github/workflows/validate.yml`):**

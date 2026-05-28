@@ -116,3 +116,20 @@ Sprints 11-20 moved to history-archive.md per hygiene gate 2026-05-27. Key patte
 - **Registry contract pick:** Chose explicit $ToolRegistry with 3-line extension pattern over auto-discovery. Reason: Windows tool files have no naming convention mapping filename -> function (Install-Git vs Invoke-GhAuth vs Write-PowerShellProfile). Auto-discovery would require a refactor that's out of scope.
 - **Baseline fixture strategy:** Committed text files (tests/fixtures/baseline-tools-{platform}.txt) as the regression contract. Slice 0 captures them; Slice 1's first test diffs against them. This is the backward-compat enforcement that v1 lacked.
 - **PowerShell grammar pick:** `-Only "a,b"` (quoted comma-string, [string] param type) over unquoted (becomes [string[]], allows -Only a -Only b which breaks comma-canonical rule) and double-dash (breaks tab-completion, not idiomatic PS). Split internally with .Split(',') -- parity with bash IFS split.
+
+## 2026-05-30 -- Sprint 19: #468 Plan v12 Cross-Platform Syntax Regrill
+
+- **Role:** Cross-platform reviewer (Goofy lane)
+- **Verdict:** APPROVE (commit 8dfb9b4 vs f212ef1)
+- **Duck finding addressed:** Windows npm-absent bullets at lines 793-796 now use correct PowerShell syntax (`-Only 'copilot'` / `-Only 'squad-cli'`) and correct Windows registry key (`copilot` not `copilot-cli`). Single-quote convention consistent with all `-Only '...'` usages.
+- **Full sweep clean:** No Windows code/test blocks use `--only=` / `--skip=` Linux syntax. No Linux examples use PowerShell flags. Tool names consistent across platforms (Windows: `copilot`, Linux: `copilot-cli`).
+- **Pre-existing non-blockers noted:** Grammar table (line 739) uses double-quote `-Only "a,b,c"` (valid PS, predates v12); prose line 803 omits quotes around `git-hook` in flowing text (predates v12, not a code block).
+
+## 2026-05-30 -- Sprint 19: #468 Plan v14 Authoring (PowerShell Quoting Nits)
+
+- **Role:** v14 author (nano-fix per Earl directive)
+- **Source:** Doc-2 v13 fact-check findings on 2 pre-existing quoting nits from v5
+- **Fixed line 831** (formerly ~815): `` `-Only git-hook` `` -> `` `-Only 'git-hook'` `` (bare token quoted)
+- **Fixed line 1124** (formerly ~1108): `` `-Only "gh"` `` -> `` `-Only 'gh'` `` (double-quote -> single-quote)
+- **Final sweep result:** All `-Only 'X'` / `-Skip 'X'` usages in Windows prose/tests use single-quote convention. Grammar table (lines 767-768) and Syntax Rules (line 778) and Summary synopsis (line 182) retain double-quote for spec-level comma-string syntax -- intentional (pre-doc grammar convention). Additional bare-token occurrences `` `-Skip winget-check` `` at lines 104-106 (v7 changelog) and 860 (foot-gun docs) noted and reported; NOT fixed per scope discipline (mandate was 2 lines only). `--only=` / `--skip=` usages confirmed Linux/bash contexts only.
+- **Scope confirmation:** Surgical 2-line fix + author line + v14 changelog. No structural changes, no slice changes.
