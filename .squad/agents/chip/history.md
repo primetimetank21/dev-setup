@@ -67,20 +67,7 @@ Established CI/CD validation framework and cross-platform test coverage infrastr
 
 ## Recent Work (pre-#239 summary)
 
-Full detail in `history-archive.md`. Highlights:
-
-- **2026-04-18** Sprint 7 completion: Issues #121 (git hooks) and #123 (CI triage, PS 5.1 guards).
-- **2026-05-04 to 2026-05-14** PR #195 Group K test updates (Windows setup split refactor), PS 5.1 test Groups N, O, P for AllScope aliases + psmux.
-- **2026-05-16 to 2026-05-19** Issue #197 non-ASCII test file fix (CP1252 cleanup), `ps51-ascii-safety` skill created, Issue #187 alias parity test, Issue #183 wire test_git_hooks.ps1 into validate.yml, Issue #212 commit-msg merge/revert rewrite (prepare-commit-msg), Issue #181 macOS CI validation, #255 squad-cli session warning, #279 YAML/bash quoting fix revision, #253 e2e-install failure-summary step.
-- **2026-05-23** Post-sprint tests/CI audit (Sprint 8 wrap) + read-only verification of V-3 / V-4 / V-16.
-
-Lessons preserved verbatim in Learnings section above (CP1252 encoding, PSVersion guards, hook behavioral testing patterns).
-
----
-
-## Issue #239 + Sprint 12 Work (compressed)
-
-#239 e2e-install.yml: 3 OS jobs, fresh-shell assertions, squad-history-check.yml gate (squad:* label -> history.md required). #225 macOS nvm parity. #252 Node 22.11.0 pinned + nvm alias default. #224 Group X hook behavioral tests (em-dash bytes, pre-push scenarios). #238 Group FF uninstall sandbox (New-FfSandbox/Invoke-UninstallIsolated, fake HOME via env vars, $fakeHome not $home). Key: `pwsh -NoProfile` tests system PATH not profile-added PATH; `sh` on PATH differs locally vs CI runner.
+**Full detail in `history-archive.md`.** Sprints 9-17 archived. Key learnings: CP1252 encoding, PSVersion guards, hook behavioral testing patterns, e2e-install gate, group X hook tests, group FF uninstall sandbox.
 
 ## Issue #441 Plan Grill (Chip v4) -- 2026-05-27 [compressed]
 
@@ -183,3 +170,11 @@ Reviewed PR #458 (feat(profile): #442 v5.2 profile-path fix -- host-queried PROF
 
 - Reviewing PR #458 (v5.2 profile-path fix, closes #441/#442). Focus: acceptance criteria, test coverage (136 passed, 8 pre-existing baseline failures). Pluto's implementation on branch squad/442-profile-path-impl delivered Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile parameterization, legacy cleanup, uninstall resolver integration. Mickey reviewing architecture/cross-cutting in parallel.
 - 2026-05-27 -- #442/#458 re-review -- CI 11/11 green; allowlist patch (Invoke-HostQuery:windows, Resolve-ProfilePath:windows) correctly scoped with :windows suffix and #441/#442 reference; all 6 AC met; posted VERIFY OK comment per co-author lockout protocol.
+
+## 2026-05-27 -- Grill Ceremony: Issue #451 Vertical Slice Plan (v1->v3)
+
+- **Plan author role:** Authored vertical slice plan for PowerShell test parity gaps (T_C, T_D, T7 + CI YAML step). v1 received 4 blocking/major findings; revised to v2 (all findings resolved); revised to v3 (added out-of-scope tracking for $IsWindows caveat, filed #461).
+- **Grill panel feedback (v1->v2->v3):** Mickey R1 REVISE (CI gap, PS 5.1 coverage, error-msg coupling, T7 vagueness); Goofy R1 REVISE ($IsWindows fragility); Jiminy R1 DIRTY (plan location); Mickey R2 APPROVE (all 4 blockers resolved); Goofy R2 APPROVE-W/-CAVEATS (caveat tracked); Jiminy R2 CLEAN; Mickey R3 APPROVE (R2 conditions tracked); Goofy R3 APPROVE (scope boundary sound); Jiminy R4 CLEAN (trailers verified).
+- **Trailer fix:** Commits 461befc + b274cebe had Co-authored-by concatenated to body (no blank line); fixed via doc rebase to 72b80bb + 18f170a; verified via `git interpret-trailers --parse`.
+- **Implementation ready:** YES. Plan v3 at docs/plans/451-pwsh-parity-gaps.md with all acceptance criteria documented. Draft PR #462 opened. Follow-up #461 filed for PS 5.1 defensiveness (out-of-scope).
+

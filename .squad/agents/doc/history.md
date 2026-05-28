@@ -164,3 +164,11 @@ Hired as the squad's Fact Checker. Addresses the verifier/validator gap Earl fla
 - **Verification:** Pre-commit hook passes; `git grep "[^\\x00-\\x7F]"` returns 0 matches on tracked .md files.
 - **Learnings:** Worktree setup requires explicit CWD tracking in multi-worktree environments; file I/O via PowerShell [System.IO] can appear to succeed but not persist (use Python pathlib or direct git commands for reliability). UTF-8 byte counting (where multi-byte chars count as N bytes) differs from Unicode character counting -- use Python's `ord(ch) > 127` for accurate non-ASCII detection.
 - 2026-05-27 -- Grilled #441 profile-path plan (fact-check lens). Verdict: PROCEED (10 factual claims verified; all PowerShell behaviors + sentinel patterns + profile load order confirmed).
+
+## 2026-05-27 -- Mechanical Trailer Fix: Issue #451
+
+- **Task:** Fix git commit trailers (blank line before Co-authored-by per conventional-commits)
+- **Problem:** Commits 461befc + b274cebe had Co-authored-by concatenated to body (Jiminy-R3 DIRTY flagged)
+- **Solution:** Rebase with git commit --amend on both commits; insert blank line before trailer
+- **Verification:** Both fixed commits parse correctly via git interpret-trailers --parse; old SHAs orphaned; worktree clean
+- **Key learning:** Mechanical fixes like trailer format are low-context tasks suitable for delegated review post-implementation. Correct early to maintain clean audit trail.

@@ -84,3 +84,36 @@ Hired 2026-05-16 to close 5 recurring squad-hygiene gaps Earl caught manually: (
 - **New findings:** NF-J3 [LOW] -- v5 H5 changelog entry lacks "superseded by v5.2/JN-1" note (cosmetic). NF-J4 [LOW] -- C-3 skip example missing from v3-D4 (implementer must infer from C-2 pattern).
 - **Files written:** `docs/plans/441-grill-jiminy-v5.2.md` (new), `.squad/decisions/inbox/jiminy-441-v5.2-verify.md` (new).
 - **History size:** ~10900B pre-append; no compression needed (gate = 14000B).
+
+### 451-plan-landing-audit (jiminy-10, 2026-05-27)
+
+- **Session:** 451-plan-landing-audit
+- **Task:** Hygiene audit of #451 vertical slice plan commit on squad/451-pwsh-parity-gaps.
+- **Verdict:** DIRTY (2 items + 1 MEDIUM recommendation).
+- **Findings:** (1) Plan file at `.squad/decisions/451-vertical-slice.md` breaks `docs/plans/` convention from #441 precedent -- MEDIUM. (2) 3 stale squad/* branches (442-profile-path-impl, scribe-decision-merge x2). (3) 3 undrained inbox files predating #451.
+- **Clean items:** Domain scope tests-only (Chip solo authority), branch from develop confirmed, tree clean, Conventional Commits + Co-authored-by trailer correct, develop in sync.
+- **Lesson:** Plans go to `docs/plans/{N}-{slug}.md`. `.squad/decisions/*.md` is for permanent sprint archives only. Enforce in spawn prompts.
+- **Files written:** `.squad/decisions/inbox/jiminy-451-grill.md` (new).
+
+---
+
+## 2026-05-27 -- #451 Re-Audit Round 2
+
+- Round 1 path-move finding resolved: Chip moved plan correctly.
+- Learned: check trailer blank-line separation -- concatenated trailers still parse but look sloppy.
+- Scope creep detection works: caught tests-only -> tests+CI expansion. Flag for Coordinator, not block.
+- Stale branches and inbox backlog: carry forward as non-blocking until Coordinator drains.
+
+## 2026-05-27 -- #451 Quick Sweep Round 3
+
+- **R3 Verdict:** DIRTY -- Chip's claimed v4 trailer fix missed: commit 461befc still has Co-authored-by concatenated to body (no blank line). Worktree clean, issue #461 filed, inbox drift minimal. Need v4 redo with blank line.
+
+- **2026-05-27 R4 #451:** Double-blank-line bug (no BL before trailer) leaves git interpret-trailers --parse seeing concatenated text, not trailer -- requires commit rebuild (reset --soft, sequential commits preserve contents), old SHAs become unreachable, doc coordination + final hygiene gate closes loop.
+
+## 2026-05-28 -- Hygiene Audit: Issue #451 Vertical Slice Plan (Rounds 1-4)
+
+- **R1 verdict:** DIRTY (2 findings + 1 rec). Domain scope PASS (tests/**). Plan file location CONCERN (wrong canonical home). Worktree/Branch state PASS. Main checkout drift DIRTY (stale branches, undrained inbox).
+- **R2 verdict:** CLEAN (caveats noted). Plan moved to docs/plans/ OK. Trailers CAVEAT (no blank line before Co-authored-by; git parses but violates conventional-commits).
+- **R3 verdict:** DIRTY. Trailer format STILL BROKEN. Need v4 commit with blank line before trailer.
+- **R4 verdict:** CLEAN (5-point checklist). Trailers verified (72b80bb, 18f170a). Old SHAs (461befc, b274cebe) orphaned. Worktree clean.
+- **Key learning:** Trailer format is a hygiene gate; verify via git interpret-trailers --parse. Cosmetic issues in R2/R3 escalate if not corrected before R4 verification.

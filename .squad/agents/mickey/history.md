@@ -74,39 +74,33 @@ Lead architect; established foundational team process, architecture, and Windows
 
 ## Recent Work (pre-Sprint-19 summary)
 
-Full detail in `history-archive.md`. Highlights: Sprint 6/7 lead reviews (PRs #145, #146 REJECTED, #149 PSScriptAnalyzer pre-push, #138, #160 AllScope, #169, #170, #175/#176); Sprint 8 PS 5.1 compat (PRs #198, #200 merge gate + ASCII-safety skill, batch reviews #202-#210, #222 tag discipline); Sprint 8h/9/10 squad upgrade + retros (0.9.4 audit PR #262 rogue-file bug + git-workflow SKILL overwrite risk, Sprint 8h/9 retros, PR #274, pwsh-lastexitcode skill PR #288, #239 E2E filed). Lessons preserved verbatim in Learnings (CI=true, BOM gotcha, worktree isolation, commit-msg merge bypass, Doc hire pattern).
+**Full detail in `history-archive.md`.** Sprints 9-18 moved to archive per hygiene gate. Key learnings: CI=true gate, BOM trap with PowerShell UTF-8, worktree isolation, doc hire pattern, commit-msg merge bypass, squad-upgrade rogue-file bug, git-workflow SKILL overwrite risk, fetch-tags rejection for hermetic tests.
 
-## Sprint 19 -- #414, #430
+## 2026-05-28 -- Grill Review: Issue #451 Vertical Slice Plan (Round 1)
 
-2026-05-18: Squad-spawn helper + lint-spawn-prompt backstop (PR #420). Added scripts/squad-spawn.{ps1,sh} (auto-inject hygiene tail, idempotent, {name}/{N}/{worktree-path} substitution) and scripts/lint-spawn-prompt.{ps1,sh} (6-marker scan, exit 0/1). .squad/skills/spawn-prompt-lint/SKILL.md added (medium confidence). routing.md updated with helper/linter enforcement paths. 20 tests (4 files x 5 cases). Root-cause fix for Sprint 18 #406/#407 fixup pattern.
-2026-05-18: test_changelog_fold.ps1 CI fix (PR #431, #430). New-TestEnv now creates git sandbox with tag 0.9.7 for tag-resolution self-containment. Rejected fetch-tags in validate.yml -- hermetic test sandboxes preferred.
+- **Verdict:** APPROVE-WITH-CHANGES (plan has 2 BLOCKING + 2 MAJOR issues to fix)
+- **Key findings:**
+  1. **BLOCKING-1 (CI integration):** Plan claims existing CI will run tests but doesn't specify validate.yml line or job. Must add step explicitly.
+  2. **BLOCKING-2 (PS 5.1 coverage):** validate-ps51 job does NOT currently run test_sprint_end_labels_pwsh.ps1. Plan must clarify scope: add to validate-ps51 or document why not.
+  3. **MAJOR-1 (error-message coupling):** T_C/T_D assertions couple to script error messages. Plan should document this contract in Done Criteria so future maintainers don't accidentally break tests via message rewording.
+  4. **MAJOR-2 (T7 scope vagueness):** Plan says "Assert shebang valid" but doesn't specify what that means. Clarify: (a) starts with 0x23 0x21? (b) full shebang check? (c) why needed if asserting no CR?
+- **Pattern:** Chip's slice itself is sound (3 test cases, good scope). The blockers are all about CI visibility and test contract clarity -- coordination issues, not technical issues. Recommend Chip revise plan in place (per .squad/skills/grill/SKILL.md Lockout protocol) and resubmit for inline re-grill.
 
+## 2026-05-28 -- Re-Grill Review: Issue #451 Vertical Slice Plan (Round 2)
 
-## 2026-05-18 03:09 (PR #433-fix, Issue #433)
-- **Outcome**: Fixed test_changelog_fold sandbox CWD regression
-- **Lesson**: Sandbox tests must run from a neutral CWD to reproduce CI's
-  stateless environment. Don't rely on host worktree's git state.
-  The cd '\' && prefix ensures bash inherits the sandbox's
-  git repo rather than whatever CWD the test runner happens to be in.
-- **Files**: tests/test_changelog_fold.ps1
-- 2026-05-27 -- Grilled #441 profile-path plan (architecture lens). Verdict: REVISE ($PROFILE.CurrentUserAllHosts contradiction + scope mismatch).
+- **Verdict:** **APPROVE** -- Plan v2 is implementation-ready
+- **All 4 findings RESOLVED:**
+  1. **F1 (CI integration):** OK RESOLVED. Plan section "CI Integration (v2 addition)" specifies exact YAML step after validate.yml line 369 in validate-ps51 job: `powershell -ExecutionPolicy Bypass -File tests\test_sprint_end_labels_pwsh.ps1`. TODO comment at line 285 marked for removal. Both validate-ps51 and validate-powershell listed as required-green in Done Criteria.
+  2. **F2 (PS 5.1 coverage):** OK RESOLVED. Explicit decision to add test to validate-ps51 with justification: test uses only PS 5.1-compatible constructs (lines 47-50). No `$IsWindows` dependency, no ternary/null-coalesce/parallel operators. Identical pattern to existing PS 5.1 test suite.
+  3. **F3 (error-message coupling):** OK RESOLVED. T_C asserts exit code only (no message); T_D asserts exit code + substring match on `"release:shipped-"` (mirrors bash peer). **Contract documented** (lines 125-129): coordinated updates required across both test files and script(s). Done Criteria line 174 adds PR description requirement for contract note.
+  4. **F4 (T7 shebang vagueness):** OK RESOLVED. Replaced vague "assert shebang valid" with two precise assertions: (1) no 0x0D bytes (CR regression invariant); (2) file starts with bytes 0x23 0x21 (#! header). Rationale documented; code sketch provided (lines 95-109).
+- **New concerns:** None. Revision is complete and consistent. Inline doc comment requirement for T7 (lines 90-92) is good practice. Effort estimate unchanged (30 min).
+- **Key learning (Grill Round 2 pattern):** Lockout-protocol revisions (grill-then-revise-then-re-grill) work well. Chip's v2 addressed all 4 blockers/majors directly with specificity. No scope creep, no workarounds, no new gaps. When a tester responds to architectural feedback with precision (line numbers, rationale, code sketches), re-grill confirms readiness quickly. Recommended pattern for future complex slices.
 
-## 2026-05-27 -- Plan #441 v5.2 (session 441-v5.2-patch)
+## 2026-05-28 -- Grill Review: Issue #451 Plan v3 Verification (Round 3)
 
-Fixed JN-1 (MEDIUM): parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; `$local:beginMarker`/`$local:endMarker` unchanged. Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated. Fixed JN-2 (LOW): `Write-Host` -> `Write-Warning '[SKIPPED] ...'` in v3-D4 skip. Vertical slice preserved: 7 GG tests, no new layers. Decision drop: `.squad/decisions/inbox/mickey-441-v5.2-revision.md`.
-- 2026-05-27 -- Reviewed PR #443 (chore/scribe grill-441 log). Verdict: APPROVE. .squad/** entries well-formed; flagged own history.md warn-zone for trim follow-up.
-
-## Learnings -- PR #458 Architecture Review (2026-05-27)
-
-**v5.2 profile-path fix (Pluto, PR #458 -- Issues #441/#442)**
-
-- **Write-Info stream-contamination trap (install vs uninstall):** Resolved-path capture pattern `@((Resolve-ProfilePath ...))` in profile.ps1 required switching to `Write-Host` inside Resolve-ProfilePath (logging.ps1's Write-Info uses Write-Output, which contaminates return values). uninstall.ps1 defines its own local Write-Info/Write-Warn as Write-Host wrappers, so it is safe using them. This difference looks like drift on first read -- annotate cosmetic divergences in the SKILL to prevent false alarms.
-- **Inline-copy self-containment tradeoff:** uninstall.ps1 inlines Invoke-HostQuery + Resolve-ProfilePath (~30 lines) for self-containment (user may delete repo post-install). The pattern works but creates a maintenance surface. To manage drift: both copies must implement the same algorithm; cosmetic differences (logging wrappers) are acceptable if functionally equivalent; the SKILL.md documents the expected divergence.
-- **Optional-param test-injection seam (v5.2-D1):** Parameterizing void-style functions with optional path overrides (production defaults in signature) is a clean pattern for redirecting disk writes in tests without test-framework coupling. No Pester required. Apply this wherever a function writes to a path derived from $HOME.
-- **Idempotency seam caveat:** Strip regex `(?s)\r?\n# BEGIN...# END\r?\n?` does not match a block at byte-0 (no preceding \r?\n). Idempotency tests must seed the file with pre-existing content. Production profiles always have preceding content, so this is not a production gap -- but tests that start with empty files will give false greens on the strip leg.
-- **Co-author trailer form:** PR commits used `noreply` form; policy (decisions.md 2026-05-18) requires `copilot@github.com`. Non-blocking; correct in squash commit. Flag in review comment, don't block PR.
-
-## 2026-05-27 -- PR #458 Review & Merge (Session wrap)
-
-- Reviewed PR #458 (v5.2 profile-path fix, closes #441/#442). APPROVE. Pluto: Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile parameterization, legacy cleanup, uninstall resolver integration. Tests: 136 passed, 8 pre-existing baseline failures. Chip reviewing acceptance criteria in parallel.
-- RE-APPROVED PR #458 after Chip's alias-parity follow-up. Merged at fe64139 (2026-05-28T01:20:15Z). Issues #441, #442 closed. Re-review cycles complete (Chip-1, Chip-2, Mickey-1). All CI tests green post-fix.
+- **Verdict:** **APPROVE** -- Plan v3 ready for implementation
+- **R2 conditional notes tracking:** All 3 properly recorded in Done Criteria and narrative. (1) Launcher determinism: lines 91-92, 99-101 + deferred to code review per protocol. (2) PR description contract: line 174 Done Criteria. (3) TODO removal: lines 65-66, 172 Done Criteria.
+- **Out-of-Scope boundary:** Clean. `$IsWindows` PS 5.1 hazard identified, filed #461, no scope creep. #451 scope tight: T_C, T_D, T7, validate.yml step.
+- **New concerns:** None. Revision history (lines 205-229) audit trail complete; no backtracking, no new gaps, no contradictions.
+- **Learning (R3 pattern):** Once grill panel issues are resolved in v2 and tracked with precision (line numbers, gates in Done Criteria), R3 verification is fast and confirms implementation readiness. Out-of-Scope sections are stronger scope-boundary tools than they appear.

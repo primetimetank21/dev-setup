@@ -90,30 +90,14 @@ Lessons preserved verbatim in Learnings section above (CP1252 trap, AllScope ali
 
 > Re-compressed 2026-05-17 (W2 fold) per #319 gate. Sprint 13+ entries kept verbatim; older summarized.
 
-## Sprint 11-12 entries (summary)
+## Sprint 11-20 entries (archived)
 
-- **2026-05-18 -- Sprint 11 Wave 1 (PR #297, issue #230): moved `scripts/windows/auth.ps1` -> `scripts/windows/tools/auth.ps1`** via `git mv` (96% similarity, rename preserved). Fixed dot-source path `\lib\logging.ps1` -> `\..\lib\logging.ps1` to match tools/ pattern. Updated `setup.ps1:34` dot-source + `tests/test_windows_setup.ps1` Group S setup Join-Path. CHANGELOG entry added. `Invoke-GhAuth` body byte-identical. Group S 3/3 PASS, full suite 114 PASS + 8 unrelated baseline FAIL. Did NOT touch ARCHITECTURE.md (Mickey owned #229 in parallel worktree) nor the 4 `$LASTEXITCODE` leak sites (deferred to Wave 2). CHANGELOG.md:76 historical 0.8.0 entry left pinned.
-- **2026-05-19 -- Sprint 11 Wave 2 (PR for #292): hardened `$LASTEXITCODE` at 5 sites** per the `pwsh-lastexitcode` SKILL.md authored by Mickey in PR #291. Applied `$global:LASTEXITCODE = 0` reset (canonical pattern from `uninstall.ps1:117-125`) after each expected-failure native command: 4 sites in `scripts/windows/tools/auth.ps1` (2x `gh auth status`, 2x `gh api user`) + 1 site in `scripts/windows/setup.ps1` (`git rev-parse` in `Install-GitHook`). Added Group EE (EE-1..EE-5) static-source assertion tests. Updated SKILL.md audit table -- all 5 sites mitigated. Must use `$global:LASTEXITCODE` (not local `$LASTEXITCODE = 0` which only shadows the automatic var).
-- **2026-05-17 -- Sprint 12 Wave 2 #235 install-guard deferral (Case B, NOT_PLANNED).** Reassigned from Mickey mid-sprint. Searched `scripts/lib/`, `scripts/{linux,windows}/lib/`, both `setup.{sh,ps1}`, and every tool script for `install-guard` / `Install-Guard` / `is_installed` / `Test-IsInstalled` / `IsInstalled` -- zero code hits (only Mickey-history mentions). Mapped current "already installed?" idioms across ~12 tool scripts: 3 distinct shapes (simple presence, version-pinned regex, composite presence+probe) -- premature helper would undercover or over-engineer. Closed as `not_planned` with Case B flow (no code, no PR). **Threshold rule formalized:** revisit when 3+ tools share a single check shape (e.g., 3+ version-pinned tools using `Read-ToolVersion`). Inline idiom + `Read-ToolVersion.ps1` / `read-tool-version.sh` remains canonical (documented in CONTRIBUTING.md "Tool Version Pin Enforcement"). Worktree `dev-setup-235` had zero commits, branch never pushed. **Skill candidate noted:** "abstraction-threshold" rule (3-site shared-pattern test) -- did NOT formalize (one application insufficient); lift to skill on next deferral.
+Sprints 11-20 moved to history-archive.md per hygiene gate 2026-05-27. Key patterns: AllScope alias guards, $LASTEXITCODE hardening, ASCII sweep automation, history.md size gates, cross-platform test patterns.
 
-## 2026-05-17 Sprint 13 Wave 2 -- Issue #322 part A: ASCII sweep all .md files
+## 2026-05-28 -- Grill Panel: Issue #451 Vertical Slice Plan (Rounds 1-3)
 
-- Scope: 163 .md files scanned; 124 edited; 2,501 non-ASCII chars replaced.
-- Outside fenced code blocks: 0 remaining (verified). Inside fences: ~1,686 preserved intentionally (tree diagrams, raw-byte tables, code samples that need literal glyphs).
-- Tool: scripts/lib/ascii-sweep.py -- preserves ``` and ~~~ fences; maps em/en dashes, smart quotes, arrows, math ops, box-drawing (U+2500..U+257F), status emoji, and circled digits to ASCII. Rerunnable + idempotent.
-- Biggest offenders: .squad/decisions-archive.md (359), .github/agents/squad.agent.md (315), .squad/templates/squad.agent.md (293), .squad/agents/mickey/history-archive.md (177).
-- Intentional preservation: code fences (per repo policy). Checkmarks U+2705 -> [x], crosses U+274C -> [ ] across team.md and status tables to preserve task-list semantics.
-- Coordinated with Mickey (parallel worktree, hooks/pre-commit patch -- Issue #322 part B). No overlap; only CHANGELOG.md is a predicted rebase conflict (Changed vs Fixed sections).
-- Lessons: fence-aware sweep is essential -- naive global replace would mangle ARCHITECTURE.md tree diagrams. Script generalizable -> candidate skill if applied a second time.
-
-## Sprint 19
-
-- **2026-05-18 -- Sprint 19 (PR #419, issue #416): pre-commit history.md size gate.** Added Check 7 to hooks/pre-commit: rejects staged .squad/agents/*/history.md blobs > 15360 B, warns > 14336 B. 29/29 tests pass (3 new Check 7 cases). Updated SKILL.md with Layered enforcement section + corrected Check 4 -> Check 7 reference.
-
-## Sprint 20
-
-- **2026-05-27 -- Drafted plan for #441 (profile-path-fix).** Authored docs/plans/441-profile-path.md on branch squad/441-profile-path-fix. Plan covers root cause (OneDrive KFM / hardcoded \C:\Users\Earl Tankard path), Resolve-ProfilePath algorithm, 20 edge cases, 10-test Group GG plan, backward-compat legacy cleanup, uninstall mirror, and 8 risks. Pending grilling by Mickey, Chip, Doc. Grill ceremony completed 2026-05-27; verdicts: Mickey REVISE, Chip REVISE, Doc PROCEED.
-
-## 2026-05-27 -- Team Update
-
-- Pluto shipped v5.2 profile-path fix in PR #458; review in flight.
+- **Role:** Cross-platform reviewer (PS 5.1 + POSIX concerns)
+- **R1 verdict:** APPROVE-WITH-CHANGES. Identified True PS 5.1 fragility (pre-existing code, acceptable for #451 scope). Flagged byte-read safety (OK), CRLF handling (OK), no PS 7+ features (OK). Deferred launcher byte-determinism question to R2 analysis.
+- **R2 verdict:** APPROVE-WITH-MINOR-CAVEATS. Caveat: True undefined on PS 5.1 causes -not $null = $true, chmod fails silently on Windows. Acceptable (PS 5.1 is Windows-only). Offered two mitigation options; recommended clarifying comment or OS-platform check during impl.
+- **R3 verdict:** APPROVE. Caveat fully addressed by plan v3 out-of-scope section + filed #461. Scope boundary clean; plan ready for implementation.
+- **Key learning:** Cross-platform caveats should be explicitly acknowledged and tracked separately (#461) rather than blocking the implementation slice (#451). Deferred defensiveness improvements are sustainable when documented.
