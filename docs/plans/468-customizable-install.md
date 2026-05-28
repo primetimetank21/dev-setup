@@ -1,9 +1,33 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix)
+**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections)
 **Issue:** #468
 **Status:** Ready for review
+
+---
+
+## v10 Changelog (Doc -- factual corrections from v9 review, 2026-05-28)
+
+> **Source:** Doc raised REQUEST CHANGES on v9 (PR #470). Two factual errors all nine
+> prior rounds missed. Earl authorized Doc as v10 author (narrow patch only). Next grill
+> panel: Duck + Jiminy + Goofy; Doc is recused as author.
+
+1. **Windows git-hook location corrected (Verified):** v9 documented the `Install-GitHook`
+   function as living in `scripts/windows/tools/git-hook.ps1`. That file does **not exist**.
+   Verified by directory listing of `scripts/windows/tools/` (files present: auth.ps1,
+   copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1, profile.ps1, psmux.ps1,
+   squad-cli.ps1, uv.ps1, vim.ps1 -- no git-hook.ps1). `Install-GitHook` is defined at
+   lines 36-46 of `scripts/windows/setup.ps1`. All plan references corrected to reflect
+   actual location. Confidence: **Verified**.
+
+2. **Windows squad-cli npm-absent behavior corrected (Verified):** v9 stated
+   "`copilot-cli`/`squad-cli` silently skip if npm absent", implying identical behavior on
+   both platforms. Actual behavior is the **opposite**: Linux (`scripts/linux/tools/squad-cli.sh`
+   lines 41-43) emits `log_warn` and `exit 0` (silent skip); Windows
+   (`scripts/windows/tools/squad-cli.ps1` lines 37-43) emits `Write-Err` diagnostics and
+   `exit 1` (hard stop). Graceful Degradation section updated with per-platform breakdown.
+   Confidence: **Verified**.
 
 ---
 
@@ -720,7 +744,11 @@ param(
 ### Graceful Degradation
 
 Tools are NOT fully independent. Known chains:
-- `copilot-cli`/`squad-cli` silently skip if npm absent (nvm not run first)
+- `copilot-cli`/`squad-cli` npm-absent behavior **differs by platform** (Verified):
+  - **Linux** (`scripts/linux/tools/squad-cli.sh`): emits `log_warn` and `exit 0` -- silent
+    skip; tool is non-functional until Node is available but the overall run continues.
+  - **Windows** (`scripts/windows/tools/squad-cli.ps1`): emits `Write-Err` diagnostics and
+    `exit 1` -- hard stop with actionable error (PATH refresh hints, nvm troubleshooting).
 - `auth` silently skips if `gh` not installed
 
 `--only=copilot-cli` on a fresh machine without nvm = exit 0, tool not functional.
@@ -737,7 +765,7 @@ Windows), the git-hook scripts **self-guard** and exit 0 cleanly:
 command -v git >/dev/null 2>&1 || { echo "git not present, skipping hooks"; exit 0; }
 ```
 
-**Windows (`Install-GitHook` in `scripts/windows/tools/git-hook.ps1`):**
+**Windows (`Install-GitHook` in `scripts/windows/setup.ps1`):**
 ```powershell
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "git not present, skipping hooks"
