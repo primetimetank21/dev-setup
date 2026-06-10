@@ -146,7 +146,7 @@ After running setup, you get shortcuts for common git, dev, and utility commands
 
 **GitHub CLI:** `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
 
-**Dev tools:** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
+**Dev tools:** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`, `gosquad`
 
 **Utility:** `myip`, `pb`, `h`, `ep`
 
