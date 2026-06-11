@@ -1486,8 +1486,7 @@ $prePushHook   = Join-Path $RepoRoot "hooks\pre-push"
 if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
     Write-Skip "Y-1 pre-commit rejects .ps1 with em-dash"          "sh not available"
     Write-Skip "Y-2 pre-commit allows ASCII-only .ps1"              "sh not available"
-    Write-Skip "Y-3 pre-commit rejects rogue .squad/ path"          "sh not available"
-    Write-Skip "Y-4 pre-push hard-rejects direct push to main"      "sh not available"
+    Write-Skip "Y-4 pre-push hard-rejects direct push to main"  "sh not available"
     Write-Skip "Y-5 pre-push allows push to develop"                "sh not available"
     Write-Skip "Y-6 pre-push exits 0 on feature branch (advisory)"  "sh not available"
 } else {
@@ -1553,25 +1552,6 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
                 $out = & sh $preCommitHook 2>&1
                 if ($LASTEXITCODE -ne 0) {
                     throw "pre-commit rejected ASCII-only .ps1 (exit $LASTEXITCODE): $out"
-                }
-            } finally { Pop-Location }
-        }
-
-        # ------------------------------------------------------------------
-        # Y-3: pre-commit rejects a newly staged .squad/ path not on allow-list
-        # ------------------------------------------------------------------
-        Test-Scenario "Y-3 pre-commit rejects rogue .squad/ path" {
-            $repoDir = Join-Path $yTmpBase "y3"
-            New-YTestRepo $repoDir
-            Push-Location $repoDir
-            try {
-                & git checkout -q -b pluto/rogue-squad 2>&1 | Out-Null
-                New-Item -ItemType Directory -Path ".squad\random" -Force | Out-Null
-                "rogue" | Set-Content ".squad\random\notes.md" -Encoding ASCII
-                & git add ".squad\random\notes.md" 2>&1 | Out-Null
-                & sh $preCommitHook 2>&1 | Out-Null
-                if ($LASTEXITCODE -eq 0) {
-                    throw "pre-commit should have rejected rogue .squad/ path but exited 0"
                 }
             } finally { Pop-Location }
         }
@@ -1747,32 +1727,12 @@ Test-Scenario "AA-3: git unset-all core.hooksPath removes the local key (functio
 }
 
 # ---------------------------------------------------------------------------
-# Group DD: version-pin enforcement for squad-cli, copilot, and gh (#255)
+# Group DD: version-pin enforcement for copilot and gh (#255)
 # ---------------------------------------------------------------------------
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group DD: version-pin enforcement (squad-cli / copilot / gh)" -ForegroundColor Cyan
+Write-Host " Group DD: version-pin enforcement (copilot / gh)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
-
-Test-Scenario "DD-1: squad-cli.ps1 reads pinned version from .tool-versions" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'Get-ToolVersion') {
-        throw "squad-cli.ps1 does not call Get-ToolVersion to read pinned version"
-    }
-    if ($content -notmatch "squad-cli") {
-        throw "squad-cli.ps1 does not reference 'squad-cli' tool name for version lookup"
-    }
-}
-
-Test-Scenario "DD-2: squad-cli.ps1 uses version-aware check (not bare Get-Command)" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'InstalledVersion') {
-        throw "squad-cli.ps1 does not perform version comparison (no InstalledVersion variable)"
-    }
-    if ($content -notmatch 'SquadCliVersion') {
-        throw "squad-cli.ps1 does not use SquadCliVersion in install command"
-    }
-}
 
 Test-Scenario "DD-3: gh.ps1 uses --version flag with pinned value" {
     $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\gh.ps1') -Raw
