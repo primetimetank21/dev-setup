@@ -9,49 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `gosquad` alias - launches GitHub Copilot CLI with the Squad agent (`copilot --agent squad --yolo`), available on bash/zsh and Windows PowerShell.
-
 ### Changed
 
 ### Fixed
 
 ### Removed
 
+- Embedded squad infrastructure: removed `.squad/` directory and all internal AI-agent coordination tooling from the repository. Project coordination now handled externally. (PR #475, PR #477)
+- Branch naming convention changed from `squad/{issue}-{slug}` to `feat|fix|chore|docs|refactor/{issue}-{slug}` (conventional commit prefixes).
+- Removed `gosquad` shell alias and all `squad-cli` tool references from documentation and examples.
+
 ## [0.9.8] - 2026-05-19
 
 ### Added
-- Mandatory hygiene tail template (`.squad/templates/spawn-prompt-hygiene.md`) and `routing.md` section enforcing 6-item discipline at every spawn (#397/#401)
+- Mandatory hygiene tail template and routing.md section enforcing 6-item discipline at every spawn (#397/#401)
 - Two new hygiene skills formalized: `history-md-pre-size-check` and `changelog-fold-completeness` (#398/#399/#402)
 - Sprint label vocabulary standardized: `sprint:17`, `sprint:18`, `release:shipped-0.9.7` introduced and backfilled across S17 work (#400/#403)
 - Test G in `tests/test_sprint_end_labels.ps1` -- CRLF regression coverage via function-override shim (#403)
-- Sprint 18 decision archive at `.squad/decisions/sprint-18.md` (#408)
+- Sprint 18 decision archive (#408)
 
 ### Changed
 - `scripts/sprint-end-labels.sh`: combined `gh issue list` + `gh pr list` queries (issue-list silently excludes PRs); pipe jq through `tr -d '\r'` for Windows CRLF safety (#403)
-- `.squad/agents/donald/history.md`, `.squad/agents/ralph/history.md`, `.squad/agents/scribe/history.md` compressed under 15360 B gate per `history-md-pre-size-check` SKILL (#404)
+- Agent history files compressed under 15360 B gate per `history-md-pre-size-check` SKILL (#404)
 
 ### Fixed
 - `gh issue list --search` PR-exclusion bug in sprint-end-labels automation -- script now correctly processes both issues and PRs (#403)
 - Windows jq CRLF idempotency-guard bypass in sprint-end-labels script -- already-labeled items no longer re-labeled on subsequent runs (#403)
-- Sprint 18 attribution trail gaps via fixup PRs #406 (Pluto) + #407 (Donald)
+- Sprint 18 attribution trail gaps via fixup PRs #406, #407
 
 ## [0.9.7] - 2026-05-17 -- Sprint 17: Hygiene gate restoration + label automation + skill formalization
 
 ### Added
 
-- Sprint-end label automation: `scripts/sprint-end-labels.sh` + `.github/workflows/sprint-end-labels.yml`. Applies `release:shipped-X.Y.Z` and removes `release:backlog` across all issues/PRs carrying a given sprint label. Hard-verifies every label op via re-query with 3-retry exponential backoff (1s, 2s, 4s). Dry-run mode (`--dry-run`) for safe rehearsals. Type/area/squad/priority labels are never touched. Covered by `tests/test_sprint_end_labels.ps1` (6 tests, including happy-path and fail-loudly retry scenarios). New skill `.squad/skills/gh-label-verify-retry/SKILL.md` formalizes the write-then-verify-then-retry pattern. (#382)
+- Sprint-end label automation: `scripts/sprint-end-labels.sh` + `.github/workflows/sprint-end-labels.yml`. Applies `release:shipped-X.Y.Z` and removes `release:backlog` across all issues/PRs carrying a given sprint label. Hard-verifies every label op via re-query with 3-retry exponential backoff (1s, 2s, 4s). Dry-run mode (`--dry-run`) for safe rehearsals. Type/area/priority labels are never touched. Covered by `tests/test_sprint_end_labels.ps1` (6 tests, including happy-path and fail-loudly retry scenarios). New skill formalizes the write-then-verify-then-retry pattern. (#382)
 - New skills formalized: `gh-pr-base-develop` (high-conf, --base develop enforcement pattern), `worktree-remove-first` (medium-conf, worktree-remove-before-merge quirk), `gh-label-verify-retry` (high-conf, write-then-verify-then-retry pattern). (#383, #384, #382)
-- Per-sprint decisions sub-folders introduced: `sprint-12.md` and `sprint-15.md` added under `.squad/decisions/`; sub-folder policy documented. (#371)
+- Per-sprint decisions sub-folders introduced: `sprint-12.md` and `sprint-15.md` added; sub-folder policy documented. (#371)
 
 ### Changed
 
-- README refresh: expanded 8-agent roster, updated hooks list, hygiene gates, and skill ecosystem pointer for v0.9.6 state. (#381)
+- README refresh: expanded roster, updated hooks list, hygiene gates, and skill ecosystem pointer for v0.9.6 state. (#381)
 - `decisions.md` restructured to current-sprint-only live file; gate restored from 65737 B to 7228 B. (#371)
 - `routing.md`: spawn-prompt hygiene section added. (#384)
 
 ### Fixed
 
-- `.gitignore` em-dash artifact removed (hand-off slip caught by Jiminy Sprint 17 audit). (#390)
+- `.gitignore` em-dash artifact removed. (#390)
 
 ### Removed
 
@@ -59,13 +61,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Sprint 16 skill drift watchlist audit at `.squad/decisions/pluto-skill-drift-2026-05-17.md`. (#367)
-- New `.copilot/skills/ascii-docs-about-non-ascii/SKILL.md` formalizing the "self-documenting non-ASCII" discipline (medium confidence, 2 observations across Sprint 14 #340 and Sprint 15 #356/#359). (#362)
-- New `.copilot/skills/worktree-base-refresh/SKILL.md` formalizing the stale-sprint-branch recovery pattern from Sprint 15 #359 (low confidence, 1 observation). (#364)
+- Sprint 16 skill drift watchlist audit documented. (#367)
+- New skill formalizing the "self-documenting non-ASCII" discipline (medium confidence). (#362)
+- New skill formalizing the stale-sprint-branch recovery pattern (low confidence). (#364)
 
 ### Changed
 
-- Decisions ledger archival pass -- 1 stale entry (2025-07-14) moved to .squad/decisions-archive.md. Hard gate (51200 B) not met mid-sprint; follow-up #371 filed for policy review. (#363)
+- Decisions ledger archival pass -- 1 stale entry moved to archive. Hard gate (51200 B) not met mid-sprint; follow-up #371 filed for policy review. (#363)
 - Tag prefix sanity check -- 14/14 tags conform to bare X.Y.Z convention, no drift. (#365)
 
 ### Fixed
@@ -75,12 +77,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.5] - 2026-05-17 -- Sprint 15: Legacy non-ASCII sweep + Sprint number normalization
 
 ### Added
-- Sprint 14 retro at .squad/retros/2026-05-17-sprint-14-retro.md (retroactive Sprint 14 artifact, folded into 0.9.5)
-- Doc canonical decision record at .squad/decisions/doc-356-ascii-sweep.md documenting #356 sweep scope, methodology, and conversion mapping table (#359)
+- Sprint 14 retro (retroactive Sprint 14 artifact, folded into 0.9.5)
+- Canonical decision record documenting sweep scope, methodology, and conversion mapping table (#359)
 
 ### Changed
 - Normalized historical Sprint letter references (Sprint R/S/T) to numbers (Sprint 11/12/13) in CHANGELOG.md historical entries for consistency with current Sprint NN numbering (#355).
-- Swept legacy non-ASCII characters (em-dashes, smart quotes, box-drawing) from 33 tracked .md files (.copilot/skills/, ARCHITECTURE.md, tests/README.md, .github/agents/squad.agent.md); ~1250 non-ASCII bytes removed (#356).
+- Swept legacy non-ASCII characters (em-dashes, smart quotes, box-drawing) from 33 tracked .md files; ~1250 non-ASCII bytes removed (#356).
 - history-compression skill: confidence medium -> high (8+ applications in Sprint 14)
 - per-topic-inbox-routing skill: confidence medium -> high (7+ applications in Sprint 14)
 
@@ -91,13 +93,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.4] - 2026-05-17
 
 ### Added
-- history-compression skill formalized at confidence: medium -- 4-step heuristic (front-matter verbatim / current-sprint verbatim / older to dated bullets / preserve refs), 13 KB target with 2 KB headroom under the 15360 B hard gate (#340)
+- history-compression skill formalized at confidence: medium -- 4-step heuristic, 13 KB target with 2 KB headroom under the 15360 B hard gate (#340)
 - per-topic inbox routing skill formalized at confidence: medium -- routing decision tree, atomic-rm model, dual-model coexistence with chronological journal (#341)
 
 ### Changed
 - README refreshed: pre-commit 6-check description (F1), ascii-sweep.py docs (F2), file-tree hand-converted to ASCII (F3), file-tree updated (F4), pre-commit one-liner expanded (F5) (#342)
 - Label taxonomy slimmed from 45 to 32 labels (drop 8 GitHub-default duplicates, 4 stale release version labels, 1 lonely status label; rename area:linux/macos/windows -> platform:*) (#347)
-- sync-squad-labels.yml: add priority:p3 + platform:* to managed labels, remove dead hasCopilot code (#350)
+- Label sync workflow: add priority:p3 + platform:* to managed labels, remove dead hasCopilot code (#350)
 
 ### Fixed
 
@@ -106,15 +108,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.3] - 2026-05-17 -- Sprint 13: Documentation accuracy and ASCII policy hardening
 
 ### Added
-- squad: skill formalizing the worktree-remove-FIRST PR merge pattern; documents the gh CLI quirk and proven 5-of-5 workaround (#317)
-- `.squad/retros/2026-05-17-sprint-13-retro.md`: Sprint 13 retrospective (#339; folded retroactively into 0.9.3 -- PR merged after tag; see `.squad/decisions/changelog-retro-placement.md`)
+- Skill formalizing the worktree-remove-FIRST PR merge pattern; documents the gh CLI quirk and proven 5-of-5 workaround (#317)
+- Sprint 13 retrospective (#339; folded retroactively into 0.9.3 -- PR merged after tag)
 
 ### Changed
 
 - docs: ASCII-sweep all repo Markdown files (em-dash, arrows, smart quotes, box-drawing) per repo policy (#322 part A)
-- squad: compress 8 over-gate agent history.md files per Scribe HARD GATE (#319)
-- squad: fold Sprint 13 Wave 1 hygiene drops into per-topic decisions and re-compress jiminy/history.md back under 15KB gate
-- squad: fold Sprint 13 Wave 2 hygiene drops into per-topic decisions and re-compress 4 over-gate agent history.md files
+- Compress over-gate agent history.md files per HARD GATE (#319)
+- Fold Sprint 13 Wave 1 hygiene drops into per-topic decisions and re-compress history files
+- Fold Sprint 13 Wave 2 hygiene drops into per-topic decisions and re-compress 4 over-gate agent history.md files
 
 ### Fixed
 - docs(architecture): correct stale top-level path for auth.ps1; reflects post-PR #297 move to tools/ (#325)
@@ -130,13 +132,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CONTRIBUTING.md `Test Harness Pattern` section: documents the `set -uo` (intentionally NOT `set -euo`) convention for bash tests; failure tally pattern, helper conventions, minimal skeleton (closes #237)
 
 ### Changed
-- README.md: refreshed to reflect Sprints 8-12 changes (auth.ps1 path move, .tool-versions pinning, expanded squad roster, decisions/retros workflow, numeric sprint naming convention, ARCH/CONTRIB cross-references) (closes #306)
+- README.md: refreshed to reflect Sprints 8-12 changes (auth.ps1 path move, .tool-versions pinning, expanded roster, decisions/retros workflow, numeric sprint naming convention, ARCH/CONTRIB cross-references) (closes #306)
 - ARCHITECTURE.md: documented Windows orchestrator dependency order chain; mirrors the Linux Dependency Order section for parallel install flow visibility (closes #310)
 - ARCHITECTURE.md: rewrote `Script Conventions` section to point at `scripts/{linux,windows}/lib/` as source of truth; documents `source` / dot-source loading + `Read-ToolVersion.ps1` parser pattern (closes #309)
 - Sprint naming convention standardized to numeric format: Sprint 8-hotfix, Sprint 9, Sprint 10, Sprint 11; next = Sprint 12. Tier 3 full sweep across 21 files (~170 refs). Retro files renamed with `git mv`. Historical sprint letter references removed in favor of numeric format for consistency. CONTRIBUTING.md "Sprint Naming Convention" section updated with current numeric convention.
 - `.aliases`: added header marking the file as bash/zsh-only (not POSIX); documents non-POSIX features in use and intended loading pattern (closes #236)
-- `.squad/decisions.md`: drained 4 Wave 2 inbox drops (mickey #310, donald #237, goofy #235, jiminy audit); folded staged history modifications (goofy, jiminy); archive gate crossed (57 KB >= 50 KB) but no entries eligible for 7-day cut (oldest live entry 2026-05-14, 3 days old) -- (Sprint 12 Wave 2 fold)
-- `.squad/retros/2026-05-17-sprint-12-retro.md`: new Sprint 12 retrospective (3 waves, 10 PRs, 9 issues closed, worktree-isolation + ASCII-scope lessons learned)
+- Decision log drained and restructured; archive gate crossed (57 KB >= 50 KB) but no entries eligible for 7-day cut (Sprint 12 Wave 2 fold)
+- Sprint 12 retrospective (3 waves, 10 PRs, 9 issues closed, worktree-isolation + ASCII-scope lessons learned)
 
 ### Removed
 - Legacy GitHub labels `priority: high`, `priority: medium`, `priority: low` (with spaces) deleted; canonical taxonomy is now `priority:p0..p3` (closes #254)
@@ -147,70 +149,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/windows/tools/auth.ps1` + `scripts/windows/setup.ps1`: applied `$LASTEXITCODE` reset mitigation at 5 sites; eliminates spurious failure detection when callers check exit codes downstream (closes #292)
 
 ### Added
-- `.squad/skills/pwsh-lastexitcode/SKILL.md`: documents the `$LASTEXITCODE` propagation gotcha across pwsh `&` script-call boundaries; canonical fix is `$global:LASTEXITCODE = 0` after expected-failure commands (closes #288, surfaced by #277)
+- PowerShell exit-code discipline skill: documents the `$LASTEXITCODE` propagation gotcha across pwsh `&` script-call boundaries; canonical fix is `$global:LASTEXITCODE = 0` after expected-failure commands (closes #288, surfaced by #277)
 - CONTRIBUTING.md "PowerShell Exit Code Discipline" section referencing the new skill
-- `.squad/decisions/doc-and-jiminy-automation.md`: decision record codifying the post-batch Jiminy audit gate and the Doc subagent worktree pattern (closes #289, #290)
-- `.squad/retros/2026-05-17-sprint-11-retro.md`: Sprint 11 retrospective - first sprint exercising the #293 SOPs (Jiminy gates fired clean, Doc worktree not triggered); 6 PRs merged, sequential Goofy pattern validated, Group EE static-source tests added
+- Decision record codifying the post-batch audit gate and the subagent worktree pattern (closes #289, #290)
+- Sprint 11 retrospective - first sprint exercising the SOPs (gates fired clean, worktree not triggered); 6 PRs merged, sequential pattern validated, Group EE static-source tests added
 
 ### Changed
-- `scripts/windows/auth.ps1` moved to `scripts/windows/tools/auth.ps1` for consistency with the per-tool layout introduced in #195; all callers updated (closes #230)
-- ARCHITECTURE.md: refreshed file trees + agent/skill rosters + hook + CI layout to reflect Sprint 8-hotfix through Sprint 10 changes (`prepare-commit-msg`, per-tool Windows layout, `.tool-versions` pin-driven install, Doc + Jiminy agents, `.squad/decisions/`) (closes #229)
-- `hooks/pre-push`: documented advisory-only intent of the PSScriptAnalyzer step with an inline comment block at the top of the PSSA section; clarifies that PSSA findings warn but do not block, explains the three reasons (availability gap, subjective rules, out-of-scope hardening), and flags `|| true` as load-bearing (closes #233)
-- `CONTRIBUTING.md` "Why is PSSA advisory in `pre-push`?" subsection under Git Hooks: codifies the advisory model for contributors so the `|| true` in `hooks/pre-push` is not incorrectly "fixed" away (closes #233)
-- `.squad/templates/loop.md`, `.squad/templates/ceremonies.md`, and Doc/Jiminy charters: codify post-batch Jiminy audit gate + Doc subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint 10 (closes #289, #290)
-- `CONTRIBUTING.md` "Squad Operational Gates (Coordinator dispatch)" section -- human-facing summary of the Doc worktree + Jiminy auto-dispatch SOPs
-- `hooks/pre-commit` Source of Truth allow-list extended to include canonical `.squad/decisions/*.md` files (top-level decisions directory, distinct from the gitignored `inbox/` subdir). Required so permanent decision records like `.squad/decisions/doc-and-jiminy-automation.md` are commit-eligible.
+- `scripts/windows/auth.ps1` moved to `scripts/windows/tools/auth.ps1` for consistency with the per-tool layout; all callers updated (closes #230)
+- ARCHITECTURE.md: refreshed file trees + rosters + hook + CI layout to reflect Sprint 8-hotfix through Sprint 10 changes (closes #229)
+- `hooks/pre-push`: documented advisory-only intent of the PSScriptAnalyzer step with an inline comment block at the top of the PSSA section; clarifies that PSSA findings warn but do not block (closes #233)
+- `CONTRIBUTING.md` "Why is PSSA advisory in `pre-push`?" subsection under Git Hooks: codifies the advisory model for contributors (closes #233)
+- Templates and charters: codify post-batch audit gate + subagent worktree pattern; eliminates the dual-fold-PR overhead of Sprint 10 (closes #289, #290)
+- `CONTRIBUTING.md` operational gates section -- human-facing summary of the worktree + auto-dispatch SOPs
+- `hooks/pre-commit` Source of Truth allow-list extended to include canonical decision files (top-level decisions directory, distinct from the gitignored `inbox/` subdir).
 - Sprint 11 end-of-session cleanup: no straggler branches/worktrees
 
 ## [0.9.0] - 2026-05-17 -- Sprint 9 + Sprint 10: Hygiene backlog and tool-version pin sweep
 
 ### Added
-- `tests/test_nvm_bootstrap.sh` T6-T9: static source checks verifying that squad-cli and copilot-cli scripts read pins from `.tool-versions` and perform version-aware idempotency (closes #255)
-- `tests/test_nvm_bootstrap.sh` T10-T11: regression sentinel asserting `@bradygaster/squad-cli` is the installed package and that `squad --version` captures stderr so the "session persistence may fail" warning is surfaced in CI (closes #255)
-- `tests/test_windows_setup.ps1` Group DD (DD-1 through DD-5): version-pin validation for Windows squad-cli, copilot, and gh installers (closes #255)
-- `tests/test_windows_setup.ps1` Group X -- behavioral tests for pre-commit (ASCII check, rogue .squad/ path) and pre-push (main guard, feature-branch allow, advisory exit-code) hooks (closes #224)
-- `tests/test_windows_setup.ps1` Group Z -- coverage for `-Encoding ASCII` enforcement in `profile.ps1` and `uninstall.ps1` (closes #234)
-- `tests/test_precommit_hygiene.sh` extended with pre-push section -- 5 bash scenarios covering direct-to-main rejection and advisory exit-code (closes #224)
-- `.squad/skills/tool-version-pin/SKILL.md`: documents the bare-idempotency anti-pattern and the canonical version-pin solution
-- `.copilot/skills/error-recovery/SKILL.md` -- new generic error-recovery skill
-- `.squad/skills/squad-upgrade-hygiene/SKILL.md` -- reusable checklist for auditing future `squad upgrade` runs
-- Doc (Fact Checker) joins the squad -- new agent addressing the verifier/validator gap from Sprint 8-hotfix retro. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings (Verified/Unverified/Contradicted/Needs Investigation). Charter: `.squad/agents/doc/charter.md`.
-- `.github/workflows/squad-label-enforce.yml` -- enforces mutual exclusivity for `go:`, `release:`, `type:`, `priority:` label groups
-- `.squad/templates/{fact-checker-charter.md, loop.md, squad.agent.md.template}` -- new templates from 0.9.4
-- `hooks/pre-commit` now allows `.squad/templates/*.template` files (squad upgrade ships `squad.agent.md.template`); allow-list extended to permit `.squad/retros/*.md` so session retros can be committed
-- `.squad/agents/ralph/charter.md` "Develop Commit Ban" section -- documents that Ralph (and all agents) cannot commit directly to `develop`/`main`/`master`; EOS history entries flow through short-lived branch+PR or Scribe drain process (closes #273)
-- CONTRIBUTING.md "Group Letter Assignment" section -- coordinator pre-assigns test group letters to prevent parallel-agent collisions; Sprint 9 example documented (closes #273)
-- CONTRIBUTING.md "CHANGELOG Conflict Strategy" section -- documents mechanical resolution for predictable [Unreleased] conflicts when multiple PRs land in one sprint: merge order, unique headers, union entries (closes #273)
+- Static source checks verifying that scripts read pins from `.tool-versions` and perform version-aware idempotency (closes #255)
+- Regression sentinel asserting correct package is installed and that version output captures stderr (closes #255)
+- Version-pin validation for Windows installers (closes #255)
+- Behavioral tests for pre-commit (ASCII check) and pre-push (main guard, feature-branch allow, advisory exit-code) hooks (closes #224)
+- Coverage for `-Encoding ASCII` enforcement in Windows profile and uninstall scripts (closes #234)
+- Bash scenarios covering direct-to-main rejection and advisory exit-code (closes #224)
+- Skill documenting the bare-idempotency anti-pattern and the canonical version-pin solution
+- New generic error-recovery skill
+- Reusable checklist for auditing future upgrade runs
+- Fact checker agent joins the project -- addresses the verifier/validator gap. Auto-triggers on `review`/`verify`/`fact-check`/`audit` tasks; produces verification reports with confidence ratings.
+- Label enforcement workflow for mutual exclusivity
+- New templates from governance upgrade
+- `hooks/pre-commit` now allows template files; allow-list extended to permit retro files so session retros can be committed
+- "Develop Commit Ban" section -- documents that agents cannot commit directly to `develop`/`main`/`master`; EOS history entries flow through short-lived branch+PR or drain process (closes #273)
+- CONTRIBUTING.md "Group Letter Assignment" section -- coordinator pre-assigns test group letters to prevent parallel-agent collisions; example documented (closes #273)
+- CONTRIBUTING.md "CHANGELOG Conflict Strategy" section -- documents mechanical resolution for predictable [Unreleased] conflicts (closes #273)
 - CONTRIBUTING.md "Tool Version Pin Enforcement" section -- documents the version-pin workflow and the npm-package validation step (closes #255)
-- `.gitignore` now ignores `*.tgz` tarballs so squad upgrade artifacts cannot accidentally land in commits; Jiminy charter documents the new dispatch SOP
+- `.gitignore` now ignores `*.tgz` tarballs so upgrade artifacts cannot accidentally land in commits
 
 ### Changed
-- `.tool-versions`: added `squad-cli 0.9.4` and `gh 2.92.0` pins; corrected `copilot-cli` from stale `0.0.339` to `1.0.48` (`@github/copilot` npm package)
-- `scripts/windows/tools/squad-cli.ps1`, `copilot.ps1`, `gh.ps1`: now dot-source `Read-ToolVersion.ps1` to resolve pinned version at runtime
-- `scripts/windows/tools/profile.ps1` and `scripts/windows/uninstall.ps1`: added `-Encoding ASCII` to all `Set-Content` and `Add-Content` calls. Prevents encoding mismatch between PS 5.1 (UTF-16LE BOM default) and PS 7 (UTF-8 BOM default) (closes #234).
+- `.tool-versions`: added tool pins and version corrections
+- Windows tools now dot-source `Read-ToolVersion.ps1` to resolve pinned version at runtime
+- Windows profile and uninstall scripts: added `-Encoding ASCII` to all `Set-Content` and `Add-Content` calls. Prevents encoding mismatch between PS 5.1 (UTF-16LE BOM default) and PS 7 (UTF-8 BOM default) (closes #234).
 - `.gitattributes` now pins `*.ps1`, `*.psm1`, and `*.psd1` files to explicit CRLF line endings, eliminating platform divergence when `core.autocrlf` is enabled (closes #231).
-- `setup.sh` and `scripts/linux/uninstall.sh` now source `scripts/linux/lib/log.sh` instead of defining their own logging helpers. Local `log_*` / `ok` / `info` / `skip` definitions removed; all call sites updated to the canonical `log_ok` / `log_info` / `log_warn` / `log_error` names (closes #223).
-- Documentation: README + CONTRIBUTING now document the automatic `core.hooksPath` setup performed by `setup.sh` and `setup.ps1`. Replaced stale "install hooks manually" instruction. Added branch-from-develop validation note per Sprint 8-hotfix retro (closes #228).
-- Squad governance upgraded from 0.9.1 to 0.9.4 (dispatch mechanism, `CURRENT_DATETIME` requirement, `name` param in spawn prompts, default models bumped to `claude-sonnet-4.6` / `gpt-5.3-codex`, tier-based agent timeout policy)
-- `.github/workflows/squad-heartbeat.yml` removes noisy cron trigger; Ralph now fires on issue events only
-- `.github/workflows/squad-triage.yml` and `sync-squad-labels.yml` add `slugify()` for label names (bugfix)
-- Dotfile backup strategy: `.bak` files are now timestamped (`.bak.YYYYMMDD-HHMMSS`) on both Linux (`config/dotfiles/install.sh`) and Windows (`scripts/windows/tools/dotfiles.ps1`). Keeps last 5 backups by default (override with `DOTFILE_BACKUP_KEEP` env var); previous versions of dotfiles are no longer lost on re-run (closes #227).
+- `setup.sh` and `scripts/linux/uninstall.sh` now source `scripts/linux/lib/log.sh` instead of defining their own logging helpers. Local definitions removed; all call sites updated to the canonical names (closes #223).
+- Documentation: README + CONTRIBUTING now document the automatic `core.hooksPath` setup performed by setup scripts. Replaced stale "install hooks manually" instruction. Added branch-from-develop validation note.
+- Governance upgraded (dispatch mechanism, CURRENT_DATETIME requirement, name param in spawn prompts, default models bumped, tier-based agent timeout policy)
+- Workflows: heartbeat removes noisy cron trigger; label workflows add `slugify()` for label names (bugfix)
+- Dotfile backup strategy: `.bak` files are now timestamped (`.bak.YYYYMMDD-HHMMSS`) on both Linux and Windows. Keeps last 5 backups by default (override with `DOTFILE_BACKUP_KEEP` env var) (closes #227).
 
 ### Fixed
-- `scripts/linux/tools/squad-cli.sh`, `scripts/windows/tools/squad-cli.ps1`: replace bare `command -v squad` idempotency guard with version-aware check; installs pinned version via `npm install -g @bradygaster/squad-cli@<version>`; upgrades silently if installed version drifts from pin (closes #255)
-- `scripts/linux/tools/copilot-cli.sh`, `scripts/windows/tools/copilot.ps1`: replace bare binary-exists guard with version-aware check; switch install package from deprecated `@githubnext/github-copilot-cli` to `@github/copilot`; Windows switches from winget (wrong product) to npm for consistency with Linux; pin corrected from stale `0.0.339` (opaque curl-installer version) to `1.0.48` (closes #255)
-- `scripts/linux/tools/gh.sh`: Linux now downloads pinned release tarball from GitHub releases instead of `apt-get install -y gh` (latest); macOS logs WARN if brew installs a version other than the pin (brew versioned formulae not available for gh) (closes #255)
-- `scripts/windows/tools/gh.ps1`: passes `--version $GhVersion` to winget so runner cache cannot silently use an older gh (closes #255)
-- `scripts/linux/uninstall.sh` and `scripts/windows/uninstall.ps1` now run `git config --unset-all core.hooksPath` during uninstall (LOCAL scope, matching setup) so git falls back to per-repo `.git/hooks` defaults instead of pointing at the (now-deleted) dev-setup hooks dir; Windows path resets `$global:LASTEXITCODE = 0` after the unset so the expected non-zero exit when no hookspath is configured no longer fails the uninstall step (closes #271).
-- `.github/workflows/e2e-install.yml` -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
-- `scripts/linux/tools/squad-cli.sh` -- investigated 'session persistence may fail' warning (#255). Root cause: `@github/copilot-sdk` (transitive dep) attempts node:sqlite session storage on startup; on environments without write access to HOME, it emits this warning. Verified absent in squad-cli 0.9.4 `--version` path. Added regression guard: `e2e-install.yml` now captures `squad --version` output and fails if the warning appears. Static installer tests (`test_nvm_bootstrap.sh` T10-T11) verify correct package name and stderr capture.
-- `scripts/windows/tools/*.ps1` -- winget install calls now assert `$LASTEXITCODE` and surface failures to `setup.ps1` (closes #226). 7 install sites previously swallowed non-zero exits silently.
-- `.github/workflows/e2e-install.yml` -- bash `-lc` step bodies now use YAML doubled-single-quote escapes for embedded apostrophes; previously, an inner `'session persistence may fail'` could terminate the wrapping single-quoted YAML scalar mid-string.
+- Tool install scripts: replace bare binary-exists guard with version-aware check; installs pinned version; upgrades silently if installed version drifts from pin (closes #255)
+- Copilot CLI: switch install package from deprecated package to current; Windows switches from winget (wrong product) to npm for consistency with Linux; pin corrected (closes #255)
+- Linux gh installer: now downloads pinned release tarball from GitHub releases instead of `apt-get install -y gh` (latest); macOS logs WARN if brew installs a version other than the pin (brew versioned formulae not available for gh) (closes #255)
+- Windows gh installer: passes `--version $GhVersion` to winget so runner cache cannot silently use an older gh (closes #255)
+- Uninstall scripts now run `git config --unset-all core.hooksPath` during uninstall (LOCAL scope) so git falls back to per-repo `.git/hooks` defaults; Windows path resets `$global:LASTEXITCODE = 0` after the unset (closes #271).
+- E2E workflow -- adds a final `summary` job that fails the workflow if any platform job fails, preventing silent green-dashboard regressions. Per-platform jobs still use `continue-on-error: true` so full matrix telemetry is preserved (closes #253).
+- Tool CLI warnings investigated; verified absent in version check path. Added regression guard: e2e workflow now captures version output and fails if warning appears. Static installer tests verify correct package name and stderr capture.
+- Windows tool installers -- winget install calls now assert `$LASTEXITCODE` and surface failures (closes #226). 7 install sites previously swallowed non-zero exits silently.
+- E2E workflow -- bash step bodies now use YAML doubled-single-quote escapes for embedded apostrophes.
 
 ## [0.8.0] - 2026-05-16 -- Sprint 8 + Sprint 8-hotfix (formerly Sprint Q): Gap audit refactor and install regression P0s
 
 ### Added
-- Pre-commit hygiene checks: ASCII-only enforcement on staged `.ps1` files, rogue `.squad/` path validation, staged inbox file detection, and branch ancestry verification for squad branches (closes #240)
+- Pre-commit hygiene checks: ASCII-only enforcement on staged `.ps1` files, path validation, staged file detection, and branch ancestry verification for feature branches (closes #240)
 - `tests/test_precommit_hygiene.sh` -- bash tests for all 4 pre-commit hygiene checks (13 pass/fail cases)
 - E2E install smoke test workflow `.github/workflows/e2e-install.yml` with 3-OS matrix (Linux, macOS, Windows) -- exercises full setup, tool assertions, idempotency, and uninstall on fresh runners (closes #239)
   - Triggers: per-PR, nightly cron (04:00 UTC), manual workflow_dispatch
@@ -238,28 +239,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `prepare-commit-msg` hook that rewrites git auto-generated merge/revert messages into Conventional Commits form (#212)
 
 ### Changed
-- Shared logging helpers extracted to `scripts/linux/lib/log.sh` and `scripts/windows/lib/logging.ps1` (closes #186)
+- Shared logging helpers extracted to dedicated lib files (closes #186)
 - Support for `merge` type in commit-msg hook type allowlist (#212)
-- `squad-cli` install failure is now a loud error with actionable hints (was silent warning)
-- `scripts/linux/tools/nvm.sh` installs pinned Node version from `.tool-versions` (was `--lts`)
-- `scripts/linux/tools/nvm.sh` reads nvm version from `.tool-versions` instead of fetching latest
-- `scripts/linux/tools/uv.sh` reads uv version from `.tool-versions` instead of fetching latest
-- `scripts/linux/tools/copilot-cli.sh` reads copilot-cli version from `.tool-versions`
-- `scripts/windows/tools/nvm.ps1` reads nvm version from `.tool-versions`
+- Tool install failure is now a loud error with actionable hints (was silent warning)
+- Tool installers read versions from `.tool-versions` instead of fetching latest
 - Made tmux auto-attach opt-in via `TMUX_AUTOSTART=1` env var (was always-on)
 - Refreshed ARCHITECTURE.md and README.md file trees to match current repo layout
 - commit-msg no longer needs special-case bypass for merge/revert -- prepare-commit-msg now normalizes them (#212)
 
 ### Fixed
-- Windows: session PATH now refreshed after every `winget install` so just-installed binaries (nvm, git, gh, vim, copilot, psmux) resolve immediately without restarting the terminal; preserves session-only PATH entries (e.g., GitHub Actions tool-cache, profile-injected paths) (closes #251)
-- Windows nvm install switched from winget+nvm-setup.exe to portable nvm-noinstall.zip download (deterministic, no installer race); replaces Wait-ForNvmInstall polling with Install-NvmPortable + Set-NvmEnvironment (#251)
-- Pinned Node.js version bumped from 20.11.0 to 22.11.0 in `.tool-versions` to satisfy `squad-cli` engine requirement (`>=22.5.0`); added `nvm alias default` so fresh shells inherit the pinned version; affects Linux, macOS, and Windows setup paths (fixes #252, related #255)
+- Windows: session PATH now refreshed after every `winget install` so just-installed binaries resolve immediately without restarting the terminal; preserves session-only PATH entries (closes #251)
+- Windows nvm install switched from winget+nvm-setup.exe to portable nvm-noinstall.zip download (deterministic, no installer race); replaces polling with Install-NvmPortable + Set-NvmEnvironment (#251)
+- Pinned Node.js version bumped to satisfy engine requirement; added `nvm alias default` so fresh shells inherit the pinned version; affects Linux, macOS, and Windows setup paths (fixes #252, related #255)
 - E2E install workflow: added Node major version assertion (>=22) to Linux and macOS fresh-shell steps to prevent future regressions (#252)
 - CI: Added nvm + Node.js validation step to validate-macos job, aligning with validate-linux (closes #225)
 - Pre-commit hook now refuses commits directly on `develop`, `main`, or `master` with a clear error message directing the user to create a feature branch (closes #249)
-- `scripts/windows/tools/nvm.ps1` resolved wrong lib path (one level up instead of two); `Read-ToolVersion.ps1` not found at runtime (closes #221)
+- Windows nvm installer resolved wrong lib path; `Read-ToolVersion.ps1` not found at runtime (closes #221)
 - Added runtime assertion in `nvm.ps1` to catch missing lib directory early
-- PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics (PR #198)
+- PS 5.1 compat: psmux install skip-with-warning + profile write diagnostics
 
 ## [0.7.0] - 2026-04-25 -- Sprint 7: Hooks, psmux, and profile hardening
 
@@ -286,15 +283,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2026-04-18 -- Sprint 6: Tools and CI hardening
 
 ### Added
-- Vim install via winget on Windows (PR #112)
-- Tmux added to system prerequisites (PR #84)
-- `va` alias to edit `~/.aliases` in vim (PR #86)
-- GitHub issue templates (PR #114)
-- Missing aliases added to PowerShell profile (PR #115)
-- PS 5.1 validation CI job on Windows runner (PR #116)
-- `squad-cli` global install in Windows and Linux setup (PR #118)
-- Windows regression tests: PS5 compat, profile idempotency, Copilot CLI install (PR #104)
-- Direct-push-to-main override policy documented (PR #117)
+- Vim install via winget on Windows
+- Tmux added to system prerequisites
+- `va` alias to edit `~/.aliases` in vim
+- GitHub issue templates
+- Missing aliases added to PowerShell profile
+- PS 5.1 validation CI job on Windows runner
+- Global tool install in Windows and Linux setup
+- Windows regression tests: PS5 compat, profile idempotency, Copilot CLI install
+- Direct-push-to-main override policy documented
 
 ### Fixed
 - Copilot CLI: remove conflicting `gh` alias before extension install (PR #63)
@@ -308,8 +305,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Test-Path` variable guards for PS 6+ auto-vars in `setup.ps1` (PR #130)
 
 ### Changed
-- Sprint wrap: ban squash merges in favor of regular merge commits (PR #100)
-- Removed log/orchestration-log from git tracking (PR #101)
+- Sprint wrap: ban squash merges in favor of regular merge commits
+- Removed log/orchestration-log from git tracking
 
 ## [0.5.0] - 2026-04-08 -- Sprint 5: Process stabilization
 
@@ -326,11 +323,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-04-07 -- Sprint 4: Branch protection and testing
 
 ### Added
-- Branch protection enabled on `develop` with documented merge gates (PR #47)
-- Mickey approval gate enforced and documented in Ralph spec (PR #48)
-- Regression test for `Remove-CustomItem` multi-argument behavior (PR #52)
-- Test coverage for `create_tmux()` session detection logic (PR #53)
-- `uv` replaces `pip` for Python tooling in devcontainer (PR #50)
+- Branch protection enabled on `develop` with documented merge gates
+- Approval gate enforced and documented
+- Regression test for `Remove-CustomItem` multi-argument behavior
+- Test coverage for `create_tmux()` session detection logic
+- `uv` replaces `pip` for Python tooling in devcontainer
 
 ### Fixed
 - `create_tmux()`: named session check corrected, dead variable removed (PR #39)

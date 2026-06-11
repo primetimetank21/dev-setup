@@ -1,6 +1,6 @@
 # Contributing to dev-setup
 
-Welcome! This repo is maintained by the **Disney Classic Squad** -- a team of specialized AI agents each owning a slice of the codebase. Human contributors are equally welcome. This guide explains how to work alongside the squad.
+Welcome! This guide explains the contribution workflow for dev-setup.
 
 ---
 
@@ -17,20 +17,22 @@ The branch protection rule has `enforce_admins` intentionally **disabled**. Why?
 All work happens on a dedicated branch. **Never commit directly to `develop` or `main`.**
 
 ```
-squad/{issue-number}-{kebab-slug}
+{type}/{issue-number}-{kebab-slug}
 ```
 
+Where `type` is one of: `feat`, `fix`, `chore`, `docs`, `refactor`.
+
 **Examples:**
-- `squad/42-add-nvm-install`
-- `squad/17-fix-zsh-detection`
-- `squad/8-dotfile-editorconfig`
+- `feat/42-add-nvm-install`
+- `fix/17-fix-zsh-detection`
+- `chore/8-dotfile-editorconfig`
 
 Base branch is **always `develop`**:
 
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b squad/{issue-number}-{slug}
+git checkout -b {type}/{issue-number}-{slug}
 ```
 
 ---
@@ -42,14 +44,12 @@ git checkout -b squad/{issue-number}-{slug}
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b squad/{issue-number}-{slug}
+git checkout -b {type}/{issue-number}-{slug}
 ```
 
-**Never fork a squad branch from another squad branch.** Branching from a peer's branch pulls in their unmerged commits, inflating your PR diff and making review harder. If you see commits in your PR that don't belong to your issue, your branch was not forked from `develop`.
+**Never fork a feature branch from another feature branch.** Branching from a peer's branch pulls in their unmerged commits, inflating your PR diff and making review harder. If you see commits in your PR that don't belong to your issue, your branch was not forked from `develop`.
 
-> This rule exists because "branch ancestry bleed" occurred 3 times in Sprint 6. Every time it's violated, PR review quality degrades.
-
-**All squad branches MUST be cut from `develop`, not `main`.** The pre-commit hook validates this: if you commit to a `squad/*` branch that is not an ancestor of `develop`, the hook warns that you may have accidentally forked from `main` or another squad branch. To fix: `git rebase develop` before pushing.
+**All feature branches MUST be cut from `develop`, not `main`.** The pre-commit hook validates this: if you commit to a feature branch that is not an ancestor of `develop`, the hook warns that you may have accidentally forked from `main` or another feature branch. To fix: `git rebase develop` before pushing.
 
 ---
 
@@ -63,7 +63,7 @@ Before opening a pull request, confirm all of the following:
 - [ ] CI is green before requesting review
 - [ ] Commit messages follow conventional commits
 - [ ] One issue per PR
-- [ ] Mickey approval required before merge
+- [ ] Approval from a maintainer required before merge
 
 ---
 
@@ -94,10 +94,9 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ## Code Review
 
-- **Mickey** is the lead reviewer -- all PRs require Mickey's approval before merge.
+- All PRs require approval from a maintainer before merge.
 - **CI must be green** before requesting review. Do not ask for review on a failing PR.
-- Reviewers may request changes or reassign work to a different squad member.
-- If Mickey rejects a PR, a *different* agent (not the original author) will be assigned to revise.
+- Reviewers may request changes or reassign work to a different contributor.
 
 ---
 
@@ -198,13 +197,13 @@ A direct push to `main` is permitted ONLY when ALL of the following conditions a
 1. A critical regression or broken state is on `main` that blocks users
 2. The fix is small, surgical, and fully understood (not exploratory)
 3. `develop` itself is broken or the PR pipeline cannot be expedited
-4. The repo owner (Earl Tankard) explicitly authorizes the override in session
+4. The repo owner explicitly authorizes the override in session
 
 **Required audit trail:**
 
 - Commit message must include `[hotfix-override]` annotation
-- A squad decision record must be written to `.squad/decisions/inbox/` documenting: what was pushed, why, and who authorized
-- The override must be referenced in the next sprint retro
+- The override must be documented in decision records or session notes
+- The override must be referenced in the next sprint retro if applicable
 
 **Reference:** The 2026-04-18 hotfix session (PS 5.x `$MyInvocation.MyCommand.Path` regression) is the canonical example of an authorized override.
 
@@ -212,15 +211,15 @@ A direct push to `main` is permitted ONLY when ALL of the following conditions a
 
 ---
 
-## Parallel Agent Work
+## Parallel Work
 
 ### Why worktree isolation matters
 
-In Sprint 4, two Chip agents ran simultaneously on issues #41 and #43, both sharing the same git working tree. Chip-issue-43 checked out `squad/43` while Chip-issue-41 was mid-commit on a different branch. The result: wrong content landed on the wrong branch, and PR #51 had to be closed and recreated. This is a classic branch-checkout race condition.
+In past work, concurrent development on different issues in the same working tree caused branch-checkout race conditions. Wrong content landed on the wrong branch, and PRs had to be closed and recreated.
 
 ### How to enable it
 
-Set `SQUAD_WORKTREES=1` before starting any Squad session where parallel work is expected:
+Set `SQUAD_WORKTREES=1` before starting work where parallel development is expected:
 
 ```bash
 export SQUAD_WORKTREES=1
@@ -228,7 +227,7 @@ export SQUAD_WORKTREES=1
 
 Or add it permanently to your `.env` / shell profile. The devcontainer sets it by default in `remoteEnv`.
 
-When enabled, the Squad coordinator creates an isolated `git worktree` for each issue before handing control to the agent. Branch checkouts inside one worktree never affect any other.
+When enabled, coordinators or automation can create an isolated `git worktree` for each issue. Branch checkouts inside one worktree never affect any other.
 
 ### Worktree path convention
 
@@ -253,10 +252,6 @@ git worktree remove /workspaces/dev-setup-56
 ```
 
 Or list all active worktrees with `git worktree list`.
-
-### Merging Squad PRs from worktrees
-
-When merging a Squad PR that was developed in a worktree, follow the worktree-remove-FIRST pattern (remove the worktree and delete the local branch BEFORE `gh pr merge --delete-branch`). See `.squad/skills/worktree-remove-first/SKILL.md` for the five-step sequence and the gh CLI quirk it sidesteps.
 
 ---
 
@@ -409,12 +404,8 @@ For the broader rationale around test isolation and second-run safety, see
 ## Group Letter Assignment (parallel test work)
 
 Behavioral tests in `tests/test_windows_setup.ps1` are organized by alphabetic groups
-(Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel agents may extend this
-file in the same sprint, the **coordinator pre-assigns Group letters in each spawn prompt**
-to prevent collisions. Sprint 9 (formerly Sprint R) example: Chip #267 picked "Group X" independently while
-Goofy #268 also picked "Group X" - required a manual rename to Group Y during rebase.
-Going forward, the coordinator's spawn checklist includes Group letter assignment for any
-agent that may add tests to this file.
+(Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel contributors may extend this
+file, group letters should be pre-assigned to prevent collisions during rebase.
 
 ---
 
@@ -457,17 +448,12 @@ docs that used the letter names.
 
 - Next sprint after Sprint 11 = **Sprint 12** (NOT Sprint U).
 - CHANGELOG release headers MUST include `-- Sprint N: short-name` suffix (matches the 0.1.0-0.7.0 pattern).
-- Retro file naming: `.squad/retros/YYYY-MM-DD-sprint-N-retro.md` (numeric).
 - Retro files renamed to numeric (e.g., `2026-05-16-sprint-8-hotfix-retro.md`).
-- Out-of-cadence hotfix sprints (a la Sprint 8-hotfix) get a `-hotfix` suffix in retro filename:
-  `.squad/retros/YYYY-MM-DD-sprint-N-hotfix-retro.md` -- the version header attribution stays
-  on the numeric parent (e.g., `Sprint 8 + Sprint 8-hotfix`).
+- Out-of-cadence hotfix sprints get a `-hotfix` suffix in retro filename.
 
 ### Why this matters
 
-The letter scheme caused real confusion: Sprint 8 silently vanished from CHANGELOG headers
-between 0.7.0 and 0.8.0, and the alphabet runs out. Numbers are unbounded and consistent
-with the established 1-7 history.
+Numbers are unbounded and consistent with established project history.
 
 ---
 
@@ -568,58 +554,3 @@ variable). Optionally pair with `2>$null` or `2>&1 | Out-Null` to silence
 stderr noise. The trailing reset is load-bearing for any script invoked from
 a workflow `shell: pwsh` step via `& .\path\to\script.ps1` -- without it the
 GH Actions wrapper fails the step on the next inspection of `$LASTEXITCODE`.
-
-See `.squad/skills/pwsh-lastexitcode/SKILL.md` for the full pattern, a
-detection checklist, and the call-site audit. The discovery PR is #277
-(`fix(uninstall): unset core.hooksPath`); the skill closes #288.
-
----
-
-## Squad Operational Gates (Coordinator dispatch)
-
-Two operational SOPs govern Coordinator-side spawn behavior. Both are codified at
-three independent surfaces (charter + `.squad/templates/loop.md` + `.squad/templates/ceremonies.md`)
-so a single forgotten checkpoint doesn't silently break the SOP. Source decision:
-`.squad/decisions/doc-and-jiminy-automation.md` (closes #289, #290).
-
-### Doc subagent runs in a dedicated worktree (#289)
-
-Doc (Fact Checker) is a `general-purpose` subagent that inherits the Coordinator's
-CWD by default. To prevent his `.squad/agents/doc/history.md` writes from landing
-as `M` on `develop` in the primary worktree (Sprint 10 anti-pattern: required PRs
-#281 + #283), Doc runs in a dedicated per-sprint worktree.
-
-**Sprint kickoff (Coordinator, one-time per sprint):**
-
-```bash
-git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
-```
-
-**Every Doc spawn prompt** MUST begin with an explicit CWD directive pointing at
-`..\dev-setup-doc`. Doc commits + pushes after every fact-check. At sprint wrap,
-the Coordinator opens ONE fold PR from `squad/doc-history-sprint-<N>` into
-`develop`. Target: 1 fold PR per sprint (down from 2 in Sprint 10).
-
-### Jiminy auto-dispatch after >= 3-agent batches and at session-end (#290)
-
-The Jiminy dispatch SOP from PR #280 (Coordinator MUST invoke Jiminy after every
-3+ agent batch and at session-end) is now enforced at three surfaces:
-
-1. `.squad/agents/jiminy/charter.md` -> `Triggers` table (canonical).
-2. `.squad/templates/loop.md` -> "Squad Operational Gates" (Gate 1 post-batch, Gate 2 session-end).
-3. `.squad/templates/ceremonies.md` -> `Sprint Wrap` ceremony, step 1.
-
-**Trigger condition (Gate 1):** 3 or more agent spawns in a single Coordinator
-turn, counted excluding Scribe (which runs silently in background by design).
-**Action:** Spawn Jiminy BEFORE returning results to the user. Wait for
-`Jiminy clear` or resolve the dirty report.
-
-**Trigger condition (Gate 2):** user signals session-end OR work queue empties
-after a full sprint. **Action:** Jiminy full sweep; BLOCKS session close on dirty
-state. Ralph runs after Jiminy for stale-branch cleanup.
-
-If you (Coordinator or human contributor) ever notice a >= 3-agent batch landed
-without a Jiminy run, that is a Sprint Retro action item, not a one-off
-self-correction. File a `retro-action` issue.
-
-

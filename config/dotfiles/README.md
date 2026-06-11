@@ -1,8 +1,6 @@
 # Dotfile Templates
 
-Managed by **Pluto** (Config Engineer). These templates give every Dev Container
-and Codespace a sensible, consistent environment right out of the box -- no
-manual config required on day one.
+These templates give every Dev Container and Codespace a sensible, consistent environment right out of the box -- no manual config required on day one.
 
 ---
 
@@ -80,12 +78,6 @@ remain in `$HOME/.gitconfig` -- just edit the file manually.
 | `git lg` | Pretty one-line graph log |
 | `git undo` | `git reset --soft HEAD~1` |
 | `git unstage` | `git restore --staged` |
-
-**Shell Aliases:**
-
-| Alias | Expands to |
-|-------|-----------|
-| `gosquad` | `copilot --agent squad --yolo` |
 
 ---
 
