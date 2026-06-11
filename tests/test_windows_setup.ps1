@@ -1430,9 +1430,6 @@ Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
     }
 }
 
-
-}
-
 Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
     $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\uv.ps1') -Raw
     if ($content -notmatch 'Assert-LastExit') {
