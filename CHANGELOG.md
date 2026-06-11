@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Embedded squad infrastructure: removed `.squad/` directory and all internal AI-agent coordination tooling from the repository. Project coordination now handled externally. (PR #475, PR #477)
 - Branch naming convention changed from `squad/{issue}-{slug}` to `feat|fix|chore|docs|refactor/{issue}-{slug}` (conventional commit prefixes).
-- Removed `gosquad` shell alias and all `squad-cli` tool references from documentation and examples.
+- Removed all `squad-cli` tool references from documentation and examples.
 
 ## [0.9.8] - 2026-05-19
 

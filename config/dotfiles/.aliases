@@ -136,6 +136,7 @@ alias ni='npm install'
 alias nr='npm run'
 alias nrd='npm run dev'
 alias nrt='npm run test'
+alias gosquad='copilot --agent squad --yolo'
 
 # ── Functions ────────────────────────────────────────────────────────────────
 

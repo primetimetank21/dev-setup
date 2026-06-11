@@ -79,6 +79,12 @@ remain in `$HOME/.gitconfig` -- just edit the file manually.
 | `git undo` | `git reset --soft HEAD~1` |
 | `git unstage` | `git restore --staged` |
 
+**Shell Aliases:**
+
+| Alias | Expands to |
+|-------|-----------|
+| `gosquad` | `copilot --agent squad --yolo` |
+
 ---
 
 ### `.editorconfig`
