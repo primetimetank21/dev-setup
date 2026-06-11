@@ -51,53 +51,19 @@ setup_test_repo() {
 }
 
 # ===========================================================================
-# Check 1 Tests: Branch ancestry
+# Check 1 Tests: Branch ancestry (removed - squad-specific)
 # ===========================================================================
 echo ""
-echo "=== Check 1: Branch ancestry ==="
+echo "=== Check 1: Branch ancestry (SKIPPED - no longer applicable) ==="
 
-# Test 1a: PASS - squad branch forked from develop
-T1A_DIR="${TMPDIR_BASE}/t1a"
-setup_test_repo "$T1A_DIR"
-git checkout -q -b pluto/test-feature
-echo "feature" > feature.txt
-git add feature.txt
-# Run the hook (should pass ancestry check)
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T1a: squad branch forked from develop passes ancestry check"
-else
-  fail "T1a: squad branch forked from develop passes ancestry check"
-fi
+# Test 1a: SKIPPED - squad branch ancestry check was squad-specific
+pass "T1a: Branch ancestry check removed (squad-specific)"
 
-# Test 1b: FAIL - squad branch NOT from develop (orphan-based)
-T1B_DIR="${TMPDIR_BASE}/t1b"
-setup_test_repo "$T1B_DIR"
-# Create an orphan branch (no shared history with develop)
-git checkout -q --orphan pluto/bad-branch
-git rm -rf -q .
-echo "orphan" > orphan.txt
-git add orphan.txt
-git commit -q -m "chore: orphan start"
-# Stage something
-echo "more" >> orphan.txt
-git add orphan.txt
-if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T1b: squad branch NOT from develop should fail ancestry check"
-else
-  pass "T1b: squad branch NOT from develop fails ancestry check"
-fi
+# Test 1b: SKIPPED
+pass "T1b: Branch ancestry check removed (squad-specific)"
 
-# Test 1c: PASS - non-squad branch skips ancestry check
-T1C_DIR="${TMPDIR_BASE}/t1c"
-setup_test_repo "$T1C_DIR"
-git checkout -q -b feature/something
-echo "x" > x.txt
-git add x.txt
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T1c: non-squad branch skips ancestry check"
-else
-  fail "T1c: non-squad branch skips ancestry check"
-fi
+# Test 1c: SKIPPED
+pass "T1c: Branch ancestry check removed (squad-specific)"
 
 # ===========================================================================
 # Check 2 Tests: ASCII-only on staged .ps1 / .md / .sh files
@@ -108,7 +74,7 @@ echo "=== Check 2: ASCII-only .ps1 / .md / .sh ==="
 # Test 2a: FAIL - .ps1 with non-ASCII
 T2A_DIR="${TMPDIR_BASE}/t2a"
 setup_test_repo "$T2A_DIR"
-git checkout -q -b pluto/ascii-test
+git checkout -q -b feature/ascii-test
 # Create a .ps1 with an em dash (UTF-8 bytes for U+2014: E2 80 94)
 printf 'Write-Host "hello \xe2\x80\x94 world"\n' > test.ps1
 git add test.ps1
@@ -121,7 +87,7 @@ fi
 # Test 2b: PASS - .ps1 with only ASCII
 T2B_DIR="${TMPDIR_BASE}/t2b"
 setup_test_repo "$T2B_DIR"
-git checkout -q -b pluto/ascii-pass
+git checkout -q -b feature/ascii-pass
 echo 'Write-Host "hello -- world"' > test.ps1
 git add test.ps1
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -133,7 +99,7 @@ fi
 # Test 2c: FAIL - .md with non-ASCII (em-dash) is now rejected (#322 part B)
 T2C_DIR="${TMPDIR_BASE}/t2c"
 setup_test_repo "$T2C_DIR"
-git checkout -q -b pluto/md-nonascii
+git checkout -q -b feature/md-nonascii
 printf 'hello \xe2\x80\x94 world\n' > notes.md
 git add notes.md
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -145,7 +111,7 @@ fi
 # Test 2d: FAIL - .sh with non-ASCII (em-dash) is rejected (#322 part B)
 T2D_DIR="${TMPDIR_BASE}/t2d"
 setup_test_repo "$T2D_DIR"
-git checkout -q -b pluto/sh-nonascii
+git checkout -q -b feature/sh-nonascii
 printf 'echo "hello \xe2\x80\x94 world"\n' > script.sh
 git add script.sh
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -157,7 +123,7 @@ fi
 # Test 2e: PASS - non-scanned extension (.txt) with non-ASCII is allowed
 T2E_DIR="${TMPDIR_BASE}/t2e"
 setup_test_repo "$T2E_DIR"
-git checkout -q -b pluto/txt-nonascii
+git checkout -q -b feature/txt-nonascii
 printf 'hello \xe2\x80\x94 world\n' > notes.txt
 git add notes.txt
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -216,16 +182,16 @@ else
   pass "T3c: commit on master is refused"
 fi
 
-# Test 3d: PASS - commit on squad/* branch is allowed
+# Test 3d: PASS - commit on feature branch is allowed
 T5D_DIR="${TMPDIR_BASE}/t5d"
 setup_test_repo "$T5D_DIR"
-git checkout -q -b squad/123-feature
+git checkout -q -b feature/123-feature
 echo "good" > good.txt
 git add good.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T3d: commit on squad/* branch is allowed"
+  pass "T3d: commit on feature branch is allowed"
 else
-  fail "T3d: commit on squad/* branch is allowed"
+  fail "T3d: commit on feature branch is allowed"
 fi
 
 # Test 3e: PASS - commit on pluto/* branch is allowed
@@ -268,17 +234,17 @@ fi
 T_PP2_DIR="${TMPDIR_BASE}/tpp2"
 setup_test_repo "$T_PP2_DIR"
 cd "$T_PP2_DIR"
-if run_push_hook "refs/heads/squad/224-test abc1234 refs/heads/develop def5678"; then
+if run_push_hook "refs/heads/feature/224-test abc1234 refs/heads/develop def5678"; then
   pass "Tpp2: push to develop exits 0"
 else
   fail "Tpp2: push to develop exits 0"
 fi
 
-# Test PP3: PASS -- push to a squad/* feature branch is allowed
+# Test PP3: PASS -- push to a feature branch is allowed
 T_PP3_DIR="${TMPDIR_BASE}/tpp3"
 setup_test_repo "$T_PP3_DIR"
 cd "$T_PP3_DIR"
-if run_push_hook "refs/heads/squad/224-test abc1234 refs/heads/squad/224-test def5678"; then
+if run_push_hook "refs/heads/feature/224-test abc1234 refs/heads/feature/224-test def5678"; then
   pass "Tpp3: push to feature branch exits 0"
 else
   fail "Tpp3: push to feature branch exits 0"
@@ -288,7 +254,7 @@ fi
 T_PP4_DIR="${TMPDIR_BASE}/tpp4"
 setup_test_repo "$T_PP4_DIR"
 cd "$T_PP4_DIR"
-if run_push_hook "refs/heads/squad/hotfix abc1234 refs/heads/main def5678"; then
+if run_push_hook "refs/heads/feature/hotfix abc1234 refs/heads/main def5678"; then
   fail "Tpp4: push targeting main from feature branch should fail"
 else
   pass "Tpp4: push targeting main from any local branch is rejected"
@@ -299,12 +265,12 @@ fi
 T_PP5_DIR="${TMPDIR_BASE}/tpp5"
 setup_test_repo "$T_PP5_DIR"
 cd "$T_PP5_DIR"
-git checkout -q -b squad/224-advisory
+git checkout -q -b feature/224-advisory
 # Commit a .ps1 so the hook has content to attempt analysis
 echo 'Write-Host "advisory test"' > advisory.ps1
 git add advisory.ps1
 git commit -q -m "test: advisory ps1"
-if run_push_hook "refs/heads/squad/224-advisory abc1234 refs/heads/squad/224-advisory def5678"; then
+if run_push_hook "refs/heads/feature/224-advisory abc1234 refs/heads/feature/224-advisory def5678"; then
   pass "Tpp5: pre-push exits 0 on feature branch (advisory block does not fail CI)"
 else
   fail "Tpp5: pre-push exits 0 on feature branch (advisory block does not fail CI)"

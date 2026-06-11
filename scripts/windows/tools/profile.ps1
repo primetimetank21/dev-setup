@@ -226,9 +226,6 @@ Set-Alias -Name nrt -Value Invoke-NpmRunTest -Force -Scope Global
 function Invoke-Python { python $args }                     # python shorthand
 Set-Alias -Name py -Value Invoke-Python -Force -Scope Global
 
-function Invoke-CopilotSquad { copilot --agent squad --yolo $args }  # run Copilot with Squad agent
-Set-Alias -Name gosquad -Value Invoke-CopilotSquad -Force -Scope Global
-
 Set-Alias -Name c -Value Clear-Host -Force -Scope Global    # clear the screen
 
 # -- Utility --------------------------------------------------------------------

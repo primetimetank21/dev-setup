@@ -53,7 +53,13 @@ jobs:
             node --version
             npm --version
 
-            echo "--- Node version gate (>=22) ---"`n            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)`n            if [ "$NODE_MAJOR" -lt 22 ]; then`n              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22"`n              exit 1`n            fi`n            echo "Node major version $NODE_MAJOR OK"
+            echo "--- Node version gate (>=22) ---"
+            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)
+            if [ "$NODE_MAJOR" -lt 22 ]; then
+              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22"
+              exit 1
+            fi
+            echo "Node major version $NODE_MAJOR OK"
 
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"
@@ -181,7 +187,13 @@ jobs:
             node --version
             npm --version
 
-            echo "--- Node version gate (>=22) ---"`n            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)`n            if [ "$NODE_MAJOR" -lt 22 ]; then`n              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22"`n              exit 1`n            fi`n            echo "Node major version $NODE_MAJOR OK"
+            echo "--- Node version gate (>=22) ---"
+            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)
+            if [ "$NODE_MAJOR" -lt 22 ]; then
+              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22"
+              exit 1
+            fi
+            echo "Node major version $NODE_MAJOR OK"
 
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"
@@ -340,9 +352,6 @@ jobs:
             Write-Host "--- Editors ---"
             Assert-Command 'vim' '--version'
 
-            Write-Host "--- Squad CLI ---"
-            Assert-Command 'squad' '--version'
-
             Write-Host "--- Multiplexer ---"
             Assert-Command 'psmux' '--version'
 
@@ -402,7 +411,6 @@ jobs:
             }
 
             Write-Host "--- Post-idempotency assertions ---"
-            Assert-Command 'squad' '--version'
             Assert-Command 'psmux' '--version'
             Assert-Command 'node' '--version'
             Assert-Command 'uv' '--version'

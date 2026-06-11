@@ -482,47 +482,6 @@ Test-Scenario "F-6: PS 5.x compat - no banned patterns in profile content block"
 }
 
 # ---------------------------------------------------------------------------
-# Group G: Install-SquadCli (Issue #106)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group G: Install-SquadCli (Issue #106)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-# Load squad-cli.ps1 content
-$squadToolPath = Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1'
-$squadToolContent = Get-Content $squadToolPath -Raw
-
-Test-Scenario "G-1: Install-SquadCli function exists in scripts/windows/tools/squad-cli.ps1" {
-    if ($squadToolContent -notmatch 'function Install-SquadCli') {
-        throw "Install-SquadCli function not found in scripts/windows/tools/squad-cli.ps1"
-    }
-}
-
-Test-Scenario "G-2: Install-SquadCli is called in Main" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern '^\s*Install-SquadCli\s*$' -Quiet
-    if (-not $found) {
-        throw "Install-SquadCli is not called in Main"
-    }
-}
-
-Test-Scenario "G-3: Install-SquadCli contains npm availability check (error+exit)" {
-    if ($squadToolContent -notmatch 'Get-Command npm') {
-        throw "Install-SquadCli does not check for npm availability"
-    }
-    if ($squadToolContent -notmatch 'npm not found after nvm install') {
-        throw "Install-SquadCli does not emit error when npm is missing"
-    }
-}
-
-Test-Scenario "G-4: No MyInvocation.MyCommand.Path in Install-SquadCli" {
-    if ($squadToolContent -match '\$MyInvocation\.MyCommand\.Path') {
-        throw "scripts/windows/tools/squad-cli.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
-    }
-}
-
-# ---------------------------------------------------------------------------
 # Group H: psmux aliases in PowerShell profile (Issue #140)
 # ---------------------------------------------------------------------------
 
@@ -1344,40 +1303,6 @@ Test-Scenario "T-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
     $hasUse     = $nvmContent -match 'nvm use \$pinnedNode'
     if (-not $hasInstall -or -not $hasUse) {
         throw "nvm.ps1 does not call nvm install/use with pinned version variable"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Group U: squad-cli.ps1 loud error (Issue #201)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group U: squad-cli.ps1 loud error (Issue #201)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-$squadScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'squad-cli.ps1'
-$squadContent = Get-Content $squadScript -Raw
-
-Test-Scenario "U-1 squad-cli.ps1 emits ERROR (not WARN) when npm missing" {
-    if ($squadContent -match 'Write-Warn.*npm not found') {
-        throw "squad-cli.ps1 still uses Write-Warn for npm-missing case"
-    }
-    if ($squadContent -notmatch 'Write-Err.*npm not found') {
-        throw "squad-cli.ps1 does not emit Write-Err when npm is missing"
-    }
-}
-
-Test-Scenario "U-2 squad-cli.ps1 exits non-zero when npm missing" {
-    if ($squadContent -notmatch 'exit\s+1') {
-        throw "squad-cli.ps1 does not exit 1 when npm is missing"
-    }
-}
-
-Test-Scenario "U-3 squad-cli.ps1 provides actionable troubleshooting hints" {
-    $hasHint1 = $squadContent -match 'close this terminal'
-    $hasHint2 = $squadContent -match 'nvm.*install.*failed'
-    if (-not $hasHint1 -or -not $hasHint2) {
-        throw "squad-cli.ps1 does not provide actionable troubleshooting hints"
     }
 }
 
