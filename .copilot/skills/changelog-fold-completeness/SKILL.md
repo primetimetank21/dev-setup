@@ -10,12 +10,12 @@ source: "earned (issues #399, Sprints 15/16/17 -- 3 consecutive releases, binary
 
 The `CHANGELOG.md` file follows Keep a Changelog format. The `[Unreleased]` block is
 supposed to accumulate entries as PRs merge to develop throughout a sprint. In practice,
-only the first agent to land a feature PR adds their entry. Subsequent agents either
+only the first contributor to land a feature PR adds their entry. Subsequent contributors either
 skip the update (single-PR scope feels too small) or defer it to "someone else." By
 release time, the `[Unreleased]` block contains only the first-lander's entry --
 typically 1 of N contributions.
 
-The release agent (Mickey) folds `[Unreleased]` to `[X.Y.Z]` and ships. The missing
+The release process folds `[Unreleased]` to `[X.Y.Z]` and ships. The missing
 entries are gone from the release notes permanently.
 
 This pattern has repeated identically in Sprints 15, 16, and 17. The fix is a
@@ -118,39 +118,39 @@ gh issue list --state closed `
   inside the release transaction, not a best-effort beforehand.
 - **Step 8 (restore empty block) immediately after fold.** If the fold succeeds but
   the restore is skipped, the next sprint starts without a `[Unreleased]` block, which
-  causes the first agent to manually edit CHANGELOG structure instead of appending
+  causes the first contributor to manually edit CHANGELOG structure instead of appending
   to a predictable location.
 
 ## Examples
 
 **Sprint 17 release (0.9.7, PR #393, commit 71d2ffe):**
 At release time, `[Unreleased]` contained only the `#382` (sprint-end label automation)
-entry -- 1 of 6 total PRs merged to develop that sprint. Mickey-14 ran the completeness
+entry -- 1 of 6 total PRs merged to develop that sprint. The release process ran the completeness
 check and added 5 missing entries (PRs #383, #384, #385, #388, #390 plus issues #371,
 #381) before folding. Without this check, 0.9.7 release notes would have been ~85%
 incomplete. Cited in Sprint 17 retro under "Key learnings."
 
 **Sprint 16 release (0.9.6, PR #372, commit 7172ae7):**
-`[Unreleased]` had sparse coverage -- only the first-lander entry. Mickey-12 added
+`[Unreleased]` had sparse coverage -- only the first-lander entry. The release process added
 missing Sprint 16 entries (PRs #368, #369, #370, #363, #365, #367) before folding to
 `[0.9.6] - 2026-05-17 -- Sprint 16: Skill formalization + hygiene gate review`.
 
 **Sprint 15 release (0.9.5, PR #360, commit 0c8d710):**
-Same pattern. Only 1 entry in `[Unreleased]` at release time. Mickey added the missing
+Same pattern. Only 1 entry in `[Unreleased]` at release time. The release process added the missing
 Sprint 15 PR entries (#355 normalization, #356 ASCII sweep, #357-#359 Doc wave) before
 folding. Sprint 15 retro noted this as a process gap; it was not fixed structurally
 until this skill was formalized.
 
 **Pattern summary:** Three consecutive releases (0.9.5, 0.9.6, 0.9.7) had incomplete
 `[Unreleased]` blocks at release time. The merge PR template asks contributors to
-update CHANGELOG.md, but agents on single-PR scopes routinely skip it. The live block
-contains only the first agent's entry by release time. The completeness check has
+update CHANGELOG.md, but contributors on single-PR scopes routinely skip it. The live block
+contains only the first contributor's entry by release time. The completeness check has
 never failed to find missing entries when applied.
 
 ## Anti-Patterns
 
 - **Trusting that `[Unreleased]` is complete.** It never is by release time. The
-  pattern is binary: the first lander adds one entry; subsequent agents skip. Every
+  pattern is binary: the first lander adds one entry; subsequent contributors skip. Every
   sprint, every release.
 - **Skipping Steps 3-5 because the sprint was "small."** Sprint 17 had 6 PRs; only 1
   entry was in `[Unreleased]`. Sprint 16 had 7 Sprint PRs; same pattern. There is no
@@ -159,34 +159,31 @@ never failed to find missing entries when applied.
   to it requires a second commit amending the release block -- noisy and confusing for
   readers of the git log.
 - **Folding without restoring `[Unreleased]`.** Leaves CHANGELOG.md with no top-level
-  Unreleased block. First agent next sprint either forgets to add the block and
+  Unreleased block. First contributor next sprint either forgets to add the block and
   appends under the versioned section, or adds the block incorrectly.
 - **Relying on the PR template alone.** The template asks for a CHANGELOG update on
-  every PR. Agents on single-PR scope treat it as optional. The release gate is the
+  every PR. Contributors on single-PR scope treat it as optional. The release gate is the
   only reliable enforcement point.
 
 ## Placement decision
 
-This skill lives in `.copilot/skills/` (coordinator level) rather than `.squad/skills/`
-(team level). Rationale: the fold step is performed by Mickey (or the coordinator
-directly) during a release cut -- it is release-process governance, not day-to-day
-agent workflow. The coordinator is responsible for ensuring the fold is gated on
-completeness. If Mickey is the release agent, the coordinator must include this skill
-reference in Mickey's release spawn prompt.
+This skill lives in `.copilot/skills/` (process automation level) rather than project-specific
+workflow. Rationale: the fold step is performed during a release cut -- it is release-process
+governance, not day-to-day workflow. The release automation is responsible for ensuring the
+fold is gated on completeness.
 
-Compare with `.squad/skills/history-md-pre-size-check/SKILL.md`, which governs
-individual agent appends and therefore lives at the team level.
+Compare with other append-based hygiene checks which govern individual contributions.
 
 ## Related Skills
 
-- `.squad/skills/gh-pr-base-develop/SKILL.md` -- every squad PR must pass
+- `.squad/skills/gh-pr-base-develop/SKILL.md` -- every PR must pass
   `--base develop`; if any PR was misrouted (base=main), the gh queries in Steps 4-5
   will miss it; verify develop ancestry with `git log $LAST_TAG..develop --merges`
   as the authoritative source.
 - `.copilot/skills/release-process/SKILL.md` -- the full release runbook; this skill
   is a pre-step for the fold phase of that runbook.
 - `.squad/skills/history-md-pre-size-check/SKILL.md` -- companion hygiene check
-  (agent-level); ensures agents' own history files are within gate before the sprint
+  (contributor-level); ensures history files are within gate before the sprint
   closes and before the release audit.
 
 ## References

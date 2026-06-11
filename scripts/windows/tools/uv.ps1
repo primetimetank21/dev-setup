@@ -1,6 +1,5 @@
 # scripts/windows/tools/uv.ps1 - uv (Python package manager) installer
 #
-# Owner: Goofy (#2)
 # Installs uv via official install script
 
 Set-StrictMode -Version Latest

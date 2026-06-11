@@ -1,13 +1,13 @@
 # Plan: #468 Customizable Install (Pick-and-Choose Tools)
 
 **Date:** 2026-05-30
-**Author:** Pluto -- v4 (full rewrite); Donald -- v5 (polish pass); Pluto -- v6 (final polish); Jiminy -- v7 (fixture provenance); Pluto -- v8 (coherence reconciliation); Mickey -- v9 (semantic fix); Doc -- v10 (factual corrections); Mickey -- v11 (2x2 npm-absent matrix); Doc -- v12 (Windows example syntax fix); Mickey -- v13 (Windows flag syntax fix); Goofy -- v14 (PowerShell quoting nits)
+**Author:** Contributor (v14)
 **Issue:** #468
 **Status:** Ready for review
 
 ---
 
-## v14 Changelog (Goofy -- PowerShell quoting nits, 2026-05-30)
+## v14 Changelog (revision 14, 2026-05-30)
 
 > **Source:** Doc-2 v13 fact-check findings. Two pre-existing quoting-style nits from v5
 > survived all previous passes: one bare token and one double-quoted value in Windows prose

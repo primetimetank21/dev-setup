@@ -1,6 +1,5 @@
 # scripts/windows/tools/nvm.ps1 - nvm-windows + Node.js installer
 #
-# Owner: Goofy (#2)
 # Installs nvm-windows (Node Version Manager for Windows), then auto-installs
 # the pinned Node.js version from .tool-versions so node/npm are usable in
 # the same setup session.

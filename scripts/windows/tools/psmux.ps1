@@ -1,6 +1,5 @@
 # scripts/windows/tools/psmux.ps1 - psmux (tmux for Windows) installer
 #
-# Owner: Goofy (#2)
 # Installs psmux - terminal multiplexer for Windows PowerShell
 
 Set-StrictMode -Version Latest

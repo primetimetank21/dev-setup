@@ -1,6 +1,5 @@
 # scripts/windows/tools/profile.ps1 - PowerShell profile writer
 #
-# Owner: Goofy (#2)
 # Writes dev-setup shortcuts to PowerShell profile (both PS 5.1 and PS 7+)
 
 Set-StrictMode -Version Latest
