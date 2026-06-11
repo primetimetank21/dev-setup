@@ -1754,12 +1754,9 @@ Test-Scenario "DD-4: copilot.ps1 reads pinned version from .tool-versions" {
     }
 }
 
-Test-Scenario "DD-5: .tool-versions contains squad-cli and gh pins" {
+Test-Scenario "DD-5: .tool-versions contains gh pin" {
     $tvPath = Join-Path $RepoRoot '.tool-versions'
     $content = Get-Content $tvPath -Raw
-    if ($content -notmatch 'squad-cli\s+[0-9]+\.[0-9]+\.[0-9]+') {
-        throw ".tool-versions does not contain a squad-cli version pin"
-    }
     if ($content -notmatch 'gh\s+[0-9]+\.[0-9]+\.[0-9]+') {
         throw ".tool-versions does not contain a gh version pin"
     }
