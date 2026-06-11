@@ -482,47 +482,6 @@ Test-Scenario "F-6: PS 5.x compat - no banned patterns in profile content block"
 }
 
 # ---------------------------------------------------------------------------
-# Group G: Install-SquadCli (Issue #106)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group G: Install-SquadCli (Issue #106)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-# Load squad-cli.ps1 content
-$squadToolPath = Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1'
-$squadToolContent = Get-Content $squadToolPath -Raw
-
-Test-Scenario "G-1: Install-SquadCli function exists in scripts/windows/tools/squad-cli.ps1" {
-    if ($squadToolContent -notmatch 'function Install-SquadCli') {
-        throw "Install-SquadCli function not found in scripts/windows/tools/squad-cli.ps1"
-    }
-}
-
-Test-Scenario "G-2: Install-SquadCli is called in Main" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern '^\s*Install-SquadCli\s*$' -Quiet
-    if (-not $found) {
-        throw "Install-SquadCli is not called in Main"
-    }
-}
-
-Test-Scenario "G-3: Install-SquadCli contains npm availability check (error+exit)" {
-    if ($squadToolContent -notmatch 'Get-Command npm') {
-        throw "Install-SquadCli does not check for npm availability"
-    }
-    if ($squadToolContent -notmatch 'npm not found after nvm install') {
-        throw "Install-SquadCli does not emit error when npm is missing"
-    }
-}
-
-Test-Scenario "G-4: No MyInvocation.MyCommand.Path in Install-SquadCli" {
-    if ($squadToolContent -match '\$MyInvocation\.MyCommand\.Path') {
-        throw "scripts/windows/tools/squad-cli.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
-    }
-}
-
-# ---------------------------------------------------------------------------
 # Group H: psmux aliases in PowerShell profile (Issue #140)
 # ---------------------------------------------------------------------------
 
@@ -1348,40 +1307,6 @@ Test-Scenario "T-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
 }
 
 # ---------------------------------------------------------------------------
-# Group U: squad-cli.ps1 loud error (Issue #201)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group U: squad-cli.ps1 loud error (Issue #201)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-$squadScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'squad-cli.ps1'
-$squadContent = Get-Content $squadScript -Raw
-
-Test-Scenario "U-1 squad-cli.ps1 emits ERROR (not WARN) when npm missing" {
-    if ($squadContent -match 'Write-Warn.*npm not found') {
-        throw "squad-cli.ps1 still uses Write-Warn for npm-missing case"
-    }
-    if ($squadContent -notmatch 'Write-Err.*npm not found') {
-        throw "squad-cli.ps1 does not emit Write-Err when npm is missing"
-    }
-}
-
-Test-Scenario "U-2 squad-cli.ps1 exits non-zero when npm missing" {
-    if ($squadContent -notmatch 'exit\s+1') {
-        throw "squad-cli.ps1 does not exit 1 when npm is missing"
-    }
-}
-
-Test-Scenario "U-3 squad-cli.ps1 provides actionable troubleshooting hints" {
-    $hasHint1 = $squadContent -match 'close this terminal'
-    $hasHint2 = $squadContent -match 'nvm.*install.*failed'
-    if (-not $hasHint1 -or -not $hasHint2) {
-        throw "squad-cli.ps1 does not provide actionable troubleshooting hints"
-    }
-}
-
-# ---------------------------------------------------------------------------
 # Group V: shared logging lib (Issue #186)
 # ---------------------------------------------------------------------------
 
@@ -1505,13 +1430,6 @@ Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
     }
 }
 
-Test-Scenario "X-6: squad-cli.ps1 calls Assert-LastExit after npm install" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'Assert-LastExit') {
-        throw "squad-cli.ps1 does not call Assert-LastExit after npm install"
-    }
-}
-
 Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
     $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\uv.ps1') -Raw
     if ($content -notmatch 'Assert-LastExit') {
@@ -1568,8 +1486,7 @@ $prePushHook   = Join-Path $RepoRoot "hooks\pre-push"
 if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
     Write-Skip "Y-1 pre-commit rejects .ps1 with em-dash"          "sh not available"
     Write-Skip "Y-2 pre-commit allows ASCII-only .ps1"              "sh not available"
-    Write-Skip "Y-3 pre-commit rejects rogue .squad/ path"          "sh not available"
-    Write-Skip "Y-4 pre-push hard-rejects direct push to main"      "sh not available"
+    Write-Skip "Y-4 pre-push hard-rejects direct push to main"  "sh not available"
     Write-Skip "Y-5 pre-push allows push to develop"                "sh not available"
     Write-Skip "Y-6 pre-push exits 0 on feature branch (advisory)"  "sh not available"
 } else {
@@ -1635,25 +1552,6 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
                 $out = & sh $preCommitHook 2>&1
                 if ($LASTEXITCODE -ne 0) {
                     throw "pre-commit rejected ASCII-only .ps1 (exit $LASTEXITCODE): $out"
-                }
-            } finally { Pop-Location }
-        }
-
-        # ------------------------------------------------------------------
-        # Y-3: pre-commit rejects a newly staged .squad/ path not on allow-list
-        # ------------------------------------------------------------------
-        Test-Scenario "Y-3 pre-commit rejects rogue .squad/ path" {
-            $repoDir = Join-Path $yTmpBase "y3"
-            New-YTestRepo $repoDir
-            Push-Location $repoDir
-            try {
-                & git checkout -q -b pluto/rogue-squad 2>&1 | Out-Null
-                New-Item -ItemType Directory -Path ".squad\random" -Force | Out-Null
-                "rogue" | Set-Content ".squad\random\notes.md" -Encoding ASCII
-                & git add ".squad\random\notes.md" 2>&1 | Out-Null
-                & sh $preCommitHook 2>&1 | Out-Null
-                if ($LASTEXITCODE -eq 0) {
-                    throw "pre-commit should have rejected rogue .squad/ path but exited 0"
                 }
             } finally { Pop-Location }
         }
@@ -1829,32 +1727,12 @@ Test-Scenario "AA-3: git unset-all core.hooksPath removes the local key (functio
 }
 
 # ---------------------------------------------------------------------------
-# Group DD: version-pin enforcement for squad-cli, copilot, and gh (#255)
+# Group DD: version-pin enforcement for copilot and gh (#255)
 # ---------------------------------------------------------------------------
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group DD: version-pin enforcement (squad-cli / copilot / gh)" -ForegroundColor Cyan
+Write-Host " Group DD: version-pin enforcement (copilot / gh)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
-
-Test-Scenario "DD-1: squad-cli.ps1 reads pinned version from .tool-versions" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'Get-ToolVersion') {
-        throw "squad-cli.ps1 does not call Get-ToolVersion to read pinned version"
-    }
-    if ($content -notmatch "squad-cli") {
-        throw "squad-cli.ps1 does not reference 'squad-cli' tool name for version lookup"
-    }
-}
-
-Test-Scenario "DD-2: squad-cli.ps1 uses version-aware check (not bare Get-Command)" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'InstalledVersion') {
-        throw "squad-cli.ps1 does not perform version comparison (no InstalledVersion variable)"
-    }
-    if ($content -notmatch 'SquadCliVersion') {
-        throw "squad-cli.ps1 does not use SquadCliVersion in install command"
-    }
-}
 
 Test-Scenario "DD-3: gh.ps1 uses --version flag with pinned value" {
     $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\gh.ps1') -Raw
@@ -1876,12 +1754,9 @@ Test-Scenario "DD-4: copilot.ps1 reads pinned version from .tool-versions" {
     }
 }
 
-Test-Scenario "DD-5: .tool-versions contains squad-cli and gh pins" {
+Test-Scenario "DD-5: .tool-versions contains gh pin" {
     $tvPath = Join-Path $RepoRoot '.tool-versions'
     $content = Get-Content $tvPath -Raw
-    if ($content -notmatch 'squad-cli\s+[0-9]+\.[0-9]+\.[0-9]+') {
-        throw ".tool-versions does not contain a squad-cli version pin"
-    }
     if ($content -notmatch 'gh\s+[0-9]+\.[0-9]+\.[0-9]+') {
         throw ".tool-versions does not contain a gh version pin"
     }

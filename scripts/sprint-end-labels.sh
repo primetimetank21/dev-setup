@@ -17,7 +17,7 @@
 #
 # Idempotent: safe to run twice. A second run finds no work to do.
 #
-# Type/area/squad/priority labels are NEVER touched by this script.
+# Type/area/owner/priority labels are NEVER touched by this script.
 #
 # Usage:
 #   scripts/sprint-end-labels.sh \
@@ -186,7 +186,7 @@ verify_with_retry() {
 # ---------------------------------------------------------------------------
 # Apply label changes for a single issue/PR.
 #
-# Never touches type:, area:, squad:, priority: labels. Only release:* and
+# Never touches type:, area:, owner:, priority: labels. Only release:* and
 # only the two specific labels passed in (release:backlog and the shipped one).
 # ---------------------------------------------------------------------------
 

@@ -28,7 +28,6 @@ function Test-WingetAvailable {
 . "$PSScriptRoot\tools\vim.ps1"
 . "$PSScriptRoot\tools\psmux.ps1"
 . "$PSScriptRoot\tools\copilot.ps1"
-. "$PSScriptRoot\tools\squad-cli.ps1"
 . "$PSScriptRoot\tools\dotfiles.ps1"
 . "$PSScriptRoot\tools\profile.ps1"
 . "$PSScriptRoot\tools\auth.ps1"
@@ -62,7 +61,6 @@ function Main {
     Install-Vim
     Install-Psmux
     Install-CopilotCli
-    Install-SquadCli
     Install-Dotfiles
     Write-PowerShellProfile
     Install-GitHook

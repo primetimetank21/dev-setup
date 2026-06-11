@@ -89,12 +89,6 @@ jobs:
       - name: Run shared logging tests
         run: bash tests/test_shared_logging.sh
 
-      - name: Run squad spawn tests
-        run: bash tests/test_squad_spawn.sh
-
-      - name: Run spawn prompt lint tests
-        run: bash tests/test_spawn_prompt_lint.sh
-
       - name: Configure git for pre-commit hygiene test
         run: |
           git config --global init.defaultBranch master
@@ -192,12 +186,6 @@ jobs:
       - name: Run shared logging tests
         run: bash tests/test_shared_logging.sh
 
-      - name: Run squad spawn tests
-        run: bash tests/test_squad_spawn.sh
-
-      - name: Run spawn prompt lint tests
-        run: bash tests/test_spawn_prompt_lint.sh
-
       - name: Configure git for pre-commit hygiene test
         run: |
           git config --global init.defaultBranch master
@@ -272,12 +260,6 @@ jobs:
 
       - name: Run changelog fold tests
         run: pwsh tests/test_changelog_fold.ps1
-
-      - name: Run squad spawn tests
-        run: pwsh tests/test_squad_spawn.ps1
-
-      - name: Run spawn prompt lint tests
-        run: pwsh tests/test_spawn_prompt_lint.ps1
 
       - name: Run sprint-end labels tests
         run: pwsh tests/test_sprint_end_labels.ps1

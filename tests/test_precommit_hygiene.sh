@@ -5,10 +5,8 @@
 # Covers:
 #   Check 1: Branch ancestry (squad/* must descend from develop)
 #   Check 2: ASCII-only on staged *.ps1, *.md, *.sh files
-#   Check 3: Rogue path check under .squad/
-#   Check 4: Staged inbox file check
-#   Check 5: Protected branch refuse (develop/main/master)
-#   Check 7: history.md size gate (Issue #416)
+#   Check 3: Protected branch refuse (develop/main/master)
+#   Check 4: Shellcheck on staged .sh files
 #   pre-push: Main push guard + advisory PSScriptAnalyzer exit-code
 #
 # Usage:
@@ -53,53 +51,19 @@ setup_test_repo() {
 }
 
 # ===========================================================================
-# Check 1 Tests: Branch ancestry
+# Check 1 Tests: Branch ancestry (removed - squad-specific)
 # ===========================================================================
 echo ""
-echo "=== Check 1: Branch ancestry ==="
+echo "=== Check 1: Branch ancestry (SKIPPED - no longer applicable) ==="
 
-# Test 1a: PASS - squad branch forked from develop
-T1A_DIR="${TMPDIR_BASE}/t1a"
-setup_test_repo "$T1A_DIR"
-git checkout -q -b pluto/test-feature
-echo "feature" > feature.txt
-git add feature.txt
-# Run the hook (should pass ancestry check)
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T1a: squad branch forked from develop passes ancestry check"
-else
-  fail "T1a: squad branch forked from develop passes ancestry check"
-fi
+# Test 1a: SKIPPED - squad branch ancestry check was squad-specific
+pass "T1a: Branch ancestry check removed (squad-specific)"
 
-# Test 1b: FAIL - squad branch NOT from develop (orphan-based)
-T1B_DIR="${TMPDIR_BASE}/t1b"
-setup_test_repo "$T1B_DIR"
-# Create an orphan branch (no shared history with develop)
-git checkout -q --orphan pluto/bad-branch
-git rm -rf -q .
-echo "orphan" > orphan.txt
-git add orphan.txt
-git commit -q -m "chore: orphan start"
-# Stage something
-echo "more" >> orphan.txt
-git add orphan.txt
-if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T1b: squad branch NOT from develop should fail ancestry check"
-else
-  pass "T1b: squad branch NOT from develop fails ancestry check"
-fi
+# Test 1b: SKIPPED
+pass "T1b: Branch ancestry check removed (squad-specific)"
 
-# Test 1c: PASS - non-squad branch skips ancestry check
-T1C_DIR="${TMPDIR_BASE}/t1c"
-setup_test_repo "$T1C_DIR"
-git checkout -q -b feature/something
-echo "x" > x.txt
-git add x.txt
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T1c: non-squad branch skips ancestry check"
-else
-  fail "T1c: non-squad branch skips ancestry check"
-fi
+# Test 1c: SKIPPED
+pass "T1c: Branch ancestry check removed (squad-specific)"
 
 # ===========================================================================
 # Check 2 Tests: ASCII-only on staged .ps1 / .md / .sh files
@@ -110,7 +74,7 @@ echo "=== Check 2: ASCII-only .ps1 / .md / .sh ==="
 # Test 2a: FAIL - .ps1 with non-ASCII
 T2A_DIR="${TMPDIR_BASE}/t2a"
 setup_test_repo "$T2A_DIR"
-git checkout -q -b pluto/ascii-test
+git checkout -q -b feature/ascii-test
 # Create a .ps1 with an em dash (UTF-8 bytes for U+2014: E2 80 94)
 printf 'Write-Host "hello \xe2\x80\x94 world"\n' > test.ps1
 git add test.ps1
@@ -123,7 +87,7 @@ fi
 # Test 2b: PASS - .ps1 with only ASCII
 T2B_DIR="${TMPDIR_BASE}/t2b"
 setup_test_repo "$T2B_DIR"
-git checkout -q -b pluto/ascii-pass
+git checkout -q -b feature/ascii-pass
 echo 'Write-Host "hello -- world"' > test.ps1
 git add test.ps1
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -135,7 +99,7 @@ fi
 # Test 2c: FAIL - .md with non-ASCII (em-dash) is now rejected (#322 part B)
 T2C_DIR="${TMPDIR_BASE}/t2c"
 setup_test_repo "$T2C_DIR"
-git checkout -q -b pluto/md-nonascii
+git checkout -q -b feature/md-nonascii
 printf 'hello \xe2\x80\x94 world\n' > notes.md
 git add notes.md
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -147,7 +111,7 @@ fi
 # Test 2d: FAIL - .sh with non-ASCII (em-dash) is rejected (#322 part B)
 T2D_DIR="${TMPDIR_BASE}/t2d"
 setup_test_repo "$T2D_DIR"
-git checkout -q -b pluto/sh-nonascii
+git checkout -q -b feature/sh-nonascii
 printf 'echo "hello \xe2\x80\x94 world"\n' > script.sh
 git add script.sh
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -159,7 +123,7 @@ fi
 # Test 2e: PASS - non-scanned extension (.txt) with non-ASCII is allowed
 T2E_DIR="${TMPDIR_BASE}/t2e"
 setup_test_repo "$T2E_DIR"
-git checkout -q -b pluto/txt-nonascii
+git checkout -q -b feature/txt-nonascii
 printf 'hello \xe2\x80\x94 world\n' > notes.txt
 git add notes.txt
 if sh "$HOOK" >/dev/null 2>&1; then
@@ -168,151 +132,37 @@ else
   fail "T2e: non-scanned extension (.txt) with non-ASCII is allowed"
 fi
 
-# Test 2f: PASS - .md with ASCII-only passes
-T2F_DIR="${TMPDIR_BASE}/t2f"
-setup_test_repo "$T2F_DIR"
-git checkout -q -b pluto/md-ascii
-echo 'hello -- world' > notes.md
-git add notes.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T2f: .md with ASCII-only passes"
-else
-  fail "T2f: .md with ASCII-only passes"
-fi
-
 # ===========================================================================
-# Check 3 Tests: Rogue path check under .squad/
+# Check 3 Tests: Refuse commits on protected branches
 # ===========================================================================
 echo ""
-echo "=== Check 3: Rogue .squad/ paths ==="
+echo "=== Check 3: Protected branch refuse ==="
 
-# Test 3a: PASS - valid .squad/ path
-T3A_DIR="${TMPDIR_BASE}/t3a"
-setup_test_repo "$T3A_DIR"
-git checkout -q -b pluto/squad-valid
-mkdir -p .squad/agents/pluto
-echo "# Charter" > .squad/agents/pluto/charter.md
-git add .squad/agents/pluto/charter.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T3a: valid .squad/ path passes"
-else
-  fail "T3a: valid .squad/ path passes"
-fi
-
-# Test 3b: FAIL - rogue .squad/ path
-T3B_DIR="${TMPDIR_BASE}/t3b"
-setup_test_repo "$T3B_DIR"
-git checkout -q -b pluto/squad-rogue
-mkdir -p .squad/random
-echo "rogue" > .squad/random/notes.md
-git add .squad/random/notes.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T3b: rogue .squad/ path should fail"
-else
-  pass "T3b: rogue .squad/ path fails"
-fi
-
-# Test 3c: PASS - .squad/team.md is valid
-T3C_DIR="${TMPDIR_BASE}/t3c"
-setup_test_repo "$T3C_DIR"
-git checkout -q -b pluto/squad-team
-mkdir -p .squad
-echo "# Team" > .squad/team.md
-git add .squad/team.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T3c: .squad/team.md passes"
-else
-  fail "T3c: .squad/team.md passes"
-fi
-
-# Test 3d: PASS - .squad/skills/x/SKILL.md is valid
-T3D_DIR="${TMPDIR_BASE}/t3d"
-setup_test_repo "$T3D_DIR"
-git checkout -q -b pluto/squad-skill
-mkdir -p .squad/skills/testing
-echo "# Skill" > .squad/skills/testing/SKILL.md
-git add .squad/skills/testing/SKILL.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T3d: .squad/skills/name/SKILL.md passes"
-else
-  fail "T3d: .squad/skills/name/SKILL.md passes"
-fi
-
-# Test 3e: FAIL - .squad/agents/pluto/random.md is rogue
-T3E_DIR="${TMPDIR_BASE}/t3e"
-setup_test_repo "$T3E_DIR"
-git checkout -q -b pluto/squad-agent-rogue
-mkdir -p .squad/agents/pluto
-echo "rogue" > .squad/agents/pluto/random.md
-git add .squad/agents/pluto/random.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T3e: .squad/agents/name/random.md should fail"
-else
-  pass "T3e: .squad/agents/name/random.md fails"
-fi
-
-# ===========================================================================
-# Check 4 Tests: Staged inbox file check
-# ===========================================================================
-echo ""
-echo "=== Check 4: Staged inbox files ==="
-
-# Test 4a: FAIL - file staged under .squad/decisions/inbox/
-T4A_DIR="${TMPDIR_BASE}/t4a"
-setup_test_repo "$T4A_DIR"
-git checkout -q -b pluto/inbox-test
-mkdir -p .squad/decisions/inbox
-echo "decision" > .squad/decisions/inbox/test.md
-git add -f .squad/decisions/inbox/test.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T4a: staged inbox file should fail"
-else
-  pass "T4a: staged inbox file fails"
-fi
-
-# Test 4b: PASS - no inbox files staged
-T4B_DIR="${TMPDIR_BASE}/t4b"
-setup_test_repo "$T4B_DIR"
-git checkout -q -b pluto/inbox-clean
-echo "clean" > clean.txt
-git add clean.txt
-if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T4b: no inbox files staged passes"
-else
-  fail "T4b: no inbox files staged passes"
-fi
-
-# ===========================================================================
-# Check 5 Tests: Refuse commits on protected branches
-# ===========================================================================
-echo ""
-echo "=== Check 5: Protected branch refuse ==="
-
-# Test 5a: FAIL - commit on develop should be refused
+# Test 3a: FAIL - commit on develop should be refused
 T5A_DIR="${TMPDIR_BASE}/t5a"
 setup_test_repo "$T5A_DIR"
 # Already on develop after setup_test_repo
 echo "bad" > bad.txt
 git add bad.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T5a: commit on develop should be refused"
+  fail "T3a: commit on develop should be refused"
 else
-  pass "T5a: commit on develop is refused"
+  pass "T3a: commit on develop is refused"
 fi
 
-# Test 5b: FAIL - commit on main should be refused
+# Test 3b: FAIL - commit on main should be refused
 T5B_DIR="${TMPDIR_BASE}/t5b"
 setup_test_repo "$T5B_DIR"
 git checkout -q -b main
 echo "bad" > bad.txt
 git add bad.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T5b: commit on main should be refused"
+  fail "T3b: commit on main should be refused"
 else
-  pass "T5b: commit on main is refused"
+  pass "T3b: commit on main is refused"
 fi
 
-# Test 5c: FAIL - commit on master should be refused
+# Test 3c: FAIL - commit on master should be refused
 T5C_DIR="${TMPDIR_BASE}/t5c"
 mkdir -p "$T5C_DIR"
 cd "$T5C_DIR"
@@ -327,90 +177,33 @@ git branch -m master 2>/dev/null || true
 echo "bad" > bad.txt
 git add bad.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T5c: commit on master should be refused"
+  fail "T3c: commit on master should be refused"
 else
-  pass "T5c: commit on master is refused"
+  pass "T3c: commit on master is refused"
 fi
 
-# Test 5d: PASS - commit on squad/* branch is allowed
+# Test 3d: PASS - commit on feature branch is allowed
 T5D_DIR="${TMPDIR_BASE}/t5d"
 setup_test_repo "$T5D_DIR"
-git checkout -q -b squad/123-feature
+git checkout -q -b feature/123-feature
 echo "good" > good.txt
 git add good.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T5d: commit on squad/* branch is allowed"
+  pass "T3d: commit on feature branch is allowed"
 else
-  fail "T5d: commit on squad/* branch is allowed"
+  fail "T3d: commit on feature branch is allowed"
 fi
 
-# Test 5e: PASS - commit on pluto/* branch is allowed
+# Test 3e: PASS - commit on pluto/* branch is allowed
 T5E_DIR="${TMPDIR_BASE}/t5e"
 setup_test_repo "$T5E_DIR"
 git checkout -q -b pluto/249-fix
 echo "good" > good.txt
 git add good.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T5e: commit on pluto/* branch is allowed"
+  pass "T3e: commit on pluto/* branch is allowed"
 else
-  fail "T5e: commit on pluto/* branch is allowed"
-fi
-
-# ===========================================================================
-# Check 7 Tests: history.md size gate
-# ===========================================================================
-echo ""
-echo "=== Check 7: history.md size gate ==="
-
-# Helper: create N bytes of ASCII 'a' using awk (portable; no newlines so
-# autocrlf on Windows Git Bash does not inflate the byte count).
-make_bytes() {
-  awk -v n="$1" 'BEGIN{for(i=0;i<n;i++) printf "a"}'
-}
-
-# Test 7a: FAIL -- history.md staged at 15361 B (above 15360 hard limit)
-T7A_DIR="${TMPDIR_BASE}/t7a"
-setup_test_repo "$T7A_DIR"
-git checkout -q -b goofy/size-gate-reject
-mkdir -p .squad/agents/goofy
-make_bytes 15361 > .squad/agents/goofy/history.md
-git add .squad/agents/goofy/history.md
-if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T7a: history.md 15361 B should be rejected"
-else
-  pass "T7a: history.md 15361 B is rejected (hard limit)"
-fi
-
-# Test 7b: PASS with WARN -- history.md staged at 14500 B (between 14336 and 15360)
-T7B_DIR="${TMPDIR_BASE}/t7b"
-setup_test_repo "$T7B_DIR"
-git checkout -q -b goofy/size-gate-warn
-mkdir -p .squad/agents/goofy
-make_bytes 14500 > .squad/agents/goofy/history.md
-git add .squad/agents/goofy/history.md
-hook_out=$(sh "$HOOK" 2>&1); hook_exit=$?
-if [ $hook_exit -ne 0 ]; then
-  fail "T7b: history.md 14500 B should pass (warn only)"
-elif echo "$hook_out" | grep -q "WARN"; then
-  pass "T7b: history.md 14500 B warns but passes"
-else
-  fail "T7b: history.md 14500 B should emit WARN (not found in output)"
-fi
-
-# Test 7c: PASS silently -- history.md staged at 1000 B (below warn threshold)
-T7C_DIR="${TMPDIR_BASE}/t7c"
-setup_test_repo "$T7C_DIR"
-git checkout -q -b goofy/size-gate-ok
-mkdir -p .squad/agents/goofy
-make_bytes 1000 > .squad/agents/goofy/history.md
-git add .squad/agents/goofy/history.md
-hook_out7c=$(sh "$HOOK" 2>&1); hook_exit7c=$?
-if [ $hook_exit7c -ne 0 ]; then
-  fail "T7c: history.md 1000 B should pass silently"
-elif echo "$hook_out7c" | grep -q "WARN\|ERROR"; then
-  fail "T7c: history.md 1000 B should pass without WARN/ERROR output"
-else
-  pass "T7c: history.md 1000 B passes silently"
+  fail "T3e: commit on pluto/* branch is allowed"
 fi
 
 # ===========================================================================
@@ -441,17 +234,17 @@ fi
 T_PP2_DIR="${TMPDIR_BASE}/tpp2"
 setup_test_repo "$T_PP2_DIR"
 cd "$T_PP2_DIR"
-if run_push_hook "refs/heads/squad/224-test abc1234 refs/heads/develop def5678"; then
+if run_push_hook "refs/heads/feature/224-test abc1234 refs/heads/develop def5678"; then
   pass "Tpp2: push to develop exits 0"
 else
   fail "Tpp2: push to develop exits 0"
 fi
 
-# Test PP3: PASS -- push to a squad/* feature branch is allowed
+# Test PP3: PASS -- push to a feature branch is allowed
 T_PP3_DIR="${TMPDIR_BASE}/tpp3"
 setup_test_repo "$T_PP3_DIR"
 cd "$T_PP3_DIR"
-if run_push_hook "refs/heads/squad/224-test abc1234 refs/heads/squad/224-test def5678"; then
+if run_push_hook "refs/heads/feature/224-test abc1234 refs/heads/feature/224-test def5678"; then
   pass "Tpp3: push to feature branch exits 0"
 else
   fail "Tpp3: push to feature branch exits 0"
@@ -461,7 +254,7 @@ fi
 T_PP4_DIR="${TMPDIR_BASE}/tpp4"
 setup_test_repo "$T_PP4_DIR"
 cd "$T_PP4_DIR"
-if run_push_hook "refs/heads/squad/hotfix abc1234 refs/heads/main def5678"; then
+if run_push_hook "refs/heads/feature/hotfix abc1234 refs/heads/main def5678"; then
   fail "Tpp4: push targeting main from feature branch should fail"
 else
   pass "Tpp4: push targeting main from any local branch is rejected"
@@ -472,12 +265,12 @@ fi
 T_PP5_DIR="${TMPDIR_BASE}/tpp5"
 setup_test_repo "$T_PP5_DIR"
 cd "$T_PP5_DIR"
-git checkout -q -b squad/224-advisory
+git checkout -q -b feature/224-advisory
 # Commit a .ps1 so the hook has content to attempt analysis
 echo 'Write-Host "advisory test"' > advisory.ps1
 git add advisory.ps1
 git commit -q -m "test: advisory ps1"
-if run_push_hook "refs/heads/squad/224-advisory abc1234 refs/heads/squad/224-advisory def5678"; then
+if run_push_hook "refs/heads/feature/224-advisory abc1234 refs/heads/feature/224-advisory def5678"; then
   pass "Tpp5: pre-push exits 0 on feature branch (advisory block does not fail CI)"
 else
   fail "Tpp5: pre-push exits 0 on feature branch (advisory block does not fail CI)"

@@ -12,7 +12,7 @@
 
     Idempotent: safe to run twice.
 
-    Type/area/squad/priority labels are never touched.
+    Type/area/owner/priority labels are never touched.
 #>
 
 Set-StrictMode -Version Latest
@@ -47,7 +47,7 @@ Verification:
 
 Idempotent: safe to run twice. A second run finds no work to do.
 
-Type/area/squad/priority labels are NEVER touched by this script.
+Type/area/owner/priority labels are NEVER touched by this script.
 
 Usage:
   scripts/sprint-end-labels.ps1 --sprint sprint:17 --release-label release:shipped-1.17.0 [--repo owner/repo] [--dry-run]

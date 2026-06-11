@@ -485,24 +485,24 @@ silently keeps whatever version the runner cached and never upgrades on version 
 
 1. **Pin** the desired version in `.tool-versions`:
    ```
-   squad-cli 0.9.4
    gh 2.92.0
+   copilot-cli 1.0.48
    ```
 
 2. **Read** the pin at install time using the shared helpers:
    ```bash
    # Bash/POSIX (Linux/macOS)
-   VERSION="$(sh scripts/lib/read-tool-version.sh squad-cli)"
+   VERSION="$(sh scripts/lib/read-tool-version.sh gh)"
    ```
    ```powershell
    # PowerShell (Windows)
    . "$PSScriptRoot\..\..\lib\Read-ToolVersion.ps1"
-   $Version = Get-ToolVersion -Name 'squad-cli'
+   $Version = Get-ToolVersion -Name 'gh'
    ```
 
 3. **Detect** the installed version:
    ```bash
-   INSTALLED="$(squad --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+   INSTALLED="$(gh --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
    ```
 
 4. **Branch** on comparison:
@@ -511,16 +511,18 @@ silently keeps whatever version the runner cached and never upgrades on version 
 
 5. **Install explicitly with version**:
    ```bash
-   npm install -g "@bradygaster/squad-cli@${VERSION}"
+   # For npm-based tools
+   npm install -g "package-name@${VERSION}"
    ```
    ```powershell
+   # For winget-based tools
    winget install --id GitHub.cli --version $Version ...
    ```
 
 ### Why this matters
 
 The bare-idempotency anti-pattern (`if command -v X; then exit 0; fi`) was the root
-cause of issue #255: squad-cli, copilot-cli, and gh silently stayed at cached/older
+cause of issue #255: copilot-cli and gh silently stayed at cached/older
 versions on CI runners. Fix PRs that bumped `.tool-versions` had no effect because the
 old binary was already present. Version-aware guards eliminate this silent drift.
 

@@ -1,11 +1,3 @@
-# Squad: ignore runtime state (logs, inbox, sessions)
-.squad/orchestration-log/
-.squad/log/
-.squad/decisions/inbox/
-.squad/sessions/
-# Squad: SubSquad activation file (local to this machine)
-.squad-workstream
-
 # Tests: ephemeral shim directories created by tests/test_sprint_end_labels.ps1
 .test-tmp/
 

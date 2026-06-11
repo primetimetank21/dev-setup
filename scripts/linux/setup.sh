@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# scripts/linux/setup.sh — Core Linux/macOS/WSL installer
+# scripts/linux/setup.sh -- Core Linux/macOS/WSL installer
 #
 # Called by: setup.sh (root entry point)
-# Owner:     Donald (#1, #4–#7, #9)
+# Owner:     Donald (#1, #4-#7, #9)
 #
 # This script installs system prerequisites and runs individual tool installers
-# from scripts/linux/tools/. Each tool script is idempotent — safe to re-run.
+# from scripts/linux/tools/. Each tool script is idempotent -- safe to re-run.
 #
 # Usage (direct):
 #   bash scripts/linux/setup.sh
@@ -33,9 +33,9 @@ run_tool() {
   log_info "Installing: ${tool_name}"
   # shellcheck source=/dev/null
   if bash "${tool_script}"; then
-    log_ok "${tool_name} — done"
+    log_ok "${tool_name} -- done"
   else
-    log_error "${tool_name} — FAILED (see above)"
+    log_error "${tool_name} -- FAILED (see above)"
     return 1
   fi
 }
@@ -58,7 +58,7 @@ install_prerequisites() {
 
   if [[ "$platform" == "macos" ]]; then
     if ! command -v brew &>/dev/null; then
-      log_warn "Homebrew not found — install it from https://brew.sh and re-run setup"
+      log_warn "Homebrew not found -- install it from https://brew.sh and re-run setup"
       return 0
     fi
     brew install curl git vim tmux
@@ -86,7 +86,6 @@ main() {
   run_tool "gh"
   run_tool "auth"
   run_tool "copilot-cli"
-  run_tool "squad-cli"
 
   # Apply dotfiles if Pluto's installer exists
   local dotfiles_script="${REPO_ROOT}/config/dotfiles/install.sh"
