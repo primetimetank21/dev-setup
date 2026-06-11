@@ -14,7 +14,6 @@
 | `vim` | Modal text editor -- installed on all platforms |
 | `tmux` | Terminal multiplexer (Linux/macOS) |
 | `psmux` | Terminal multiplexer (Windows) |
-| `squad-cli` | AI agent orchestration tool (installed via npm) |
 | Shell aliases | Shortcuts for common git and dev commands |
 
 ## Supported Platforms
@@ -96,7 +95,6 @@ dev-setup/
 |   |       +-- copilot-cli.sh
 |   |       +-- gh.sh
 |   |       +-- nvm.sh
-|   |       +-- squad-cli.sh  -- squad-cli (npm)
 |   |       +-- uv.sh
 |   |       \-- zsh.sh
 |   \-- windows/
@@ -105,15 +103,15 @@ dev-setup/
 |       \-- tools/            -- Per-tool install scripts
 |           +-- auth.ps1      -- GitHub CLI authentication (interactive)
 |           +-- copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
-|           +-- profile.ps1, psmux.ps1, squad-cli.ps1
+|           +-- profile.ps1, psmux.ps1
 |           +-- uv.ps1, vim.ps1
-|           \-- (11 files total)
+|           \-- (9 files total)
 +-- config/
 |   \-- dotfiles/             -- Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
 |       \-- install.sh        -- Dotfile installer
 +-- hooks/
 |   +-- commit-msg            -- Enforce Conventional Commits
-|   +-- pre-commit            -- 6-check hygiene gate (branch ancestry + ASCII on .ps1/.md/.sh + .squad/ allow-list + inbox guard + branch refusal + shellcheck); see Git Hooks below
+|   +-- pre-commit            -- 4-check hygiene gate (branch ancestry + ASCII on .ps1/.md/.sh + branch refusal + shellcheck); see Git Hooks below
 |   +-- prepare-commit-msg    -- Rewrite merge/revert messages to Conventional Commits form; see Git Hooks below
 |   \-- pre-push             -- Block pushes to main; advisory linting
 +-- tests/                    -- Validation tests (bash + PowerShell)

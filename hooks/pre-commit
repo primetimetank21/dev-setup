@@ -3,11 +3,8 @@
 # Checks (ordered fastest-first):
 #   1. Branch ancestry (squad/* must descend from develop)
 #   2. ASCII-only on staged *.ps1, *.md, *.sh files
-#   3. Rogue path check under .squad/
-#   4. Staged inbox file check (.squad/decisions/inbox/ should be gitignored)
-#   5. Refuse commits directly on develop/main/master
-#   6. Shellcheck on staged .sh files
-#   7. history.md size gate (15360 B hard limit, 14336 B warn threshold)
+#   3. Refuse commits directly on develop/main/master
+#   4. Shellcheck on staged .sh files
 set -e
 
 # ---------------------------------------------------------------------------
@@ -77,94 +74,7 @@ if [ -n "$ASCII_STAGED" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Check 3: Rogue path check under .squad/
-# ---------------------------------------------------------------------------
-SQUAD_STAGED=$(git diff --cached --name-only --diff-filter=A | grep '^\.squad/' || true)
-if [ -n "$SQUAD_STAGED" ]; then
-  ROGUE_FAIL=0
-  for file in $SQUAD_STAGED; do
-    VALID=0
-    case "$file" in
-      .squad/agents/*/charter.md) VALID=1 ;;
-      .squad/agents/*/history.md) VALID=1 ;;
-      .squad/agents/*/history-archive.md) VALID=1 ;;
-      .squad/decisions.md) VALID=1 ;;
-      .squad/decisions-archive.md) VALID=1 ;;
-      .squad/decisions/inbox/*.md) VALID=1 ;;
-      .squad/decisions/*.md) VALID=1 ;;
-      .squad/orchestration-log/*.md) VALID=1 ;;
-      .squad/log/*.md) VALID=1 ;;
-      .squad/retros/*.md) VALID=1 ;;
-      .squad/skills/*/SKILL.md) VALID=1 ;;
-      .squad/templates/*.md) VALID=1 ;;
-      .squad/templates/*.template) VALID=1 ;;
-      .squad/casting/*.json) VALID=1 ;;
-      .squad/identity/*.md) VALID=1 ;;
-      .squad/plugins/*.json) VALID=1 ;;
-      .squad/team.md) VALID=1 ;;
-      .squad/routing.md) VALID=1 ;;
-      .squad/ceremonies.md) VALID=1 ;;
-      .squad/config.json) VALID=1 ;;
-    esac
-    if [ "$VALID" -eq 0 ]; then
-      if [ "$ROGUE_FAIL" -eq 0 ]; then
-        echo ""
-        echo "ERROR: Staged file under .squad/ does not match any legal path."
-        echo "  See the Source of Truth Hierarchy for allowed locations."
-        echo ""
-      fi
-      echo "  Rogue path: $file"
-      ROGUE_FAIL=1
-    fi
-  done
-  if [ "$ROGUE_FAIL" -ne 0 ]; then
-    echo ""
-    echo "  Allowed locations:"
-    echo "    .squad/agents/{name}/charter.md | history.md | history-archive.md"
-    echo "    .squad/decisions.md | .squad/decisions-archive.md"
-    echo "    .squad/decisions/inbox/*.md (gitignored -- should not be staged)"
-    echo "    .squad/decisions/*.md (canonical permanent decision records)"
-    echo "    .squad/orchestration-log/*.md"
-    echo "    .squad/log/*.md"
-    echo "    .squad/retros/*.md"
-    echo "    .squad/skills/{name}/SKILL.md"
-    echo "    .squad/templates/*.md | .squad/templates/*.template | .squad/casting/*.json"
-    echo "    .squad/identity/*.md | .squad/plugins/*.json"
-    echo "    .squad/team.md | routing.md | ceremonies.md | config.json"
-    echo ""
-    echo "  Suggestions:"
-    echo "    Batch evidence -> .squad/orchestration-log/"
-    echo "    Decisions -> .squad/decisions/inbox/"
-    echo "    Learnings -> .squad/agents/{name}/history.md"
-    echo ""
-    exit 1
-  fi
-fi
-
-# ---------------------------------------------------------------------------
-# Check 4: Staged inbox file check (should be gitignored)
-# ---------------------------------------------------------------------------
-INBOX_STAGED=$(git diff --cached --name-only | grep '^\.squad/decisions/inbox/' || true)
-if [ -n "$INBOX_STAGED" ]; then
-  echo ""
-  echo "ERROR: Files staged under .squad/decisions/inbox/ -- this directory is gitignored."
-  echo ""
-  echo "  Staged inbox files:"
-  for file in $INBOX_STAGED; do
-    echo "    $file"
-  done
-  echo ""
-  echo "  This should never happen. Possible causes:"
-  echo "    - .gitignore was bypassed (git add -f)"
-  echo "    - .gitignore entry for .squad/decisions/inbox/ is missing or malformed"
-  echo ""
-  echo "  Fix: git reset HEAD .squad/decisions/inbox/"
-  echo ""
-  exit 1
-fi
-
-# ---------------------------------------------------------------------------
-# Check 5: Refuse commits directly on develop / main / master
+# Check 3: Refuse commits directly on develop / main / master
 # ---------------------------------------------------------------------------
 current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 case "$current_branch" in
@@ -179,28 +89,7 @@ case "$current_branch" in
 esac
 
 # ---------------------------------------------------------------------------
-# Check 7: history.md size gate (15360 B hard limit, 14336 B warn threshold)
-#
-# Measured against staged blob (git show), not working tree, so the gate
-# fires on the exact bytes that will land in the commit.
-# wc -c | tr -d ' ' strips leading whitespace emitted by BSD wc on macOS.
-# || true after grep prevents set -e failure when no history.md is staged.
-# ---------------------------------------------------------------------------
-for staged_file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '^\.squad/agents/[^/]+/history\.md$' || true); do
-  size=$(git show :"$staged_file" | wc -c | tr -d ' ')
-  if [ "$size" -gt 15360 ]; then
-    echo ""
-    echo "ERROR: $staged_file is $size bytes (max 15360 B)."
-    echo "  Compress before commit -- see .squad/skills/history-md-pre-size-check/SKILL.md"
-    echo ""
-    exit 1
-  elif [ "$size" -gt 14336 ]; then
-    echo "WARN: $staged_file is $size bytes (warn at 14336 B, hard limit 15360 B). Consider compressing." >&2
-  fi
-done
-
-# ---------------------------------------------------------------------------
-# Check 6: Shellcheck on staged .sh files (existing behavior)
+# Check 4: Shellcheck on staged .sh files
 # ---------------------------------------------------------------------------
 if ! command -v shellcheck >/dev/null 2>&1; then
   exit 0

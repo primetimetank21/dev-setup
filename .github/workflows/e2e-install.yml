@@ -53,13 +53,7 @@ jobs:
             node --version
             npm --version
 
-            echo "--- Node version gate (>=22) ---"
-            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)
-            if [ "$NODE_MAJOR" -lt 22 ]; then
-              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22 (squad-cli requires >=22.5.0)"
-              exit 1
-            fi
-            echo "Node major version $NODE_MAJOR OK"
+            echo "--- Node version gate (>=22) ---"`n            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)`n            if [ "$NODE_MAJOR" -lt 22 ]; then`n              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22"`n              exit 1`n            fi`n            echo "Node major version $NODE_MAJOR OK"
 
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"
@@ -74,23 +68,6 @@ jobs:
 
             echo "--- Multiplexer ---"
             tmux -V
-
-            echo "--- Squad CLI ---"
-            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
-              echo "FAIL: squad CLI not found or not executable. Is @bradygaster/squad-cli installed via npm?"
-              exit 1
-            }
-            echo "squad --version: $SQUAD_VER_OUT"
-            # Regression: assert no ''session persistence may fail'' warning (#255).
-            # This warning was traced to @github/copilot-sdk (transitive dep) on
-            # environments where node:sqlite session storage cannot be initialized.
-            # It is absent in squad-cli 0.9.4+ when invoked with --version.
-            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
-              echo "FAIL: squad --version emitted ''session persistence may fail'' (#255)"
-              echo "  This indicates a degraded squad-cli install -- check HOME writability"
-              echo "  and node:sqlite availability (requires Node >= 22.5.0)."
-              exit 1
-            fi
 
             echo "--- Dotfiles ---"
             test -f "$HOME/.zshrc" && echo ".zshrc exists"
@@ -126,14 +103,7 @@ jobs:
 
             echo "--- Post-idempotency assertions ---"
             tmux -V
-            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
-              echo "FAIL: squad CLI not found after idempotency rerun. Is @bradygaster/squad-cli installed via npm?"
-              exit 1
-            }
-            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
-              echo "FAIL: squad --version emitted ''session persistence may fail'' after idempotency rerun (#255)"
-              exit 1
-            fi
+
             node --version
             uv --version
             gh --version | head -1
@@ -211,13 +181,7 @@ jobs:
             node --version
             npm --version
 
-            echo "--- Node version gate (>=22) ---"
-            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)
-            if [ "$NODE_MAJOR" -lt 22 ]; then
-              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22 (squad-cli requires >=22.5.0)"
-              exit 1
-            fi
-            echo "Node major version $NODE_MAJOR OK"
+            echo "--- Node version gate (>=22) ---"`n            NODE_MAJOR=$(node --version | sed 's/^v//' | cut -d. -f1)`n            if [ "$NODE_MAJOR" -lt 22 ]; then`n              echo "FAIL: Node major version is $NODE_MAJOR, expected >=22"`n              exit 1`n            fi`n            echo "Node major version $NODE_MAJOR OK"
 
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"
@@ -233,18 +197,7 @@ jobs:
             echo "--- Multiplexer ---"
             tmux -V
 
-            echo "--- Squad CLI ---"
-            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
-              echo "FAIL: squad CLI not found or not executable. Is @bradygaster/squad-cli installed via npm?"
-              exit 1
-            }
-            echo "squad --version: $SQUAD_VER_OUT"
-            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
-              echo "FAIL: squad --version emitted ''session persistence may fail'' (#255)"
-              echo "  This indicates a degraded squad-cli install -- check HOME writability"
-              echo "  and node:sqlite availability (requires Node >= 22.5.0)."
-              exit 1
-            fi
+
 
             echo "--- Dotfiles ---"
             test -f "$HOME/.zshrc" && echo ".zshrc exists"
@@ -280,14 +233,7 @@ jobs:
 
             echo "--- Post-idempotency assertions ---"
             tmux -V
-            SQUAD_VER_OUT="$(squad --version 2>&1)" || {
-              echo "FAIL: squad CLI not found after idempotency rerun. Is @bradygaster/squad-cli installed via npm?"
-              exit 1
-            }
-            if echo "$SQUAD_VER_OUT" | grep -q "session persistence may fail"; then
-              echo "FAIL: squad --version emitted ''session persistence may fail'' after idempotency rerun (#255)"
-              exit 1
-            fi
+
             node --version
             uv --version
             gh --version | head -1
