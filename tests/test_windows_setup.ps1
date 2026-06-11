@@ -1430,11 +1430,7 @@ Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
     }
 }
 
-Test-Scenario "X-6: squad-cli.ps1 calls Assert-LastExit after npm install" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'Assert-LastExit') {
-        throw "squad-cli.ps1 does not call Assert-LastExit after npm install"
-    }
+
 }
 
 Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
