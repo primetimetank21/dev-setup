@@ -1521,7 +1521,7 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             New-YTestRepo $repoDir
             Push-Location $repoDir
             try {
-                & git checkout -q -b pluto/ascii-fail 2>&1 | Out-Null
+                & git checkout -q -b feat/ascii-fail 2>&1 | Out-Null
                 # Write a .ps1 containing a UTF-8 em-dash (bytes: 0xE2 0x80 0x94)
                 $before = [System.Text.Encoding]::ASCII.GetBytes('Write-Host "hello ')
                 $emDash = [byte[]](0xE2, 0x80, 0x94)
@@ -1546,7 +1546,7 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             New-YTestRepo $repoDir
             Push-Location $repoDir
             try {
-                & git checkout -q -b pluto/ascii-pass 2>&1 | Out-Null
+                & git checkout -q -b feat/ascii-pass 2>&1 | Out-Null
                 'Write-Host "hello -- world"' | Set-Content "test.ps1" -Encoding ASCII
                 & git add "test.ps1" 2>&1 | Out-Null
                 $out = & sh $preCommitHook 2>&1
@@ -1586,7 +1586,7 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             try {
                 $hookUnix   = $prePushHook.Replace('\', '/')
                 $stdinFile  = Join-Path $yTmpBase "push_stdin_y5.txt"
-                Set-Content $stdinFile "refs/heads/squad/224-test abc1234 refs/heads/develop def5678" -Encoding ASCII
+                Set-Content $stdinFile "refs/heads/feat/224-test abc1234 refs/heads/develop def5678" -Encoding ASCII
                 $stdinUnix  = $stdinFile.Replace('\', '/')
                 $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
                 if ($LASTEXITCODE -ne 0) {
@@ -1604,14 +1604,14 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             New-YTestRepo $repoDir
             Push-Location $repoDir
             try {
-                & git checkout -q -b squad/224-advisory-test 2>&1 | Out-Null
+                & git checkout -q -b feat/224-advisory-test 2>&1 | Out-Null
                 # Commit a .ps1 so the hook has content to (optionally) analyze
                 'Write-Host "advisory test"' | Set-Content "advisory.ps1" -Encoding ASCII
                 & git add "advisory.ps1" 2>&1 | Out-Null
                 & git commit -q -m "test: advisory ps1" 2>&1 | Out-Null
                 $hookUnix   = $prePushHook.Replace('\', '/')
                 $stdinFile  = Join-Path $yTmpBase "push_stdin_y6.txt"
-                Set-Content $stdinFile "refs/heads/squad/224-advisory-test abc1234 refs/heads/squad/224-advisory-test def5678" -Encoding ASCII
+                Set-Content $stdinFile "refs/heads/feat/224-advisory-test abc1234 refs/heads/feat/224-advisory-test def5678" -Encoding ASCII
                 $stdinUnix  = $stdinFile.Replace('\', '/')
                 $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
                 if ($LASTEXITCODE -ne 0) {

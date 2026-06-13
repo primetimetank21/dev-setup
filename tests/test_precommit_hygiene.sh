@@ -3,7 +3,7 @@
 # Tests for pre-commit hygiene checks (Issue #240) and pre-push guard (Issue #224)
 #
 # Covers:
-#   Check 1: Branch ancestry (squad/* must descend from develop)
+#   Check 1: Branch ancestry (removed)
 #   Check 2: ASCII-only on staged *.ps1, *.md, *.sh files
 #   Check 3: Protected branch refuse (develop/main/master)
 #   Check 4: Shellcheck on staged .sh files
@@ -31,7 +31,7 @@ mkdir -p "$TMPDIR_BASE"
 cleanup() { rm -rf "$TMPDIR_BASE"; }
 trap cleanup EXIT
 
-# Helper: create a fresh git repo with develop branch and a squad branch
+# Helper: create a fresh git repo with develop branch and a feature branch
 setup_test_repo() {
   local repo_dir="$1"
   mkdir -p "$repo_dir"
@@ -51,19 +51,19 @@ setup_test_repo() {
 }
 
 # ===========================================================================
-# Check 1 Tests: Branch ancestry (removed - squad-specific)
+# Check 1 Tests: Branch ancestry (removed)
 # ===========================================================================
 echo ""
 echo "=== Check 1: Branch ancestry (SKIPPED - no longer applicable) ==="
 
-# Test 1a: SKIPPED - squad branch ancestry check was squad-specific
-pass "T1a: Branch ancestry check removed (squad-specific)"
+# Test 1a: SKIPPED - branch ancestry check was removed
+pass "T1a: Branch ancestry check removed"
 
 # Test 1b: SKIPPED
-pass "T1b: Branch ancestry check removed (squad-specific)"
+pass "T1b: Branch ancestry check removed"
 
 # Test 1c: SKIPPED
-pass "T1c: Branch ancestry check removed (squad-specific)"
+pass "T1c: Branch ancestry check removed"
 
 # ===========================================================================
 # Check 2 Tests: ASCII-only on staged .ps1 / .md / .sh files
@@ -194,16 +194,16 @@ else
   fail "T3d: commit on feature branch is allowed"
 fi
 
-# Test 3e: PASS - commit on pluto/* branch is allowed
+# Test 3e: PASS - commit on feature branch is allowed
 T5E_DIR="${TMPDIR_BASE}/t5e"
 setup_test_repo "$T5E_DIR"
-git checkout -q -b pluto/249-fix
+git checkout -q -b feat/249-fix
 echo "good" > good.txt
 git add good.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T3e: commit on pluto/* branch is allowed"
+  pass "T3e: commit on feature branch is allowed"
 else
-  fail "T3e: commit on pluto/* branch is allowed"
+  fail "T3e: commit on feature branch is allowed"
 fi
 
 # ===========================================================================
