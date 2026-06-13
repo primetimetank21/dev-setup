@@ -2,7 +2,6 @@
 # scripts/linux/setup.sh -- Core Linux/macOS/WSL installer
 #
 # Called by: setup.sh (root entry point)
-# Owner:     Donald (#1, #4-#7, #9)
 #
 # This script installs system prerequisites and runs individual tool installers
 # from scripts/linux/tools/. Each tool script is idempotent -- safe to re-run.

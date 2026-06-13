@@ -1,6 +1,5 @@
 # scripts/windows/tools/copilot.ps1 - GitHub Copilot CLI installer
 #
-# Owner: Goofy (#2, #255)
 # Installs GitHub Copilot CLI at pinned version from .tool-versions via npm.
 # Version-aware: upgrades if installed version != pinned version.
 # Package: @github/copilot (modern, active). Do NOT use @githubnext/github-copilot-cli (deprecated).

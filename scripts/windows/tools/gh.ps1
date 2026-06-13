@@ -1,6 +1,5 @@
 # scripts/windows/tools/gh.ps1 - GitHub CLI installer
 #
-# Owner: Goofy (#2, #255)
 # Installs GitHub CLI (gh) at pinned version from .tool-versions.
 # Version-aware: upgrades if installed version != pinned version.
 

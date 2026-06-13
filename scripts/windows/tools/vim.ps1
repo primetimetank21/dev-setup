@@ -1,6 +1,5 @@
 # scripts/windows/tools/vim.ps1 - Vim text editor installer
 #
-# Owner: Goofy (#2)
 # Installs vim with PATH registration (winget doesn't reliably add it to PATH)
 
 Set-StrictMode -Version Latest

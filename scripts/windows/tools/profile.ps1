@@ -1,6 +1,5 @@
 # scripts/windows/tools/profile.ps1 - PowerShell profile writer
 #
-# Owner: Goofy (#2)
 # Writes dev-setup shortcuts to PowerShell profile (both PS 5.1 and PS 7+)
 
 Set-StrictMode -Version Latest
@@ -225,6 +224,9 @@ Set-Alias -Name nrt -Value Invoke-NpmRunTest -Force -Scope Global
 
 function Invoke-Python { python $args }                     # python shorthand
 Set-Alias -Name py -Value Invoke-Python -Force -Scope Global
+
+function Invoke-CopilotSquad { copilot --agent squad --yolo $args }  # run Copilot with Squad agent
+Set-Alias -Name gosquad -Value Invoke-CopilotSquad -Force -Scope Global
 
 Set-Alias -Name c -Value Clear-Host -Force -Scope Global    # clear the screen
 

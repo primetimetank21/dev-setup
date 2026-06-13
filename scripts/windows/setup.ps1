@@ -1,7 +1,6 @@
 # scripts/windows/setup.ps1 - Core Windows installer orchestrator
 #
 # Called by: setup.ps1 (root entry point)
-# Owner:     Goofy (#2)
 #
 # Orchestrates developer tool installation on Windows by delegating to per-tool scripts.
 # Each tool installer is idempotent - safe to run multiple times.

@@ -121,15 +121,7 @@ dev-setup/
 |   +-- test_remove_custom_item.ps1
 |   \-- test_windows_setup.ps1
 +-- .devcontainer/            -- Dev Container / Codespace configuration
-+-- .github/workflows/        -- CI validation and squad automation
-\-- .squad/                   -- Squad coordination (committed; not installed onto end-user machines)
-    +-- agents/                 -- per-agent charter.md + history.md (9 agents: Mickey, Donald, Goofy, Pluto, Chip, Jiminy, Doc, Scribe, Ralph)
-    +-- decisions.md            -- append-only decision log (<= 50KB gate)
-    +-- decisions-archive.md    -- historical decisions fold here when main >= 50KB
-    +-- skills/                 -- formalized agent skills and patterns (15+ skills)
-    +-- routing.md              -- work routing table + spawn-prompt hygiene rules
-    +-- retros/                 -- sprint retrospectives (committed; pre-commit allow-listed)
-    \-- ...                     -- see ARCHITECTURE.md for the full breakdown
++-- .github/workflows/        -- CI validation and automation
 ```
 
 Root entry points (`setup.sh`, `setup.ps1`) are thin routers -- they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
@@ -198,12 +190,10 @@ No manual copying needed. After running setup, four hooks are active:
 
 Six ordered hygiene checks (fastest-first); the commit is blocked if any check fails:
 
-1. **Branch ancestry** -- `squad/*` (and per-agent `mickey/*`, `goofy/*`, etc.) branches must descend from `develop`. Catches accidental forks-of-forks.
-2. **ASCII-only content** on staged `.ps1`, `.md`, and `.sh` files. PS 5.1 on Windows uses CP1252, so non-ASCII bytes (em dashes, smart quotes, curly apostrophes) break string literals; Markdown and shell sources should also stay ASCII-clean for portable `grep`/`sed`/`diff`. If a `.md` file trips this check, run `python scripts/lib/ascii-sweep.py --dry-run` to preview fixes, then drop `--dry-run` to apply (see below). The sweep preserves fenced code blocks verbatim, so any non-ASCII inside ``` ... ``` must be cleaned by hand. Scope extended from `.ps1` only to `.ps1 + .md + .sh` in Sprint 13 (#322B / PR #334).
-3. **Rogue path check** under `.squad/` -- only paths in the hook's allow-list (e.g. `.squad/agents/*/charter.md`, `.squad/decisions/*.md`, `.squad/retros/*.md`) may be staged.
-4. **Staged inbox guard** -- rejects anything staged under `.squad/decisions/inbox/` (that directory is gitignored; staged content there indicates a `git add -f` accident).
-5. **Refuse direct commits on `develop` / `main` / `master`** -- create a feature branch first.
-6. **Shellcheck** on staged `.sh` files. Silently skipped if `shellcheck` is not installed.
+1. **Branch ancestry** -- feature branches must descend from `develop`. Catches accidental forks-of-forks.
+2. **ASCII-only content** on staged `.ps1`, `.md`, and `.sh` files. PS 5.1 on Windows uses CP1252, so non-ASCII bytes (em dashes, smart quotes, curly apostrophes) break string literals; Markdown and shell sources should also stay ASCII-clean for portable `grep`/`sed`/`diff`. If a `.md` file trips this check, run `python scripts/lib/ascii-sweep.py --dry-run` to preview fixes, then drop `--dry-run` to apply (see below). The sweep preserves fenced code blocks verbatim, so any non-ASCII inside ``` ... ``` must be cleaned by hand.
+3. **Refuse direct commits on `develop` / `main` / `master`** -- create a feature branch first.
+4. **Shellcheck** on staged `.sh` files. Silently skipped if `shellcheck` is not installed.
 
 ### `commit-msg`
 
@@ -252,7 +242,6 @@ nvm 0.39.7
 nvm-windows 1.2.2
 uv 0.4.18
 copilot-cli 1.0.48
-squad-cli 0.9.4
 gh 2.92.0
 ```
 
@@ -271,7 +260,7 @@ When a sprint wraps, every issue and PR carrying its `sprint:N` label needs the 
 - remove `release:backlog` (if present)
 - add `release:shipped-X.Y.Z` (if missing)
 
-Type, area, squad, and priority labels are never touched.
+Type, area, and priority labels are never touched.
 
 This is done by `scripts/sprint-end-labels.sh` and the matching workflow `.github/workflows/sprint-end-labels.yml`.
 
@@ -288,7 +277,7 @@ Remove `--dry-run` to apply changes.
 
 **Workflow trigger:** Actions tab -> "Sprint End Labels" -> Run workflow. Inputs: `sprint_label`, `release_label`, `dry_run` (defaults to `true`).
 
-**Verification (HARD REQUIREMENT):** After every label op, the script re-queries the issue and asserts the desired state. On mismatch it retries the read (not the write) with exponential backoff -- 1s, 2s, 4s -- then fails loudly. The CLI's exit code alone is treated as necessary-but-not-sufficient. See `.squad/skills/gh-label-verify-retry/SKILL.md` for the pattern.
+**Verification (HARD REQUIREMENT):** After every label op, the script re-queries the issue and asserts the desired state. On mismatch it retries the read (not the write) with exponential backoff -- 1s, 2s, 4s -- then fails loudly. The CLI's exit code alone is treated as necessary-but-not-sufficient.
 
 **Idempotent:** Safe to run twice. A second run finds no work to do.
 
@@ -296,32 +285,17 @@ Remove `--dry-run` to apply changes.
 
 ## Contributing
 
-This repo is maintained by the **dev-setup squad** -- a team of nine specialized AI agents, each owning a slice of the codebase:
-
-**Engineering:** Mickey (Lead/Architecture), Donald (Bash/Linux/macOS), Goofy (PowerShell/Windows), Pluto (Dotfiles/Config), Chip (Tests/CI)
-
-**Process & Hygiene:** Jiminy (Squad Ops Auditor), Doc (Fact-Checker), Scribe (Session Logger), Ralph (Work Queue Monitor)
-
-Human contributors are welcome too.
-
-### Squad Resources
-
-- [ARCHITECTURE.md](./ARCHITECTURE.md) -- full technical overview, OS detection logic, script conventions, Windows dependency order, team ownership map, and a guide for adding a new tool.
-- [CONTRIBUTING.md](./CONTRIBUTING.md) -- contributor workflow: branch naming (`squad/{issue}-{slug}` from `develop`), PR checklist, Conventional Commits, test harness pattern, sprint naming convention.
-- [CHANGELOG.md](./CHANGELOG.md) -- release history in Keep a Changelog format. Sprints use numeric naming (Sprint 1 through Sprint 16); historical letter-named sprints (Q, R, S, T) appear as `Sprint N (formerly Sprint X)` aliases for grep continuity.
-- `.squad/routing.md` -- work routing table (who handles what by task type; spawn-prompt hygiene rules).
-- `.squad/skills/` -- formalized agent skills and decision patterns (15+ skills covering architecture, testing, Unix/Windows patterns, and squad operations).
-- `.squad/decisions.md` / `.squad/decisions-archive.md` -- team decision log (decisions.md keeps entries under 50KB gate; older entries fold to archive).
-- `.squad/agents/` -- per-agent charter (role, scope, trigger rules), history.md (session logs, keeps entries under 15KB gate), and team timeout policy.
-- `.squad/retros/` -- sprint retrospectives (v0.9.4+ format).
-
-### Squad Conventions
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor workflow: branch naming (`feat|fix|chore|docs|refactor/{issue}-{slug}` from `develop`), PR checklist, Conventional Commits format, test harness pattern.
 
 All commits follow **Conventional Commits** format: `type(scope): description`. Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. The `commit-msg` hook enforces this; `prepare-commit-msg` rewrite auto-converts merge/revert messages to Conventional Commits form.
 
-PRs to `develop` use **squash merges** (feature PRs, sprint work). Release cuts from `develop` to `main` use **regular (non-squash) merges** for clean release lineage.
+PRs to `develop` use **regular merge commits** (not squash) for full history preservation. Release cuts from `develop` to `main` also use regular merges.
 
-All squad files (charters, histories, decisions, retros) are ASCII-only. Use `python scripts/lib/ascii-sweep.py` to auto-convert em dashes, smart quotes, and other Unicode punctuation to ASCII equivalents.
+### Project Resources
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) -- full technical overview, OS detection logic, script conventions, Windows dependency order, and a guide for adding a new tool.
+- [CONTRIBUTING.md](./CONTRIBUTING.md) -- contributor workflow, branch naming, PR checklist, test harness pattern.
+- [CHANGELOG.md](./CHANGELOG.md) -- release history in Keep a Changelog format.
 
 ---
 

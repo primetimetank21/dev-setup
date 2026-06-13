@@ -1,38 +1,38 @@
 # Fix Plan: #441 -- profile.ps1 writes to wrong path on OneDrive/KFM systems
 
-**Author:** Goofy (v1), Mickey (v2), Donald (v3), Jiminy (v4 -- quality audit revision), Donald (v5 -- hole-patch revision), Donald (v5.1 -- F-4/F-5 patch), Mickey (v5.2 -- JN-1/JN-2 patch)
+**Author:** Contributor
 **Date:** 2026-05-27
 **Issue:** https://github.com/primetimetank21/dev-setup/issues/441
-**Branch:** squad/441-profile-path-fix
-**Status:** Ready for re-grill (v5.2)
+**Branch:** fix/441-profile-path
+**Status:** v5.2
 
 ---
 
-## v5 Changes (Donald revision)
+## v5 Changes (revision 5)
 
-| # | Hole | Griller | Sev | Patch |
+| # | Hole | Reviewer | Sev | Patch |
 |---|------|---------|-----|-------|
-| H1 | `Set-Content` in foreach body missing `-Encoding ASCII` | Donald F-1 | HIGH | Added `-Encoding ASCII` to orphan-strip `Set-Content` (matches production line 28) |
-| H2 | GG-7 exit-1 leaves stale `$LASTEXITCODE`; contaminates success-path tests | Donald F-3 | MEDIUM | Section 5 header: each test resets `$global:LASTEXITCODE = 0` before mock redefinition |
-| H3 | `TestDrive` in GG-4 contradicts Section 3 D2 (Pester rejected as scope creep) | Donald F-2 + Chip C-2 | MEDIUM | Replaced `TestDrive` with `Join-Path $env:TEMP "gg-test-441-$(New-Guid)"` temp-path language in GG-4; temp-dir cleanup sentence added to Section 5 header |
-| H4 | GG-7 exe unspecified; false green on PS5.1-only runner | Chip C-1 | MEDIUM | GG-7 row: `$HostExe = 'powershell'` (guaranteed on Windows); note that `'pwsh'` would mask the not-installed early-exit |
-| H5 | `$ps51Fallback`/`$ps7Fallback` undefined inside `Write-PowerShellProfile` under `Set-StrictMode -Version Latest` | Pluto A-1 | MEDIUM | Two `$local:` definitions added at top of `Write-PowerShellProfile` in Section 4 (mirror production lines 17-19) |
+| H1 | `Set-Content` in foreach body missing `-Encoding ASCII` | F-1 | HIGH | Added `-Encoding ASCII` to orphan-strip `Set-Content` (matches production line 28) |
+| H2 | GG-7 exit-1 leaves stale `$LASTEXITCODE`; contaminates success-path tests | F-3 | MEDIUM | Section 5 header: each test resets `$global:LASTEXITCODE = 0` before mock redefinition |
+| H3 | `TestDrive` in GG-4 contradicts Section 3 D2 (Pester rejected as scope creep) | F-2 + C-2 | MEDIUM | Replaced `TestDrive` with `Join-Path $env:TEMP "gg-test-441-$(New-Guid)"` temp-path language in GG-4; temp-dir cleanup sentence added to Section 5 header |
+| H4 | GG-7 exe unspecified; false green on PS5.1-only runner | C-1 | MEDIUM | GG-7 row: `$HostExe = 'powershell'` (guaranteed on Windows); note that `'pwsh'` would mask the not-installed early-exit |
+| H5 | `$ps51Fallback`/`$ps7Fallback` undefined inside `Write-PowerShellProfile` under `Set-StrictMode -Version Latest` | A-1 | MEDIUM | Two `$local:` definitions added at top of `Write-PowerShellProfile` in Section 4 (mirror production lines 17-19) |
 
-## v5.2 Changes (Mickey revision)
+## v5.2 Changes (revision 5.2)
 
-| # | Hole | Griller | Sev | Patch |
+| # | Hole | Reviewer | Sev | Patch |
 |---|------|---------|-----|-------|
-| JN-1 | `$local:ps51Fallback`/`$local:ps7Fallback` inside `Write-PowerShellProfile` shadow calling scope; test-scope assignment inoperable; GG-1/GG-4/GG-5 would write to real `$HOME` paths | Jiminy JN-1 | MEDIUM | Parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated |
-| JN-2 | C-2/C-3 PS7+ skip uses `Write-Host`; increments pass counter instead of skip counter on PS7+ CI | Jiminy JN-2 / Chip NF-3v4 | LOW | `Write-Host 'SKIP C-2: ...'` -> `Write-Warning '[SKIPPED] C-2: ...'` in Section 3 v3-D4; warning stream is visually distinct in PS output; no Pester dependency (D2 preserved) |
+| JN-1 | `$local:ps51Fallback`/`$local:ps7Fallback` inside `Write-PowerShellProfile` shadow calling scope; test-scope assignment inoperable; GG-1/GG-4/GG-5 would write to real `$HOME` paths | JN-1 | MEDIUM | Parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated |
+| JN-2 | C-2/C-3 PS7+ skip uses `Write-Host`; increments pass counter instead of skip counter on PS7+ CI | JN-2 / NF-3v4 | LOW | `Write-Host 'SKIP C-2: ...'` -> `Write-Warning '[SKIPPED] C-2: ...'` in Section 3 v3-D4; warning stream is visually distinct in PS output; no Pester dependency (D2 preserved) |
 
-## v5.1 Changes (Donald patch)
+## v5.1 Changes (revision 5.1)
 
 - F-4: Orphan-strip regex matches production line 27 (`\r?\n` prefix added; `.+?` -> `.*?`)
 - F-5: `$local:beginMarker`/`$local:endMarker` defined in `Write-PowerShellProfile` (mirrors production lines 12-13)
 
 ---
 
-## v4 Changes (Jiminy revision)
+## v4 Changes (revision 4)
 
 | # | Griller | Sev | Patch |
 |---|---------|-----|-------|

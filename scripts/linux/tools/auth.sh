@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# scripts/linux/tools/auth.sh — GitHub authentication check and prompt
+# scripts/linux/tools/auth.sh -- GitHub authentication check and prompt
 #
 # Called by: scripts/linux/setup.sh (after gh is installed)
-# Owner:     Donald (#13)
-# Idempotent: yes — exits 0 immediately if already authenticated
+# Idempotent: yes -- exits 0 immediately if already authenticated
 
 set -euo pipefail
 
@@ -12,7 +11,7 @@ set -euo pipefail
 
 # Require gh CLI
 if ! command -v gh &>/dev/null; then
-  log_warn "gh CLI not found — skipping auth check (run gh.sh first)"
+  log_warn "gh CLI not found -- skipping auth check (run gh.sh first)"
   exit 0
 fi
 

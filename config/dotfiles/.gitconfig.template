@@ -59,7 +59,7 @@
 	ui = auto
 
 [alias]
-	# Short-hands used by the whole squad
+	# Convenient git shortcuts
 	co  = checkout
 	br  = branch
 	st  = status -sb

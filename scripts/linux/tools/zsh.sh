@@ -2,7 +2,6 @@
 # scripts/linux/tools/zsh.sh -- Install and configure zsh
 #
 # Called by: scripts/linux/setup.sh
-# Owner:     Donald (#7)
 # Idempotent: yes -- checks if zsh is already installed before acting
 
 set -euo pipefail

@@ -2,9 +2,9 @@
 
 **Date:** 2026-05-28T02:56:01-04:00  
 **Revised:** 2026-05-27T23:47:00-04:00  
-**Author:** Chip (Tester)  
+**Author:** Contributor
 **Issue:** #451  
-**Status:** v3 -- Post-Grill Revision (Round 2)
+**Status:** v3
 
 ---
 

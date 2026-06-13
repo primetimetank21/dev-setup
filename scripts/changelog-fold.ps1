@@ -1,6 +1,5 @@
 # scripts/changelog-fold.ps1 -- CHANGELOG fold automation (Issue #415)
 #
-# Owner: Donald
 # Closes: #415 (Windows mirror of scripts/changelog-fold.sh)
 #
 # Enumerates all PRs merged and issues closed since the last release tag,

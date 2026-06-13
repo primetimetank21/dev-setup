@@ -2,7 +2,6 @@
 # scripts/linux/tools/copilot-cli.sh -- Install GitHub Copilot CLI at pinned version
 #
 # Called by: scripts/linux/setup.sh
-# Owner:     Donald / Goofy (#255)
 # Idempotent: yes -- version-aware; upgrades if installed version != pinned version.
 #
 # Install mechanism: npm install -g @github/copilot@<version>

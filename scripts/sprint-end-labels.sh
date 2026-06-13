@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # scripts/sprint-end-labels.sh -- Sprint-end label automation (Issue #382)
 #
-# Owner: Donald
 # Closes: #382
 #
 # Applies sprint-end label transitions to all issues and PRs carrying a given

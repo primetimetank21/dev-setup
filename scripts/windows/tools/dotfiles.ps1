@@ -1,6 +1,5 @@
 # scripts/windows/tools/dotfiles.ps1 - Dotfile installer for Windows
 #
-# Owner: Pluto (Config Engineer)
 # Copies dotfiles to %USERPROFILE% with timestamped .bak backup on change.
 # No symlinks -- plain copy for maximum compatibility (no admin/developer mode).
 #
