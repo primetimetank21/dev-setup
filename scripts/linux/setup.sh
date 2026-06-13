@@ -86,7 +86,7 @@ main() {
   run_tool "auth"
   run_tool "copilot-cli"
 
-  # Apply dotfiles if Pluto's installer exists
+  # Apply dotfiles if installer script exists
   local dotfiles_script="${REPO_ROOT}/config/dotfiles/install.sh"
   if [[ -f "$dotfiles_script" ]]; then
     log_info "Applying dotfiles..."

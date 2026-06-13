@@ -2,7 +2,7 @@
 name: github-multi-account
 description: Detect and set up account-locked gh aliases for multi-account GitHub. The AI reads this skill, detects accounts, asks the user which is personal/work, and runs the setup automatically.
 confidence: high
-source: https://github.com/tamirdresher/squad-skills/tree/main/plugins/github-multi-account
+source: earned (multi-account patterns from GitHub CLI documentation)
 author: tamirdresher
 ---
 
@@ -45,7 +45,7 @@ Set-Alias ghw gh-work
 }
 
 # 3. Create CMD wrappers
-$binDir = Join-Path $env:USERPROFILE ".squad\bin"
+$binDir = Join-Path $env:USERPROFILE ".local\bin"
 if (!(Test-Path $binDir)) { New-Item -ItemType Directory -Path $binDir -Force | Out-Null }
 "@echo off`ngh auth switch --user $personal >nul 2>&1`ngh %*" | Out-File "$binDir\ghp.cmd" -Encoding ascii
 "@echo off`ngh auth switch --user $work >nul 2>&1`ngh %*" | Out-File "$binDir\ghw.cmd" -Encoding ascii
@@ -84,12 +84,15 @@ ghw api user --jq '.login'   # should show work username
 
 ## Repo-Specific Account Binding
 
-This repo (`bradygaster/squad`) is bound to the **bradygaster** (personal) account.
-All `gh` operations in this repo MUST use `ghp` / `gh-personal`.
+Each repository is bound to a specific account based on ownership.
+All `gh` operations in that repo MUST use the appropriate alias (personal or work).
 
-## For Squad Agents
+Example: if `owner/repo` is your personal project, use `ghp` / `gh-personal`.
+
+## For Automation Agents
+
 At the TOP of any script touching GitHub, define:
 ```powershell
-function gh-personal { gh auth switch --user bradygaster 2>$null | Out-Null; gh @args }
-function gh-work { gh auth switch --user bradyg_microsoft 2>$null | Out-Null; gh @args }
+function gh-personal { gh auth switch --user $personal 2>$null | Out-Null; gh @args }
+function gh-work { gh auth switch --user $work 2>$null | Out-Null; gh @args }
 ```

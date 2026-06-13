@@ -1,6 +1,6 @@
 ---
 name: secret-handling
-description: Never read .env files or write secrets to .squad/ committed files
+description: Never read .env files or write secrets to version-controlled committed files
 domain: security, file-operations, team-collaboration
 confidence: high
 source: earned (issue #267 -- credential leak incident)
@@ -8,7 +8,7 @@ source: earned (issue #267 -- credential leak incident)
 
 ## Context
 
-Spawned agents have read access to the entire repository, including `.env` files containing live credentials. If an agent reads secrets and writes them to `.squad/` files (decisions, logs, history), Scribe auto-commits them to git, exposing them in remote history. This skill codifies absolute prohibitions and safe alternatives.
+Spawned agents have read access to the entire repository, including `.env` files containing live credentials. If an agent reads secrets and writes them to version-controlled files that get auto-committed, they expose credentials in remote history. This skill codifies absolute prohibitions and safe alternatives.
 
 ## Patterns
 
@@ -37,7 +37,7 @@ Spawned agents have read access to the entire repository, including `.env` files
 
 ### Prohibited Output Patterns
 
-**NEVER write these to `.squad/` files:**
+**NEVER write these to committed/tracked files:**
 
 | Pattern Type | Examples | Regex Pattern (for scanning) |
 |--------------|----------|-------------------------------|
@@ -57,7 +57,7 @@ Spawned agents have read access to the entire repository, including `.env` files
 
 ### Scribe Pre-Commit Validation
 
-**Before committing `.squad/` changes, Scribe MUST:**
+**Before committing version-controlled file changes, validation MUST:**
 
 1. **Scan all staged files** for secret patterns (use regex table above)
 2. **Check for prohibited file names** (don't commit `.env` even if manually staged)
@@ -68,7 +68,7 @@ Spawned agents have read access to the entire repository, including `.env` files
      ```
      ? SECRET DETECTED -- commit blocked
      
-     File: .squad/decisions/inbox/river-db-config.md
+     File: decisions/inbox/river-db-config.md
      Pattern: DATABASE_URL=postgres://user:password@localhost:5432/prod
      
      This file contains credentials and MUST NOT be committed.
@@ -95,7 +95,7 @@ Spawned agents have read access to the entire repository, including `.env` files
    
    A secret was found in git history:
    Commit: abc1234
-   File: .squad/decisions/inbox/agent-config.md
+   File: decisions/inbox/agent-config.md
    Pattern: API_KEY=sk-proj-...
    
    This requires immediate remediation:
@@ -121,7 +121,7 @@ Agent: "What environment variables does this app need?"
     DATABASE_URL=postgres://user:pass@localhost:5432/db
     REDIS_URL=redis://localhost:6379
 
--> Writes to .squad/decisions/inbox/river-env-setup.md:
+-> Writes to decisions/inbox/river-env-setup.md:
     "App requires three environment variables:
     - OPENAI_API_KEY (OpenAI API key, format: sk-...)
     - DATABASE_URL (Postgres connection string)
@@ -137,7 +137,7 @@ Agent: "What environment variables does this app need?"
 Agent: (reads .env)
     DATABASE_URL=postgres://admin:super_secret_pw@prod.example.com:5432/appdb
 
--> Writes to .squad/decisions/inbox/river-db-schema.md:
+-> Writes to decisions/inbox/river-db-schema.md:
     "Database connection: postgres://admin:super_secret_pw@prod.example.com:5432/appdb"
     
 ? VIOLATION: Live credential written to committed file
@@ -148,7 +148,7 @@ Agent: (reads .env)
 Agent: (reads .env.example OR asks user)
 User: "It's a Postgres database, schema is in migrations/"
 
--> Writes to .squad/decisions/inbox/river-db-schema.md:
+-> Writes to decisions/inbox/river-db-schema.md:
     "Database: Postgres (connection configured in .env). Schema defined in db/migrations/."
 ```
 
@@ -158,7 +158,7 @@ User: "It's a Postgres database, schema is in migrations/"
 
 ```powershell
 # Stage files
-git add .squad/
+git add .
 
 # Scan staged content for secrets
 $stagedContent = git diff --cached
@@ -179,7 +179,7 @@ foreach ($pattern in $secretPatterns) {
 
 if ($detected) {
     # Remove from staging, report, exit
-    git reset HEAD .squad/
+    git reset HEAD .
     Write-Error "Commit blocked -- secret detected in staged files"
     exit 1
 }
@@ -196,5 +196,5 @@ git commit -F $msgFile
 - [ ] Committing first, scanning later -- validation MUST happen before commit
 - [ ] Silently skipping secret detection -- fail loud, never silent
 - [ ] Trusting agents to "know better" -- enforce at multiple layers (prompt, hook, architecture)
-- [ ] Writing secrets to "temporary" files in `.squad/` -- Scribe commits ALL `.squad/` changes
+- [ ] Writing secrets to "temporary" files in version-controlled directories -- all changes get committed
 - [ ] Extracting "just the host" from a connection string -- still leaks infrastructure topology

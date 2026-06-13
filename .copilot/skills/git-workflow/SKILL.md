@@ -114,12 +114,12 @@ gh pr create --base develop --title "fix: stamp bug" --body "Closes #195" --draf
 
 All PRs target `develop` independently. Multiple worktrees don't interfere with each other's filesystem.
 
-### .squad/ State in Worktrees
+### Project State Files in Worktrees
 
-The `.squad/` directory (if present) exists in each worktree as a copy. This is safe because:
-- `.gitattributes` declares `merge=union` on append-only files (history.md, decisions.md, logs)
-- Each process appends to its own section; union merge reconciles on PR merge to develop
-- **Rule:** Never rewrite or reorder `.squad/` files in a worktree -- append only
+Project-specific state files (if present) exist in each worktree as a copy. To avoid conflicts on merge:
+- Configure `.gitattributes` to use `merge=union` for append-only files
+- Each process appends its own section; union merge reconciles sections on PR merge
+- **Rule:** Never rewrite or reorder state files in a worktree -- append only
 
 ### Cleanup After Merge
 

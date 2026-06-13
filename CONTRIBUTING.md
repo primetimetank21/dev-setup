@@ -209,52 +209,6 @@ A direct push to `main` is permitted ONLY when ALL of the following conditions a
 
 ---
 
----
-
-## Parallel Work
-
-### Why worktree isolation matters
-
-In past work, concurrent development on different issues in the same working tree caused branch-checkout race conditions. Wrong content landed on the wrong branch, and PRs had to be closed and recreated.
-
-### How to enable it
-
-Set `SQUAD_WORKTREES=1` before starting work where parallel development is expected:
-
-```bash
-export SQUAD_WORKTREES=1
-```
-
-Or add it permanently to your `.env` / shell profile. The devcontainer sets it by default in `remoteEnv`.
-
-When enabled, coordinators or automation can create an isolated `git worktree` for each issue. Branch checkouts inside one worktree never affect any other.
-
-### Worktree path convention
-
-```
-{repo-parent}/{repo-name}-{issue-number}
-```
-
-**Example:** for issue #56 inside `/workspaces/dev-setup`, the worktree is created at:
-
-```
-/workspaces/dev-setup-56/
-```
-
-Each worktree has its own index and working files but shares the same `.git` object store with the main repo -- no extra disk space for history, just the working tree.
-
-### Cleaning up
-
-Worktrees are not automatically removed. After a PR is merged, clean up with:
-
-```bash
-git worktree remove /workspaces/dev-setup-56
-```
-
-Or list all active worktrees with `git worktree list`.
-
----
-
 ## Test Harness Pattern
 
 Bash test files in `tests/*.sh` follow a **tally-based harness convention**: each assertion
