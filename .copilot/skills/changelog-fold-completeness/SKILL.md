@@ -172,21 +172,9 @@ workflow. The release automation is responsible for ensuring the fold is gated o
 
 Compare with other append-based hygiene checks which govern individual contributions.
 
-## Related Skills
-
-- `.squad/skills/gh-pr-base-develop/SKILL.md` -- every PR must pass
-  `--base develop`; if any PR was misrouted (base=main), the gh queries in Steps 4-5
-  will miss it; verify develop ancestry with `git log $LAST_TAG..develop --merges`
-  as the authoritative source.
-- `.squad/skills/history-md-pre-size-check/SKILL.md` -- companion hygiene check
-  (contributor-level); ensures history files are within gate before the sprint
-  closes and before the release audit.
-
 ## References
 
 - Issue #399 -- formalization request (Sprint 18)
-- Sprint 17 retro (`.squad/retros/2026-05-18-sprint-17-retro.md`) -- "Key learnings:
-  RECURRING: Pre-append history.md size check missing" and release completeness notes
 - PR #393 (commit 71d2ffe) -- Sprint 17 release (0.9.7); completeness check applied,
   5 missing entries added
 - PR #372 (commit 7172ae7) -- Sprint 16 release (0.9.6); completeness check applied
