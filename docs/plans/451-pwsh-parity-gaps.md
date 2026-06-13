@@ -1,12 +1,12 @@
-# Plan: #451 Vertical Slice -- PowerShell Parity Gaps
-
-**Date:** 2026-05-28T02:56:01-04:00  
-**Revised:** 2026-05-27T23:47:00-04:00  
-**Author:** Contributor
-**Issue:** #451  
-**Status:** v3
-
 ---
+issue: 451
+title: "PowerShell parity gaps (vertical slice)"
+status: ready
+created: 2026-05-28
+updated: 2026-06-13
+---
+
+# Plan: #451 -- PowerShell parity gaps (vertical slice)
 
 ## Summary
 
