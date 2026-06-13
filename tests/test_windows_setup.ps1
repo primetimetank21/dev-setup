@@ -875,7 +875,7 @@ Test-Scenario "N-2: Write-PowerShellProfile writes to the PS 7+ profile path" {
     }
 }
 
-Test-Scenario "N-3: Profile content heredoc includes the squad BEGIN and END markers" {
+Test-Scenario "N-3: Profile content heredoc includes the dev-setup BEGIN and END markers" {
     if ($profileToolContent -notmatch '# BEGIN dev-setup profile') {
         throw "profile.ps1 does not contain '# BEGIN dev-setup profile' marker"
     }

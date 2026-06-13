@@ -168,9 +168,7 @@ never failed to find missing entries when applied.
 ## Placement decision
 
 This skill lives in `.copilot/skills/` (process automation level) rather than project-specific
-workflow. Rationale: the fold step is performed during a release cut -- it is release-process
-governance, not day-to-day workflow. The release automation is responsible for ensuring the
-fold is gated on completeness.
+workflow. The release automation is responsible for ensuring the fold is gated on completeness.
 
 Compare with other append-based hygiene checks which govern individual contributions.
 
@@ -180,8 +178,6 @@ Compare with other append-based hygiene checks which govern individual contribut
   `--base develop`; if any PR was misrouted (base=main), the gh queries in Steps 4-5
   will miss it; verify develop ancestry with `git log $LAST_TAG..develop --merges`
   as the authoritative source.
-- `.copilot/skills/release-process/SKILL.md` -- the full release runbook; this skill
-  is a pre-step for the fold phase of that runbook.
 - `.squad/skills/history-md-pre-size-check/SKILL.md` -- companion hygiene check
   (contributor-level); ensures history files are within gate before the sprint
   closes and before the release audit.
