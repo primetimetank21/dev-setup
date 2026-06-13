@@ -1,11 +1,12 @@
-# Plan: #468 Customizable Install (Pick-and-Choose Tools)
-
-**Date:** 2026-05-30
-**Author:** Contributor (v14)
-**Issue:** #468
-**Status:** Ready for review
-
 ---
+issue: 468
+title: "Customizable install (pick-and-choose tools)"
+status: ready
+created: 2026-05-30
+updated: 2026-06-13
+---
+
+# Plan: #468 -- Customizable install (pick-and-choose tools)
 
 ## v14 Changelog (revision 14, 2026-05-30)
 

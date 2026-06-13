@@ -1,12 +1,12 @@
-# Fix Plan: #441 -- profile.ps1 writes to wrong path on OneDrive/KFM systems
-
-**Author:** Contributor
-**Date:** 2026-05-27
-**Issue:** https://github.com/primetimetank21/dev-setup/issues/441
-**Branch:** fix/441-profile-path
-**Status:** v5.2
-
 ---
+issue: 441
+title: "Profile path fix on OneDrive/KFM systems"
+status: implemented
+created: 2026-05-27
+updated: 2026-06-13
+---
+
+# Plan: #441 -- Profile path fix on OneDrive/KFM systems
 
 ## v5 Changes (revision 5)
 
