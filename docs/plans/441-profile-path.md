@@ -8,44 +8,6 @@ updated: 2026-06-13
 
 # Plan: #441 -- Profile path fix on OneDrive/KFM systems
 
-## v5 Changes (revision 5)
-
-| # | Hole | Reviewer | Sev | Patch |
-|---|------|---------|-----|-------|
-| H1 | `Set-Content` in foreach body missing `-Encoding ASCII` | F-1 | HIGH | Added `-Encoding ASCII` to orphan-strip `Set-Content` (matches production line 28) |
-| H2 | GG-7 exit-1 leaves stale `$LASTEXITCODE`; contaminates success-path tests | F-3 | MEDIUM | Section 5 header: each test resets `$global:LASTEXITCODE = 0` before mock redefinition |
-| H3 | `TestDrive` in GG-4 contradicts Section 3 D2 (Pester rejected as scope creep) | F-2 + C-2 | MEDIUM | Replaced `TestDrive` with `Join-Path $env:TEMP "gg-test-441-$(New-Guid)"` temp-path language in GG-4; temp-dir cleanup sentence added to Section 5 header |
-| H4 | GG-7 exe unspecified; false green on PS5.1-only runner | C-1 | MEDIUM | GG-7 row: `$HostExe = 'powershell'` (guaranteed on Windows); note that `'pwsh'` would mask the not-installed early-exit |
-| H5 | `$ps51Fallback`/`$ps7Fallback` undefined inside `Write-PowerShellProfile` under `Set-StrictMode -Version Latest` | A-1 | MEDIUM | Two `$local:` definitions added at top of `Write-PowerShellProfile` in Section 4 (mirror production lines 17-19) |
-
-## v5.2 Changes (revision 5.2)
-
-| # | Hole | Reviewer | Sev | Patch |
-|---|------|---------|-----|-------|
-| JN-1 | `$local:ps51Fallback`/`$local:ps7Fallback` inside `Write-PowerShellProfile` shadow calling scope; test-scope assignment inoperable; GG-1/GG-4/GG-5 would write to real `$HOME` paths | JN-1 | MEDIUM | Parameterized `Write-PowerShellProfile` with `-Ps51Fallback`/`-Ps7Fallback` (defaults = production lines 17-18); tests pass temp paths as named parameters; Section 3 v5.2-D1 added; Section 5 GG-1/GG-4/GG-5 updated |
-| JN-2 | C-2/C-3 PS7+ skip uses `Write-Host`; increments pass counter instead of skip counter on PS7+ CI | JN-2 / NF-3v4 | LOW | `Write-Host 'SKIP C-2: ...'` -> `Write-Warning '[SKIPPED] C-2: ...'` in Section 3 v3-D4; warning stream is visually distinct in PS output; no Pester dependency (D2 preserved) |
-
-## v5.1 Changes (revision 5.1)
-
-- F-4: Orphan-strip regex matches production line 27 (`\r?\n` prefix added; `.+?` -> `.*?`)
-- F-5: `$local:beginMarker`/`$local:endMarker` defined in `Write-PowerShellProfile` (mirrors production lines 12-13)
-
----
-
-## v4 Changes (revision 4)
-
-| # | Griller | Sev | Patch |
-|---|---------|-----|-------|
-| P1 | Pluto | BLOCKING | Section 4 foreach loop body filled -- explicit strip regex + log; no stub comment |
-| P2 | Pluto | BLOCKING | Section 4 algorithm wrapped explicitly in `Write-PowerShellProfile`; comment explains dot-source safety |
-| P3 | Chip | HIGH | GG-7 mock calls `& $env:ComSpec /c "exit 1"` -- propagates `$LASTEXITCODE = 1` via native-command global semantics |
-| P4 | Chip | SS-2 | Section 3 v3-D4 guard: `skip` replaced with `if/Write-Host/return`; guard + `$PROFILE = $path` moved INSIDE Test-Scenario body |
-| P5 | Chip | MEDIUM | Section 5 header: mock isolation pattern documented -- mock redefined before each GG test; Test-Scenario child-scope model stated |
-| P6 | Chip | MEDIUM | GG-4 row: both mock calls return same `$oneDrivePath`; dedup -> 1 entry; both legacy paths confirmed orphaned |
-| P7 | Doc | cosmetic | Section 3 v3-D4: `$PROFILE` is conceptually (not technically) read-only, per MS Learn |
-
----
-
 ## 1. Problem
 
 `profile.ps1` hardcodes `$HOME\Documents\...` as the profile path. On OneDrive KFM systems, PowerShell's actual `$PROFILE` resolves to `OneDrive\Documents\...`. The dev-setup block is written to a file that is never sourced; aliases silently fail to appear in new terminals.
@@ -98,7 +60,7 @@ Decision: Check `$LASTEXITCODE -ne 0` after `Invoke-HostQuery`. `& $Exe` exits n
 
 Decision: GG-4 seeds BOTH legacy paths simultaneously and asserts BOTH stripped. One-path test cannot catch a loop-break bug after the first match.
 
-**v3-D4. C-2/C-3 guarded in PS7+** *(updated v4 -- Doc/Chip)*
+**v3-D4. C-2/C-3 guarded in PS7+**
 
 Decision: Guard C-2 and C-3 with proper skip. The `$PROFILE` automatic variable is conceptually read-only in PowerShell (per Microsoft Learn); assigning to it is unsupported and may cause issues in test contexts. Full refactor deferred; behavior these tests cover is superseded by this PR. Concrete mechanism: move the `$PROFILE = $path` assignment INSIDE the Test-Scenario body (it was erroneously outside as setup code), then open with `if ($PSVersionTable.PSVersion.Major -ge 7) { Write-Warning '[SKIPPED] C-2: PS7+ -- $PROFILE conceptually read-only; covered by GG tests'; return }`. This ensures the assignment never fires on PS7+ and the skip reason is logged.
 

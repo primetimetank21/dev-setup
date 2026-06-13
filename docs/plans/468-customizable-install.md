@@ -8,177 +8,6 @@ updated: 2026-06-13
 
 # Plan: #468 -- Customizable install (pick-and-choose tools)
 
-## v14 Changelog (revision 14, 2026-05-30)
-
-> **Source:** Doc-2 v13 fact-check findings. Two pre-existing quoting-style nits from v5
-> survived all previous passes: one bare token and one double-quoted value in Windows prose
-> and Windows e2e spec contexts. Both were flagged by Doc-2 as inconsistent with the
-> single-quote convention used throughout the rest of the plan.
-
-1. **Line 815 Windows prose corrected (Verified):** `-Only git-hook` -> `-Only 'git-hook'`.
-   Bare token quoted to match single-quote convention. Surgical 1-line fix; no scope change.
-
-2. **Line 1108 Windows e2e spec corrected (Verified):** `-Only "gh"` -> `-Only 'gh'`.
-   Double-quote switched to single-quote to match single-quote convention. Surgical 1-line
-   fix; no scope change.
-
-3. **[Amend] 3 bare `-Skip winget-check` occurrences normalized (Verified):** Lines ~104,
-   ~106 (v7 changelog), and ~860 (foot-gun docs) each had bare `-Skip winget-check`; all
-   corrected to `-Skip 'winget-check'`. Same class as items 1-2 above, surfaced during v14
-   sweep. Earl approved scope expansion. (Note: task brief said 4 nits; 3 actual occurrences
-   found and fixed -- no 4th occurrence exists in the file.)
-
----
-
-## v13 Changelog (Mickey -- Windows flag syntax fix, 2026-05-28)
-
-> **Source:** Duck-2 v12 regrill finding. Line 167 in DD-1 used Linux flag syntax
-> (`--only=uv`) inside an explicitly Windows example ("fresh Windows"). Bug missed by
-> Doc (v12 author), Jiminy, and Goofy on their sweeps; caught by Duck rubber-duck pass.
-
-1. **Line 167 Windows example corrected (Verified):** `--only=uv` on fresh Windows ->
-   `-Only 'uv'` on fresh Windows. Single-quote style matches all existing `-Only '...'`
-   usages throughout the plan. Surgical 1-line fix; no scope change.
-
----
-
-## v12 Changelog (Doc -- Windows example syntax fix, 2026-05-28)
-
-> **Source:** Duck v11 verdict (no `.squad/decisions/inbox/duck-468-v11-regrill.md` on
-> disk; finding communicated inline). The two Windows npm-absent example bullets at
-> lines 778-780 used Linux flag syntax (`--only=`) and the Linux tool name (`copilot-cli`).
-> Windows uses PowerShell syntax (`-Only 'X'`) and the registry key is `copilot`
-> (not `copilot-cli`), per grammar table lines 720-724 and registry lines 263-274 / 320-331.
-
-1. **Windows npm-absent example bullets corrected (Verified):** Lines 778 and 780
-   updated. `--only=copilot-cli` Windows -> `-Only 'copilot'`; `--only=squad-cli`
-   Windows -> `-Only 'squad-cli'`. Single-quote style matches all existing `-Only '...'`
-   usages throughout the plan. Registry key `copilot` confirmed at `$DefaultTools` line
-   273 and `$ToolRegistry` line 330.
-
----
-
-## v11 Changelog (Mickey -- 2x2 npm-absent matrix, 2026-05-28)
-
-> **Source:** Duck raised REQUEST CHANGES on v10 grill (PR #470). The Graceful Degradation
-> section grouped `copilot-cli` and `squad-cli` together, but real Windows behavior differs
-> between the two tools. Earl authorized Mickey as v11 author (narrow patch, deadlock break
-> per Reviewer Protocol step 7).
-
-1. **2x2 npm-absent matrix added (Verified):** Replaced the flat per-platform bullets with a
-   full tool x platform matrix distinguishing all four cells. Evidence verified against source:
-   `scripts/linux/tools/copilot-cli.sh:46-49`, `scripts/linux/tools/squad-cli.sh:41-43`,
-   `scripts/windows/tools/copilot.ps1:47-50`, `scripts/windows/tools/squad-cli.ps1:37-43`.
-
-2. **Parity clarifier added to Non-Negotiables #2 (Duck Suggestion #2):** One sentence
-   distinguishing selection-semantics parity from per-tool degradation behavior.
-
----
-
-## v10 Changelog (Doc -- factual corrections from v9 review, 2026-05-28)
-
-> **Source:** Doc raised REQUEST CHANGES on v9 (PR #470). Two factual errors all nine
-> prior rounds missed. Earl authorized Doc as v10 author (narrow patch only). Next grill
-> panel: Duck + Jiminy + Goofy; Doc is recused as author.
-
-1. **Windows git-hook location corrected (Verified):** v9 documented the `Install-GitHook`
-   function as living in `scripts/windows/tools/git-hook.ps1`. That file does **not exist**.
-   Verified by directory listing of `scripts/windows/tools/` (files present: auth.ps1,
-   copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1, profile.ps1, psmux.ps1,
-   squad-cli.ps1, uv.ps1, vim.ps1 -- no git-hook.ps1). `Install-GitHook` is defined at
-   lines 36-46 of `scripts/windows/setup.ps1`. All plan references corrected to reflect
-   actual location. Confidence: **Verified**.
-
-2. **Windows squad-cli npm-absent behavior corrected (Verified):** v9 stated
-   "`copilot-cli`/`squad-cli` silently skip if npm absent", implying identical behavior on
-   both platforms. Actual behavior is the **opposite**: Linux (`scripts/linux/tools/squad-cli.sh`
-   lines 41-43) emits `log_warn` and `exit 0` (silent skip); Windows
-   (`scripts/windows/tools/squad-cli.ps1` lines 37-43) emits `Write-Err` diagnostics and
-   `exit 1` (hard stop). Graceful Degradation section updated with per-platform breakdown.
-   Confidence: **Verified**.
-
----
-
-## v9 Changelog (Mickey -- semantic fix, closing Jiminy blocker)
-
-1. **`winget-check` registry entry is not behavior-preserving (Jiminy blocker):** v8 mapped
-   `'winget-check' = { Test-WingetAvailable }` -- the dispatcher invokes the scriptblock and
-   ignores the returned `$false`, so the missing-winget gate no longer exits. Fixed by
-   introducing `Invoke-WingetGate` wrapper function that preserves the original `Write-Err` +
-   `exit 1` semantics from `scripts/windows/setup.ps1` lines 50-55. Registry entry updated
-   to `'winget-check' = { Invoke-WingetGate }`.
-
-2. **Document `-Skip 'winget-check'` foot-gun (Jiminy non-blocking):** Added parallel
-   documentation to the existing `--skip=prereqs` foot-gun note, calling out that
-   `-Skip 'winget-check'` bypasses the App Installer availability gate on Windows.
-
----
-
-## v8 Changelog (Pluto -- coherence reconciliation)
-
-1. **v8 (Pluto):** Fixture Provenance includes Windows `winget-check` (lines 535-549), but
-   `$DefaultTools` and `$ToolRegistry` omitted it -- making `T_baseline_real_defaults`
-   impossible to pass coherently. Reconciled via path (A): added `'winget-check'` as first
-   entry in Windows `$DefaultTools` and `$ToolRegistry`, paralleling Linux `prereqs` as
-   the prerequisite-check phase. Preserves 2-concept model; AlwaysRun stays dropped.
-
----
-
-## v7 Changelog (Jiminy -- fixture provenance polish)
-
-1. **v7 (Jiminy):** Fixture Provenance Linux/Windows order corrected to match real `setup.{sh,ps1}` execution including prereqs/dotfiles/git-hook phases absorbed into DefaultTools after AlwaysRun drop.
-
----
-
-## v6 Changelog (Pluto -- surgical polish on Donald's v5)
-
-1. **`--check` mode write-then-diff bug (Duck blocker):** Restructured
-   `regenerate-baseline-fixtures.sh` spec so extraction populates in-memory arrays
-   (`${linux_defaults[@]}` / `${win_defaults[@]}`, with PowerShell `$win_defaults`
-   explicitly defined) ONLY; `--check` diffs in-memory against committed fixture
-   files and never writes. Normal mode is the sole write path.
-
-2. **CI workflow name misalignment (Jiminy blocker):** Slice 4 now correctly targets
-   `e2e-install.yml` for e2e jobs and `validate.yml` for validate-{linux,powershell,ps51}.
-   Added explicit macOS selective-install e2e coverage (`E2E_only_macos`).
-
-3. **Flag-combo coverage gaps (Jiminy blocker):** Added named Test-Scenario cases for
-   bash `--list --skip`, PowerShell `-List -Only` / `-List -Skip`, and both direct-child
-   plus root-forwarding paths for `--only` / `--skip`.
-
-4. **Fixture provenance anchor (Jiminy blocker):** Added "Fixture Provenance" subsection
-   under Baseline Fixture Mechanism. Explicit current Linux + Windows tool orders committed
-   as fixtures BEFORE refactor lands. `regenerate-baseline-fixtures.sh` must NOT be run
-   during implementation.
-
-5. **Re-run/flag idempotency (Jiminy blocker):** Added `T_no_selection_persistence` test
-   in Slice 3 -- verifies no state persists between flag invocations (bash + pwsh).
-
-6. **Skip-path coverage for git-hook safety (Duck non-blocking):** Added
-   `T_git_hook_skip_path_safe` test in Slice 3 -- asserts `--skip=prereqs` (Linux) and
-   `-Skip 'git'` (Windows) still allows git-hook to self-guard cleanly.
-
----
-
-## v5 Changelog (Donald -- polish pass on Pluto's v4)
-
-1. **Baseline harness format mismatch (Donald review):** Stubs now log bare tool names
-   (e.g. `echo "prereqs" >> "$RUN_LOG"`) instead of `RAN:prereqs`. This eliminates the
-   impossible diff between `RUN_LOG` (prefixed) and `defaults.txt` (bare). Option (a)
-   chosen -- simplest, no transform step in tests.
-
-2. **Git-hook safety via flag paths (Duck DK4-bis):** `git-hook.sh` and `Install-GitHook`
-   are now self-guarding: early-return exit 0 with skip message when `git` is not on PATH.
-   New test `T_git_hook_no_git_safe` in Slice 2 confirms both platforms.
-
-3. **Real-defaults drift test (Duck-2):** Added `T_baseline_real_defaults` (bash + pwsh)
-   that extracts real `DEFAULT_TOOLS`/`$DefaultTools` arrays from source via
-   `scripts/dev/regenerate-baseline-fixtures.sh` and diffs against committed
-   `tests/fixtures/baseline-tools-{linux,windows}.txt`. Runs alongside (not replacing)
-   the mock-dispatcher baseline test.
-
----
-
 ## Summary
 
 Add flag-based tool selection to `scripts/linux/setup.sh` and `scripts/windows/setup.ps1`
@@ -293,6 +122,8 @@ Manifest and prompt are explicitly out of scope -- they can layer on top later.
 `SelectableTools` = `AvailableTools` (anything discoverable is targetable by `--only`/`--skip`).
 
 ### Default Order (Linux)
+
+> **NOTE:** squad-cli entries below are stale pending #468 implementation.
 
 ```bash
 DEFAULT_TOOLS=(
@@ -614,7 +445,7 @@ diff "$RUN_LOG" tests/fixtures/stub-tools/linux/defaults.txt
 The stub `defaults.txt` is the expected run-log output in order. The test proves that
 no-arg dispatch matches the declared default order exactly (order + set).
 
-### Real-Defaults Drift Test (v5 fix #3 -- Duck-2)
+### Real-Defaults Drift Test
 
 The mock-dispatcher baseline test above proves the dispatch mechanism works, but does
 NOT protect against accidental edits to the real `DEFAULT_TOOLS` / `$DefaultTools` arrays
@@ -1230,6 +1061,6 @@ entries (3-line pattern). NOT added to DefaultTools (opt-in only).
 | DK4 (git-hook unsafe when git absent) | DD-1: git-hook is a normal tool -- `--only=uv` never triggers it |
 | DK4-bis (git-hook via flag paths) | v5: git-hook self-guards (`command -v git` / `Get-Command git`), `T_git_hook_no_git_safe` |
 | DK5 (hidden flags unprotected) | Slice 1: `T_help_no_toolsdir` negative assertions on both platforms |
-| Donald-1 (baseline format mismatch) | v5: stubs log bare tool names -- `RUN_LOG` directly diffs against `defaults.txt` |
-| Duck-2 (real defaults drift unprotected) | v5: `T_baseline_real_defaults` + `--check` mode in regeneration script |
+| baseline format mismatch | v5: stubs log bare tool names -- `RUN_LOG` directly diffs against `defaults.txt` |
+| real defaults drift unprotected | v5: `T_baseline_real_defaults` + `--check` mode in regeneration script |
 

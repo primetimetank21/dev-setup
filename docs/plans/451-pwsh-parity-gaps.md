@@ -35,7 +35,7 @@ Test count increases from 6 (T1-T6) to 9 (T1-T7, T_C, T_D), achieving parity wit
 
 ---
 
-## CI Integration (v2 addition -- resolves Mickey BLOCKING-1/BLOCKING-2, Goofy Finding-1)
+## CI Integration
 
 The `validate-ps51` job (`.github/workflows/validate.yml` lines 287-369) does NOT currently run
 `test_sprint_end_labels_pwsh.ps1`. The `validate-powershell` job (line 282-283) runs only the
@@ -79,7 +79,7 @@ is a prerequisite to close the CI gap and is explicitly in-scope for this issue.
 - T_C / T_D: No setup, direct Invoke-ScriptRun on bare script
 - T7: Minimal test state via New-TestEnv (empty issues/prs, copy launcher logic)
 
-**T7 detail (v2 -- replaces vague "assert shebang valid", resolves Mickey MAJOR-2):**
+**T7 detail:**
 - Read launcher file via `[System.IO.File]::ReadAllBytes()` (binary, no encoding transform)
 - Assert no 0x0D (CR) bytes present (primary regression invariant)
 - Assert file starts with bytes 0x23 0x21 (the ASCII codes for `#!`) -- this is the shebang
@@ -117,7 +117,7 @@ if ($bytes[0] -ne 0x23 -or $bytes[1] -ne 0x21) {
 **T_C / T_D (LOW):** Pure argument parsing, no side effects, no fixtures.
 
 - Risk: Error message wording is coupled to implementation strings in `scripts/sprint-end-labels.ps1`
-  and `scripts/sprint-end-labels.sh`. (v2 decision -- resolves Mickey MAJOR-1 / Goofy T_C/T_D note)
+  and `scripts/sprint-end-labels.sh`.
 - **Decision:** Use substring/regex match assertions (not full-string equality). T_C asserts
   exit code != 0 only (mirrors bash Test C which checks exit code = 2, no message assertion).
   T_D asserts exit code != 0 AND output contains `"release:shipped-"` (mirrors bash Test D).
@@ -131,7 +131,7 @@ if ($bytes[0] -ne 0x23 -or $bytes[1] -ne 0x21) {
 **T7 (MEDIUM):** Byte-level assertion requires precise encoding handling.
 - Risk: `[System.IO.File]::ReadAllBytes()` MUST be used; `Get-Content` applies encoding and
   may hide CR bytes
-- Mitigation: Use established ASCII safety pattern from chip/history.md
+- Mitigation: Use the established ASCII safety pattern
 - Dependencies: None new (reuses New-TestEnv)
 
 ---
@@ -149,7 +149,7 @@ preventing silent re-introduction of the bug.
 1. **PS 5.1 coverage:** RESOLVED. validate-ps51 does NOT currently run this test file. Plan
    includes a 2-step YAML addition to close the gap (see CI Integration section above).
 
-2. **Launcher byte determinism:** RESOLVED (by Goofy). Launcher content is session-deterministic
+2. **Launcher byte determinism:** RESOLVED. Launcher content is session-deterministic
    (same $PowerShellPath within a run) but not identical across independent CI runs. T7 is a
    regression test, not an idempotency test -- this is acceptable. See T7 detail above.
 
@@ -175,7 +175,7 @@ preventing silent re-introduction of the bug.
 
 ---
 
-## Out-of-Scope Tracked Item (v3 addition -- resolves Goofy Round 2 caveat)
+## Out-of-Scope Tracked Item
 
 **`$IsWindows` PS 5.1 hazard in `New-TestEnv` (line 320 of test file):**
 
@@ -201,28 +201,3 @@ Implementer does NOT need to fix this during #451 -- it is tracked and will be a
 in #461.
 
 ---
-
-## Revision History
-
-- **v1 (2026-05-28T02:56:01-04:00):** Initial plan committed to `.squad/decisions/451-vertical-slice.md`.
-  Three parity gaps identified (T_C, T_D, T7). Open questions deferred to grill.
-- **v2 (2026-05-27T23:12:03-04:00):** Addressed grill panel findings (Mickey/Goofy/Jiminy).
-  - BLOCKING (Mickey/Goofy): Added CI Integration section; test wired into validate-ps51 job
-    (YAML step at line 369+); TODO comment at line 285 marked for removal.
-  - MAJOR (Mickey #4): Replaced vague "assert shebang valid" with precise two-assertion spec:
-    no 0x0D bytes (CR regression) + file starts with 0x23 0x21 (#! shebang bytes); both
-    assertions required and rationale documented.
-  - MAJOR (Mickey #3): T_C/T_D assertion strategy defined as substring/regex match; T_C is
-    exit-code-only; T_D uses "release:shipped-" substring; error-message contract documented
-    in Risk Assessment and Done Criteria.
-  - MEDIUM (Jiminy): Plan moved from `.squad/decisions/451-vertical-slice.md` to
-    `docs/plans/451-pwsh-parity-gaps.md` per PR #441 precedent.
-- **v3 (2026-05-27T23:47:00-04:00):** Addressed Round 2 grill panel (Mickey/Goofy/Jiminy).
-  - Mickey APPROVE: All four R1 findings confirmed resolved. Done Criteria at lines 174/172
-    already cover both Mickey implementation-phase notes (error-message contract in PR
-    description; TODO removal). No plan text changes needed.
-  - Goofy APPROVE-WITH-MINOR-CAVEATS: `$IsWindows` PS 5.1 hazard at New-TestEnv line 320
-    noted. Decision: out of scope for #451 (pre-existing code, not introduced by this slice).
-    Filed follow-up issue #461. See "Out-of-Scope Tracked Item" section above.
-  - Jiminy CLEAN: Commit trailer formatting noted. v3 commit uses blank-line-separated
-    Co-authored-by trailer per git interpret-trailers convention.
