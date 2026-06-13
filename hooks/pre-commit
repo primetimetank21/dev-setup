@@ -1,38 +1,13 @@
 #!/bin/sh
 # pre-commit hook: hygiene checks + shellcheck
 # Checks (ordered fastest-first):
-#   1. Branch ancestry (squad/* must descend from develop)
-#   2. ASCII-only on staged *.ps1, *.md, *.sh files
-#   3. Refuse commits directly on develop/main/master
-#   4. Shellcheck on staged .sh files
+#   1. ASCII-only on staged *.ps1, *.md, *.sh files
+#   2. Refuse commits directly on develop/main/master
+#   3. Shellcheck on staged .sh files
 set -e
 
 # ---------------------------------------------------------------------------
-# Check 1: Branch ancestry (fast -- single git command)
-# ---------------------------------------------------------------------------
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
-case "$CURRENT_BRANCH" in
-  squad/*|goofy/*|mickey/*|chip/*|pluto/*|donald/*|jiminy/*)
-    if git rev-parse --verify develop >/dev/null 2>&1; then
-      if ! git merge-base --is-ancestor develop HEAD 2>/dev/null; then
-        echo ""
-        echo "ERROR: Branch ancestry bleed detected."
-        echo ""
-        echo "  Branch '$CURRENT_BRANCH' is not descended from 'develop'."
-        echo "  squad/* branches must be forked from develop, not from other squad branches."
-        echo ""
-        echo "  Fix: rebase onto develop or recreate the branch from develop."
-        echo "    git rebase develop"
-        echo "    # or: git checkout develop && git checkout -b <new-branch>"
-        echo ""
-        exit 1
-      fi
-    fi
-    ;;
-esac
-
-# ---------------------------------------------------------------------------
-# Check 2: ASCII-only on staged *.ps1, *.md, *.sh files
+# Check 1: ASCII-only on staged *.ps1, *.md, *.sh files
 #
 # Scanned extensions:
 #   .ps1 -- PS 5.1 on Windows uses CP1252; non-ASCII breaks string literals
@@ -74,7 +49,7 @@ if [ -n "$ASCII_STAGED" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Check 3: Refuse commits directly on develop / main / master
+# Check 2: Refuse commits directly on develop / main / master
 # ---------------------------------------------------------------------------
 current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 case "$current_branch" in
@@ -82,14 +57,14 @@ case "$current_branch" in
     echo ""
     echo "ERROR: refusing to commit directly on '$current_branch'."
     echo "       Create a feature branch first:"
-    echo "         git checkout -b squad/<issue>-<slug>"
+    echo "         git checkout -b feat/<issue>-<slug>"
     echo ""
     exit 1
     ;;
 esac
 
 # ---------------------------------------------------------------------------
-# Check 4: Shellcheck on staged .sh files
+# Check 3: Shellcheck on staged .sh files
 # ---------------------------------------------------------------------------
 if ! command -v shellcheck >/dev/null 2>&1; then
   exit 0

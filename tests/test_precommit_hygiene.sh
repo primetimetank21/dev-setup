@@ -3,10 +3,9 @@
 # Tests for pre-commit hygiene checks (Issue #240) and pre-push guard (Issue #224)
 #
 # Covers:
-#   Check 1: Branch ancestry (squad/* must descend from develop)
-#   Check 2: ASCII-only on staged *.ps1, *.md, *.sh files
-#   Check 3: Protected branch refuse (develop/main/master)
-#   Check 4: Shellcheck on staged .sh files
+#   Check 1: ASCII-only on staged *.ps1, *.md, *.sh files
+#   Check 2: Protected branch refuse (develop/main/master)
+#   Check 3: Shellcheck on staged .sh files
 #   pre-push: Main push guard + advisory PSScriptAnalyzer exit-code
 #
 # Usage:
@@ -31,7 +30,7 @@ mkdir -p "$TMPDIR_BASE"
 cleanup() { rm -rf "$TMPDIR_BASE"; }
 trap cleanup EXIT
 
-# Helper: create a fresh git repo with develop branch and a squad branch
+# Helper: create a fresh git repo with develop branch and a feature branch
 setup_test_repo() {
   local repo_dir="$1"
   mkdir -p "$repo_dir"
@@ -51,118 +50,103 @@ setup_test_repo() {
 }
 
 # ===========================================================================
-# Check 1 Tests: Branch ancestry (removed - squad-specific)
+# Check 1 Tests: ASCII-only on staged .ps1 / .md / .sh files
 # ===========================================================================
 echo ""
-echo "=== Check 1: Branch ancestry (SKIPPED - no longer applicable) ==="
+echo "=== Check 1: ASCII-only .ps1 / .md / .sh ==="
 
-# Test 1a: SKIPPED - squad branch ancestry check was squad-specific
-pass "T1a: Branch ancestry check removed (squad-specific)"
-
-# Test 1b: SKIPPED
-pass "T1b: Branch ancestry check removed (squad-specific)"
-
-# Test 1c: SKIPPED
-pass "T1c: Branch ancestry check removed (squad-specific)"
-
-# ===========================================================================
-# Check 2 Tests: ASCII-only on staged .ps1 / .md / .sh files
-# ===========================================================================
-echo ""
-echo "=== Check 2: ASCII-only .ps1 / .md / .sh ==="
-
-# Test 2a: FAIL - .ps1 with non-ASCII
-T2A_DIR="${TMPDIR_BASE}/t2a"
-setup_test_repo "$T2A_DIR"
+# Test 1a: FAIL - .ps1 with non-ASCII
+T1A_DIR="${TMPDIR_BASE}/t1a"
+setup_test_repo "$T1A_DIR"
 git checkout -q -b feature/ascii-test
 # Create a .ps1 with an em dash (UTF-8 bytes for U+2014: E2 80 94)
 printf 'Write-Host "hello \xe2\x80\x94 world"\n' > test.ps1
 git add test.ps1
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T2a: .ps1 with non-ASCII bytes should fail"
+  fail "T1a: .ps1 with non-ASCII bytes should fail"
 else
-  pass "T2a: .ps1 with non-ASCII bytes fails"
+  pass "T1a: .ps1 with non-ASCII bytes fails"
 fi
 
-# Test 2b: PASS - .ps1 with only ASCII
-T2B_DIR="${TMPDIR_BASE}/t2b"
-setup_test_repo "$T2B_DIR"
+# Test 1b: PASS - .ps1 with only ASCII
+T1B_DIR="${TMPDIR_BASE}/t1b"
+setup_test_repo "$T1B_DIR"
 git checkout -q -b feature/ascii-pass
 echo 'Write-Host "hello -- world"' > test.ps1
 git add test.ps1
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T2b: .ps1 with ASCII-only passes"
+  pass "T1b: .ps1 with ASCII-only passes"
 else
-  fail "T2b: .ps1 with ASCII-only passes"
+  fail "T1b: .ps1 with ASCII-only passes"
 fi
 
-# Test 2c: FAIL - .md with non-ASCII (em-dash) is now rejected (#322 part B)
-T2C_DIR="${TMPDIR_BASE}/t2c"
-setup_test_repo "$T2C_DIR"
+# Test 1c: FAIL - .md with non-ASCII (em-dash) is now rejected (#322 part B)
+T1C_DIR="${TMPDIR_BASE}/t1c"
+setup_test_repo "$T1C_DIR"
 git checkout -q -b feature/md-nonascii
 printf 'hello \xe2\x80\x94 world\n' > notes.md
 git add notes.md
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T2c: .md with non-ASCII bytes should fail"
+  fail "T1c: .md with non-ASCII bytes should fail"
 else
-  pass "T2c: .md with non-ASCII bytes fails"
+  pass "T1c: .md with non-ASCII bytes fails"
 fi
 
-# Test 2d: FAIL - .sh with non-ASCII (em-dash) is rejected (#322 part B)
-T2D_DIR="${TMPDIR_BASE}/t2d"
-setup_test_repo "$T2D_DIR"
+# Test 1d: FAIL - .sh with non-ASCII (em-dash) is rejected (#322 part B)
+T1D_DIR="${TMPDIR_BASE}/t1d"
+setup_test_repo "$T1D_DIR"
 git checkout -q -b feature/sh-nonascii
 printf 'echo "hello \xe2\x80\x94 world"\n' > script.sh
 git add script.sh
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T2d: .sh with non-ASCII bytes should fail"
+  fail "T1d: .sh with non-ASCII bytes should fail"
 else
-  pass "T2d: .sh with non-ASCII bytes fails"
+  pass "T1d: .sh with non-ASCII bytes fails"
 fi
 
-# Test 2e: PASS - non-scanned extension (.txt) with non-ASCII is allowed
-T2E_DIR="${TMPDIR_BASE}/t2e"
-setup_test_repo "$T2E_DIR"
+# Test 1e: PASS - non-scanned extension (.txt) with non-ASCII is allowed
+T1E_DIR="${TMPDIR_BASE}/t1e"
+setup_test_repo "$T1E_DIR"
 git checkout -q -b feature/txt-nonascii
 printf 'hello \xe2\x80\x94 world\n' > notes.txt
 git add notes.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T2e: non-scanned extension (.txt) with non-ASCII is allowed"
+  pass "T1e: non-scanned extension (.txt) with non-ASCII is allowed"
 else
-  fail "T2e: non-scanned extension (.txt) with non-ASCII is allowed"
+  fail "T1e: non-scanned extension (.txt) with non-ASCII is allowed"
 fi
 
 # ===========================================================================
-# Check 3 Tests: Refuse commits on protected branches
+# Check 2 Tests: Refuse commits on protected branches
 # ===========================================================================
 echo ""
-echo "=== Check 3: Protected branch refuse ==="
+echo "=== Check 2: Protected branch refuse ==="
 
-# Test 3a: FAIL - commit on develop should be refused
+# Test 2a: FAIL - commit on develop should be refused
 T5A_DIR="${TMPDIR_BASE}/t5a"
 setup_test_repo "$T5A_DIR"
 # Already on develop after setup_test_repo
 echo "bad" > bad.txt
 git add bad.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T3a: commit on develop should be refused"
+  fail "T2a: commit on develop should be refused"
 else
-  pass "T3a: commit on develop is refused"
+  pass "T2a: commit on develop is refused"
 fi
 
-# Test 3b: FAIL - commit on main should be refused
+# Test 2b: FAIL - commit on main should be refused
 T5B_DIR="${TMPDIR_BASE}/t5b"
 setup_test_repo "$T5B_DIR"
 git checkout -q -b main
 echo "bad" > bad.txt
 git add bad.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T3b: commit on main should be refused"
+  fail "T2b: commit on main should be refused"
 else
-  pass "T3b: commit on main is refused"
+  pass "T2b: commit on main is refused"
 fi
 
-# Test 3c: FAIL - commit on master should be refused
+# Test 2c: FAIL - commit on master should be refused
 T5C_DIR="${TMPDIR_BASE}/t5c"
 mkdir -p "$T5C_DIR"
 cd "$T5C_DIR"
@@ -177,33 +161,33 @@ git branch -m master 2>/dev/null || true
 echo "bad" > bad.txt
 git add bad.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  fail "T3c: commit on master should be refused"
+  fail "T2c: commit on master should be refused"
 else
-  pass "T3c: commit on master is refused"
+  pass "T2c: commit on master is refused"
 fi
 
-# Test 3d: PASS - commit on feature branch is allowed
+# Test 2d: PASS - commit on feature branch is allowed
 T5D_DIR="${TMPDIR_BASE}/t5d"
 setup_test_repo "$T5D_DIR"
 git checkout -q -b feature/123-feature
 echo "good" > good.txt
 git add good.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T3d: commit on feature branch is allowed"
+  pass "T2d: commit on feature branch is allowed"
 else
-  fail "T3d: commit on feature branch is allowed"
+  fail "T2d: commit on feature branch is allowed"
 fi
 
-# Test 3e: PASS - commit on pluto/* branch is allowed
+# Test 2e: PASS - commit on feature branch is allowed
 T5E_DIR="${TMPDIR_BASE}/t5e"
 setup_test_repo "$T5E_DIR"
-git checkout -q -b pluto/249-fix
+git checkout -q -b feat/249-fix
 echo "good" > good.txt
 git add good.txt
 if sh "$HOOK" >/dev/null 2>&1; then
-  pass "T3e: commit on pluto/* branch is allowed"
+  pass "T2e: commit on feature branch is allowed"
 else
-  fail "T3e: commit on pluto/* branch is allowed"
+  fail "T2e: commit on feature branch is allowed"
 fi
 
 # ===========================================================================
