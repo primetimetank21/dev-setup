@@ -30,7 +30,7 @@ a prior one.
 | Status      | Meaning                                          |
 |-------------|--------------------------------------------------|
 | draft       | In progress; not ready for implementation        |
-| ready       | Grill-passed or otherwise approved; ready impl   |
+| ready       | Approved; ready to implement                     |
 | in-progress | Implementation underway (PR open)                |
 | implemented | Shipped to develop; doc kept for reference       |
 | superseded  | Replaced by another plan doc (note supersedes)   |
@@ -56,9 +56,9 @@ or attached binary assets.
 
 ---
 
-## Grill / Review History
+## Review History
 
-Do NOT commit grill-panel review changelogs to plan docs. The HQ coordinator maintains
+Do NOT commit review-panel changelogs to plan docs. The HQ coordinator maintains
 review history externally. Plan docs contain only the living spec; revision history is
 captured in git log and front-matter `updated` field.
 
@@ -75,7 +75,7 @@ captured in git log and front-matter `updated` field.
 
 ## What Does NOT Belong Here
 
-- Review panel names, cast names, or griller attributions
+- Reviewer names, cast names, or review attributions
 - Version changelog blocks (vN Changes sections)
 - Process notes (merge decisions, admin notes, coordinator instructions)
 - Implementation progress updates (use the GitHub issue for that)
