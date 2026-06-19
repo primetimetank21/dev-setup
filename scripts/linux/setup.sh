@@ -85,6 +85,7 @@ main() {
   run_tool "gh"
   run_tool "auth"
   run_tool "copilot-cli"
+  run_tool "squad-cli"
 
   # Apply dotfiles if installer script exists
   local dotfiles_script="${REPO_ROOT}/config/dotfiles/install.sh"

@@ -89,6 +89,11 @@ jobs:
               exit 1
             fi
 
+            echo "--- squad-cli ---"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            squad --version | head -1
+
             echo "All Linux assertions passed"
           '
 
@@ -224,6 +229,11 @@ jobs:
               echo "FAIL: core.hooksPath=$HOOKS_PATH (expected hooks)"
               exit 1
             fi
+
+            echo "--- squad-cli ---"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            squad --version | head -1
 
             echo "All macOS assertions passed"
           '
@@ -372,6 +382,9 @@ jobs:
               Write-Host "[FAIL] PS7 profile not found: $profilePath"
               $failures += 'profile'
             }
+
+            Write-Host "--- squad-cli ---"
+            Assert-Command 'squad' '--version'
 
             if ($failures.Count -gt 0) {
               Write-Host "`nFailed assertions: $($failures -join ', ')"

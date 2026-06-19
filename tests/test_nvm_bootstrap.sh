@@ -73,6 +73,32 @@ else
   fail "copilot-cli.sh still uses bare binary-exists guard (no version comparison)"
 fi
 
+# --- squad-cli bootstrap tests ---
+
+SQUAD_CLI_SCRIPT="${REPO_ROOT}/scripts/linux/tools/squad-cli.sh"
+
+# T7: squad-cli.sh sources nvm in-script before npm checks
+# shellcheck disable=SC2016
+if grep -q '\. "\$NVM_DIR/nvm.sh" --no-use' "$SQUAD_CLI_SCRIPT" && grep -q 'nvm use default 2>/dev/null || true' "$SQUAD_CLI_SCRIPT"; then
+  pass "squad-cli.sh sources nvm and activates default alias in-script"
+else
+  fail "squad-cli.sh does not source nvm/default alias before npm checks"
+fi
+
+# T8: squad-cli.sh reads pinned version from .tool-versions
+if grep -q 'read-tool-version.sh.*squad-cli' "$SQUAD_CLI_SCRIPT"; then
+  pass "squad-cli.sh reads squad-cli version from .tool-versions"
+else
+  fail "squad-cli.sh does not read squad-cli version from .tool-versions"
+fi
+
+# T9: squad-cli.sh performs version-aware idempotency check
+if grep -q 'INSTALLED_VERSION' "$SQUAD_CLI_SCRIPT" && grep -q 'SQUAD_CLI_VERSION' "$SQUAD_CLI_SCRIPT"; then
+  pass "squad-cli.sh performs version-aware idempotency check"
+else
+  fail "squad-cli.sh still uses bare binary-exists guard (no version comparison)"
+fi
+
 # --- Summary ---
 
 echo ""

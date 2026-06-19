@@ -2392,6 +2392,65 @@ Test-Scenario "GG-7: Non-zero host exit -- fallback path returned" {
 $global:LASTEXITCODE = 0  # v5-H2: reset after native-command contamination
 
 # ---------------------------------------------------------------------------
+# Group HH: squad-cli installer (Issue #487)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group HH: squad-cli installer (#487)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$squadCliToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1'
+$squadCliToolContent = Get-Content $squadCliToolPath -Raw
+
+Test-Scenario "HH-1: Install-SquadCli function defined in squad-cli.ps1" {
+    $found = Select-String -Path $squadCliToolPath -Pattern 'function Install-SquadCli' -Quiet
+    if (-not $found) {
+        throw "Install-SquadCli function not found in scripts/windows/tools/squad-cli.ps1"
+    }
+}
+
+Test-Scenario "HH-2: squad-cli.ps1 reads pinned version via Get-ToolVersion" {
+    if ($squadCliToolContent -notmatch "Get-ToolVersion.*-Name\s+'squad-cli'") {
+        throw "squad-cli.ps1 does not call Get-ToolVersion -Name 'squad-cli'"
+    }
+}
+
+Test-Scenario "HH-3: Install-SquadCli called in setup.ps1 Main() after Install-CopilotCli" {
+    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
+    $mainFn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Main' }, $true)
+    if ($mainFn.Count -eq 0) { throw "Main function not found in setup.ps1" }
+    $mainBody = $mainFn[0].Body.Extent.Text
+    if ($mainBody -notmatch 'Install-SquadCli') {
+        throw "Install-SquadCli is not called in Main"
+    }
+    # Verify ordering: Install-CopilotCli must appear before Install-SquadCli
+    $copilotIdx  = $mainBody.IndexOf('Install-CopilotCli')
+    $squadCliIdx = $mainBody.IndexOf('Install-SquadCli')
+    if ($copilotIdx -lt 0) { throw "Install-CopilotCli not found in Main" }
+    if ($squadCliIdx -le $copilotIdx) {
+        throw "Install-SquadCli does not appear after Install-CopilotCli in Main"
+    }
+}
+
+Test-Scenario "HH-4: Missing npm guard uses Write-Warn + return (soft-fail, not exit 1)" {
+    if ($squadCliToolContent -notmatch 'Write-Warn.*npm not found') {
+        throw "squad-cli.ps1 does not use Write-Warn for missing npm (soft-fail pattern missing)"
+    }
+    # Must NOT contain exit 1 for the npm-absent path
+    $lines = $squadCliToolContent -split "`n"
+    $npmAbsentSection = $false
+    foreach ($line in $lines) {
+        if ($line -match 'npm not found') { $npmAbsentSection = $true }
+        if ($npmAbsentSection -and $line -match '\bexit 1\b') {
+            throw "squad-cli.ps1 uses exit 1 for npm-absent path -- must use return (soft-fail)"
+        }
+        if ($npmAbsentSection -and $line -match '\breturn\b') { break }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
