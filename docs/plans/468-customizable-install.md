@@ -3,7 +3,7 @@ issue: 468
 title: "Customizable install (pick-and-choose tools)"
 status: ready
 created: 2026-05-30
-updated: 2026-06-13
+updated: 2026-06-19
 ---
 
 # Plan: #468 -- Customizable install (pick-and-choose tools)
@@ -123,8 +123,6 @@ Manifest and prompt are explicitly out of scope -- they can layer on top later.
 
 ### Default Order (Linux)
 
-> **NOTE:** squad-cli entries below are stale pending #468 implementation.
-
 ```bash
 DEFAULT_TOOLS=(
   "prereqs"
@@ -134,7 +132,6 @@ DEFAULT_TOOLS=(
   "gh"
   "auth"
   "copilot-cli"
-  "squad-cli"
   "dotfiles"
   "git-hook"
 )
@@ -153,7 +150,6 @@ $DefaultTools = @(
   'vim'
   'psmux'
   'copilot'
-  'squad-cli'
   'dotfiles'
   'profile'
   'git-hook'
@@ -210,7 +206,6 @@ $ToolRegistry = [ordered]@{
     'vim'       = { Install-Vim }
     'psmux'     = { Install-Psmux }
     'copilot'   = { Install-CopilotCli }
-    'squad-cli' = { Install-SquadCli }
     'dotfiles'  = { Install-Dotfiles }
     'profile'   = { Write-PowerShellProfile }
     'git-hook'  = { Install-GitHook }
@@ -492,12 +487,11 @@ nvm
 gh
 auth
 copilot-cli
-squad-cli
 dotfiles
 git-hook
 ```
 
-Linux maps to `install_prerequisites` first, then the seven `run_tool` calls, then the dotfiles block, then git-hook config in `main`.
+Linux maps to `install_prerequisites` first, then the six `run_tool` calls, then the dotfiles block, then git-hook config in `main`.
 
 **Current Windows order** (from `scripts/windows/setup.ps1` `Main` execution):
 ```
@@ -510,7 +504,6 @@ auth
 vim
 psmux
 copilot
-squad-cli
 dotfiles
 profile
 git-hook
@@ -643,23 +636,17 @@ param(
 ### Graceful Degradation
 
 Tools are NOT fully independent. Known chains:
-- `copilot-cli` / `squad-cli` npm-absent behavior **differs by tool and platform** (Verified):
+- `copilot-cli` npm-absent behavior (Verified):
+  - Linux: `log_warn` + `exit 0` -- warning, silent skip; run continues
+  - Windows: `Write-Warn` + `return` -- warning, non-hard-stop; run continues
 
-  | Tool | Linux | Windows |
-  |------|-------|---------|
-  | `copilot-cli` | `log_warn` + `exit 0` -- warning, silent skip; run continues | `Write-Warn` + `return` -- warning, non-hard-stop; run continues |
-  | `squad-cli` | `log_warn` + `exit 0` -- warning, silent skip; run continues | `Write-Err` + `exit 1` -- hard stop with PATH/nvm diagnostics |
-
-  Sources: `scripts/linux/tools/copilot-cli.sh:46-49`, `scripts/linux/tools/squad-cli.sh:41-43`,
-  `scripts/windows/tools/copilot.ps1:47-50`, `scripts/windows/tools/squad-cli.ps1:37-43`.
+  Sources: `scripts/linux/tools/copilot-cli.sh:46-49`, `scripts/windows/tools/copilot.ps1:47-50`.
 
 - `auth` silently skips if `gh` not installed
 
 **npm-absent examples (fresh machine without Node):**
 - `--only=copilot-cli` Linux: `exit 0`, tool non-functional until Node available.
 - `-Only 'copilot'` Windows: `return` (non-hard-stop), tool non-functional until Node available.
-- `--only=squad-cli` Linux: `exit 0`, tool non-functional until Node available.
-- `-Only 'squad-cli'` Windows: `exit 1` (hard stop) -- actionable error guides PATH refresh / nvm troubleshooting.
 
 Documented behavior. Future DAG (out of scope) could warn.
 
