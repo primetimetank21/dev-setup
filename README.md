@@ -11,6 +11,7 @@
 | `nvm` + Node.js LTS | Node Version Manager + latest Node LTS |
 | `gh` | GitHub CLI |
 | GitHub Copilot CLI | AI pair programmer in your terminal (`gh copilot`) |
+| `squad` CLI | Multi-agent copilot orchestrator (`gosquad` launcher) |
 | `vim` | Modal text editor -- installed on all platforms |
 | `tmux` | Terminal multiplexer (Linux/macOS) |
 | `psmux` | Terminal multiplexer (Windows) |
@@ -93,7 +94,8 @@ dev-setup/
 |   |   \-- tools/            -- Individual tool install scripts
 |   |       +-- auth.sh       -- GitHub CLI authentication (interactive)
 |   |       +-- copilot-cli.sh
-|   |       +-- gh.sh
+|   |       +-- squad-cli.sh
+|       +-- gh.sh
 |   |       +-- nvm.sh
 |   |       +-- uv.sh
 |   |       \-- zsh.sh
@@ -103,9 +105,9 @@ dev-setup/
 |       \-- tools/            -- Per-tool install scripts
 |           +-- auth.ps1      -- GitHub CLI authentication (interactive)
 |           +-- copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
-|           +-- profile.ps1, psmux.ps1
+|           +-- profile.ps1, psmux.ps1, squad-cli.ps1
 |           +-- uv.ps1, vim.ps1
-|           \-- (9 files total)
+|           \-- (10 files total)
 +-- config/
 |   \-- dotfiles/             -- Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
 |       \-- install.sh        -- Dotfile installer

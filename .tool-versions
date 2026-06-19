@@ -3,4 +3,5 @@ nvm 0.39.7
 nvm-windows 1.2.2
 uv 0.4.18
 copilot-cli 1.0.48
+squad-cli 0.10.0
 gh 2.92.0
