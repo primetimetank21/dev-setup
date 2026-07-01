@@ -258,4 +258,36 @@ if [[ -f "$HOME/.bashrc" ]]; then
   append_managed_block "$HOME/.bashrc" "$BASHRC_MANAGED_BLOCK" ".bashrc"
 fi
 
+# -- Codespace bootstrap: clone HQ + wire work repo --------------------------
+if [[ -n "${CODESPACES:-}" ]]; then
+  (
+    HQ_TARGET="/workspaces/clonewars-squad-hq"
+    if [[ ! -d "$HQ_TARGET/.git" ]]; then
+      if [[ -n "${HQ_CLONE_TOKEN:-}" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+          dry "Would clone Clone HQ to $HQ_TARGET"
+        else
+          info "Cloning Clone HQ to $HQ_TARGET ..."
+          git clone "https://${HQ_CLONE_TOKEN}@github.com/primetimetank21/clonewars-squad-hq.git" "$HQ_TARGET"
+          git -C "$HQ_TARGET" remote set-url origin "https://github.com/primetimetank21/clonewars-squad-hq.git"
+          ok "HQ cloned to $HQ_TARGET"
+        fi
+      else
+        info "HQ_CLONE_TOKEN not set -- skipping HQ clone (set at github.com/settings/codespaces)"
+      fi
+    else
+      skip "HQ already at $HQ_TARGET"
+    fi
+    WORK_DIR="/workspaces/$(basename "${GITHUB_REPOSITORY:-}")"
+    if [[ -d "$WORK_DIR" && -f "$HQ_TARGET/scripts/bootstrap-codespace.sh" ]]; then
+      if [[ "$DRY_RUN" == true ]]; then
+        dry "Would run: bash $HQ_TARGET/scripts/bootstrap-codespace.sh $WORK_DIR"
+      else
+        bash "$HQ_TARGET/scripts/bootstrap-codespace.sh" "$WORK_DIR"
+        ok "Codespace bootstrap complete for $WORK_DIR"
+      fi
+    fi
+  ) || info "Codespace bootstrap incomplete -- re-run: bash /workspaces/clonewars-squad-hq/scripts/bootstrap-codespace.sh \$WORK_DIR"
+fi
+
 printf '\n%sDone.%s\n\n' "$GREEN" "$RESET"

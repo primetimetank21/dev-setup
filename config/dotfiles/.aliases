@@ -138,6 +138,13 @@ alias nrd='npm run dev'
 alias nrt='npm run test'
 alias gosquad='copilot --agent squad --yolo'
 
+# ── Squad HQ env (Codespaces only) ───────────────────────────────────────────
+
+if [[ -n "${CODESPACES:-}" ]]; then
+  export SQUAD_HQ_ROOT="/workspaces/clonewars-squad-hq"
+  export SQUAD_WORK_REPO="${GITHUB_REPOSITORY##*/}"
+fi
+
 # ── Functions ────────────────────────────────────────────────────────────────
 
 # Create or attach to the tank_dev tmux session
