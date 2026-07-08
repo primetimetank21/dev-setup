@@ -3,7 +3,7 @@ issue: 468
 title: "Customizable install (pick-and-choose tools)"
 status: ready
 created: 2026-05-30
-updated: 2026-06-13
+updated: 2026-07-08
 ---
 
 # Plan: #468 -- Customizable install (pick-and-choose tools)
@@ -122,8 +122,6 @@ Manifest and prompt are explicitly out of scope -- they can layer on top later.
 `SelectableTools` = `AvailableTools` (anything discoverable is targetable by `--only`/`--skip`).
 
 ### Default Order (Linux)
-
-> **NOTE:** squad-cli entries below are stale pending #468 implementation.
 
 ```bash
 DEFAULT_TOOLS=(
