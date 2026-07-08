@@ -1,0 +1,10 @@
+prereqs
+zsh
+uv
+nvm
+gh
+auth
+copilot-cli
+squad-cli
+dotfiles
+git-hook

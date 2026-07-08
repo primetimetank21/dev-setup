@@ -4,12 +4,21 @@
 # platform-specific installer. It does NOT install any tools itself.
 #
 # Usage:
-#   powershell -ExecutionPolicy Bypass -File setup.ps1
+#   powershell -ExecutionPolicy Bypass -File setup.ps1 [OPTIONS]
 #
-# Supported platforms:
-#   Windows (native PowerShell)
+# Flags are forwarded to scripts\windows\setup.ps1:
+#   -List, -Help, -Only "a,b", -Skip "a,b"
 #
 # For Linux/macOS/WSL, use setup.sh instead.
+
+[CmdletBinding()]
+param(
+    [string]$Only = '',
+    [string]$Skip = '',
+    [switch]$List,
+    [switch]$Help,
+    [string]$ToolsDir = ''
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -99,8 +108,16 @@ function Invoke-WindowsSetup {
     exit 1
   }
 
+  # Sanitized forward: only user-facing params, never $PSBoundParameters (DD-4)
+  $forwardParams = @{}
+  if ($Only)    { $forwardParams['Only']    = $Only }
+  if ($Skip)    { $forwardParams['Skip']    = $Skip }
+  if ($List)    { $forwardParams['List']    = $true }
+  if ($Help)    { $forwardParams['Help']    = $true }
+  if ($ToolsDir){ $forwardParams['ToolsDir'] = $ToolsDir }
+
   Write-Info "Handing off to: scripts\windows\setup.ps1"
-  & $windowsScript
+  & $windowsScript @forwardParams
 }
 
 Main

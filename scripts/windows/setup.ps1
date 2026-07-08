@@ -1,13 +1,30 @@
-# scripts/windows/setup.ps1 - Core Windows installer orchestrator
+# scripts/windows/setup.ps1 - Core Windows installer orchestrator (#468 flags-first)
 #
 # Called by: setup.ps1 (root entry point)
 #
-# Orchestrates developer tool installation on Windows by delegating to per-tool scripts.
-# Each tool installer is idempotent - safe to run multiple times.
-# Requires: Windows 10 1709+ with App Installer (winget) available.
-#
 # Usage (direct):
-#   powershell -ExecutionPolicy Bypass -File scripts\windows\setup.ps1
+#   powershell -ExecutionPolicy Bypass -File scripts\windows\setup.ps1 [OPTIONS]
+#
+# Flags:
+#   -List           Print available tools (alphabetical), exit 0. No install.
+#   -Help           Print usage, exit 0.
+#   -Only "a,b,c"   Install ONLY the listed tools (comma-separated).
+#   -Skip "a,b,c"   Install all default tools EXCEPT the listed ones.
+#   -Only and -Skip are mutually exclusive.
+#
+# Hidden test seam (not in -Help):
+#   -ToolsDir <path>   Override the tools directory (test use only).
+#
+# PS 5.1 ASCII-only: no smart quotes, em-dashes, or non-ASCII characters.
+
+[CmdletBinding()]
+param(
+    [string]$Only    = '',
+    [string]$Skip    = '',
+    [switch]$List,
+    [switch]$Help,
+    [string]$ToolsDir = ''
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -15,11 +32,8 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\lib\logging.ps1"
 . "$PSScriptRoot\lib\path.ps1"
 
-function Test-WingetAvailable {
-    return $null -ne (Get-Command winget -ErrorAction SilentlyContinue)
-}
-
-# Dot-source tool installer modules
+# Dot-source all tool installer modules
+. "$PSScriptRoot\tools\winget-check.ps1"
 . "$PSScriptRoot\tools\git.ps1"
 . "$PSScriptRoot\tools\uv.ps1"
 . "$PSScriptRoot\tools\nvm.ps1"
@@ -31,40 +45,183 @@ function Test-WingetAvailable {
 . "$PSScriptRoot\tools\dotfiles.ps1"
 . "$PSScriptRoot\tools\profile.ps1"
 . "$PSScriptRoot\tools\auth.ps1"
+. "$PSScriptRoot\tools\git-hook.ps1"
 
-function Install-GitHook {
-    Write-Info "Configuring git hooks..."
-    & git rev-parse --git-dir 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        & git config core.hooksPath hooks
-        Write-Ok "Git hooks configured (core.hooksPath=hooks)"
-    } else {
-        Write-Warn "Not inside a git repo - skipping hooks config"
-    }
-    $global:LASTEXITCODE = 0
+# ---------------------------------------------------------------------------
+# $DefaultTools -- single ordered source of truth for a no-arg default run.
+# Adding a .ps1 file to tools/ + a registry entry makes it AvailableTools
+# (selectable via -Only) but does NOT add it here.
+# ---------------------------------------------------------------------------
+$DefaultTools = @(
+    'winget-check'
+    'git'
+    'uv'
+    'nvm'
+    'gh'
+    'auth'
+    'vim'
+    'psmux'
+    'copilot'
+    'squad-cli'
+    'dotfiles'
+    'profile'
+    'git-hook'
+)
+
+# $ToolRegistry maps logical tool names to their install scriptblock.
+# copilot-cli is aliased to copilot so both platforms accept the same name.
+$ToolRegistry = [ordered]@{
+    'winget-check' = { Invoke-WingetGate }
+    'git'          = { Install-Git }
+    'uv'           = { Install-Uv }
+    'nvm'          = { Install-Nvm }
+    'gh'           = { Install-GhCli }
+    'auth'         = { Invoke-GhAuth }
+    'vim'          = { Install-Vim }
+    'psmux'        = { Install-Psmux }
+    'copilot'      = { Install-CopilotCli }
+    'copilot-cli'  = { Install-CopilotCli }
+    'squad-cli'    = { Install-SquadCli }
+    'dotfiles'     = { Install-Dotfiles }
+    'profile'      = { Write-PowerShellProfile }
+    'git-hook'     = { Install-GitHook }
 }
 
-function Main {
-    Write-Info "Starting Windows setup..."
-    Write-Info "Checking for winget..."
-    if (-not (Test-WingetAvailable)) {
-        Write-Err "winget not found. Please install App Installer from the Microsoft Store."
-        Write-Err "https://apps.microsoft.com/store/detail/app-installer/9NBLGGH4NNS1"
+# ---------------------------------------------------------------------------
+# Test seam: when -ToolsDir is set, build a dynamic registry from stub files
+# and load DefaultTools from defaults.txt in that directory.
+# ---------------------------------------------------------------------------
+if ($ToolsDir) {
+    $ToolRegistry = [ordered]@{}
+    foreach ($f in (Get-ChildItem "$ToolsDir\*.ps1" | Sort-Object Name)) {
+        $name = $f.BaseName
+        $path = $f.FullName
+        $ToolRegistry[$name] = [scriptblock]::Create(". '$path'")
+    }
+    $defaultsFile = Join-Path $ToolsDir 'defaults.txt'
+    if (Test-Path $defaultsFile) {
+        $DefaultTools = Get-Content $defaultsFile | Where-Object { $_ -ne '' }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+function Get-AvailableTools {
+    return ($ToolRegistry.Keys | Sort-Object)
+}
+
+function Split-ToolList {
+    param([string]$Input)
+    if ([string]::IsNullOrEmpty($Input)) {
+        Write-Err "Flag requires at least one tool name."
         exit 1
     }
+    $tools = $Input.Split(',')
+    foreach ($t in $tools) {
+        if ([string]::IsNullOrEmpty($t)) {
+            Write-Err "Empty tool name in list (check commas)."
+            exit 1
+        }
+    }
+    return $tools
+}
 
-    Install-Git
-    Install-Uv
-    Install-Nvm
-    Install-GhCli
-    Invoke-GhAuth
-    Install-Vim
-    Install-Psmux
-    Install-CopilotCli
-    Install-SquadCli
-    Install-Dotfiles
-    Write-PowerShellProfile
-    Install-GitHook
+function Invoke-Tool {
+    param([string]$Name)
+    if (-not $ToolRegistry.Contains($Name)) {
+        Write-Warn "Tool not in registry, skipping: $Name"
+        return
+    }
+    Write-Info "Installing: $Name"
+    & $ToolRegistry[$Name]
+    Write-Ok "$Name -- done"
+}
+
+function Print-Help {
+    Write-Output "Usage: setup.ps1 [OPTIONS]"
+    Write-Output ""
+    Write-Output "Install developer tools on Windows."
+    Write-Output ""
+    Write-Output "Options:"
+    Write-Output "  -List           Print available tools (alphabetical order), exit 0."
+    Write-Output "  -Help           Print this help message, exit 0."
+    Write-Output "  -Only 'a,b,c'  Install ONLY the listed tools (comma-separated)."
+    Write-Output "  -Skip 'a,b,c'  Install all default tools EXCEPT the listed ones."
+    Write-Output ""
+    Write-Output "Notes:"
+    Write-Output "  -Only and -Skip are mutually exclusive."
+    Write-Output "  Unknown tool names exit with an error and print the available list."
+    Write-Output "  A no-arg run installs all default tools in the defined order."
+}
+
+# ---------------------------------------------------------------------------
+# --help / --list handling
+# ---------------------------------------------------------------------------
+if ($Help) {
+    Print-Help
+    exit 0
+}
+
+if ($List) {
+    Get-AvailableTools | ForEach-Object { Write-Output $_ }
+    exit 0
+}
+
+# ---------------------------------------------------------------------------
+# Mutual exclusion
+# ---------------------------------------------------------------------------
+if ($Only -and $Skip) {
+    Write-Err "-Only and -Skip are mutually exclusive."
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Build FinalToolSet
+# ---------------------------------------------------------------------------
+$FinalTools = @()
+$Available  = Get-AvailableTools
+
+if ($Only) {
+    $names = Split-ToolList -Input $Only
+    foreach ($name in $names) {
+        if ($Available -notcontains $name) {
+            Write-Err "Unknown tool: $name"
+            Write-Err "Available tools: $($Available -join ', ')"
+            exit 1
+        }
+    }
+    $FinalTools = $names
+
+} elseif ($Skip) {
+    $names = Split-ToolList -Input $Skip
+    foreach ($name in $names) {
+        if ($Available -notcontains $name) {
+            Write-Err "Unknown tool: $name"
+            Write-Err "Available tools: $($Available -join ', ')"
+            exit 1
+        }
+    }
+    foreach ($tool in $DefaultTools) {
+        if ($names -notcontains $tool) {
+            $FinalTools += $tool
+        }
+    }
+
+} else {
+    $FinalTools = $DefaultTools
+}
+
+# ---------------------------------------------------------------------------
+# Main dispatch
+# ---------------------------------------------------------------------------
+function Main {
+    Write-Info "Starting Windows setup..."
+
+    foreach ($tool in $FinalTools) {
+        Invoke-Tool -Name $tool
+    }
 
     Write-Ok ""
     Write-Ok "Setup complete!"
