@@ -2451,6 +2451,61 @@ Test-Scenario "HH-4: Missing npm guard uses Write-Warn + return (soft-fail, not 
 }
 
 # ---------------------------------------------------------------------------
+# Group II: nvm.ps1 space-free install root (Issue #492)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group II: nvm.ps1 space-free install root (Issue #492)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$nvmScriptII  = Join-Path $RepoRoot 'scripts\windows\tools\nvm.ps1'
+$nvmContentII = Get-Content $nvmScriptII -Raw
+
+Test-Scenario "II-1: nvm.ps1 install root is space-free (not derived from USERPROFILE)" {
+    # Must NOT use Join-Path $env:USERPROFILE -- that path contains spaces on many machines.
+    if ($nvmContentII -match 'Join-Path\s+\$env:USERPROFILE\s+.nvm.') {
+        throw "nvm.ps1 still uses Join-Path env:USERPROFILE 'nvm' -- install root may contain spaces"
+    }
+    # Must use $env:SystemDrive as the drive source (guaranteed space-free bare drive letter).
+    if ($nvmContentII -notmatch 'Join-Path\s+\$env:SystemDrive') {
+        throw "nvm.ps1 does not derive nvmHome from env:SystemDrive -- install root may not be portable"
+    }
+    # Verify a representative resolved path (using this machine's SystemDrive) has no spaces.
+    $resolvedRoot = Join-Path $env:SystemDrive 'nvm4w'
+    if ($resolvedRoot -match ' ') {
+        throw "Resolved nvm root '$resolvedRoot' contains a space -- SystemDrive is '$($env:SystemDrive)'"
+    }
+}
+
+Test-Scenario "II-2: nvm.ps1 nodejs symlink dir is space-free (not derived from USERPROFILE)" {
+    # Must NOT use Join-Path $env:USERPROFILE 'nodejs'.
+    if ($nvmContentII -match 'Join-Path\s+\$env:USERPROFILE\s+.nodejs.') {
+        throw "nvm.ps1 still uses Join-Path env:USERPROFILE 'nodejs' -- symlink dir may contain spaces"
+    }
+    # nodeDir must be derived from nvmHome (same drive, no separate USERPROFILE join).
+    if ($nvmContentII -notmatch 'nodeDir\s*=\s*Join-Path\s+\$nvmHome') {
+        throw "nvm.ps1 nodeDir is not derived from nvmHome -- the two roots may diverge"
+    }
+    # Verify representative resolved path has no spaces.
+    $resolvedRoot   = Join-Path $env:SystemDrive 'nvm4w'
+    $resolvedSymlink = Join-Path $resolvedRoot 'nodejs'
+    if ($resolvedSymlink -match ' ') {
+        throw "Resolved nodejs symlink dir '$resolvedSymlink' contains a space"
+    }
+}
+
+Test-Scenario "II-3: Install-NvmPortable settings.txt uses the same space-free root" {
+    # settings.txt root: line must reference the space-free nvmHome, not USERPROFILE.
+    if ($nvmContentII -match 'root:\s*\$env:USERPROFILE') {
+        throw "Install-NvmPortable settings.txt root references USERPROFILE -- may contain spaces"
+    }
+    # The here-string in Install-NvmPortable must reference the NvmHome parameter
+    if ($nvmContentII -notmatch 'root:\s*\$NvmHome') {
+        throw "Install-NvmPortable settings.txt does not use `$NvmHome for root line"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
