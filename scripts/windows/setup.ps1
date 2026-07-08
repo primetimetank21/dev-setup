@@ -108,7 +108,7 @@ if ($ToolsDir) {
 # Helpers
 # ---------------------------------------------------------------------------
 
-function Get-AvailableTools {
+function Get-AvailableTool {
     return ($ToolRegistry.Keys | Sort-Object)
 }
 
@@ -139,7 +139,7 @@ function Invoke-Tool {
     Write-Ok "$Name -- done"
 }
 
-function Print-Help {
+function Show-Help {
     Write-Output "Usage: setup.ps1 [OPTIONS]"
     Write-Output ""
     Write-Output "Install developer tools on Windows."
@@ -160,12 +160,12 @@ function Print-Help {
 # --help / --list handling
 # ---------------------------------------------------------------------------
 if ($Help) {
-    Print-Help
+    Show-Help
     exit 0
 }
 
 if ($List) {
-    Get-AvailableTools | ForEach-Object { Write-Output $_ }
+    Get-AvailableTool | ForEach-Object { Write-Output $_ }
     exit 0
 }
 
@@ -181,7 +181,7 @@ if ($Only -and $Skip) {
 # Build FinalToolSet
 # ---------------------------------------------------------------------------
 $FinalTools = @()
-$Available  = Get-AvailableTools
+$Available  = Get-AvailableTool
 
 if ($Only) {
     $names = Split-ToolList -ToolList $Only

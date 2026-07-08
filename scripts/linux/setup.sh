@@ -69,11 +69,15 @@ for arg in "$@"; do
 done
 
 # Override TOOLS_DIR from test seam if provided
-if [[ -n "$ARG_TOOLS_DIR" ]]; then
+  if [[ -n "$ARG_TOOLS_DIR" ]]; then
   TOOLS_DIR="$ARG_TOOLS_DIR"
   # Load DEFAULT_TOOLS from defaults.txt in the stub dir (test self-contained)
+  # Use while-read instead of mapfile -- bash 3.2 (macOS) does not have mapfile
   if [[ -f "${TOOLS_DIR}/defaults.txt" ]]; then
-    mapfile -t DEFAULT_TOOLS < "${TOOLS_DIR}/defaults.txt"
+    DEFAULT_TOOLS=()
+    while IFS= read -r _line; do
+      [[ -n "$_line" ]] && DEFAULT_TOOLS+=("$_line")
+    done < "${TOOLS_DIR}/defaults.txt"
   fi
 fi
 
@@ -161,19 +165,28 @@ if [[ -n "$ARG_ONLY" && -n "$ARG_SKIP" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Build FinalToolSet
+# Build FinalToolSet -- populates global FINAL_TOOLS (bash 3.2 safe: no
+# local -n namerefs, no mapfile; use plain global array + while-read).
 # ---------------------------------------------------------------------------
+FINAL_TOOLS=()
 build_final_toolset() {
-  local -n result_ref=$1
+  FINAL_TOOLS=()
+
+  # Build available-tools list into a local array (while-read, not mapfile)
+  local available=()
+  local _t
+  while IFS= read -r _t; do
+    [[ -n "$_t" ]] && available+=("$_t")
+  done < <(get_available_tools)
 
   if [[ -n "$ARG_ONLY" ]]; then
     validate_csv_shape "$ARG_ONLY"
+    local only_list=()
     IFS=',' read -ra only_list <<< "$ARG_ONLY"
     # Validate each name against AvailableTools
-    local available
-    mapfile -t available < <(get_available_tools)
+    local name avail found
     for name in "${only_list[@]}"; do
-      local found=0
+      found=0
       for avail in "${available[@]}"; do
         [[ "$avail" == "$name" ]] && found=1 && break
       done
@@ -183,16 +196,16 @@ build_final_toolset() {
         exit 1
       fi
     done
-    result_ref=("${only_list[@]}")
+    FINAL_TOOLS=("${only_list[@]}")
 
   elif [[ -n "$ARG_SKIP" ]]; then
     validate_csv_shape "$ARG_SKIP"
+    local skip_list=()
     IFS=',' read -ra skip_list <<< "$ARG_SKIP"
     # Validate each skip name against AvailableTools
-    local available
-    mapfile -t available < <(get_available_tools)
+    local name avail found
     for name in "${skip_list[@]}"; do
-      local found=0
+      found=0
       for avail in "${available[@]}"; do
         [[ "$avail" == "$name" ]] && found=1 && break
       done
@@ -203,16 +216,17 @@ build_final_toolset() {
       fi
     done
     # Filter DEFAULT_TOOLS, preserving order
+    local tool skip s
     for tool in "${DEFAULT_TOOLS[@]}"; do
-      local skip=0
+      skip=0
       for s in "${skip_list[@]}"; do
         [[ "$s" == "$tool" ]] && skip=1 && break
       done
-      [[ $skip -eq 0 ]] && result_ref+=("$tool")
+      [[ $skip -eq 0 ]] && FINAL_TOOLS+=("$tool")
     done
 
   else
-    result_ref=("${DEFAULT_TOOLS[@]}")
+    FINAL_TOOLS=("${DEFAULT_TOOLS[@]}")
   fi
 }
 
@@ -242,10 +256,10 @@ main() {
   log_info "Platform: ${platform}"
   log_info "Repo root: ${REPO_ROOT}"
 
-  local -a final_tools=()
-  build_final_toolset final_tools
+  build_final_toolset
 
-  for tool in "${final_tools[@]}"; do
+  local tool
+  for tool in "${FINAL_TOOLS[@]}"; do
     run_tool "$tool"
   done
 

@@ -5,7 +5,7 @@
 # --list, --help, root forwarding, baseline-diff.
 #
 # Usage: bash tests/test_setup_flags.sh
-# Requires: bash 4+ (mapfile), GNU diff
+# Requires: bash 3.2+ (macOS compatible), GNU diff
 
 set -uo pipefail
 
