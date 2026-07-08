@@ -23,12 +23,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Build the forward hashtable at script scope so PSAnalyzer sees param usage.
+# Use $PSBoundParameters.ContainsKey so an explicitly-passed empty string
+# ("-Only ''") is forwarded to the child and triggers the child's exit-1 guard,
+# not silently dropped (empty string is falsy; "if ($Only)" would skip it).
 $_fwdParams = @{}
-if ($Only)           { $_fwdParams['Only']    = $Only }
-if ($Skip)           { $_fwdParams['Skip']    = $Skip }
-if ($List.IsPresent) { $_fwdParams['List']    = $true }
-if ($Help.IsPresent) { $_fwdParams['Help']    = $true }
-if ($ToolsDir)       { $_fwdParams['ToolsDir'] = $ToolsDir }
+if ($PSBoundParameters.ContainsKey('Only')) { $_fwdParams['Only']    = $Only }
+if ($PSBoundParameters.ContainsKey('Skip')) { $_fwdParams['Skip']    = $Skip }
+if ($List.IsPresent)                        { $_fwdParams['List']    = $true }
+if ($Help.IsPresent)                        { $_fwdParams['Help']    = $true }
+if ($ToolsDir)                              { $_fwdParams['ToolsDir'] = $ToolsDir }
 
 # -- Logging helpers -----------------------------------------------------------
 

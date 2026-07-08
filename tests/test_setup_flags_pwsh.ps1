@@ -389,6 +389,31 @@ Test-Scenario "T_root_only: root setup.ps1 -Only 'alpha' forwards and installs o
 }
 
 # ---------------------------------------------------------------------------
+# T_root_only_empty: root setup.ps1 -Only '' must forward the empty value to
+# the child and exit non-zero (not silently default to a full install).
+# Bug fixed: root used "if ($Only)" (falsy for '') instead of
+# $PSBoundParameters.ContainsKey('Only'), so '' was never forwarded.
+# Nested-subprocess tolerance: accept either clean exit-1 or "Missing argument"
+# binding error -- both are non-zero and indicate the empty-Only is rejected.
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_root_only_empty: root setup.ps1 -Only '' exits non-zero (not a full install)" {
+    $rootEmptyFailed = $false
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $RootSetup `
+            -ToolsDir $StubDir -Only '' 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { $rootEmptyFailed = $true }
+    } catch {
+        # "Missing an argument for parameter 'Only'" propagated from nested subprocess --
+        # also satisfies the non-zero-exit requirement.
+        $rootEmptyFailed = $true
+    }
+    if (-not $rootEmptyFailed) {
+        throw "Root setup.ps1 -Only '' exited 0 (ran full install instead of erroring)"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # T_backward_compat_gate: no-arg run still produces full defaults (WI-2 gate)
 # ---------------------------------------------------------------------------
 
