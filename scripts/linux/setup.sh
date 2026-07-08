@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
-# scripts/linux/setup.sh -- Core Linux/macOS/WSL installer
+# scripts/linux/setup.sh -- Core Linux/macOS/WSL installer (#468 flags-first)
 #
 # Called by: setup.sh (root entry point)
 #
-# This script installs system prerequisites and runs individual tool installers
-# from scripts/linux/tools/. Each tool script is idempotent -- safe to re-run.
-#
 # Usage (direct):
-#   bash scripts/linux/setup.sh
+#   bash scripts/linux/setup.sh [--list] [--help] [--only=a,b] [--skip=a,b]
+#
+# Flags:
+#   --list          Print available tools (alphabetical), exit 0. No install.
+#   --help          Print usage, exit 0.
+#   --only=a,b,c    Install ONLY the listed tools (comma-separated).
+#   --skip=a,b,c    Install all default tools EXCEPT the listed ones.
+#   --only and --skip are mutually exclusive.
+#
+# Hidden test seam (not in --help):
+#   --tools-dir=<path>   Override the tools directory (test use only).
 
 set -euo pipefail
 exec 2>&1  # Merge stderr into stdout for ordered output in piped/Devcontainer environments
@@ -19,7 +26,64 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # shellcheck disable=SC1091
 . "$(dirname "${BASH_SOURCE[0]}")/lib/log.sh"
 
-# Source a tool script, logging success/failure
+# ---------------------------------------------------------------------------
+# DEFAULT_TOOLS -- single ordered source of truth for a no-arg default run.
+# Adding a .sh file to tools/ makes it AvailableTools (selectable via --only)
+# but does NOT add it here. Promotion to default requires editing this array.
+# ---------------------------------------------------------------------------
+DEFAULT_TOOLS=(
+  "prereqs"
+  "zsh"
+  "uv"
+  "nvm"
+  "gh"
+  "auth"
+  "copilot-cli"
+  "squad-cli"
+  "dotfiles"
+  "git-hook"
+)
+
+# ---------------------------------------------------------------------------
+# Arg parsing
+# ---------------------------------------------------------------------------
+ARG_ONLY=""
+ARG_SKIP=""
+ARG_LIST=0
+ARG_HELP=0
+ARG_TOOLS_DIR=""  # hidden test seam
+
+for arg in "$@"; do
+  case "$arg" in
+    --only=*)   ARG_ONLY="${arg#--only=}" ;;
+    --skip=*)   ARG_SKIP="${arg#--skip=}" ;;
+    --list)     ARG_LIST=1 ;;
+    --help)     ARG_HELP=1 ;;
+    --tools-dir=*) ARG_TOOLS_DIR="${arg#--tools-dir=}" ;;
+    *)
+      log_error "Unknown argument: $arg"
+      log_error "Run with --help for usage."
+      exit 1
+      ;;
+  esac
+done
+
+# Override TOOLS_DIR from test seam if provided
+  if [[ -n "$ARG_TOOLS_DIR" ]]; then
+  TOOLS_DIR="$ARG_TOOLS_DIR"
+  # Load DEFAULT_TOOLS from defaults.txt in the stub dir (test self-contained)
+  # Use while-read instead of mapfile -- bash 3.2 (macOS) does not have mapfile
+  if [[ -f "${TOOLS_DIR}/defaults.txt" ]]; then
+    DEFAULT_TOOLS=()
+    while IFS= read -r _line; do
+      [[ -n "$_line" ]] && DEFAULT_TOOLS+=("$_line")
+    done < "${TOOLS_DIR}/defaults.txt"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Dispatcher
+# ---------------------------------------------------------------------------
 run_tool() {
   local tool_name="$1"
   local tool_script="${TOOLS_DIR}/${tool_name}.sh"
@@ -39,6 +103,136 @@ run_tool() {
   fi
 }
 
+# Build AvailableTools: basenames of all *.sh in TOOLS_DIR
+get_available_tools() {
+  local tool
+  for tool in "${TOOLS_DIR}"/*.sh; do
+    [[ -f "$tool" ]] && basename "$tool" .sh
+  done | sort
+}
+
+# Validate a CSV list: no blanks, no empty tokens, each name in AvailableTools
+validate_csv_shape() {
+  local input="$1"
+  if [[ -z "$input" ]]; then
+    log_error "Flag requires at least one tool name."
+    exit 1
+  fi
+  if [[ "$input" == *,,* || "$input" == ,* || "$input" == *, ]]; then
+    log_error "Empty tool name in list (check commas)."
+    exit 1
+  fi
+}
+
+print_help() {
+  cat <<'USAGE'
+Usage: setup.sh [OPTIONS]
+
+Install developer tools on Linux/macOS/WSL.
+
+Options:
+  --list            Print available tools (alphabetical order), exit 0.
+  --help            Print this help message, exit 0.
+  --only=a,b,c      Install ONLY the listed tools (comma-separated).
+  --skip=a,b,c      Install all default tools EXCEPT the listed ones.
+
+Notes:
+  --only and --skip are mutually exclusive.
+  Unknown tool names exit with an error and print the available tool list.
+  A no-arg run installs all default tools in the defined order.
+USAGE
+}
+
+# ---------------------------------------------------------------------------
+# --help / --list handling (exit before any install logic)
+# ---------------------------------------------------------------------------
+if [[ $ARG_HELP -eq 1 ]]; then
+  print_help
+  exit 0
+fi
+
+if [[ $ARG_LIST -eq 1 ]]; then
+  get_available_tools
+  exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Mutual exclusion
+# ---------------------------------------------------------------------------
+if [[ -n "$ARG_ONLY" && -n "$ARG_SKIP" ]]; then
+  log_error "--only and --skip are mutually exclusive."
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Build FinalToolSet -- populates global FINAL_TOOLS (bash 3.2 safe: no
+# local -n namerefs, no mapfile; use plain global array + while-read).
+# ---------------------------------------------------------------------------
+FINAL_TOOLS=()
+build_final_toolset() {
+  FINAL_TOOLS=()
+
+  # Build available-tools list into a local array (while-read, not mapfile)
+  local available=()
+  local _t
+  while IFS= read -r _t; do
+    [[ -n "$_t" ]] && available+=("$_t")
+  done < <(get_available_tools)
+
+  if [[ -n "$ARG_ONLY" ]]; then
+    validate_csv_shape "$ARG_ONLY"
+    local only_list=()
+    IFS=',' read -ra only_list <<< "$ARG_ONLY"
+    # Validate each name against AvailableTools
+    local name avail found
+    for name in "${only_list[@]}"; do
+      found=0
+      for avail in "${available[@]}"; do
+        [[ "$avail" == "$name" ]] && found=1 && break
+      done
+      if [[ $found -eq 0 ]]; then
+        log_error "Unknown tool: ${name}"
+        log_error "Available tools: $(get_available_tools | tr '\n' ' ')"
+        exit 1
+      fi
+    done
+    FINAL_TOOLS=("${only_list[@]}")
+
+  elif [[ -n "$ARG_SKIP" ]]; then
+    validate_csv_shape "$ARG_SKIP"
+    local skip_list=()
+    IFS=',' read -ra skip_list <<< "$ARG_SKIP"
+    # Validate each skip name against AvailableTools
+    local name avail found
+    for name in "${skip_list[@]}"; do
+      found=0
+      for avail in "${available[@]}"; do
+        [[ "$avail" == "$name" ]] && found=1 && break
+      done
+      if [[ $found -eq 0 ]]; then
+        log_error "Unknown tool: ${name}"
+        log_error "Available tools: $(get_available_tools | tr '\n' ' ')"
+        exit 1
+      fi
+    done
+    # Filter DEFAULT_TOOLS, preserving order
+    local tool skip s
+    for tool in "${DEFAULT_TOOLS[@]}"; do
+      skip=0
+      for s in "${skip_list[@]}"; do
+        [[ "$s" == "$tool" ]] && skip=1 && break
+      done
+      [[ $skip -eq 0 ]] && FINAL_TOOLS+=("$tool")
+    done
+
+  else
+    FINAL_TOOLS=("${DEFAULT_TOOLS[@]}")
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Platform detection (kept for logging; prereqs.sh re-detects internally)
+# ---------------------------------------------------------------------------
 detect_platform() {
   local os
   os="$(uname -s)"
@@ -51,24 +245,9 @@ detect_platform() {
   fi
 }
 
-install_prerequisites() {
-  local platform="$1"
-  log_info "Installing system prerequisites..."
-
-  if [[ "$platform" == "macos" ]]; then
-    if ! command -v brew &>/dev/null; then
-      log_warn "Homebrew not found -- install it from https://brew.sh and re-run setup"
-      return 0
-    fi
-    brew install curl git vim tmux
-  else
-    sudo apt-get update -qq
-    sudo apt-get install -y curl git build-essential vim tmux
-  fi
-
-  log_ok "Prerequisites installed"
-}
-
+# ---------------------------------------------------------------------------
+# Main dispatch
+# ---------------------------------------------------------------------------
 main() {
   local platform
   platform="$(detect_platform)"
@@ -77,30 +256,15 @@ main() {
   log_info "Platform: ${platform}"
   log_info "Repo root: ${REPO_ROOT}"
 
-  install_prerequisites "$platform"
+  build_final_toolset
 
-  run_tool "zsh"
-  run_tool "uv"
-  run_tool "nvm"
-  run_tool "gh"
-  run_tool "auth"
-  run_tool "copilot-cli"
-  run_tool "squad-cli"
-
-  # Apply dotfiles if installer script exists
-  local dotfiles_script="${REPO_ROOT}/config/dotfiles/install.sh"
-  if [[ -f "$dotfiles_script" ]]; then
-    log_info "Applying dotfiles..."
-    bash "$dotfiles_script" && log_ok "Dotfiles applied"
-  fi
-
-  # Configure git hooks
-  if git rev-parse --git-dir >/dev/null 2>&1; then
-    git config core.hooksPath hooks
-    log_ok "Git hooks configured (core.hooksPath=hooks)"
-  fi
+  local tool
+  for tool in "${FINAL_TOOLS[@]}"; do
+    run_tool "$tool"
+  done
 
   log_ok "Setup complete. Open a new shell to apply all changes."
 }
 
-main "$@"
+main
+

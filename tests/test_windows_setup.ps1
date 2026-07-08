@@ -367,10 +367,11 @@ Test-Scenario "E-1: Install-Vim function exists in scripts/windows/tools/vim.ps1
 }
 
 Test-Scenario "E-2: Install-Vim is called in Main" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern '^\s*Install-Vim\s*$' -Quiet
-    if (-not $found) {
-        throw "Install-Vim is not called in Main"
+    # Architecture change (WI-1): tools are dispatched via $DefaultTools array.
+    # Verify 'vim' is registered in the $DefaultTools array in setup.ps1.
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($content -notmatch "'vim'") {
+        throw "Install-Vim is not in DefaultTools (setup.ps1)"
     }
 }
 
@@ -542,14 +543,11 @@ Test-Scenario "I-1: Install-Psmux function exists in psmux.ps1" {
 }
 
 Test-Scenario "I-2: Install-Psmux is called in Main" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
-    $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
-    $mainFn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Main' }, $true)
-    if ($mainFn.Count -eq 0) { throw "Main function not found" }
-    $mainBody = $mainFn[0].Body.Extent.Text
-    if ($mainBody -notmatch 'Install-Psmux') {
-        throw "Install-Psmux is not called in Main"
+    # Architecture change (WI-1): tools are dispatched via $DefaultTools array.
+    # Verify 'psmux' is in the $DefaultTools array in setup.ps1.
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($content -notmatch "'psmux'") {
+        throw "Install-Psmux is not in DefaultTools (setup.ps1)"
     }
 }
 
@@ -1836,7 +1834,8 @@ Test-Scenario "EE-4: auth.ps1 resets LASTEXITCODE after second gh api user block
 }
 
 Test-Scenario "EE-5: setup.ps1 resets LASTEXITCODE after git rev-parse in Install-GitHook" {
-    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1')
+    # Architecture change (WI-1): Install-GitHook moved to tools/git-hook.ps1
+    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\git-hook.ps1')
     $found = $false
     for ($i = 0; $i -lt $lines.Count; $i++) {
         if ($lines[$i] -match '& git rev-parse') {
@@ -2416,21 +2415,15 @@ Test-Scenario "HH-2: squad-cli.ps1 reads pinned version via Get-ToolVersion" {
 }
 
 Test-Scenario "HH-3: Install-SquadCli called in setup.ps1 Main() after Install-CopilotCli" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
-    $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
-    $mainFn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Main' }, $true)
-    if ($mainFn.Count -eq 0) { throw "Main function not found in setup.ps1" }
-    $mainBody = $mainFn[0].Body.Extent.Text
-    if ($mainBody -notmatch 'Install-SquadCli') {
-        throw "Install-SquadCli is not called in Main"
-    }
-    # Verify ordering: Install-CopilotCli must appear before Install-SquadCli
-    $copilotIdx  = $mainBody.IndexOf('Install-CopilotCli')
-    $squadCliIdx = $mainBody.IndexOf('Install-SquadCli')
-    if ($copilotIdx -lt 0) { throw "Install-CopilotCli not found in Main" }
+    # Architecture change (WI-1): tools are dispatched via $DefaultTools array.
+    # Verify 'squad-cli' is in DefaultTools AND appears after 'copilot'.
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    $copilotIdx  = $content.IndexOf("'copilot'")
+    $squadCliIdx = $content.IndexOf("'squad-cli'")
+    if ($copilotIdx -lt 0)  { throw "copilot not found in DefaultTools (setup.ps1)" }
+    if ($squadCliIdx -lt 0) { throw "squad-cli not found in DefaultTools (setup.ps1)" }
     if ($squadCliIdx -le $copilotIdx) {
-        throw "Install-SquadCli does not appear after Install-CopilotCli in Main"
+        throw "squad-cli does not appear after copilot in DefaultTools"
     }
 }
 
