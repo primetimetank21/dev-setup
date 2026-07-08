@@ -1,0 +1,13 @@
+winget-check
+git
+uv
+nvm
+gh
+auth
+vim
+psmux
+copilot
+squad-cli
+dotfiles
+profile
+git-hook
