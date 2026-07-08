@@ -52,10 +52,11 @@ ARG_SKIP=""
 ARG_LIST=0
 ARG_HELP=0
 ARG_TOOLS_DIR=""  # hidden test seam
+ARG_ONLY_SET=0    # tracks whether --only was explicitly provided
 
 for arg in "$@"; do
   case "$arg" in
-    --only=*)   ARG_ONLY="${arg#--only=}" ;;
+    --only=*)   ARG_ONLY="${arg#--only=}"; ARG_ONLY_SET=1 ;;
     --skip=*)   ARG_SKIP="${arg#--skip=}" ;;
     --list)     ARG_LIST=1 ;;
     --help)     ARG_HELP=1 ;;
@@ -164,6 +165,8 @@ if [[ -n "$ARG_ONLY" && -n "$ARG_SKIP" ]]; then
   exit 1
 fi
 
+# (Note: ARG_ONLY_SET handles --only= with empty value; build_final_toolset validates.)
+
 # ---------------------------------------------------------------------------
 # Build FinalToolSet -- populates global FINAL_TOOLS (bash 3.2 safe: no
 # local -n namerefs, no mapfile; use plain global array + while-read).
@@ -179,7 +182,7 @@ build_final_toolset() {
     [[ -n "$_t" ]] && available+=("$_t")
   done < <(get_available_tools)
 
-  if [[ -n "$ARG_ONLY" ]]; then
+  if [[ $ARG_ONLY_SET -eq 1 ]]; then
     validate_csv_shape "$ARG_ONLY"
     local only_list=()
     IFS=',' read -ra only_list <<< "$ARG_ONLY"
@@ -193,10 +196,40 @@ build_final_toolset() {
       if [[ $found -eq 0 ]]; then
         log_error "Unknown tool: ${name}"
         log_error "Available tools: $(get_available_tools | tr '\n' ' ')"
+        log_error "Use --list to see all available tools."
         exit 1
       fi
     done
-    FINAL_TOOLS=("${only_list[@]}")
+    # ORDER PRESERVATION: iterate DEFAULT_TOOLS, include those requested.
+    # Do NOT use input order -- dependencies require the default sequence.
+    local tool _in_only
+    for tool in "${DEFAULT_TOOLS[@]}"; do
+      _in_only=0
+      for name in "${only_list[@]}"; do
+        [[ "$name" == "$tool" ]] && _in_only=1 && break
+      done
+      [[ $_in_only -eq 1 ]] && FINAL_TOOLS+=("$tool")
+    done
+    # Opt-in tools (requested but NOT in DEFAULT_TOOLS): append alphabetically.
+    # These have no defined default position, so alphabetical is deterministic.
+    local _in_default
+    local _optin_names
+    _optin_names=()
+    for name in "${only_list[@]}"; do
+      _in_default=0
+      for tool in "${DEFAULT_TOOLS[@]}"; do
+        [[ "$tool" == "$name" ]] && _in_default=1 && break
+      done
+      [[ $_in_default -eq 0 ]] && _optin_names+=("$name")
+    done
+    if [[ ${#_optin_names[@]} -gt 0 ]]; then
+      local _sorted_optin
+      _sorted_optin=()
+      while IFS= read -r _t; do
+        [[ -n "$_t" ]] && _sorted_optin+=("$_t")
+      done < <(printf '%s\n' "${_optin_names[@]}" | sort)
+      FINAL_TOOLS+=("${_sorted_optin[@]}")
+    fi
 
   elif [[ -n "$ARG_SKIP" ]]; then
     validate_csv_shape "$ARG_SKIP"

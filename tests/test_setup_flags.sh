@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# tests/test_setup_flags.sh -- WI-1 baseline + --list/--help tests (#468)
+# tests/test_setup_flags.sh -- WI-1 baseline + WI-2 --only tests (#468)
 #
 # Tests the framework spine: DEFAULT_TOOLS constant, --tools-dir seam,
 # --list, --help, root forwarding, baseline-diff.
+# WI-2: --only selective install with ORDER PRESERVATION invariant.
 #
 # Usage: bash tests/test_setup_flags.sh
 # Requires: bash 3.2+ (macOS compatible), GNU diff
@@ -197,6 +198,214 @@ if [[ -f "$ROOT_SETUP" ]]; then
 else
   skip "T_root_help" "root setup.sh not found"
 fi
+
+# ---------------------------------------------------------------------------
+# WI-2: --only selective install
+# Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# ---------------------------------------------------------------------------
+
+# Helper: compare run-log content to a literal expected string
+assert_log_str() {
+  local expected="$1"
+  local actual
+  actual="$(cat "$RUN_LOG" 2>/dev/null || true)"
+  if [[ "$actual" == "$expected" ]]; then
+    return 0
+  fi
+  echo "  Expected: |$(echo "$expected" | cat)|"
+  echo "  Actual:   |$(echo "$actual"   | cat)|"
+  return 1
+}
+
+# ---------------------------------------------------------------------------
+# T_only_single: --only=alpha installs only alpha
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_single ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha 2>&1 | grep -q . || true
+if assert_log_str "alpha"; then
+  pass "T_only_single: --only=alpha logs only alpha"
+else
+  fail "T_only_single: unexpected run-log"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_only_multi: --only=alpha,bravo installs both in DEFAULT order
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_multi ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha,bravo 2>&1 | grep -q . || true
+if assert_log_str "$(printf 'alpha\nbravo')"; then
+  pass "T_only_multi: --only=alpha,bravo logs alpha then bravo (default order)"
+else
+  fail "T_only_multi: unexpected run-log (order or content wrong)"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_only_order_preserved: --only=bravo,alpha (reversed) must still install
+# alpha BEFORE bravo (DEFAULT_TOOLS order, not input order).
+# *** EXPECTED RED before WI-2 fix ***
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_order_preserved ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=bravo,alpha 2>&1 | grep -q . || true
+if assert_log_str "$(printf 'alpha\nbravo')"; then
+  pass "T_only_order_preserved: reversed input yields default order (alpha then bravo)"
+else
+  fail "T_only_order_preserved: order NOT preserved (input order used instead of default order)"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_only_optin: --only=delta works (delta is opt-in, not in defaults.txt)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_optin ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=delta 2>&1 | grep -q . || true
+if assert_log_str "delta"; then
+  pass "T_only_optin: --only=delta (opt-in tool) works"
+else
+  fail "T_only_optin: opt-in tool not reachable via --only"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_only_optin_order: --only=delta,alpha -> alpha (default) first, delta
+# (opt-in) appended after. *** EXPECTED RED before WI-2 fix ***
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_optin_order ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=delta,alpha 2>&1 | grep -q . || true
+if assert_log_str "$(printf 'alpha\ndelta')"; then
+  pass "T_only_optin_order: default tool (alpha) before opt-in tool (delta)"
+else
+  fail "T_only_optin_order: opt-in not appended after default-ordered tools"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_only_unknown: --only=bogus exits 1 and prints available tools
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_unknown ---"
+only_unk_out="$(bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=bogus 2>&1)" && only_unk_exit=$? || only_unk_exit=$?
+if [[ $only_unk_exit -ne 0 ]]; then
+  if echo "$only_unk_out" | grep -qi "unknown\|bogus\|available\|--list"; then
+    pass "T_only_unknown: --only=bogus exits non-zero with helpful message"
+  else
+    fail "T_only_unknown: exits non-zero but message not helpful: $only_unk_out"
+  fi
+else
+  fail "T_only_unknown: --only=bogus exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_only_empty: --only= exits 1
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_empty ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only= 2>&1 | grep -q . || true && only_empty_exit=$? || only_empty_exit=$?
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--only=" >/dev/null 2>&1 && only_empty_exit=0 || only_empty_exit=$?
+if [[ $only_empty_exit -ne 0 ]]; then
+  pass "T_only_empty: --only= exits non-zero"
+else
+  fail "T_only_empty: --only= exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_only_blank_trailing: --only=alpha, exits 1
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_blank_trailing ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--only=alpha," >/dev/null 2>&1 && bt_exit=0 || bt_exit=$?
+if [[ $bt_exit -ne 0 ]]; then
+  pass "T_only_blank_trailing: --only=alpha, exits non-zero"
+else
+  fail "T_only_blank_trailing: --only=alpha, exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_only_blank_leading: --only=,alpha exits 1
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_blank_leading ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--only=,alpha" >/dev/null 2>&1 && bl_exit=0 || bl_exit=$?
+if [[ $bl_exit -ne 0 ]]; then
+  pass "T_only_blank_leading: --only=,alpha exits non-zero"
+else
+  fail "T_only_blank_leading: --only=,alpha exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_only_blank_consecutive: --only=alpha,,bravo exits 1
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_blank_consecutive ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--only=alpha,,bravo" >/dev/null 2>&1 && bc_exit=0 || bc_exit=$?
+if [[ $bc_exit -ne 0 ]]; then
+  pass "T_only_blank_consecutive: --only=alpha,,bravo exits non-zero"
+else
+  fail "T_only_blank_consecutive: --only=alpha,,bravo exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_only_copilot_alias: --list output includes copilot-cli (real tools dir)
+# This confirms the real DEFAULT_TOOLS/tools/ expose copilot-cli as selectable
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_only_copilot_alias ---"
+copilot_list="$(bash "$LINUX_SETUP" --list 2>&1)" && copilot_list_exit=$? || copilot_list_exit=$?
+if [[ $copilot_list_exit -eq 0 ]]; then
+  if assert_contains "$copilot_list" "copilot-cli"; then
+    pass "T_only_copilot_alias: --list includes copilot-cli in real tools dir"
+  else
+    fail "T_only_copilot_alias: --list missing copilot-cli (check tools/copilot-cli.sh)"
+    echo "  List output: $copilot_list"
+  fi
+else
+  fail "T_only_copilot_alias: --list exited $copilot_list_exit"
+fi
+
+# ---------------------------------------------------------------------------
+# T_root_only: root setup.sh --only=alpha --tools-dir=... installs only alpha
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_root_only ---"
+if [[ -f "$ROOT_SETUP" ]]; then
+  setup_harness
+  bash "$ROOT_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha 2>&1 | grep -q . || true
+  if assert_log_str "alpha"; then
+    pass "T_root_only: root setup.sh --only=alpha forwards and installs only alpha"
+  else
+    fail "T_root_only: root --only=alpha did not produce expected log"
+  fi
+  teardown_harness
+else
+  skip "T_root_only" "root setup.sh not found"
+fi
+
+# ---------------------------------------------------------------------------
+# T_backward_compat_gate: no-arg run still produces full defaults (WI-2 gate)
+# Redundant with T_baseline_noarg but documents the WI-2 non-regression contract.
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_backward_compat_gate ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" 2>&1 | grep -q . || true
+if assert_log_equals "${STUB_DIR}/defaults.txt"; then
+  pass "T_backward_compat_gate: no-arg run still logs all defaults in order"
+else
+  fail "T_backward_compat_gate: no-arg run changed (REGRESSION)"
+fi
+teardown_harness
 
 # ---------------------------------------------------------------------------
 # Results
