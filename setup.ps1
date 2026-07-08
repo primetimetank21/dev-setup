@@ -6,13 +6,14 @@
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File setup.ps1 [OPTIONS]
 #
-# WI-1 flags forwarded to scripts\windows\setup.ps1: -List, -Help, -ToolsDir
-# WI-2/WI-3 flags (-Only, -Skip) will be added when those work items ship.
+# Flags forwarded to scripts\windows\setup.ps1: -List, -Help, -Only, -Skip, -ToolsDir
 #
 # For Linux/macOS/WSL, use setup.sh instead.
 
 [CmdletBinding()]
 param(
+    [string]$Only    = '',
+    [string]$Skip    = '',
     [switch]$List,
     [switch]$Help,
     [string]$ToolsDir = ''
@@ -22,11 +23,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Build the forward hashtable at script scope so PSAnalyzer sees param usage.
-# (Only/Skip are WI-2/WI-3 -- not declared here yet.)
+# Use $PSBoundParameters.ContainsKey so an explicitly-passed empty string
+# ("-Only ''") is forwarded to the child and triggers the child's exit-1 guard,
+# not silently dropped (empty string is falsy; "if ($Only)" would skip it).
 $_fwdParams = @{}
-if ($List.IsPresent) { $_fwdParams['List']    = $true }
-if ($Help.IsPresent) { $_fwdParams['Help']    = $true }
-if ($ToolsDir)       { $_fwdParams['ToolsDir'] = $ToolsDir }
+if ($PSBoundParameters.ContainsKey('Only')) { $_fwdParams['Only']    = $Only }
+if ($PSBoundParameters.ContainsKey('Skip')) { $_fwdParams['Skip']    = $Skip }
+if ($List.IsPresent)                        { $_fwdParams['List']    = $true }
+if ($Help.IsPresent)                        { $_fwdParams['Help']    = $true }
+if ($ToolsDir)                              { $_fwdParams['ToolsDir'] = $ToolsDir }
 
 # -- Logging helpers -----------------------------------------------------------
 

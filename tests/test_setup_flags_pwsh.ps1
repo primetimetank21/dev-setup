@@ -1,7 +1,8 @@
-# tests/test_setup_flags_pwsh.ps1 -- WI-1 baseline + -List/-Help tests (#468)
+# tests/test_setup_flags_pwsh.ps1 -- WI-1 baseline + WI-2 -Only tests (#468)
 #
 # Tests the framework spine: $DefaultTools constant, -ToolsDir seam,
 # -List, -Help, root forwarding, baseline-diff.
+# WI-2: -Only selective install with ORDER PRESERVATION invariant.
 #
 # Usage: powershell -ExecutionPolicy Bypass -File tests\test_setup_flags_pwsh.ps1
 # PS 5.1 ASCII-only: no smart quotes, em-dashes, arrows, or emoji.
@@ -205,6 +206,225 @@ Test-Scenario "T_root_help: root setup.ps1 -Help exits 0" {
     if ($LASTEXITCODE -ne 0) {
         throw "Root setup.ps1 -Help exited $LASTEXITCODE (expected 0)"
     }
+}
+
+# ---------------------------------------------------------------------------
+# WI-2: -Only selective install
+# Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# ---------------------------------------------------------------------------
+
+function Assert-LogStr {
+    param([string[]]$Expected)
+    $actual = (Get-Content $script:RunLog -ErrorAction SilentlyContinue)
+    if ($null -eq $actual) { $actual = @() }
+    $diff = Compare-Object $Expected $actual -SyncWindow 0
+    if ($diff) {
+        $exp = $Expected -join ', '
+        $act = $actual   -join ', '
+        throw "Run-log mismatch. Expected: [$exp] Actual: [$act]"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_single: -Only 'alpha' installs only alpha
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_single: -Only 'alpha' logs only alpha" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Only 'alpha' 2>&1 | Out-Null
+        Assert-LogStr @('alpha')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_multi: -Only 'alpha,bravo' installs both in DEFAULT order
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_multi: -Only 'alpha,bravo' logs alpha then bravo (default order)" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Only 'alpha,bravo' 2>&1 | Out-Null
+        Assert-LogStr @('alpha', 'bravo')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_order_preserved: -Only 'bravo,alpha' (reversed input) must still
+# install alpha BEFORE bravo (DEFAULT_TOOLS order, not input order).
+# *** EXPECTED RED before WI-2 fix ***
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_order_preserved: reversed input yields default order (alpha then bravo)" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Only 'bravo,alpha' 2>&1 | Out-Null
+        Assert-LogStr @('alpha', 'bravo')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_optin: -Only 'delta' works (opt-in, not in defaults.txt)
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_optin: -Only 'delta' (opt-in tool) works" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Only 'delta' 2>&1 | Out-Null
+        Assert-LogStr @('delta')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_optin_order: -Only 'delta,alpha' -> alpha (default) first, delta
+# (opt-in) appended after. *** EXPECTED RED before WI-2 fix ***
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_optin_order: default tool (alpha) before opt-in (delta)" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Only 'delta,alpha' 2>&1 | Out-Null
+        Assert-LogStr @('alpha', 'delta')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_unknown: -Only 'bogus' exits 1 with helpful message
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_unknown: -Only 'bogus' exits non-zero with error" {
+    $out = powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Only 'bogus' 2>&1 | Out-String
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for unknown tool 'bogus'" }
+    if ($out -notmatch 'bogus|unknown|available') {
+        throw "Error message not helpful: $out"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_empty: -Only '' exits 1
+# Note: in nested subprocess mode the empty string may cause "Missing argument"
+# rather than propagating as a bound parameter. Both outcomes are valid failures.
+
+Test-Scenario "T_only_empty: -Only '' exits non-zero" {
+    $emptyFailed = $false
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Only '' 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { $emptyFailed = $true }
+    } catch {
+        # "Missing an argument for parameter 'Only'" also satisfies the requirement
+        $emptyFailed = $true
+    }
+    if (-not $emptyFailed) { throw "Expected non-zero exit for empty -Only" }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_blank_trailing: -Only 'alpha,' exits 1
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_blank_trailing: -Only 'alpha,' exits non-zero" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Only 'alpha,' 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for trailing comma" }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_blank_leading: -Only ',alpha' exits 1
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_blank_leading: -Only ',alpha' exits non-zero" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Only ',alpha' 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for leading comma" }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_blank_consecutive: -Only 'alpha,,bravo' exits 1
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_blank_consecutive: -Only 'alpha,,bravo' exits non-zero" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Only 'alpha,,bravo' 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for consecutive commas" }
+}
+
+# ---------------------------------------------------------------------------
+# T_only_copilot_alias: -List includes copilot-cli (real registry)
+# Confirms the copilot-cli alias is registered on Windows.
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_only_copilot_alias: -List includes copilot-cli (alias in real registry)" {
+    $out = powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup -List 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) { throw "-List exited $LASTEXITCODE" }
+    if ($out -notmatch 'copilot-cli') {
+        throw "-List does not include 'copilot-cli' (alias missing from ToolRegistry)"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_root_only: root setup.ps1 -Only 'alpha' -ToolsDir ... installs only alpha.
+# *** EXPECTED RED before WI-2 fix (root does not forward -Only yet) ***
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_root_only: root setup.ps1 -Only 'alpha' forwards and installs only alpha" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $RootSetup `
+            -ToolsDir $StubDir -Only 'alpha' 2>&1 | Out-Null
+        Assert-LogStr @('alpha')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_root_only_empty: root setup.ps1 -Only '' must forward the empty value to
+# the child and exit non-zero (not silently default to a full install).
+# Bug fixed: root used "if ($Only)" (falsy for '') instead of
+# $PSBoundParameters.ContainsKey('Only'), so '' was never forwarded.
+# Nested-subprocess tolerance: accept either clean exit-1 or "Missing argument"
+# binding error -- both are non-zero and indicate the empty-Only is rejected.
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_root_only_empty: root setup.ps1 -Only '' exits non-zero (not a full install)" {
+    $rootEmptyFailed = $false
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $RootSetup `
+            -ToolsDir $StubDir -Only '' 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { $rootEmptyFailed = $true }
+    } catch {
+        # "Missing an argument for parameter 'Only'" propagated from nested subprocess --
+        # also satisfies the non-zero-exit requirement.
+        $rootEmptyFailed = $true
+    }
+    if (-not $rootEmptyFailed) {
+        throw "Root setup.ps1 -Only '' exited 0 (ran full install instead of erroring)"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_backward_compat_gate: no-arg run still produces full defaults (WI-2 gate)
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_backward_compat_gate: no-arg run logs all defaults in order" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogEquals (Join-Path $StubDir 'defaults.txt')
+    }
+    finally { Teardown-Harness }
 }
 
 # ---------------------------------------------------------------------------

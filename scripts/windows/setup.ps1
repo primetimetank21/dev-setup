@@ -183,16 +183,26 @@ if ($Only -and $Skip) {
 $FinalTools = @()
 $Available  = Get-AvailableTool
 
-if ($Only) {
+if ($PSBoundParameters.ContainsKey('Only')) {
     $names = Split-ToolList -ToolList $Only
     foreach ($name in $names) {
         if ($Available -notcontains $name) {
             Write-Err "Unknown tool: $name"
             Write-Err "Available tools: $($Available -join ', ')"
+            Write-Err "Use -List to see all available tools."
             exit 1
         }
     }
-    $FinalTools = $names
+    # ORDER PRESERVATION: iterate DefaultTools, include those requested.
+    # Do NOT use input order -- dependencies require the default sequence.
+    foreach ($tool in $DefaultTools) {
+        if ($names -contains $tool) {
+            $FinalTools += $tool
+        }
+    }
+    # Opt-in tools (requested but NOT in DefaultTools): append alphabetically.
+    $optIn = @($names | Where-Object { $DefaultTools -notcontains $_ } | Sort-Object)
+    foreach ($t in $optIn) { $FinalTools += $t }
 
 } elseif ($Skip) {
     $names = Split-ToolList -ToolList $Skip
