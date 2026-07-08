@@ -2451,6 +2451,58 @@ Test-Scenario "HH-4: Missing npm guard uses Write-Warn + return (soft-fail, not 
 }
 
 # ---------------------------------------------------------------------------
+# Group II: nvm.ps1 space-free install root (Issue #492)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group II: nvm.ps1 space-free install root (Issue #492)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$nvmScriptII  = Join-Path $RepoRoot 'scripts\windows\tools\nvm.ps1'
+$nvmContentII = Get-Content $nvmScriptII -Raw
+
+Test-Scenario "II-1: nvm.ps1 install root is space-free (not derived from USERPROFILE)" {
+    # The root must NOT be built with Join-Path $env:USERPROFILE (spaced path on many machines).
+    # It must be a literal space-free path such as C:\nvm4w.
+    if ($nvmContentII -match "Join-Path\s+\`$env:USERPROFILE\s+'nvm'") {
+        throw "nvm.ps1 still uses Join-Path `$env:USERPROFILE 'nvm' -- install root may contain spaces"
+    }
+    $rootMatch = [regex]::Match($nvmContentII, "nvmHome\s*=\s*'([^']+)'")
+    if (-not $rootMatch.Success) {
+        throw "nvm.ps1 does not assign nvmHome as a literal string -- cannot verify it is space-free"
+    }
+    $root = $rootMatch.Groups[1].Value
+    if ($root -match ' ') {
+        throw "nvm.ps1 install root '$root' contains a space -- will break nvm use on nvm-windows 1.2.2"
+    }
+}
+
+Test-Scenario "II-2: nvm.ps1 nodejs symlink dir is space-free (not derived from USERPROFILE)" {
+    if ($nvmContentII -match "Join-Path\s+\`$env:USERPROFILE\s+'nodejs'") {
+        throw "nvm.ps1 still uses Join-Path `$env:USERPROFILE 'nodejs' -- symlink dir may contain spaces"
+    }
+    $symlinkMatch = [regex]::Match($nvmContentII, "nodeDir\s*=\s*'([^']+)'")
+    if (-not $symlinkMatch.Success) {
+        throw "nvm.ps1 does not assign nodeDir as a literal string -- cannot verify it is space-free"
+    }
+    $symlink = $symlinkMatch.Groups[1].Value
+    if ($symlink -match ' ') {
+        throw "nvm.ps1 nodejs symlink dir '$symlink' contains a space"
+    }
+}
+
+Test-Scenario "II-3: Install-NvmPortable settings.txt uses the same space-free root" {
+    # settings.txt root: line must reference the space-free nvmHome, not USERPROFILE.
+    if ($nvmContentII -match 'root:\s*\$env:USERPROFILE') {
+        throw "Install-NvmPortable settings.txt root references USERPROFILE -- may contain spaces"
+    }
+    # The here-string in Install-NvmPortable must reference the NvmHome parameter
+    if ($nvmContentII -notmatch 'root:\s*\$NvmHome') {
+        throw "Install-NvmPortable settings.txt does not use `$NvmHome for root line"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
