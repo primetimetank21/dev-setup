@@ -113,12 +113,12 @@ function Get-AvailableTools {
 }
 
 function Split-ToolList {
-    param([string]$Input)
-    if ([string]::IsNullOrEmpty($Input)) {
+    param([string]$ToolList)
+    if ([string]::IsNullOrEmpty($ToolList)) {
         Write-Err "Flag requires at least one tool name."
         exit 1
     }
-    $tools = $Input.Split(',')
+    $tools = $ToolList.Split(',')
     foreach ($t in $tools) {
         if ([string]::IsNullOrEmpty($t)) {
             Write-Err "Empty tool name in list (check commas)."
@@ -184,7 +184,7 @@ $FinalTools = @()
 $Available  = Get-AvailableTools
 
 if ($Only) {
-    $names = Split-ToolList -Input $Only
+    $names = Split-ToolList -ToolList $Only
     foreach ($name in $names) {
         if ($Available -notcontains $name) {
             Write-Err "Unknown tool: $name"
@@ -195,7 +195,7 @@ if ($Only) {
     $FinalTools = $names
 
 } elseif ($Skip) {
-    $names = Split-ToolList -Input $Skip
+    $names = Split-ToolList -ToolList $Skip
     foreach ($name in $names) {
         if ($Available -notcontains $name) {
             Write-Err "Unknown tool: $name"
