@@ -251,7 +251,10 @@ To bump a tool version, edit the version number in `.tool-versions` and re-run s
 
 **Dotfiles:** Edit or add templates in `config/dotfiles/`. Each file is copied into your home directory on first run. Existing files are not overwritten unless you pass `--force`.
 
-**Adding a tool:** Drop a new script in `scripts/linux/tools/` (or `scripts/windows/`) following the naming pattern of existing tools, then call it from `scripts/linux/setup.sh` (or the Windows equivalent). Scripts must be idempotent -- check whether the tool is already installed before doing anything.
+**Adding a tool:** Scripts must be idempotent -- check whether the tool is already installed before doing anything.
+
+- **Linux:** Drop `scripts/linux/tools/<name>.sh`. Add `"<name>"` to the `DEFAULT_TOOLS` array in `scripts/linux/setup.sh` at the desired position to include it in the default run. A script present in `tools/` but absent from `DEFAULT_TOOLS` is available (selectable later via `--only`) but not installed by default.
+- **Windows:** Drop `scripts/windows/tools/<name>.ps1` defining an `Install-<Name>` function. Register it in `$ToolRegistry` (`'<name>' = { Install-<Name> }`) and add `'<name>'` to `$DefaultTools`, both in `scripts/windows/setup.ps1`.
 
 ## CI Workflows
 
