@@ -2462,32 +2462,35 @@ $nvmScriptII  = Join-Path $RepoRoot 'scripts\windows\tools\nvm.ps1'
 $nvmContentII = Get-Content $nvmScriptII -Raw
 
 Test-Scenario "II-1: nvm.ps1 install root is space-free (not derived from USERPROFILE)" {
-    # The root must NOT be built with Join-Path $env:USERPROFILE (spaced path on many machines).
-    # It must be a literal space-free path such as C:\nvm4w.
-    if ($nvmContentII -match "Join-Path\s+\`$env:USERPROFILE\s+'nvm'") {
-        throw "nvm.ps1 still uses Join-Path `$env:USERPROFILE 'nvm' -- install root may contain spaces"
+    # Must NOT use Join-Path $env:USERPROFILE -- that path contains spaces on many machines.
+    if ($nvmContentII -match 'Join-Path\s+\$env:USERPROFILE\s+.nvm.') {
+        throw "nvm.ps1 still uses Join-Path env:USERPROFILE 'nvm' -- install root may contain spaces"
     }
-    $rootMatch = [regex]::Match($nvmContentII, "nvmHome\s*=\s*'([^']+)'")
-    if (-not $rootMatch.Success) {
-        throw "nvm.ps1 does not assign nvmHome as a literal string -- cannot verify it is space-free"
+    # Must use $env:SystemDrive as the drive source (guaranteed space-free bare drive letter).
+    if ($nvmContentII -notmatch 'Join-Path\s+\$env:SystemDrive') {
+        throw "nvm.ps1 does not derive nvmHome from env:SystemDrive -- install root may not be portable"
     }
-    $root = $rootMatch.Groups[1].Value
-    if ($root -match ' ') {
-        throw "nvm.ps1 install root '$root' contains a space -- will break nvm use on nvm-windows 1.2.2"
+    # Verify a representative resolved path (using this machine's SystemDrive) has no spaces.
+    $resolvedRoot = Join-Path $env:SystemDrive 'nvm4w'
+    if ($resolvedRoot -match ' ') {
+        throw "Resolved nvm root '$resolvedRoot' contains a space -- SystemDrive is '$($env:SystemDrive)'"
     }
 }
 
 Test-Scenario "II-2: nvm.ps1 nodejs symlink dir is space-free (not derived from USERPROFILE)" {
-    if ($nvmContentII -match "Join-Path\s+\`$env:USERPROFILE\s+'nodejs'") {
-        throw "nvm.ps1 still uses Join-Path `$env:USERPROFILE 'nodejs' -- symlink dir may contain spaces"
+    # Must NOT use Join-Path $env:USERPROFILE 'nodejs'.
+    if ($nvmContentII -match 'Join-Path\s+\$env:USERPROFILE\s+.nodejs.') {
+        throw "nvm.ps1 still uses Join-Path env:USERPROFILE 'nodejs' -- symlink dir may contain spaces"
     }
-    $symlinkMatch = [regex]::Match($nvmContentII, "nodeDir\s*=\s*'([^']+)'")
-    if (-not $symlinkMatch.Success) {
-        throw "nvm.ps1 does not assign nodeDir as a literal string -- cannot verify it is space-free"
+    # nodeDir must be derived from nvmHome (same drive, no separate USERPROFILE join).
+    if ($nvmContentII -notmatch 'nodeDir\s*=\s*Join-Path\s+\$nvmHome') {
+        throw "nvm.ps1 nodeDir is not derived from nvmHome -- the two roots may diverge"
     }
-    $symlink = $symlinkMatch.Groups[1].Value
-    if ($symlink -match ' ') {
-        throw "nvm.ps1 nodejs symlink dir '$symlink' contains a space"
+    # Verify representative resolved path has no spaces.
+    $resolvedRoot   = Join-Path $env:SystemDrive 'nvm4w'
+    $resolvedSymlink = Join-Path $resolvedRoot 'nodejs'
+    if ($resolvedSymlink -match ' ') {
+        throw "Resolved nodejs symlink dir '$resolvedSymlink' contains a space"
     }
 }
 

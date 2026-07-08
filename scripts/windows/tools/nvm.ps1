@@ -38,8 +38,8 @@ function Install-Nvm {
     # -- Install nvm-windows if missing ------------------------------------
     if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
         $nvmVersion = Get-ToolVersion -Name 'nvm-windows'
-        $nvmHome    = 'C:\nvm4w'
-        $nodeDir    = 'C:\nvm4w\nodejs'
+        $nvmHome    = Join-Path $env:SystemDrive 'nvm4w'
+        $nodeDir    = Join-Path $nvmHome 'nodejs'
 
         # If portable nvm is already extracted, just put it on PATH.
         if (Test-Path (Join-Path $nvmHome 'nvm.exe')) {
