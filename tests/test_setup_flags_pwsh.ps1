@@ -428,6 +428,185 @@ Test-Scenario "T_backward_compat_gate: no-arg run logs all defaults in order" {
 }
 
 # ---------------------------------------------------------------------------
+# WI-3: -Skip selective exclusion
+# Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# T_skip_single: -Skip 'bravo' excludes bravo, installs remaining in order
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_single: -Skip 'bravo' excludes bravo; remaining tools in order" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Skip 'bravo' 2>&1 | Out-Null
+        Assert-LogStr @('prereqs', 'alpha', 'charlie', 'dotfiles', 'git-hook')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_skip_multi: -Skip 'alpha,charlie' excludes both, remaining in default order
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_multi: -Skip 'alpha,charlie' excludes both; remaining in default order" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Skip 'alpha,charlie' 2>&1 | Out-Null
+        Assert-LogStr @('prereqs', 'bravo', 'dotfiles', 'git-hook')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_skip_unknown: -Skip 'bogus' exits 1 with helpful message
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_unknown: -Skip 'bogus' exits non-zero with error" {
+    $out = powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Skip 'bogus' 2>&1 | Out-String
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for unknown tool 'bogus'" }
+    if ($out -notmatch 'bogus|unknown|available') {
+        throw "Error message not helpful: $out"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_skip_empty: -Skip '' exits 1 (*** EXPECTED RED before WI-3 ContainsKey fix ***)
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_empty: -Skip '' exits non-zero" {
+    $skipEmptyFailed = $false
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Skip '' 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { $skipEmptyFailed = $true }
+    } catch {
+        $skipEmptyFailed = $true
+    }
+    if (-not $skipEmptyFailed) { throw "Expected non-zero exit for empty -Skip (RED until ContainsKey fix)" }
+}
+
+# ---------------------------------------------------------------------------
+# T_skip_conflict: -Only 'alpha' -Skip 'bravo' exits 1 (mutually exclusive)
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_conflict: -Only + -Skip exits non-zero (mutually exclusive)" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Only 'alpha' -Skip 'bravo' 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit when both -Only and -Skip are provided" }
+}
+
+# ---------------------------------------------------------------------------
+# T_skip_blank_trailing: -Skip 'alpha,' exits 1
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_blank_trailing: -Skip 'alpha,' exits non-zero" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Skip 'alpha,' 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for trailing comma in -Skip" }
+}
+
+# ---------------------------------------------------------------------------
+# T_skip_blank_leading: -Skip ',alpha' exits 1
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_blank_leading: -Skip ',alpha' exits non-zero" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Skip ',alpha' 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for leading comma in -Skip" }
+}
+
+# ---------------------------------------------------------------------------
+# T_skip_blank_consecutive: -Skip 'alpha,,bravo' exits 1
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_skip_blank_consecutive: -Skip 'alpha,,bravo' exits non-zero" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -ToolsDir $StubDir -Skip 'alpha,,bravo' 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Expected non-zero exit for consecutive commas in -Skip" }
+}
+
+# ---------------------------------------------------------------------------
+# T_list_plus_only: -List -Only 'alpha' exits 0 (-List takes precedence)
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_list_plus_only: -List wins over -Only (exits 0, list printed, no install)" {
+    Setup-Harness
+    try {
+        $out = powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -List -Only 'alpha' 2>&1 | Out-String
+        $ec = $LASTEXITCODE
+        if ($ec -ne 0) { throw "-List -Only exited $ec (expected 0)" }
+        if ($out -notmatch 'alpha') { throw "-List output does not contain 'alpha'" }
+        $content = Get-Content $script:RunLog -ErrorAction SilentlyContinue
+        if ($content) { throw "-List wrote to run-log (install occurred): $($content -join ', ')" }
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_list_plus_skip: -List -Skip 'alpha' exits 0 (-List takes precedence)
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_list_plus_skip: -List wins over -Skip (exits 0, list printed, no install)" {
+    Setup-Harness
+    try {
+        $out = powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -List -Skip 'alpha' 2>&1 | Out-String
+        $ec = $LASTEXITCODE
+        if ($ec -ne 0) { throw "-List -Skip exited $ec (expected 0)" }
+        if ($out -notmatch 'alpha') { throw "-List output does not contain 'alpha'" }
+        $content = Get-Content $script:RunLog -ErrorAction SilentlyContinue
+        if ($content) { throw "-List wrote to run-log (install occurred): $($content -join ', ')" }
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_no_selection_persistence: prior -Only run does NOT poison a later no-arg run
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_no_selection_persistence: no-arg run after -Only run installs full defaults" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Only 'alpha' 2>&1 | Out-Null
+    }
+    finally { Teardown-Harness }
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogEquals (Join-Path $StubDir 'defaults.txt')
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# T_git_hook_skip_path_safe: -Skip 'git-hook' succeeds; git-hook not in run-log
+# ---------------------------------------------------------------------------
+
+Test-Scenario "T_git_hook_skip_path_safe: -Skip 'git-hook' succeeds; git-hook excluded from run" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir -Skip 'git-hook' 2>&1 | Out-Null
+        $logContent = Get-Content $script:RunLog -ErrorAction SilentlyContinue
+        if ($logContent -contains 'git-hook') {
+            throw "git-hook appeared in run-log despite being skipped"
+        }
+        if ($logContent -notcontains 'prereqs') {
+            throw "Expected other tools to run; run-log: $($logContent -join ', ')"
+        }
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 
