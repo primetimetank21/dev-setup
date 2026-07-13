@@ -97,6 +97,13 @@ jobs:
             echo "All Linux assertions passed"
           '
 
+      # -- Flag smoke tests --
+      - name: Flag smoke - --list (Linux)
+        run: bash setup.sh --list
+
+      - name: Flag smoke - --only (Linux)
+        run: bash setup.sh --only=zsh
+
       # -- Step 3: Idempotency --
       - name: Idempotency (second run)
         run: |
@@ -237,6 +244,13 @@ jobs:
 
             echo "All macOS assertions passed"
           '
+
+      # -- Flag smoke tests --
+      - name: Flag smoke - --list (macOS)
+        run: bash setup.sh --list
+
+      - name: Flag smoke - --only (macOS)
+        run: bash setup.sh --only=zsh
 
       # -- Step 3: Idempotency --
       - name: Idempotency (second run)
@@ -392,6 +406,13 @@ jobs:
             }
             Write-Host "`nAll Windows assertions passed"
           }
+
+      # -- Flag smoke tests --
+      - name: Flag smoke - -List (Windows)
+        run: .\setup.ps1 -List
+
+      - name: Flag smoke - -Only (Windows)
+        run: .\setup.ps1 -Only 'vim'
 
       # -- Step 3: Idempotency --
       - name: Idempotency (second run)

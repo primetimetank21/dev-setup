@@ -100,6 +100,12 @@ jobs:
       - name: Run tool version tests
         run: bash tests/test_tool_versions.sh
 
+      - name: Flag test - --list (Linux)
+        run: bash setup.sh --list
+
+      - name: Flag test - --only (Linux)
+        run: bash setup.sh --only=zsh
+
   validate-macos:
     name: Validate macOS Setup
     runs-on: macos-latest
@@ -194,6 +200,9 @@ jobs:
       - name: Run pre-commit hygiene tests
         run: bash tests/test_precommit_hygiene.sh
 
+      - name: Flag smoke - --list (macOS)
+        run: bash setup.sh --list
+
   lint-shell-scripts:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
@@ -263,6 +272,9 @@ jobs:
 
       - name: Run sprint-end labels tests
         run: pwsh tests/test_sprint_end_labels.ps1
+
+      - name: Flag test - -List (PowerShell)
+        run: .\setup.ps1 -List
 
   validate-ps51:
     name: Validate PowerShell 5.1 Compatibility
@@ -352,3 +364,9 @@ jobs:
         shell: powershell
         run: |
           powershell -ExecutionPolicy Bypass -File tests\test_sprint_end_labels_pwsh.ps1
+
+      - name: Flag test - -List (PS 5.1)
+        shell: powershell
+        run: |
+          .\setup.ps1 -List
+          Write-Host "Flag -List OK (PS 5.1)"

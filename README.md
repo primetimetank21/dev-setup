@@ -51,6 +51,71 @@ powershell -ExecutionPolicy Bypass -File setup.ps1
 
 No action needed. Setup runs automatically on container creation via the `postCreateCommand` hook.
 
+## Selective Install
+
+By default, `setup.sh` / `setup.ps1` installs all tools in the defined order. Use flags to control
+which tools run without editing the scripts.
+
+### Available Flags
+
+| Flag | Linux / macOS / WSL | Windows |
+|------|---------------------|---------|
+| List available tools, exit (no install) | `--list` | `-List` |
+| Print usage, exit | `--help` | `-Help` |
+| Install only the named tools | `--only=a,b,c` | `-Only 'a,b,c'` |
+| Install all defaults except named tools | `--skip=a,b,c` | `-Skip 'a,b,c'` |
+
+### Linux / macOS / WSL Examples
+
+```bash
+# List all selectable tool names
+./setup.sh --list
+
+# Print usage
+./setup.sh --help
+
+# Install only zsh and uv
+./setup.sh --only=zsh,uv
+
+# Install everything except auth and copilot-cli
+./setup.sh --skip=auth,copilot-cli
+```
+
+### Windows Examples
+
+```powershell
+# List all selectable tool names
+.\setup.ps1 -List
+
+# Print usage
+.\setup.ps1 -Help
+
+# Install only vim and gh
+.\setup.ps1 -Only 'vim,gh'
+
+# Install everything except auth and copilot-cli
+.\setup.ps1 -Skip 'auth,copilot-cli'
+```
+
+### Caveats
+
+**`--only` / `-Only` does not auto-include prerequisites.** Selecting `--only=nvm` installs
+only nvm -- its prerequisite tools (`prereqs`, `zsh`, `uv`) are not pulled in automatically.
+If a tool depends on earlier steps, list all required tools explicitly:
+
+```bash
+# Correct: include prereqs before nvm
+./setup.sh --only=prereqs,uv,nvm
+```
+
+**`--only` and `--skip` are mutually exclusive.** Combining both flags exits with an error.
+
+**`--list` takes precedence.** If `--list` is passed alongside `--only` or `--skip`, the tool
+list is printed and setup exits without installing anything.
+
+Tool names are validated against the available list. An unknown name exits with an error and
+prints the available tools. Use `--list` / `-List` to see valid names before running.
+
 ## Post-Setup Steps
 
 After running setup, complete these steps to activate your tools:
