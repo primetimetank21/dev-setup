@@ -47,6 +47,7 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\tools\auth.ps1"
 . "$PSScriptRoot\tools\git-hook.ps1"
 . "$PSScriptRoot\tools\delta.ps1"
+. "$PSScriptRoot\tools\lazygit.ps1"
 
 # ---------------------------------------------------------------------------
 # $DefaultTools -- single ordered source of truth for a no-arg default run.
@@ -87,6 +88,7 @@ $ToolRegistry = [ordered]@{
     'profile'      = { Write-PowerShellProfile }
     'git-hook'     = { Install-GitHook }
     'delta'        = { Install-Delta }
+    'lazygit'      = { Install-Lazygit }
 }
 
 # ---------------------------------------------------------------------------
