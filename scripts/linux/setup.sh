@@ -53,11 +53,12 @@ ARG_LIST=0
 ARG_HELP=0
 ARG_TOOLS_DIR=""  # hidden test seam
 ARG_ONLY_SET=0    # tracks whether --only was explicitly provided
+ARG_SKIP_SET=0    # tracks whether --skip was explicitly provided
 
 for arg in "$@"; do
   case "$arg" in
     --only=*)   ARG_ONLY="${arg#--only=}"; ARG_ONLY_SET=1 ;;
-    --skip=*)   ARG_SKIP="${arg#--skip=}" ;;
+    --skip=*)   ARG_SKIP="${arg#--skip=}"; ARG_SKIP_SET=1 ;;
     --list)     ARG_LIST=1 ;;
     --help)     ARG_HELP=1 ;;
     --tools-dir=*) ARG_TOOLS_DIR="${arg#--tools-dir=}" ;;
@@ -160,12 +161,12 @@ fi
 # ---------------------------------------------------------------------------
 # Mutual exclusion
 # ---------------------------------------------------------------------------
-if [[ -n "$ARG_ONLY" && -n "$ARG_SKIP" ]]; then
+if [[ $ARG_ONLY_SET -eq 1 && $ARG_SKIP_SET -eq 1 ]]; then
   log_error "--only and --skip are mutually exclusive."
   exit 1
 fi
 
-# (Note: ARG_ONLY_SET handles --only= with empty value; build_final_toolset validates.)
+# (Note: ARG_ONLY_SET / ARG_SKIP_SET handle empty-value sentinels; build_final_toolset validates.)
 
 # ---------------------------------------------------------------------------
 # Build FinalToolSet -- populates global FINAL_TOOLS (bash 3.2 safe: no
@@ -231,7 +232,7 @@ build_final_toolset() {
       FINAL_TOOLS+=("${_sorted_optin[@]}")
     fi
 
-  elif [[ -n "$ARG_SKIP" ]]; then
+  elif [[ $ARG_SKIP_SET -eq 1 ]]; then
     validate_csv_shape "$ARG_SKIP"
     local skip_list=()
     IFS=',' read -ra skip_list <<< "$ARG_SKIP"

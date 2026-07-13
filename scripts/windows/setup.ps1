@@ -172,7 +172,7 @@ if ($List) {
 # ---------------------------------------------------------------------------
 # Mutual exclusion
 # ---------------------------------------------------------------------------
-if ($Only -and $Skip) {
+if ($PSBoundParameters.ContainsKey('Only') -and $PSBoundParameters.ContainsKey('Skip')) {
     Write-Err "-Only and -Skip are mutually exclusive."
     exit 1
 }
@@ -204,7 +204,7 @@ if ($PSBoundParameters.ContainsKey('Only')) {
     $optIn = @($names | Where-Object { $DefaultTools -notcontains $_ } | Sort-Object)
     foreach ($t in $optIn) { $FinalTools += $t }
 
-} elseif ($Skip) {
+} elseif ($PSBoundParameters.ContainsKey('Skip')) {
     $names = Split-ToolList -ToolList $Skip
     foreach ($name in $names) {
         if ($Available -notcontains $name) {

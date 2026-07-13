@@ -408,6 +408,180 @@ fi
 teardown_harness
 
 # ---------------------------------------------------------------------------
+# WI-3: --skip selective exclusion
+# Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# T_skip_single: --skip=bravo excludes bravo, installs remaining in order
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_single ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=bravo 2>&1 | grep -q . || true
+if assert_log_str "$(printf 'prereqs\nalpha\ncharlie\ndotfiles\ngit-hook')"; then
+  pass "T_skip_single: --skip=bravo excludes bravo; remaining tools installed in order"
+else
+  fail "T_skip_single: unexpected run-log"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_skip_multi: --skip=alpha,charlie excludes both, rest in default order
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_multi ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=alpha,charlie 2>&1 | grep -q . || true
+if assert_log_str "$(printf 'prereqs\nbravo\ndotfiles\ngit-hook')"; then
+  pass "T_skip_multi: --skip=alpha,charlie excludes both; order preserved"
+else
+  fail "T_skip_multi: unexpected run-log"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_skip_unknown: --skip=bogus exits 1 with helpful message
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_unknown ---"
+skip_unk_out="$(bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=bogus 2>&1)" && skip_unk_exit=$? || skip_unk_exit=$?
+if [[ $skip_unk_exit -ne 0 ]]; then
+  if echo "$skip_unk_out" | grep -qi "unknown\|bogus\|available\|--list"; then
+    pass "T_skip_unknown: --skip=bogus exits non-zero with helpful message"
+  else
+    fail "T_skip_unknown: exits non-zero but message not helpful: $skip_unk_out"
+  fi
+else
+  fail "T_skip_unknown: --skip=bogus exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_skip_empty: --skip= exits 1 (*** EXPECTED RED before WI-3 ARG_SKIP_SET fix ***)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_empty ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--skip=" >/dev/null 2>&1 && skip_empty_exit=0 || skip_empty_exit=$?
+if [[ $skip_empty_exit -ne 0 ]]; then
+  pass "T_skip_empty: --skip= exits non-zero"
+else
+  fail "T_skip_empty: --skip= exited 0 (expected non-zero) *** RED until ARG_SKIP_SET fix ***"
+fi
+
+# ---------------------------------------------------------------------------
+# T_skip_conflict: --only=alpha --skip=bravo exits 1 (mutually exclusive)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_conflict ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha --skip=bravo >/dev/null 2>&1 && skip_conflict_exit=0 || skip_conflict_exit=$?
+if [[ $skip_conflict_exit -ne 0 ]]; then
+  pass "T_skip_conflict: --only + --skip exits non-zero (mutually exclusive)"
+else
+  fail "T_skip_conflict: --only + --skip exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_skip_blank_trailing: --skip=alpha, exits 1
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_blank_trailing ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--skip=alpha," >/dev/null 2>&1 && sbt_exit=0 || sbt_exit=$?
+if [[ $sbt_exit -ne 0 ]]; then
+  pass "T_skip_blank_trailing: --skip=alpha, exits non-zero"
+else
+  fail "T_skip_blank_trailing: --skip=alpha, exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_skip_blank_leading: --skip=,alpha exits 1
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_blank_leading ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--skip=,alpha" >/dev/null 2>&1 && sbl_exit=0 || sbl_exit=$?
+if [[ $sbl_exit -ne 0 ]]; then
+  pass "T_skip_blank_leading: --skip=,alpha exits non-zero"
+else
+  fail "T_skip_blank_leading: --skip=,alpha exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_skip_blank_consecutive: --skip=alpha,,bravo exits 1
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_skip_blank_consecutive ---"
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" "--skip=alpha,,bravo" >/dev/null 2>&1 && sbc_exit=0 || sbc_exit=$?
+if [[ $sbc_exit -ne 0 ]]; then
+  pass "T_skip_blank_consecutive: --skip=alpha,,bravo exits non-zero"
+else
+  fail "T_skip_blank_consecutive: --skip=alpha,,bravo exited 0 (expected non-zero)"
+fi
+
+# ---------------------------------------------------------------------------
+# T_list_plus_only: --list --only=alpha exits 0 (--list takes precedence)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_list_plus_only ---"
+setup_harness
+lpo_out="$(bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --list --only=alpha 2>&1)" && lpo_exit=$? || lpo_exit=$?
+if [[ $lpo_exit -eq 0 ]] && assert_contains "$lpo_out" "alpha" && [[ ! -s "$RUN_LOG" ]]; then
+  pass "T_list_plus_only: --list wins over --only (exits 0, list printed, no install)"
+else
+  fail "T_list_plus_only: --list did not win over --only (exit=$lpo_exit)"
+  echo "  Output: $lpo_out"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_list_plus_skip: --list --skip=alpha exits 0 (--list takes precedence)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_list_plus_skip ---"
+setup_harness
+lps_out="$(bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --list --skip=alpha 2>&1)" && lps_exit=$? || lps_exit=$?
+if [[ $lps_exit -eq 0 ]] && assert_contains "$lps_out" "alpha" && [[ ! -s "$RUN_LOG" ]]; then
+  pass "T_list_plus_skip: --list wins over --skip (exits 0, list printed, no install)"
+else
+  fail "T_list_plus_skip: --list did not win over --skip (exit=$lps_exit)"
+  echo "  Output: $lps_out"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_no_selection_persistence: prior --only run does NOT poison a later no-arg run
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_no_selection_persistence ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha 2>&1 | grep -q . || true
+teardown_harness
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" 2>&1 | grep -q . || true
+if assert_log_equals "${STUB_DIR}/defaults.txt"; then
+  pass "T_no_selection_persistence: no-arg run after --only run installs full defaults"
+else
+  fail "T_no_selection_persistence: no-arg run after --only run did not produce full defaults"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# T_git_hook_skip_path_safe: --skip=git-hook succeeds; git-hook not in run-log
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_git_hook_skip_path_safe ---"
+setup_harness
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=git-hook 2>&1 | grep -q . || true
+hook_log="$(cat "$RUN_LOG" 2>/dev/null || true)"
+if echo "$hook_log" | grep -qF "git-hook"; then
+  fail "T_git_hook_skip_path_safe: git-hook appeared in run-log despite being skipped"
+elif assert_contains "$hook_log" "prereqs"; then
+  pass "T_git_hook_skip_path_safe: --skip=git-hook succeeds; git-hook excluded from run"
+else
+  fail "T_git_hook_skip_path_safe: unexpected run-log: $hook_log"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 echo ""
