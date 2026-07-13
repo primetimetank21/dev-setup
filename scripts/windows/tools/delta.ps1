@@ -15,7 +15,10 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\..\lib\path.ps1"
 . "$PSScriptRoot\..\..\lib\Read-ToolVersion.ps1"
 
-function Invoke-DeltaGitConfig {
+function Set-DeltaGitConfig {
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+    if (-not $PSCmdlet.ShouldProcess('global git config', 'Set delta pager settings')) { return }
     Write-Info "Applying global git config for delta..."
     git config --global core.pager delta
     git config --global interactive.diffFilter 'delta --color-only'
@@ -39,7 +42,7 @@ function Install-Delta {
 
     if ($InstalledVersion -eq $DeltaVersion) {
         Write-Ok "git-delta already at pinned version $DeltaVersion"
-        Invoke-DeltaGitConfig
+        Set-DeltaGitConfig
         return
     }
 
@@ -66,5 +69,5 @@ function Install-Delta {
         throw "git-delta install failed: no supported package manager found"
     }
 
-    Invoke-DeltaGitConfig
+    Set-DeltaGitConfig
 }

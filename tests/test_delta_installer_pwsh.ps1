@@ -94,7 +94,7 @@ Test-Scenario "T_delta_gitconfig_iso: core.pager=delta written to isolated confi
         # Dot-source delta.ps1 to load Set-DeltaGitConfig (and Install-Delta)
         # Install-Delta is defined but not called here.
         . $DeltaPs1
-        Invoke-DeltaGitConfig
+        Set-DeltaGitConfig
         $pager = git config --global --get core.pager
         if ($pager -ne 'delta') {
             throw "core.pager expected 'delta', got '$pager'"
@@ -123,8 +123,8 @@ Test-Scenario "T_delta_gitconfig_idem: Set-DeltaGitConfig is idempotent (safe to
     try {
         $env:GIT_CONFIG_GLOBAL = $isolatedConfig
         . $DeltaPs1
-        Invoke-DeltaGitConfig  # first run
-        Invoke-DeltaGitConfig  # second run -- must not error
+        Set-DeltaGitConfig  # first run
+        Set-DeltaGitConfig  # second run -- must not error
         $dark = git config --global --get delta.dark
         if ($dark -ne 'true') {
             throw "delta.dark expected 'true' after double-run, got '$dark'"
