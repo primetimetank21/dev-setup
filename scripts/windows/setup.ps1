@@ -10,10 +10,14 @@
 #   -Help           Print usage, exit 0.
 #   -Only "a,b,c"   Install ONLY the listed tools (comma-separated).
 #   -Skip "a,b,c"   Install all default tools EXCEPT the listed ones.
+#   -Interactive     Show the tool picker when a console is available.
+#   -NonInteractive  Never show the tool picker.
 #   -Only and -Skip are mutually exclusive.
 #
 # Hidden test seam (not in -Help):
 #   -ToolsDir <path>   Override the tools directory (test use only).
+#   -SelectionFile <path>
+#                      Read selected tools from a file (test use only).
 #
 # PS 5.1 ASCII-only: no smart quotes, em-dashes, or non-ASCII characters.
 
@@ -23,7 +27,10 @@ param(
     [string]$Skip    = '',
     [switch]$List,
     [switch]$Help,
-    [string]$ToolsDir = ''
+    [switch]$Interactive,
+    [switch]$NonInteractive,
+    [string]$ToolsDir = '',
+    [string]$SelectionFile = ''
 )
 
 Set-StrictMode -Version Latest
@@ -153,6 +160,8 @@ function Show-Help {
     Write-Output "  -Help           Print this help message, exit 0."
     Write-Output "  -Only 'a,b,c'  Install ONLY the listed tools (comma-separated)."
     Write-Output "  -Skip 'a,b,c'  Install all default tools EXCEPT the listed ones."
+    Write-Output "  -Interactive    Show the tool picker when a console is available."
+    Write-Output "  -NonInteractive Never show the tool picker."
     Write-Output ""
     Write-Output "Notes:"
     Write-Output "  -Only and -Skip are mutually exclusive."
@@ -181,14 +190,77 @@ if ($PSBoundParameters.ContainsKey('Only') -and $PSBoundParameters.ContainsKey('
     exit 1
 }
 
+if ($Interactive -and $NonInteractive) {
+    Write-Err "-Interactive and -NonInteractive are mutually exclusive."
+    exit 1
+}
+
+if ($NonInteractive -and $PSBoundParameters.ContainsKey('SelectionFile')) {
+    Write-Err "-NonInteractive and -SelectionFile are mutually exclusive."
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Interactive guard. Slice 1 only detects whether a future menu may run.
+# No menu is invoked until Slice 3.
+# ---------------------------------------------------------------------------
+function Test-ShouldShowMenu {
+    param(
+        [bool]$NonInteractiveRequested,
+        [bool]$OnlySet,
+        [bool]$SkipSet,
+        [bool]$InteractiveRequested,
+        [bool]$SelectionFileSet
+    )
+    if ($NonInteractiveRequested -or $OnlySet -or $SkipSet) { return $false }
+    # -Interactive + -SelectionFile: bypass CI/TTY detection so CI can test the menu path.
+    if ($InteractiveRequested -and $SelectionFileSet) { return $true }
+    if ($env:SETUP_NON_INTERACTIVE -eq '1' -or $env:CI -or $env:GITHUB_ACTIONS) { return $false }
+    if ([Console]::IsInputRedirected -or -not [Environment]::UserInteractive) { return $false }
+    if ($null -eq $Host.UI.RawUI) { return $false }
+    return $true
+}
+
+# ponytail: detection-only ceiling for Slice 1; Slice 3 wires the PowerShell menu here.
+$null = Test-ShouldShowMenu `
+    -NonInteractiveRequested $NonInteractive.IsPresent `
+    -OnlySet ($PSBoundParameters.ContainsKey('Only')) `
+    -SkipSet ($PSBoundParameters.ContainsKey('Skip')) `
+    -InteractiveRequested $Interactive.IsPresent `
+    -SelectionFileSet ($PSBoundParameters.ContainsKey('SelectionFile'))
+
 # ---------------------------------------------------------------------------
 # Build FinalToolSet
 # ---------------------------------------------------------------------------
 $FinalTools = @()
 $Available  = Get-AvailableTool
+$UseSelectionFile = $PSBoundParameters.ContainsKey('SelectionFile') -and
+    -not $PSBoundParameters.ContainsKey('Only') -and
+    -not $PSBoundParameters.ContainsKey('Skip')
 
-if ($PSBoundParameters.ContainsKey('Only')) {
-    $names = Split-ToolList -ToolList $Only
+# Selection-file: validate, join names, route through the canonical -Only path.
+$EffectiveOnly = ''
+$UseOnlyPath = $false
+
+if ($UseSelectionFile) {
+    if ([string]::IsNullOrEmpty($SelectionFile) -or -not (Test-Path -LiteralPath $SelectionFile -PathType Leaf)) {
+        Write-Err "Selection file not found: $SelectionFile"
+        exit 1
+    }
+    $fileNames = @(Get-Content -LiteralPath $SelectionFile | Where-Object { $_ -ne '' })
+    if ($fileNames.Count -eq 0) {
+        Write-Err "Flag requires at least one tool name."
+        exit 1
+    }
+    $EffectiveOnly = $fileNames -join ','
+    $UseOnlyPath = $true
+} elseif ($PSBoundParameters.ContainsKey('Only')) {
+    $EffectiveOnly = $Only
+    $UseOnlyPath = $true
+}
+
+if ($UseOnlyPath) {
+    $names = Split-ToolList -ToolList $EffectiveOnly
     foreach ($name in $names) {
         if ($Available -notcontains $name) {
             Write-Err "Unknown tool: $name"

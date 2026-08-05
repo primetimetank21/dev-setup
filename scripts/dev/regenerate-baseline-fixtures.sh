@@ -19,6 +19,10 @@ LINUX_FIXTURE="${REPO_ROOT}/tests/fixtures/baseline-tools-linux.txt"
 WIN_FIXTURE="${REPO_ROOT}/tests/fixtures/baseline-tools-windows.txt"
 LINUX_SETUP="${REPO_ROOT}/scripts/linux/setup.sh"
 WIN_SETUP="${REPO_ROOT}/scripts/windows/setup.ps1"
+WIN_SETUP_PS="$WIN_SETUP"
+if command -v cygpath >/dev/null 2>&1; then
+  WIN_SETUP_PS="$(cygpath -w "$WIN_SETUP")"
+fi
 
 # Extract Linux DEFAULT_TOOLS from source (bash array literal)
 extract_linux() {
@@ -29,24 +33,24 @@ extract_linux() {
 extract_windows() {
   if command -v pwsh >/dev/null 2>&1; then
     pwsh -NoProfile -Command "
-      \$content = Get-Content '$WIN_SETUP' -Raw
+      \$content = Get-Content '$WIN_SETUP_PS' -Raw
       if (\$content -match '(?s)\\\$DefaultTools\s*=\s*@\((.*?)\)') {
         \$block = \$Matches[1]
         \$block.Split([char[]]@([char]13,[char]10)) |
           ForEach-Object { \$_.Trim().Trim(\"'\").Trim('\"') } |
           Where-Object { \$_ -and \$_ -notmatch '^#' }
       }
-    "
+    " | tr -d '\r'
   elif command -v powershell >/dev/null 2>&1; then
     powershell -NoProfile -Command "
-      \$content = Get-Content '$WIN_SETUP' -Raw
+      \$content = Get-Content '$WIN_SETUP_PS' -Raw
       if (\$content -match '(?s)\\\$DefaultTools\s*=\s*@\((.*?)\)') {
         \$block = \$Matches[1]
         \$block.Split([char[]]@([char]13,[char]10)) |
           ForEach-Object { \$_.Trim().Trim(\"'\").Trim('\"') } |
           Where-Object { \$_ -and \$_ -notmatch '^#' }
       }
-    "
+    " | tr -d '\r'
   else
     echo "ERROR: pwsh/powershell not found -- cannot extract Windows defaults" >&2
     exit 1

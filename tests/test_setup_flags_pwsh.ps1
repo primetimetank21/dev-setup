@@ -1,8 +1,9 @@
-# tests/test_setup_flags_pwsh.ps1 -- WI-1 baseline + WI-2 -Only tests (#468)
+# tests/test_setup_flags_pwsh.ps1 -- setup flag tests (#468, #495)
 #
 # Tests the framework spine: $DefaultTools constant, -ToolsDir seam,
 # -List, -Help, root forwarding, baseline-diff.
 # WI-2: -Only selective install with ORDER PRESERVATION invariant.
+# #495 Slice 1: interactive mode guards and backward-compat drift gates.
 #
 # Usage: powershell -ExecutionPolicy Bypass -File tests\test_setup_flags_pwsh.ps1
 # PS 5.1 ASCII-only: no smart quotes, em-dashes, arrows, or emoji.
@@ -16,6 +17,7 @@ $RepoRoot  = Split-Path $PSScriptRoot -Parent
 $WinSetup  = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
 $RootSetup = Join-Path $RepoRoot 'setup.ps1'
 $StubDir   = Join-Path $RepoRoot 'tests\fixtures\stub-tools\windows'
+$SelectionFile = Join-Path $StubDir 'selection.txt'
 $BaselineFixture = Join-Path $RepoRoot 'tests\fixtures\baseline-tools-windows.txt'
 
 # ---------------------------------------------------------------------------
@@ -602,6 +604,166 @@ Test-Scenario "T_git_hook_skip_path_safe: -Skip 'git-hook' succeeds; git-hook ex
         if ($logContent -notcontains 'prereqs') {
             throw "Expected other tools to run; run-log: $($logContent -join ', ')"
         }
+    }
+    finally { Teardown-Harness }
+}
+
+# ---------------------------------------------------------------------------
+# #495 Slice 1: interactive guard + backward-compat drift gates
+# ---------------------------------------------------------------------------
+
+$tokens = $null
+$parseErrors = $null
+$setupAst = [System.Management.Automation.Language.Parser]::ParseFile(
+    $WinSetup,
+    [ref]$tokens,
+    [ref]$parseErrors
+)
+$menuGuardAst = $setupAst.Find({
+    param($node)
+    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -eq 'Test-ShouldShowMenu'
+}, $true)
+if ($null -eq $menuGuardAst) {
+    throw "Test-ShouldShowMenu function not found"
+}
+. ([scriptblock]::Create($menuGuardAst.Extent.Text))
+
+Test-Scenario "T_menu_ci_skip_ps: CI suppresses interactive mode" {
+    $oldCi = $env:CI
+    try {
+        $env:CI = 'true'
+        if (Test-ShouldShowMenu -NonInteractiveRequested $false -OnlySet $false -SkipSet $false) {
+            throw "CI was treated as interactive"
+        }
+    }
+    finally { $env:CI = $oldCi }
+}
+
+Test-Scenario "T_menu_non_interactive_flag_ps: explicit flag suppresses interactive mode" {
+    if (Test-ShouldShowMenu -NonInteractiveRequested $true -OnlySet $false -SkipSet $false) {
+        throw "-NonInteractive was treated as interactive"
+    }
+}
+
+Test-Scenario "T_menu_only_suppresses_guard_ps: -Only suppresses interactive mode" {
+    if (Test-ShouldShowMenu -NonInteractiveRequested $false -OnlySet $true -SkipSet $false) {
+        throw "-Only was treated as interactive"
+    }
+}
+
+Test-Scenario "T_menu_selection_file_ci_bypass_ps: -Interactive + -SelectionFile is interactive under CI" {
+    $oldCi = $env:CI
+    try {
+        $env:CI = 'true'
+        $result = Test-ShouldShowMenu `
+            -NonInteractiveRequested $false `
+            -OnlySet $false `
+            -SkipSet $false `
+            -InteractiveRequested $true `
+            -SelectionFileSet $true
+        if (-not $result) {
+            throw "-Interactive + -SelectionFile was not treated as interactive under CI"
+        }
+    }
+    finally { $env:CI = $oldCi }
+}
+
+Test-Scenario "T_noarg_noninteractive_compat_ps: CI no-arg run matches defaults" {
+    Setup-Harness
+    $oldCi = $env:CI
+    try {
+        $env:CI = 'true'
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogEquals (Join-Path $StubDir 'defaults.txt')
+    }
+    finally {
+        $env:CI = $oldCi
+        Teardown-Harness
+    }
+}
+
+Test-Scenario "T_noninteractive_flag_compat_ps: -NonInteractive run matches defaults" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -NonInteractive -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogEquals (Join-Path $StubDir 'defaults.txt')
+    }
+    finally { Teardown-Harness }
+}
+
+Test-Scenario "T_noninteractive_env_var_compat_ps: env-guarded run matches defaults" {
+    Setup-Harness
+    $oldNonInteractive = $env:SETUP_NON_INTERACTIVE
+    try {
+        $env:SETUP_NON_INTERACTIVE = '1'
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogEquals (Join-Path $StubDir 'defaults.txt')
+    }
+    finally {
+        $env:SETUP_NON_INTERACTIVE = $oldNonInteractive
+        Teardown-Harness
+    }
+}
+
+Test-Scenario "T_menu_mutual_exclusion_ps: interactive flags conflict" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -Interactive -NonInteractive 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Conflicting interactive flags exited 0" }
+}
+
+Test-Scenario "T_menu_help_flags_and_no_seam_ps: public flags shown; hidden seams absent" {
+    $out = powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup -Help 2>&1 | Out-String
+    if ($out -notmatch '-Interactive') { throw "-Help omits -Interactive" }
+    if ($out -notmatch '-NonInteractive') { throw "-Help omits -NonInteractive" }
+    if ($out -match 'SelectionFile|ToolsDir') { throw "-Help exposes hidden test seam" }
+}
+
+Test-Scenario "T_selection_file_passthrough_ps: selection file resolves in canonical order" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -Interactive -SelectionFile $SelectionFile -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogStr @('alpha', 'delta')
+    }
+    finally { Teardown-Harness }
+}
+
+Test-Scenario "T_selection_file_noninteractive_conflict_ps: non-interactive rejects seam" {
+    powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+        -NonInteractive -SelectionFile $SelectionFile 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { throw "Invalid seam combination exited 0" }
+}
+
+Test-Scenario "T_menu_only_suppresses_menu_ps: explicit selection wins" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -Interactive -Only 'alpha' -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogStr @('alpha')
+    }
+    finally { Teardown-Harness }
+}
+
+Test-Scenario "T_root_interactive_passthrough_ps: root forwards interactive selection flags" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $RootSetup `
+            -Interactive -SelectionFile $SelectionFile -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogStr @('alpha', 'delta')
+    }
+    finally { Teardown-Harness }
+}
+
+Test-Scenario "T_root_noninteractive_passthrough_ps: root forwards non-interactive flag" {
+    Setup-Harness
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $RootSetup `
+            -NonInteractive -ToolsDir $StubDir 2>&1 | Out-Null
+        Assert-LogEquals (Join-Path $StubDir 'defaults.txt')
     }
     finally { Teardown-Harness }
 }

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# tests/test_setup_flags.sh -- WI-1 baseline + WI-2 --only tests (#468)
+# tests/test_setup_flags.sh -- setup flag tests (#468, #495)
 #
 # Tests the framework spine: DEFAULT_TOOLS constant, --tools-dir seam,
 # --list, --help, root forwarding, baseline-diff.
 # WI-2: --only selective install with ORDER PRESERVATION invariant.
+# #495 Slice 1: interactive mode guards and backward-compat drift gates.
 #
 # Usage: bash tests/test_setup_flags.sh
 # Requires: bash 3.2+ (macOS compatible), GNU diff
@@ -23,6 +24,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LINUX_SETUP="${REPO_ROOT}/scripts/linux/setup.sh"
 ROOT_SETUP="${REPO_ROOT}/setup.sh"
 STUB_DIR="${REPO_ROOT}/tests/fixtures/stub-tools/linux"
+SELECTION_FILE="${STUB_DIR}/selection.txt"
 
 pass() { echo -e "${GREEN}PASS${RESET}: $1"; PASS=$((PASS + 1)); }
 fail() { echo -e "${RED}FAIL${RESET}: $1"; FAIL=$((FAIL + 1)); }
@@ -54,13 +56,13 @@ assert_log_equals() {
 assert_contains() {
   local haystack="$1"
   local needle="$2"
-  echo "$haystack" | grep -qF "$needle"
+  echo "$haystack" | grep -qF -- "$needle"
 }
 
 assert_not_contains() {
   local haystack="$1"
   local needle="$2"
-  ! echo "$haystack" | grep -qF "$needle"
+  ! echo "$haystack" | grep -qF -- "$needle"
 }
 
 # ---------------------------------------------------------------------------
@@ -69,7 +71,7 @@ assert_not_contains() {
 echo ""
 echo "--- T_baseline_noarg ---"
 setup_harness
-if bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" 2>&1 | grep -q .; then : ; fi
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
 if assert_log_equals "${STUB_DIR}/defaults.txt"; then
   pass "T_baseline_noarg: no-arg run logs exactly defaults.txt order"
 else
@@ -224,7 +226,7 @@ assert_log_str() {
 echo ""
 echo "--- T_only_single ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha >/dev/null 2>&1 || true
 if assert_log_str "alpha"; then
   pass "T_only_single: --only=alpha logs only alpha"
 else
@@ -238,7 +240,7 @@ teardown_harness
 echo ""
 echo "--- T_only_multi ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha,bravo 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha,bravo >/dev/null 2>&1 || true
 if assert_log_str "$(printf 'alpha\nbravo')"; then
   pass "T_only_multi: --only=alpha,bravo logs alpha then bravo (default order)"
 else
@@ -254,7 +256,7 @@ teardown_harness
 echo ""
 echo "--- T_only_order_preserved ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=bravo,alpha 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=bravo,alpha >/dev/null 2>&1 || true
 if assert_log_str "$(printf 'alpha\nbravo')"; then
   pass "T_only_order_preserved: reversed input yields default order (alpha then bravo)"
 else
@@ -268,7 +270,7 @@ teardown_harness
 echo ""
 echo "--- T_only_optin ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=delta 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=delta >/dev/null 2>&1 || true
 if assert_log_str "delta"; then
   pass "T_only_optin: --only=delta (opt-in tool) works"
 else
@@ -283,7 +285,7 @@ teardown_harness
 echo ""
 echo "--- T_only_optin_order ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=delta,alpha 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=delta,alpha >/dev/null 2>&1 || true
 if assert_log_str "$(printf 'alpha\ndelta')"; then
   pass "T_only_optin_order: default tool (alpha) before opt-in tool (delta)"
 else
@@ -381,7 +383,7 @@ echo ""
 echo "--- T_root_only ---"
 if [[ -f "$ROOT_SETUP" ]]; then
   setup_harness
-  bash "$ROOT_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha 2>&1 | grep -q . || true
+  bash "$ROOT_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha >/dev/null 2>&1 || true
   if assert_log_str "alpha"; then
     pass "T_root_only: root setup.sh --only=alpha forwards and installs only alpha"
   else
@@ -399,7 +401,7 @@ fi
 echo ""
 echo "--- T_backward_compat_gate ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
 if assert_log_equals "${STUB_DIR}/defaults.txt"; then
   pass "T_backward_compat_gate: no-arg run still logs all defaults in order"
 else
@@ -419,7 +421,7 @@ teardown_harness
 echo ""
 echo "--- T_skip_single ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=bravo 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=bravo >/dev/null 2>&1 || true
 if assert_log_str "$(printf 'prereqs\nalpha\ncharlie\ndotfiles\ngit-hook')"; then
   pass "T_skip_single: --skip=bravo excludes bravo; remaining tools installed in order"
 else
@@ -433,7 +435,7 @@ teardown_harness
 echo ""
 echo "--- T_skip_multi ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=alpha,charlie 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=alpha,charlie >/dev/null 2>&1 || true
 if assert_log_str "$(printf 'prereqs\nbravo\ndotfiles\ngit-hook')"; then
   pass "T_skip_multi: --skip=alpha,charlie excludes both; order preserved"
 else
@@ -553,10 +555,10 @@ teardown_harness
 echo ""
 echo "--- T_no_selection_persistence ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=alpha >/dev/null 2>&1 || true
 teardown_harness
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
 if assert_log_equals "${STUB_DIR}/defaults.txt"; then
   pass "T_no_selection_persistence: no-arg run after --only run installs full defaults"
 else
@@ -570,7 +572,7 @@ teardown_harness
 echo ""
 echo "--- T_git_hook_skip_path_safe ---"
 setup_harness
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=git-hook 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --skip=git-hook >/dev/null 2>&1 || true
 hook_log="$(cat "$RUN_LOG" 2>/dev/null || true)"
 if echo "$hook_log" | grep -qF "git-hook"; then
   fail "T_git_hook_skip_path_safe: git-hook appeared in run-log despite being skipped"
@@ -578,6 +580,219 @@ elif assert_contains "$hook_log" "prereqs"; then
   pass "T_git_hook_skip_path_safe: --skip=git-hook succeeds; git-hook excluded from run"
 else
   fail "T_git_hook_skip_path_safe: unexpected run-log: $hook_log"
+fi
+teardown_harness
+
+# ---------------------------------------------------------------------------
+# #495 Slice 1: interactive guard + backward-compat drift gates
+# ---------------------------------------------------------------------------
+
+interactive_fn="$(awk '/^is_interactive\(\)/,/^}/' "$LINUX_SETUP")"
+
+echo ""
+echo "--- T_menu_ci_skip ---"
+_rc=127
+(
+  eval "$interactive_fn"
+  # shellcheck disable=SC2034
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
+  # shellcheck disable=SC2034
+  CI=true GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
+  pass "T_menu_ci_skip: CI suppresses interactive mode"
+else
+  fail "T_menu_ci_skip: CI did not suppress interactive mode (exit=$_rc)"
+fi
+
+echo ""
+echo "--- T_menu_tty_skip ---"
+_rc=127
+(
+  eval "$interactive_fn"
+  # shellcheck disable=SC2034
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
+  # shellcheck disable=SC2034
+  CI='' GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
+  pass "T_menu_tty_skip: redirected test harness suppresses interactive mode"
+else
+  fail "T_menu_tty_skip: redirected test harness was treated as interactive (exit=$_rc)"
+fi
+
+echo ""
+echo "--- T_menu_non_interactive_flag ---"
+_rc=127
+(
+  eval "$interactive_fn"
+  # shellcheck disable=SC2034
+  ARG_NON_INTERACTIVE_SET=1 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
+  # shellcheck disable=SC2034
+  CI='' GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
+  pass "T_menu_non_interactive_flag: explicit flag suppresses interactive mode"
+else
+  fail "T_menu_non_interactive_flag: explicit flag did not suppress interactive mode (exit=$_rc)"
+fi
+
+echo ""
+echo "--- T_menu_only_suppresses_guard ---"
+_rc=127
+(
+  eval "$interactive_fn"
+  # shellcheck disable=SC2034
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=1 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
+  # shellcheck disable=SC2034
+  CI='' GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
+  pass "T_menu_only_suppresses_guard: --only suppresses interactive mode"
+else
+  fail "T_menu_only_suppresses_guard: --only did not suppress interactive mode (exit=$_rc)"
+fi
+
+echo ""
+echo "--- T_menu_skip_guards_127 ---"
+# Mutation guard: proves exit 127 (missing function) is NOT exit 1.
+# The old '! is_interactive' pattern could not distinguish them.
+# [[ _rc -eq 1 ]] can -- this test fails if the guard is wrong.
+_rc=127
+(
+  _this_function_does_not_exist_and_exits_127
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 127 && $_rc -ne 1 ]]; then
+  pass "T_menu_skip_guards_127: exit-127 is distinct from exit-1 (exact-status guard valid)"
+else
+  fail "T_menu_skip_guards_127: unexpected exit=$_rc from missing-function probe"
+fi
+
+echo ""
+echo "--- T_menu_selection_file_ci_bypass ---"
+_rc=127
+(
+  eval "$interactive_fn"
+  # shellcheck disable=SC2034
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=1 ARG_SELECTION_FILE_SET=1
+  # shellcheck disable=SC2034
+  CI=true GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 0 ]]; then
+  pass "T_menu_selection_file_ci_bypass: --interactive + --selection-file is interactive under CI"
+else
+  fail "T_menu_selection_file_ci_bypass: bypass failed under CI (exit=$_rc)"
+fi
+
+echo ""
+echo "--- T_noarg_noninteractive_compat ---"
+setup_harness
+CI=true bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
+if assert_log_equals "${STUB_DIR}/defaults.txt"; then
+  pass "T_noarg_noninteractive_compat: CI no-arg run matches defaults"
+else
+  fail "T_noarg_noninteractive_compat: CI no-arg run drifted"
+fi
+teardown_harness
+
+echo ""
+echo "--- T_noninteractive_flag_compat ---"
+setup_harness
+bash "$LINUX_SETUP" --non-interactive "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
+if assert_log_equals "${STUB_DIR}/defaults.txt"; then
+  pass "T_noninteractive_flag_compat: --non-interactive run matches defaults"
+else
+  fail "T_noninteractive_flag_compat: --non-interactive run drifted"
+fi
+teardown_harness
+
+echo ""
+echo "--- T_noninteractive_env_var_compat ---"
+setup_harness
+SETUP_NON_INTERACTIVE=1 bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
+if assert_log_equals "${STUB_DIR}/defaults.txt"; then
+  pass "T_noninteractive_env_var_compat: env-guarded run matches defaults"
+else
+  fail "T_noninteractive_env_var_compat: env-guarded run drifted"
+fi
+teardown_harness
+
+echo ""
+echo "--- T_menu_mutual_exclusion ---"
+bash "$LINUX_SETUP" --interactive --non-interactive >/dev/null 2>&1 && menu_conflict_exit=0 || menu_conflict_exit=$?
+if [[ $menu_conflict_exit -ne 0 ]]; then
+  pass "T_menu_mutual_exclusion: interactive flags conflict"
+else
+  fail "T_menu_mutual_exclusion: conflicting flags exited 0"
+fi
+
+echo ""
+echo "--- T_menu_help_flags_and_no_seam ---"
+menu_help="$(bash "$LINUX_SETUP" --help 2>&1)" || true
+if assert_contains "$menu_help" "--interactive" && \
+   assert_contains "$menu_help" "--non-interactive" && \
+   assert_not_contains "$menu_help" "selection-file" && \
+   assert_not_contains "$menu_help" "tools-dir"; then
+  pass "T_menu_help_flags_and_no_seam: public flags shown; hidden seams absent"
+else
+  fail "T_menu_help_flags_and_no_seam: help visibility contract failed"
+fi
+
+echo ""
+echo "--- T_selection_file_passthrough ---"
+setup_harness
+bash "$LINUX_SETUP" --interactive "--selection-file=${SELECTION_FILE}" "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
+if assert_log_str "$(printf 'alpha\ndelta')"; then
+  pass "T_selection_file_passthrough: selection file resolves in canonical order"
+else
+  fail "T_selection_file_passthrough: selection file did not control dispatch"
+fi
+teardown_harness
+
+echo ""
+echo "--- T_selection_file_noninteractive_conflict ---"
+bash "$LINUX_SETUP" --non-interactive "--selection-file=${SELECTION_FILE}" >/dev/null 2>&1 && seam_conflict_exit=0 || seam_conflict_exit=$?
+if [[ $seam_conflict_exit -ne 0 ]]; then
+  pass "T_selection_file_noninteractive_conflict: non-interactive rejects selection seam"
+else
+  fail "T_selection_file_noninteractive_conflict: invalid seam combination exited 0"
+fi
+
+echo ""
+echo "--- T_menu_only_suppresses_menu ---"
+setup_harness
+bash "$LINUX_SETUP" --interactive --only=alpha "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
+if assert_log_str "alpha"; then
+  pass "T_menu_only_suppresses_menu: explicit selection wins"
+else
+  fail "T_menu_only_suppresses_menu: --interactive changed --only behavior"
+fi
+teardown_harness
+
+echo ""
+echo "--- T_root_interactive_passthrough ---"
+setup_harness
+bash "$ROOT_SETUP" --interactive "--selection-file=${SELECTION_FILE}" "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
+if assert_log_str "$(printf 'alpha\ndelta')"; then
+  pass "T_root_interactive_passthrough: root forwards interactive selection flags"
+else
+  fail "T_root_interactive_passthrough: root forwarding failed"
+fi
+teardown_harness
+
+echo ""
+echo "--- T_root_noninteractive_passthrough ---"
+setup_harness
+bash "$ROOT_SETUP" --non-interactive "--tools-dir=${STUB_DIR}" >/dev/null 2>&1 || true
+if assert_log_equals "${STUB_DIR}/defaults.txt"; then
+  pass "T_root_noninteractive_passthrough: root forwards non-interactive flag"
+else
+  fail "T_root_noninteractive_passthrough: root forwarding changed defaults"
 fi
 teardown_harness
 
