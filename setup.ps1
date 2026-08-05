@@ -6,7 +6,8 @@
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File setup.ps1 [OPTIONS]
 #
-# Flags forwarded to scripts\windows\setup.ps1: -List, -Help, -Only, -Skip, -ToolsDir
+# Flags forwarded to scripts\windows\setup.ps1:
+# -List, -Help, -Only, -Skip, -Interactive, -NonInteractive
 #
 # For Linux/macOS/WSL, use setup.sh instead.
 
@@ -16,7 +17,10 @@ param(
     [string]$Skip    = '',
     [switch]$List,
     [switch]$Help,
-    [string]$ToolsDir = ''
+    [switch]$Interactive,
+    [switch]$NonInteractive,
+    [string]$ToolsDir = '',
+    [string]$SelectionFile = ''
 )
 
 Set-StrictMode -Version Latest
@@ -31,7 +35,12 @@ if ($PSBoundParameters.ContainsKey('Only')) { $_fwdParams['Only']    = $Only }
 if ($PSBoundParameters.ContainsKey('Skip')) { $_fwdParams['Skip']    = $Skip }
 if ($List.IsPresent)                        { $_fwdParams['List']    = $true }
 if ($Help.IsPresent)                        { $_fwdParams['Help']    = $true }
+if ($Interactive.IsPresent)                 { $_fwdParams['Interactive'] = $true }
+if ($NonInteractive.IsPresent)              { $_fwdParams['NonInteractive'] = $true }
 if ($ToolsDir)                              { $_fwdParams['ToolsDir'] = $ToolsDir }
+if ($PSBoundParameters.ContainsKey('SelectionFile')) {
+    $_fwdParams['SelectionFile'] = $SelectionFile
+}
 
 # -- Logging helpers -----------------------------------------------------------
 

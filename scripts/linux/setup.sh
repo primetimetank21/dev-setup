@@ -5,16 +5,22 @@
 #
 # Usage (direct):
 #   bash scripts/linux/setup.sh [--list] [--help] [--only=a,b] [--skip=a,b]
+#                                  [--interactive | --non-interactive]
 #
 # Flags:
 #   --list          Print available tools (alphabetical), exit 0. No install.
 #   --help          Print usage, exit 0.
 #   --only=a,b,c    Install ONLY the listed tools (comma-separated).
 #   --skip=a,b,c    Install all default tools EXCEPT the listed ones.
+#   --interactive   Show the tool picker when a TTY is available.
+#   --non-interactive
+#                   Never show the tool picker.
 #   --only and --skip are mutually exclusive.
 #
 # Hidden test seam (not in --help):
 #   --tools-dir=<path>   Override the tools directory (test use only).
+#   --selection-file=<path>
+#                         Read selected tools from a file (test use only).
 
 set -euo pipefail
 exec 2>&1  # Merge stderr into stdout for ordered output in piped/Devcontainer environments
@@ -52,8 +58,12 @@ ARG_SKIP=""
 ARG_LIST=0
 ARG_HELP=0
 ARG_TOOLS_DIR=""  # hidden test seam
+ARG_SELECTION_FILE=""  # hidden test seam
 ARG_ONLY_SET=0    # tracks whether --only was explicitly provided
 ARG_SKIP_SET=0    # tracks whether --skip was explicitly provided
+ARG_INTERACTIVE_SET=0
+ARG_NON_INTERACTIVE_SET=0
+ARG_SELECTION_FILE_SET=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -61,7 +71,13 @@ for arg in "$@"; do
     --skip=*)   ARG_SKIP="${arg#--skip=}"; ARG_SKIP_SET=1 ;;
     --list)     ARG_LIST=1 ;;
     --help)     ARG_HELP=1 ;;
+    --interactive) ARG_INTERACTIVE_SET=1 ;;
+    --non-interactive) ARG_NON_INTERACTIVE_SET=1 ;;
     --tools-dir=*) ARG_TOOLS_DIR="${arg#--tools-dir=}" ;;
+    --selection-file=*)
+      ARG_SELECTION_FILE="${arg#--selection-file=}"
+      ARG_SELECTION_FILE_SET=1
+      ;;
     *)
       log_error "Unknown argument: $arg"
       log_error "Run with --help for usage."
@@ -137,6 +153,8 @@ Options:
   --help            Print this help message, exit 0.
   --only=a,b,c      Install ONLY the listed tools (comma-separated).
   --skip=a,b,c      Install all default tools EXCEPT the listed ones.
+  --interactive     Show the tool picker when a TTY is available.
+  --non-interactive Never show the tool picker.
 
 Notes:
   --only and --skip are mutually exclusive.
@@ -166,7 +184,38 @@ if [[ $ARG_ONLY_SET -eq 1 && $ARG_SKIP_SET -eq 1 ]]; then
   exit 1
 fi
 
+if [[ $ARG_INTERACTIVE_SET -eq 1 && $ARG_NON_INTERACTIVE_SET -eq 1 ]]; then
+  log_error "--interactive and --non-interactive are mutually exclusive."
+  exit 1
+fi
+
+if [[ $ARG_NON_INTERACTIVE_SET -eq 1 && $ARG_SELECTION_FILE_SET -eq 1 ]]; then
+  log_error "--non-interactive and --selection-file are mutually exclusive."
+  exit 1
+fi
+
 # (Note: ARG_ONLY_SET / ARG_SKIP_SET handle empty-value sentinels; build_final_toolset validates.)
+
+# ---------------------------------------------------------------------------
+# Interactive guard. Slice 1 only detects whether a future menu may run.
+# No menu is invoked until Slice 2.
+# ---------------------------------------------------------------------------
+is_interactive() {
+  if [[ $ARG_NON_INTERACTIVE_SET -eq 1 || $ARG_ONLY_SET -eq 1 || $ARG_SKIP_SET -eq 1 ]]; then
+    return 1
+  fi
+  if [[ "${SETUP_NON_INTERACTIVE:-}" == "1" || -n "${CI:-}" || -n "${GITHUB_ACTIONS:-}" ]]; then
+    return 1
+  fi
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    return 1
+  fi
+  return 0
+}
+
+if is_interactive; then
+  : # ponytail: detection-only ceiling for Slice 1; Slice 2 wires the Bash menu here.
+fi
 
 # ---------------------------------------------------------------------------
 # Build FinalToolSet -- populates global FINAL_TOOLS (bash 3.2 safe: no
@@ -175,6 +224,24 @@ fi
 FINAL_TOOLS=()
 build_final_toolset() {
   FINAL_TOOLS=()
+
+  if [[ $ARG_SELECTION_FILE_SET -eq 1 && $ARG_ONLY_SET -eq 0 && $ARG_SKIP_SET -eq 0 ]]; then
+    if [[ -z "$ARG_SELECTION_FILE" || ! -f "$ARG_SELECTION_FILE" ]]; then
+      log_error "Selection file not found: ${ARG_SELECTION_FILE}"
+      exit 1
+    fi
+    local _selection
+    while IFS= read -r _selection || [[ -n "$_selection" ]]; do
+      _selection="${_selection%$'\r'}"
+      [[ -z "$_selection" ]] && continue
+      if [[ -n "$ARG_ONLY" ]]; then
+        ARG_ONLY="${ARG_ONLY},${_selection}"
+      else
+        ARG_ONLY="$_selection"
+      fi
+    done < "$ARG_SELECTION_FILE"
+    ARG_ONLY_SET=1
+  fi
 
   # Build available-tools list into a local array (while-read, not mapfile)
   local available=()
@@ -256,7 +323,9 @@ build_final_toolset() {
       for s in "${skip_list[@]}"; do
         [[ "$s" == "$tool" ]] && skip=1 && break
       done
-      [[ $skip -eq 0 ]] && FINAL_TOOLS+=("$tool")
+      if [[ $skip -eq 0 ]]; then
+        FINAL_TOOLS+=("$tool")
+      fi
     done
 
   else
@@ -301,4 +370,3 @@ main() {
 }
 
 main
-
