@@ -1,7 +1,7 @@
 # scripts/windows/lib/tui.ps1 -- PS 5.1 ASCII menu and toolset resolution (#495 Slice 3)
 #
 # Dot-sourced by scripts/windows/setup.ps1.
-# Exports: Resolve-FinalToolset, Resolve-ToolSelection, Show-ToolMenu
+# Exports: Resolve-FinalToolset, Show-ToolMenu
 #
 # PS 5.1 ASCII-only: no smart quotes, em-dashes, arrows, or non-ASCII characters.
 # No Write-Host. Console output via [Console]::Write / [Console]::WriteLine only.
