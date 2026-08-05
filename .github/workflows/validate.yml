@@ -253,6 +253,9 @@ jobs:
       - name: Analyze scripts/windows/setup.ps1
         run: pwsh -Command "Invoke-ScriptAnalyzer -Path scripts/windows/setup.ps1 -EnableExit"
 
+      - name: Analyze scripts/windows/lib/tui.ps1
+        run: pwsh -Command "Invoke-ScriptAnalyzer -Path scripts/windows/lib/tui.ps1 -EnableExit"
+
   validate-powershell:
     name: Validate PowerShell Functions
     runs-on: windows-latest
@@ -279,7 +282,8 @@ jobs:
       - name: Flag test - -List (PowerShell)
         run: .\setup.ps1 -List
 
-  validate-ps51:
+      - name: Run TUI and resolver tests (pwsh)
+        run: pwsh tests/test_tui_pwsh.ps1
     name: Validate PowerShell 5.1 Compatibility
     runs-on: windows-latest
 
@@ -322,12 +326,28 @@ jobs:
           }
           Write-Host "Syntax check passed"
 
+      - name: Syntax check tui.ps1 (PS 5.1)
+        shell: powershell
+        run: |
+          $errors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            "$env:GITHUB_WORKSPACE\scripts\windows\lib\tui.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "Syntax check passed"
+
       - name: Run PSScriptAnalyzer under PS 5.1
         shell: powershell
         run: |
           Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
           $results = @()
           $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\scripts\windows\setup.ps1"
+          $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\scripts\windows\lib\tui.ps1"
           $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\setup.ps1"
           if ($results.Count -gt 0) {
             $results | Format-Table -AutoSize
@@ -357,6 +377,11 @@ jobs:
         shell: powershell
         run: |
           powershell -ExecutionPolicy Bypass -File tests\test_setup_flags_pwsh.ps1
+
+      - name: Run TUI and resolver tests (PS 5.1)
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File tests\test_tui_pwsh.ps1
 
       - name: Configure git hooks path
         shell: powershell

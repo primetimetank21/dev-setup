@@ -38,6 +38,7 @@ $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\lib\logging.ps1"
 . "$PSScriptRoot\lib\path.ps1"
+. "$PSScriptRoot\lib\tui.ps1"
 
 # Dot-source all tool installer modules
 . "$PSScriptRoot\tools\winget-check.ps1"
@@ -212,6 +213,8 @@ function Test-ShouldShowMenu {
         [bool]$InteractiveRequested,
         [bool]$SelectionFileSet
     )
+    # ponytail: test seam -- remove when TTY simulation available in CI
+    if ($env:_PS_TUI_TEST_MENU -eq '1') { return $true }
     if ($NonInteractiveRequested -or $OnlySet -or $SkipSet) { return $false }
     # -Interactive + -SelectionFile: bypass CI/TTY detection so CI can test the menu path.
     if ($InteractiveRequested -and $SelectionFileSet) { return $true }
@@ -221,82 +224,66 @@ function Test-ShouldShowMenu {
     return $true
 }
 
-# ponytail: detection-only ceiling for Slice 1; Slice 3 wires the PowerShell menu here.
-$null = Test-ShouldShowMenu `
-    -NonInteractiveRequested $NonInteractive.IsPresent `
-    -OnlySet ($PSBoundParameters.ContainsKey('Only')) `
-    -SkipSet ($PSBoundParameters.ContainsKey('Skip')) `
-    -InteractiveRequested $Interactive.IsPresent `
-    -SelectionFileSet ($PSBoundParameters.ContainsKey('SelectionFile'))
-
 # ---------------------------------------------------------------------------
-# Build FinalToolSet
+# Determine final toolset: menu path (interactive) or flag path (non-interactive)
 # ---------------------------------------------------------------------------
-$FinalTools = @()
-$Available  = Get-AvailableTool
-$UseSelectionFile = $PSBoundParameters.ContainsKey('SelectionFile') -and
-    -not $PSBoundParameters.ContainsKey('Only') -and
-    -not $PSBoundParameters.ContainsKey('Skip')
+$Available   = Get-AvailableTool
+[string[]]$FinalTools = @()
 
-# Selection-file: validate, join names, route through the canonical -Only path.
-$EffectiveOnly = ''
-$UseOnlyPath = $false
+if (Test-ShouldShowMenu `
+        -NonInteractiveRequested $NonInteractive.IsPresent `
+        -OnlySet ($PSBoundParameters.ContainsKey('Only')) `
+        -SkipSet ($PSBoundParameters.ContainsKey('Skip')) `
+        -InteractiveRequested $Interactive.IsPresent `
+        -SelectionFileSet ($PSBoundParameters.ContainsKey('SelectionFile'))) {
 
-if ($UseSelectionFile) {
-    if ([string]::IsNullOrEmpty($SelectionFile) -or -not (Test-Path -LiteralPath $SelectionFile -PathType Leaf)) {
-        Write-Err "Selection file not found: $SelectionFile"
-        exit 1
+    # Interactive path: selection-file seam (CI/test) or live menu
+    if ($PSBoundParameters.ContainsKey('SelectionFile') -and $SelectionFile) {
+        [string[]]$selectedNames = @(Get-Content -LiteralPath $SelectionFile |
+            Where-Object { -not [string]::IsNullOrEmpty($_) })
+    } else {
+        [string[]]$selectedNames = Show-ToolMenu -DefaultTools $DefaultTools -Available $Available
     }
-    $fileNames = @(Get-Content -LiteralPath $SelectionFile | Where-Object { $_ -ne '' })
-    if ($fileNames.Count -eq 0) {
-        Write-Err "Flag requires at least one tool name."
-        exit 1
-    }
-    $EffectiveOnly = $fileNames -join ','
-    $UseOnlyPath = $true
-} elseif ($PSBoundParameters.ContainsKey('Only')) {
-    $EffectiveOnly = $Only
-    $UseOnlyPath = $true
-}
 
-if ($UseOnlyPath) {
-    $names = Split-ToolList -ToolList $EffectiveOnly
-    foreach ($name in $names) {
-        if ($Available -notcontains $name) {
-            Write-Err "Unknown tool: $name"
-            Write-Err "Available tools: $($Available -join ', ')"
-            Write-Err "Use -List to see all available tools."
-            exit 1
-        }
+    if ($null -eq $selectedNames) {
+        Write-Output 'Install cancelled.'
+        exit 0
     }
-    # ORDER PRESERVATION: iterate DefaultTools, include those requested.
-    # Do NOT use input order -- dependencies require the default sequence.
-    foreach ($tool in $DefaultTools) {
-        if ($names -contains $tool) {
-            $FinalTools += $tool
-        }
+    if ($selectedNames.Count -eq 0) {
+        Write-Output 'Nothing selected, exiting.'
+        exit 0
     }
-    # Opt-in tools (requested but NOT in DefaultTools): append alphabetically.
-    $optIn = @($names | Where-Object { $DefaultTools -notcontains $_ } | Sort-Object)
-    foreach ($t in $optIn) { $FinalTools += $t }
-
-} elseif ($PSBoundParameters.ContainsKey('Skip')) {
-    $names = Split-ToolList -ToolList $Skip
-    foreach ($name in $names) {
-        if ($Available -notcontains $name) {
-            Write-Err "Unknown tool: $name"
-            Write-Err "Available tools: $($Available -join ', ')"
-            exit 1
-        }
-    }
-    foreach ($tool in $DefaultTools) {
-        if ($names -notcontains $tool) {
-            $FinalTools += $tool
-        }
-    }
+    $FinalTools = Resolve-FinalToolset -DefaultTools $DefaultTools `
+        -Only ($selectedNames -join ',') -OnlySet $true
 
 } else {
-    $FinalTools = $DefaultTools
+    # Non-interactive path: validate tool names then resolve
+    if ($PSBoundParameters.ContainsKey('Only')) {
+        $names = Split-ToolList -ToolList $Only
+        foreach ($name in $names) {
+            if ($Available -notcontains $name) {
+                Write-Err "Unknown tool: $name"
+                Write-Err "Available tools: $($Available -join ', ')"
+                Write-Err "Use -List to see all available tools."
+                exit 1
+            }
+        }
+        $FinalTools = Resolve-FinalToolset -DefaultTools $DefaultTools `
+            -Only $Only -OnlySet $true
+    } elseif ($PSBoundParameters.ContainsKey('Skip')) {
+        $names = Split-ToolList -ToolList $Skip
+        foreach ($name in $names) {
+            if ($Available -notcontains $name) {
+                Write-Err "Unknown tool: $name"
+                Write-Err "Available tools: $($Available -join ', ')"
+                exit 1
+            }
+        }
+        $FinalTools = Resolve-FinalToolset -DefaultTools $DefaultTools `
+            -Skip $Skip -SkipSet $true
+    } else {
+        $FinalTools = Resolve-FinalToolset -DefaultTools $DefaultTools
+    }
 }
 
 # ---------------------------------------------------------------------------
