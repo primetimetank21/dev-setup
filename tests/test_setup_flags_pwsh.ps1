@@ -652,6 +652,23 @@ Test-Scenario "T_menu_only_suppresses_guard_ps: -Only suppresses interactive mod
     }
 }
 
+Test-Scenario "T_menu_selection_file_ci_bypass_ps: -Interactive + -SelectionFile is interactive under CI" {
+    $oldCi = $env:CI
+    try {
+        $env:CI = 'true'
+        $result = Test-ShouldShowMenu `
+            -NonInteractiveRequested $false `
+            -OnlySet $false `
+            -SkipSet $false `
+            -InteractiveRequested $true `
+            -SelectionFileSet $true
+        if (-not $result) {
+            throw "-Interactive + -SelectionFile was not treated as interactive under CI"
+        }
+    }
+    finally { $env:CI = $oldCi }
+}
+
 Test-Scenario "T_noarg_noninteractive_compat_ps: CI no-arg run matches defaults" {
     Setup-Harness
     $oldCi = $env:CI

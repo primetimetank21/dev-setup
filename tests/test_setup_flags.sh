@@ -591,62 +591,102 @@ interactive_fn="$(awk '/^is_interactive\(\)/,/^}/' "$LINUX_SETUP")"
 
 echo ""
 echo "--- T_menu_ci_skip ---"
-if (
+_rc=127
+(
   eval "$interactive_fn"
   # shellcheck disable=SC2034
-  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
   # shellcheck disable=SC2034
   CI=true GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
-  ! is_interactive
-); then
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
   pass "T_menu_ci_skip: CI suppresses interactive mode"
 else
-  fail "T_menu_ci_skip: CI did not suppress interactive mode"
+  fail "T_menu_ci_skip: CI did not suppress interactive mode (exit=$_rc)"
 fi
 
 echo ""
 echo "--- T_menu_tty_skip ---"
-if (
+_rc=127
+(
   eval "$interactive_fn"
   # shellcheck disable=SC2034
-  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
   # shellcheck disable=SC2034
   CI='' GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
-  ! is_interactive
-); then
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
   pass "T_menu_tty_skip: redirected test harness suppresses interactive mode"
 else
-  fail "T_menu_tty_skip: redirected test harness was treated as interactive"
+  fail "T_menu_tty_skip: redirected test harness was treated as interactive (exit=$_rc)"
 fi
 
 echo ""
 echo "--- T_menu_non_interactive_flag ---"
-if (
+_rc=127
+(
   eval "$interactive_fn"
   # shellcheck disable=SC2034
-  ARG_NON_INTERACTIVE_SET=1 ARG_ONLY_SET=0 ARG_SKIP_SET=0
+  ARG_NON_INTERACTIVE_SET=1 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
   # shellcheck disable=SC2034
   CI='' GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
-  ! is_interactive
-); then
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
   pass "T_menu_non_interactive_flag: explicit flag suppresses interactive mode"
 else
-  fail "T_menu_non_interactive_flag: explicit flag did not suppress interactive mode"
+  fail "T_menu_non_interactive_flag: explicit flag did not suppress interactive mode (exit=$_rc)"
 fi
 
 echo ""
 echo "--- T_menu_only_suppresses_guard ---"
-if (
+_rc=127
+(
   eval "$interactive_fn"
   # shellcheck disable=SC2034
-  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=1 ARG_SKIP_SET=0
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=1 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=0 ARG_SELECTION_FILE_SET=0
   # shellcheck disable=SC2034
   CI='' GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
-  ! is_interactive
-); then
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 1 ]]; then
   pass "T_menu_only_suppresses_guard: --only suppresses interactive mode"
 else
-  fail "T_menu_only_suppresses_guard: --only did not suppress interactive mode"
+  fail "T_menu_only_suppresses_guard: --only did not suppress interactive mode (exit=$_rc)"
+fi
+
+echo ""
+echo "--- T_menu_skip_guards_127 ---"
+# Mutation guard: proves exit 127 (missing function) is NOT exit 1.
+# The old '! is_interactive' pattern could not distinguish them.
+# [[ _rc -eq 1 ]] can -- this test fails if the guard is wrong.
+_rc=127
+(
+  _this_function_does_not_exist_and_exits_127
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 127 && $_rc -ne 1 ]]; then
+  pass "T_menu_skip_guards_127: exit-127 is distinct from exit-1 (exact-status guard valid)"
+else
+  fail "T_menu_skip_guards_127: unexpected exit=$_rc from missing-function probe"
+fi
+
+echo ""
+echo "--- T_menu_selection_file_ci_bypass ---"
+_rc=127
+(
+  eval "$interactive_fn"
+  # shellcheck disable=SC2034
+  ARG_NON_INTERACTIVE_SET=0 ARG_ONLY_SET=0 ARG_SKIP_SET=0 ARG_INTERACTIVE_SET=1 ARG_SELECTION_FILE_SET=1
+  # shellcheck disable=SC2034
+  CI=true GITHUB_ACTIONS='' SETUP_NON_INTERACTIVE=''
+  is_interactive
+) && _rc=$? || _rc=$?
+if [[ $_rc -eq 0 ]]; then
+  pass "T_menu_selection_file_ci_bypass: --interactive + --selection-file is interactive under CI"
+else
+  fail "T_menu_selection_file_ci_bypass: bypass failed under CI (exit=$_rc)"
 fi
 
 echo ""

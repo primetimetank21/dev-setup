@@ -208,9 +208,13 @@ function Test-ShouldShowMenu {
     param(
         [bool]$NonInteractiveRequested,
         [bool]$OnlySet,
-        [bool]$SkipSet
+        [bool]$SkipSet,
+        [bool]$InteractiveRequested,
+        [bool]$SelectionFileSet
     )
     if ($NonInteractiveRequested -or $OnlySet -or $SkipSet) { return $false }
+    # -Interactive + -SelectionFile: bypass CI/TTY detection so CI can test the menu path.
+    if ($InteractiveRequested -and $SelectionFileSet) { return $true }
     if ($env:SETUP_NON_INTERACTIVE -eq '1' -or $env:CI -or $env:GITHUB_ACTIONS) { return $false }
     if ([Console]::IsInputRedirected -or -not [Environment]::UserInteractive) { return $false }
     if ($null -eq $Host.UI.RawUI) { return $false }
@@ -221,49 +225,42 @@ function Test-ShouldShowMenu {
 $null = Test-ShouldShowMenu `
     -NonInteractiveRequested $NonInteractive.IsPresent `
     -OnlySet ($PSBoundParameters.ContainsKey('Only')) `
-    -SkipSet ($PSBoundParameters.ContainsKey('Skip'))
+    -SkipSet ($PSBoundParameters.ContainsKey('Skip')) `
+    -InteractiveRequested $Interactive.IsPresent `
+    -SelectionFileSet ($PSBoundParameters.ContainsKey('SelectionFile'))
 
 # ---------------------------------------------------------------------------
 # Build FinalToolSet
 # ---------------------------------------------------------------------------
 $FinalTools = @()
 $Available  = Get-AvailableTool
-$SelectionNames = @()
 $UseSelectionFile = $PSBoundParameters.ContainsKey('SelectionFile') -and
     -not $PSBoundParameters.ContainsKey('Only') -and
     -not $PSBoundParameters.ContainsKey('Skip')
+
+# Selection-file: validate, join names, route through the canonical -Only path.
+$EffectiveOnly = ''
+$UseOnlyPath = $false
 
 if ($UseSelectionFile) {
     if ([string]::IsNullOrEmpty($SelectionFile) -or -not (Test-Path -LiteralPath $SelectionFile -PathType Leaf)) {
         Write-Err "Selection file not found: $SelectionFile"
         exit 1
     }
-    $SelectionNames = @(Get-Content -LiteralPath $SelectionFile | Where-Object { $_ -ne '' })
-}
-
-if ($UseSelectionFile) {
-    if ($SelectionNames.Count -eq 0) {
+    $fileNames = @(Get-Content -LiteralPath $SelectionFile | Where-Object { $_ -ne '' })
+    if ($fileNames.Count -eq 0) {
         Write-Err "Flag requires at least one tool name."
         exit 1
     }
-    $names = $SelectionNames
-    foreach ($name in $names) {
-        if ($Available -notcontains $name) {
-            Write-Err "Unknown tool: $name"
-            Write-Err "Available tools: $($Available -join ', ')"
-            exit 1
-        }
-    }
-    foreach ($tool in $DefaultTools) {
-        if ($names -contains $tool) {
-            $FinalTools += $tool
-        }
-    }
-    $optIn = @($names | Where-Object { $DefaultTools -notcontains $_ } | Sort-Object)
-    foreach ($t in $optIn) { $FinalTools += $t }
-
+    $EffectiveOnly = $fileNames -join ','
+    $UseOnlyPath = $true
 } elseif ($PSBoundParameters.ContainsKey('Only')) {
-    $names = Split-ToolList -ToolList $Only
+    $EffectiveOnly = $Only
+    $UseOnlyPath = $true
+}
+
+if ($UseOnlyPath) {
+    $names = Split-ToolList -ToolList $EffectiveOnly
     foreach ($name in $names) {
         if ($Available -notcontains $name) {
             Write-Err "Unknown tool: $name"

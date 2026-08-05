@@ -204,6 +204,10 @@ is_interactive() {
   if [[ $ARG_NON_INTERACTIVE_SET -eq 1 || $ARG_ONLY_SET -eq 1 || $ARG_SKIP_SET -eq 1 ]]; then
     return 1
   fi
+  # --interactive + --selection-file: bypass CI/TTY detection so CI can test the menu path.
+  if [[ $ARG_INTERACTIVE_SET -eq 1 && $ARG_SELECTION_FILE_SET -eq 1 ]]; then
+    return 0
+  fi
   if [[ "${SETUP_NON_INTERACTIVE:-}" == "1" || -n "${CI:-}" || -n "${GITHUB_ACTIONS:-}" ]]; then
     return 1
   fi
