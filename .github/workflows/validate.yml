@@ -284,6 +284,8 @@ jobs:
 
       - name: Run TUI and resolver tests (pwsh)
         run: pwsh tests/test_tui_pwsh.ps1
+
+  validate-ps51:
     name: Validate PowerShell 5.1 Compatibility
     runs-on: windows-latest
 

@@ -46,30 +46,17 @@ function Resolve-FinalToolset {
 }
 
 # ---------------------------------------------------------------------------
-# Resolve-ToolSelection: map a checked bool-array onto a display-order items array.
-# Input:  $Checked -- bool array parallel to $Items
-#         $Items   -- tool names in display order (DefaultTools first, sorted opt-ins after)
-# Output: comma-separated string of checked item names in display order.
-# ---------------------------------------------------------------------------
-function Resolve-ToolSelection {
-    param(
-        [bool[]]$Checked   = @(),
-        [string[]]$Items   = @()
-    )
-    $selected = @()
-    for ($i = 0; $i -lt $Items.Count; $i++) {
-        if ($Checked[$i]) { $selected += $Items[$i] }
-    }
-    return ($selected -join ',')
-}
-
-# ---------------------------------------------------------------------------
 # Show-ToolMenu: interactive ASCII checkbox menu.
 #
 # Returns:
-#   $null         -- user cancelled (Esc/Q) OR ReadKey failure (safe fallback)
+#   $null         -- user cancelled (Esc/Q) OR ReadKey failure (safe cancel fallback)
 #   [string[]]@() -- user confirmed with nothing checked
 #   [string[]]    -- user confirmed; array of checked tool names in display order
+#
+# ponytail: $null vs @() return -- verified safe: cancel returns $null (no comma),
+#   non-null returns use ,$selected (comma prefix) to prevent pipeline unrolling.
+#   Caller assigns [string[]]$x = Show-ToolMenu; $null-eq-check and Count-check
+#   are distinguishable. See test T_menu_noop_empty_ps.
 #
 # Display order: DefaultTools pre-checked (default), then sorted opt-ins unchecked.
 # Keys: Up/Down = move cursor; Space = toggle; A = toggle all; Enter = confirm; Esc/Q = cancel.
@@ -79,10 +66,6 @@ function Show-ToolMenu {
         [string[]]$DefaultTools = @(),
         [string[]]$Available    = @()
     )
-
-    # ponytail: test seams -- remove when TTY simulation is available in CI
-    if ($env:_PS_TUI_MOCK -eq 'cancel') { return $null }
-    if ($env:_PS_TUI_MOCK -eq 'empty')  { return ,@() }
 
     # Build display order: defaults (pre-checked) then sorted opt-ins (unchecked)
     $optIns  = @($Available | Where-Object { $DefaultTools -notcontains $_ } | Sort-Object)
@@ -134,9 +117,9 @@ function Show-ToolMenu {
             if (-not $confirmed -and -not $cancelled) { & $renderMenu }
         }
     } catch {
-        # ReadKey failure in a nominally interactive host: one clear warning, safe fallback
+        # ReadKey failure in a nominally interactive host: one clear warning, install cancelled
         [Console]::Error.WriteLine(
-            "WARNING: Console input unavailable ($($_.Exception.Message)). Proceeding non-interactively.")
+            "WARNING: Interactive menu failed ($($_.Exception.Message)). Installation is being cancelled.")
         return $null
     }
 

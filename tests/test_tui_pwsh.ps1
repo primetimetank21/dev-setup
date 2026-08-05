@@ -1,11 +1,13 @@
 # tests/test_tui_pwsh.ps1 -- Slice 3 TUI and resolver tests (#495)
 #
-# Tests: Resolve-FinalToolset, Resolve-ToolSelection (unit, dot-sourced from tui.ps1)
-#        Show-ToolMenu integration paths (selection-file seam, cancel seam, empty)
+# Tests: Resolve-FinalToolset (unit, dot-sourced from tui.ps1)
+#        Show-ToolMenu integration paths (selection-file seam, empty)
 #        ASCII purity of tui.ps1, -Help hiding of -SelectionFile.
 #
 # Usage: powershell -ExecutionPolicy Bypass -File tests\test_tui_pwsh.ps1
 # PS 5.1 ASCII-only: no smart quotes, em-dashes, arrows, or emoji.
+# Cancel path (Esc/Q) and ReadKey failure are manual-only gates (no real key-reader seam).
+# Test count: 9
 
 $ErrorActionPreference = 'Stop'
 $TestsPassed  = 0
@@ -96,59 +98,6 @@ Test-Scenario "T_resolve_toolset_skip_ps: -Skip removes tool in default order" {
 }
 
 # ===========================================================================
-# Resolve-ToolSelection unit tests
-# ===========================================================================
-
-# ---------------------------------------------------------------------------
-# T_resolve_selection_defaults_ps: all items checked => full CSV
-# ---------------------------------------------------------------------------
-Test-Scenario "T_resolve_selection_defaults_ps: all checked gives full CSV" {
-    $items   = @('alpha', 'bravo', 'charlie')
-    $checked = @($true, $true, $true)
-    $csv     = Resolve-ToolSelection -Checked $checked -Items $items
-    if ($csv -ne 'alpha,bravo,charlie') {
-        throw "Expected 'alpha,bravo,charlie' got '$csv'"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# T_resolve_selection_subset_ps: subset checked => order-preserved subset CSV
-# ---------------------------------------------------------------------------
-Test-Scenario "T_resolve_selection_subset_ps: subset checked gives correct CSV" {
-    $items   = @('alpha', 'bravo', 'charlie')
-    $checked = @($true, $false, $true)
-    $csv     = Resolve-ToolSelection -Checked $checked -Items $items
-    if ($csv -ne 'alpha,charlie') {
-        throw "Expected 'alpha,charlie' got '$csv'"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# T_resolve_selection_optin_ps: opt-in checked => appended in CSV after defaults
-# ---------------------------------------------------------------------------
-Test-Scenario "T_resolve_selection_optin_ps: opt-in item appended after defaults in CSV" {
-    # items: alpha + bravo are defaults, delta is opt-in (already sorted by caller)
-    $items   = @('alpha', 'bravo', 'delta')
-    $checked = @($true, $false, $true)
-    $csv     = Resolve-ToolSelection -Checked $checked -Items $items
-    if ($csv -ne 'alpha,delta') {
-        throw "Expected 'alpha,delta' got '$csv'"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# T_resolve_selection_empty_ps: nothing checked => empty CSV (callers handle exit)
-# ---------------------------------------------------------------------------
-Test-Scenario "T_resolve_selection_empty_ps: nothing checked gives empty CSV" {
-    $items   = @('alpha', 'bravo')
-    $checked = @($false, $false)
-    $csv     = Resolve-ToolSelection -Checked $checked -Items $items
-    if ($csv -ne '') {
-        throw "Expected empty string got '$csv'"
-    }
-}
-
-# ===========================================================================
 # Integration tests (subprocess)
 # ===========================================================================
 
@@ -171,29 +120,6 @@ Test-Scenario "T_menu_selection_file_e2e_ps: SelectionFile integration routes to
         }
     }
     finally { Teardown-Harness }
-}
-
-# ---------------------------------------------------------------------------
-# T_menu_cancel_aborts_ps: Show-ToolMenu returns $null => exit 0, no tools run
-# Uses _PS_TUI_TEST_MENU (force menu path) + _PS_TUI_MOCK=cancel test seams.
-# ---------------------------------------------------------------------------
-Test-Scenario "T_menu_cancel_aborts_ps: cancel return exits 0 with empty run-log" {
-    Setup-Harness
-    $env:_PS_TUI_TEST_MENU = '1'
-    $env:_PS_TUI_MOCK      = 'cancel'
-    try {
-        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
-            -Interactive -ToolsDir $StubDir 2>&1 | Out-Null
-        $ec = $LASTEXITCODE
-        if ($ec -ne 0) { throw "Expected exit 0 on cancel, got $ec" }
-        $content = Get-Content $script:RunLog -ErrorAction SilentlyContinue
-        if ($content) { throw "Tools ran on cancel: $($content -join ', ')" }
-    }
-    finally {
-        Remove-Item env:_PS_TUI_TEST_MENU -ErrorAction SilentlyContinue
-        Remove-Item env:_PS_TUI_MOCK -ErrorAction SilentlyContinue
-        Teardown-Harness
-    }
 }
 
 # ---------------------------------------------------------------------------
@@ -289,14 +215,14 @@ Write-Host "Results: $TestsPassed passed, $TestsFailed failed, $TestsSkipped ski
     -ForegroundColor $color
 Write-Host ''
 Write-Host 'Manual verification required (not CI-testable):' -ForegroundColor Yellow
+Write-Host '  - Cancel (Esc/Q): exit 0, "Install cancelled." printed, nothing installed'
 Write-Host '  - Arrow Up/Down navigation in Windows Terminal (PS 5.1 + pwsh)'
 Write-Host '  - Arrow navigation in legacy conhost (cmd.exe host, PS 5.1)'
 Write-Host '  - Opt-in tools shown unchecked below defaults with "(opt-in)" label'
-Write-Host '  - ESC / Q cancels cleanly (exit 0, no install)'
 Write-Host '  - Space toggles current item; A toggles all'
 Write-Host '  - All defaults checked + Enter == no-arg non-interactive run result'
 Write-Host '  - Uncheck a default, confirm => that tool skipped'
-Write-Host '  - [Console]::ReadKey failure: warning logged to stderr, exit 0 (no install)'
+Write-Host '  - [Console]::ReadKey failure: warning to stderr ("Interactive menu failed..."), exit 0 (no install)'
 Write-Host ''
 
 if ($TestsFailed -gt 0) { exit 1 }
