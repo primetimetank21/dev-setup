@@ -132,7 +132,53 @@ _tui_arrow_redraw() {
 }
 
 # ---------------------------------------------------------------------------
-# _tui_arrow_mode -- bash >= 4.2: arrow keys, Space, Enter, q/ESC
+# _tui_checked_toggle_all -- toggle-all: if every item checked, uncheck all;
+#   otherwise check all. Prints the resulting space-separated 0|1 string.
+#   $1: space-separated checked flags (e.g. "1 0 1")
+#   $2: count
+# ---------------------------------------------------------------------------
+_tui_checked_toggle_all() {
+  local checked_sp="$1" count="$2"
+  local arr=()
+  IFS=' ' read -ra arr <<< "$checked_sp"
+  local all_on=1 f j
+  for f in "${arr[@]}"; do [[ "$f" == "0" ]] && all_on=0 && break; done
+  for j in $(seq 0 $((count-1))); do
+    [[ $all_on -eq 1 ]] && arr[j]=0 || arr[j]=1
+  done
+  printf '%s' "${arr[*]}"
+}
+
+# ---------------------------------------------------------------------------
+# _tui_arrow_handle_key -- pure key-dispatch for arrow mode (no TTY/globals).
+#   $1: key string (may contain escape sequences)
+#   $2: current cursor index
+#   $3: count
+#   $4: space-separated checked flags
+# Prints pipe-delimited result: cursor|checked_sp|done|cancelled
+#   done=1      -- Enter pressed; caller should stop the loop
+#   cancelled=1 -- q/Q/ESC; caller should set _MENU_CANCELLED and return
+# ---------------------------------------------------------------------------
+_tui_arrow_handle_key() {
+  local key="$1" cursor="$2" count="$3" checked_sp="$4"
+  local arr=() done_=0 cancelled=0
+  IFS=' ' read -ra arr <<< "$checked_sp"
+  case "$key" in
+    $'\033[A') cursor=$(( cursor > 0         ? cursor - 1 : 0          )) ;;
+    $'\033[B') cursor=$(( cursor < count - 1 ? cursor + 1 : count - 1 )) ;;
+    ' ')
+      if [[ "${arr[cursor]}" == "1" ]]; then arr[cursor]=0; else arr[cursor]=1; fi ;;
+    a|A)
+      IFS=' ' read -ra arr <<< "$(_tui_checked_toggle_all "${arr[*]}" "$count")" ;;
+    '') done_=1 ;;
+    q|Q|$'\033') cancelled=1 ;;
+  esac
+  printf '%s|%s|%s|%s' "$cursor" "${arr[*]}" "$done_" "$cancelled"
+}
+
+# ---------------------------------------------------------------------------
+# _tui_arrow_mode -- bash >= 4.2: arrow keys, Space, Enter, a/A=toggle-all,
+#   q/ESC to cancel
 # ---------------------------------------------------------------------------
 _tui_arrow_mode() {
   local tools_nl="$1" checked_sp="$2" is_def_sp="$3" count="$4"
@@ -155,23 +201,21 @@ _tui_arrow_mode() {
       key="${k1}${k2}${k3}"
     fi
 
-    case "$key" in
-      $'\033[A')  cursor=$(( cursor > 0          ? cursor - 1 : 0           )) ;;
-      $'\033[B')  cursor=$(( cursor < count - 1  ? cursor + 1 : count - 1  )) ;;
-      ' ')
-        if [[ "${checked_arr[cursor]}" == "1" ]]; then
-          checked_arr[cursor]=0
-        else
-          checked_arr[cursor]=1
-        fi
-        ;;
-      '')  done_=1 ;;
-      q|Q|$'\033')
-        _MENU_CANCELLED=1
-        printf '\nInstall cancelled.\n'
-        return 0
-        ;;
-    esac
+    local _kd
+    _kd="$(_tui_arrow_handle_key "$key" "$cursor" "$count" "${checked_arr[*]}")"
+    cursor="${_kd%%|*}"
+    local _kd_rest="${_kd#*|}"
+    IFS=' ' read -ra checked_arr <<< "${_kd_rest%%|*}"
+    local _kd_done="${_kd_rest#*|}"
+    local _kd_cancelled="${_kd_done#*|}"
+    _kd_done="${_kd_done%%|*}"
+
+    if [[ "$_kd_cancelled" == "1" ]]; then
+      _MENU_CANCELLED=1
+      printf '\nInstall cancelled.\n'
+      return 0
+    fi
+    [[ "$_kd_done" == "1" ]] && done_=1
 
     if [[ $done_ -eq 0 ]]; then
       _tui_arrow_redraw "$count" "$cursor" "$tools_nl" "${checked_arr[*]}" "$is_def_sp"
@@ -214,12 +258,7 @@ _tui_numbered_mode() {
         return 0
         ;;
       a|A)
-        local all_on=1 f
-        for f in "${checked_arr[@]}"; do [[ "$f" == "0" ]] && all_on=0 && break; done
-        local j
-        for j in $(seq 0 $((count-1))); do
-          [[ $all_on -eq 1 ]] && checked_arr[j]=0 || checked_arr[j]=1
-        done
+        IFS=' ' read -ra checked_arr <<< "$(_tui_checked_toggle_all "${checked_arr[*]}" "$count")"
         _tui_numbered_render tool_arr checked_arr is_def_arr "$count"
         ;;
       *)

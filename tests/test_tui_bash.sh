@@ -8,9 +8,13 @@
 #   Unit: selection logic via _MENU_SELECTION / _tui_render_list
 #   Integration: --interactive --selection-file=<f> E2E, cancel/no-op paths
 #
-# NOT covered (requires live TTY, documented in PR):
-#   Arrow-key navigation, ANSI redraw, numbered-toggle interactive input,
-#   ESC/Q from within menu, visual fidelity of list rendering.
+# Automated (no TTY): key dispatch logic via _tui_arrow_handle_key (cursor
+#   movement, toggle-all, Space, Enter, cancel, noop), _tui_checked_toggle_all
+#   state transitions, _tui_render_list output, and _tui_arrow_redraw ANSI bytes.
+# NOT covered (requires live interactive TTY, documented in PR):
+#   Terminal byte delivery from keyboard to read loop, ANSI in-place rendering
+#   fidelity in a real terminal (mintty, tmux, Terminal.app), numbered-toggle
+#   interactive input, ESC/Q from within a live menu session.
 
 set -uo pipefail
 
@@ -371,6 +375,229 @@ if echo "$_redraw_hex" | grep -qF "1b5b3441"; then
   fail "T_arrow_redraw_stable[ansi-no-creep]: ESC[4A present -- count+1 viewport-creep bug"
 else
   pass "T_arrow_redraw_stable[ansi-no-creep]: ESC[4A absent -- no viewport creep"
+fi
+
+# ---------------------------------------------------------------------------
+# T_arrow_dispatch_a_lower_none_to_all_checked / T_arrow_dispatch_a_lower_mixed_to_all_checked /
+# T_arrow_dispatch_A_upper_all_checked_to_unchecked:
+#   All three use _tui_arrow_handle_key (the production dispatch) to pass
+#   'a' or 'A' and assert the result. This tests the full dispatch path
+#   (case matching + _tui_checked_toggle_all) with no TTY and no source grep.
+#
+# Helper: parse_kd splits cursor|checked_sp|done|cancelled from the function.
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "--- T_arrow_dispatch_a_lower_none_to_all_checked ---"
+_kd_a_none="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key 'a' 0 3 '0 0 0'
+" 2>&1)"
+_kd_a_none_rest="${_kd_a_none#*|}"; _kd_a_none_checked="${_kd_a_none_rest%%|*}"
+_kd_a_none_rest2="${_kd_a_none_rest#*|}"; _kd_a_none_done="${_kd_a_none_rest2%%|*}"
+_kd_a_none_cancelled="${_kd_a_none_rest2#*|}"
+if [[ "$_kd_a_none_checked" == "1 1 1" ]]; then
+  pass "T_arrow_dispatch_a_lower_none_to_all_checked[checked]: 'a' on '0 0 0' -> '1 1 1'"
+else
+  fail "T_arrow_dispatch_a_lower_none_to_all_checked[checked]: expected '1 1 1', got '${_kd_a_none_checked}'"
+fi
+if [[ "$_kd_a_none_done" == "0" ]] && [[ "$_kd_a_none_cancelled" == "0" ]]; then
+  pass "T_arrow_dispatch_a_lower_none_to_all_checked[flags]: done=0 cancelled=0"
+else
+  fail "T_arrow_dispatch_a_lower_none_to_all_checked[flags]: done=${_kd_a_none_done} cancelled=${_kd_a_none_cancelled}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_a_lower_mixed_to_all_checked ---"
+_kd_a="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key 'a' 0 3 '1 1 0'
+" 2>&1)"
+_kd_a_cursor="${_kd_a%%|*}"
+_kd_a_rest="${_kd_a#*|}"; _kd_a_checked="${_kd_a_rest%%|*}"
+_kd_a_rest2="${_kd_a_rest#*|}"; _kd_a_done="${_kd_a_rest2%%|*}"
+_kd_a_cancelled="${_kd_a_rest2#*|}"
+if [[ "$_kd_a_checked" == "1 1 1" ]]; then
+  pass "T_arrow_dispatch_a_lower_mixed_to_all_checked[checked]: 'a' on '1 1 0' -> '1 1 1'"
+else
+  fail "T_arrow_dispatch_a_lower_mixed_to_all_checked[checked]: expected '1 1 1', got '${_kd_a_checked}'"
+fi
+if [[ "$_kd_a_done" == "0" ]] && [[ "$_kd_a_cancelled" == "0" ]]; then
+  pass "T_arrow_dispatch_a_lower_mixed_to_all_checked[flags]: done=0 cancelled=0"
+else
+  fail "T_arrow_dispatch_a_lower_mixed_to_all_checked[flags]: done=${_kd_a_done} cancelled=${_kd_a_cancelled}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_A_upper_all_checked_to_unchecked ---"
+_kd_A="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key 'A' 0 3 '1 1 1'
+" 2>&1)"
+_kd_A_rest="${_kd_A#*|}"; _kd_A_checked="${_kd_A_rest%%|*}"
+_kd_A_rest2="${_kd_A_rest#*|}"; _kd_A_done="${_kd_A_rest2%%|*}"
+_kd_A_cancelled="${_kd_A_rest2#*|}"
+if [[ "$_kd_A_checked" == "0 0 0" ]]; then
+  pass "T_arrow_dispatch_A_upper_all_checked_to_unchecked[checked]: 'A' on '1 1 1' -> '0 0 0'"
+else
+  fail "T_arrow_dispatch_A_upper_all_checked_to_unchecked[checked]: expected '0 0 0', got '${_kd_A_checked}'"
+fi
+if [[ "$_kd_A_done" == "0" ]] && [[ "$_kd_A_cancelled" == "0" ]]; then
+  pass "T_arrow_dispatch_A_upper_all_checked_to_unchecked[flags]: done=0 cancelled=0"
+else
+  fail "T_arrow_dispatch_A_upper_all_checked_to_unchecked[flags]: done=${_kd_A_done} cancelled=${_kd_A_cancelled}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_space_toggles_item ---"
+# cursor=1, item 1 is unchecked (0) -> space -> item 1 becomes 1
+_kd_sp="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key ' ' 1 3 '1 0 1'
+" 2>&1)"
+_kd_sp_rest="${_kd_sp#*|}"; _kd_sp_checked="${_kd_sp_rest%%|*}"
+if [[ "$_kd_sp_checked" == "1 1 1" ]]; then
+  pass "T_arrow_dispatch_space_toggles_item: Space at cursor=1 on '1 0 1' -> '1 1 1'"
+else
+  fail "T_arrow_dispatch_space_toggles_item: expected '1 1 1', got '${_kd_sp_checked}'"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_enter_sets_done ---"
+_kd_enter="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key '' 0 3 '1 0 0'
+" 2>&1)"
+_kd_enter_rest="${_kd_enter#*|}"; _kd_enter_rest2="${_kd_enter_rest#*|}"
+_kd_enter_done="${_kd_enter_rest2%%|*}"; _kd_enter_cancelled="${_kd_enter_rest2#*|}"
+if [[ "$_kd_enter_done" == "1" ]] && [[ "$_kd_enter_cancelled" == "0" ]]; then
+  pass "T_arrow_dispatch_enter_sets_done: Enter -> done=1 cancelled=0"
+else
+  fail "T_arrow_dispatch_enter_sets_done: done=${_kd_enter_done} cancelled=${_kd_enter_cancelled}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_q_sets_cancelled ---"
+_kd_q="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key 'q' 0 3 '1 0 0'
+" 2>&1)"
+_kd_q_rest="${_kd_q#*|}"; _kd_q_rest2="${_kd_q_rest#*|}"
+_kd_q_done="${_kd_q_rest2%%|*}"; _kd_q_cancelled="${_kd_q_rest2#*|}"
+if [[ "$_kd_q_cancelled" == "1" ]] && [[ "$_kd_q_done" == "0" ]]; then
+  pass "T_arrow_dispatch_q_sets_cancelled: 'q' -> cancelled=1 done=0"
+else
+  fail "T_arrow_dispatch_q_sets_cancelled: done=${_kd_q_done} cancelled=${_kd_q_cancelled}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_unknown_key_noop ---"
+# An unrecognized key must not change state, done, or cancelled
+_kd_noop="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key 'x' 1 3 '1 0 1'
+" 2>&1)"
+_kd_noop_cursor="${_kd_noop%%|*}"
+_kd_noop_rest="${_kd_noop#*|}"; _kd_noop_checked="${_kd_noop_rest%%|*}"
+_kd_noop_rest2="${_kd_noop_rest#*|}"; _kd_noop_done="${_kd_noop_rest2%%|*}"
+_kd_noop_cancelled="${_kd_noop_rest2#*|}"
+if [[ "$_kd_noop_cursor" == "1" ]] && [[ "$_kd_noop_checked" == "1 0 1" ]] && \
+   [[ "$_kd_noop_done" == "0" ]] && [[ "$_kd_noop_cancelled" == "0" ]]; then
+  pass "T_arrow_dispatch_unknown_key_noop: 'x' -> state unchanged, done=0, cancelled=0"
+else
+  fail "T_arrow_dispatch_unknown_key_noop: cursor=${_kd_noop_cursor} checked='${_kd_noop_checked}' done=${_kd_noop_done} cancelled=${_kd_noop_cancelled}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_up_moves_cursor ---"
+# Up from cursor=2 -> cursor=1; state/flags unchanged
+_kd_up="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key $'\\033[A' 2 3 '1 0 1'
+" 2>&1)"
+_kd_up_cursor="${_kd_up%%|*}"
+_kd_up_rest="${_kd_up#*|}"; _kd_up_checked="${_kd_up_rest%%|*}"
+_kd_up_rest2="${_kd_up_rest#*|}"; _kd_up_done="${_kd_up_rest2%%|*}"
+_kd_up_cancelled="${_kd_up_rest2#*|}"
+if [[ "$_kd_up_cursor" == "1" ]] && [[ "$_kd_up_checked" == "1 0 1" ]] && \
+   [[ "$_kd_up_done" == "0" ]] && [[ "$_kd_up_cancelled" == "0" ]]; then
+  pass "T_arrow_dispatch_up_moves_cursor: Up at cursor=2 -> cursor=1, state/flags unchanged"
+else
+  fail "T_arrow_dispatch_up_moves_cursor: cursor=${_kd_up_cursor} checked='${_kd_up_checked}' done=${_kd_up_done} cancelled=${_kd_up_cancelled}"
+fi
+# Clamp: Up at cursor=0 -> cursor stays 0
+_kd_up_clamp="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key $'\\033[A' 0 3 '1 0 1'
+" 2>&1)"
+_kd_up_clamp_cursor="${_kd_up_clamp%%|*}"
+if [[ "$_kd_up_clamp_cursor" == "0" ]]; then
+  pass "T_arrow_dispatch_up_moves_cursor[clamp]: Up at cursor=0 clamps to 0"
+else
+  fail "T_arrow_dispatch_up_moves_cursor[clamp]: expected cursor=0, got ${_kd_up_clamp_cursor}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_down_moves_cursor ---"
+# Down from cursor=1 -> cursor=2 (count=3); state/flags unchanged
+_kd_dn="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key $'\\033[B' 1 3 '1 0 1'
+" 2>&1)"
+_kd_dn_cursor="${_kd_dn%%|*}"
+_kd_dn_rest="${_kd_dn#*|}"; _kd_dn_checked="${_kd_dn_rest%%|*}"
+_kd_dn_rest2="${_kd_dn_rest#*|}"; _kd_dn_done="${_kd_dn_rest2%%|*}"
+_kd_dn_cancelled="${_kd_dn_rest2#*|}"
+if [[ "$_kd_dn_cursor" == "2" ]] && [[ "$_kd_dn_checked" == "1 0 1" ]] && \
+   [[ "$_kd_dn_done" == "0" ]] && [[ "$_kd_dn_cancelled" == "0" ]]; then
+  pass "T_arrow_dispatch_down_moves_cursor: Down at cursor=1, count=3 -> cursor=2, state/flags unchanged"
+else
+  fail "T_arrow_dispatch_down_moves_cursor: cursor=${_kd_dn_cursor} checked='${_kd_dn_checked}' done=${_kd_dn_done} cancelled=${_kd_dn_cancelled}"
+fi
+# Clamp: Down at cursor=count-1 -> cursor stays count-1
+_kd_dn_clamp="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key $'\\033[B' 2 3 '1 0 1'
+" 2>&1)"
+_kd_dn_clamp_cursor="${_kd_dn_clamp%%|*}"
+if [[ "$_kd_dn_clamp_cursor" == "2" ]]; then
+  pass "T_arrow_dispatch_down_moves_cursor[clamp]: Down at cursor=count-1 clamps to count-1"
+else
+  fail "T_arrow_dispatch_down_moves_cursor[clamp]: expected cursor=2, got ${_kd_dn_clamp_cursor}"
+fi
+
+# ---------------------------------------------------------------------------
+# T_arrow_dispatch_Q_upper_sets_cancelled / T_arrow_dispatch_esc_sets_cancelled:
+#   Verify that uppercase Q and bare ESC also trigger cancelled=1, done=0 via
+#   the production dispatch in _tui_arrow_handle_key.
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "--- T_arrow_dispatch_Q_upper_sets_cancelled ---"
+_kd_Q="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key 'Q' 0 3 '1 0 0'
+" 2>&1)"
+_kd_Q_rest="${_kd_Q#*|}"; _kd_Q_rest2="${_kd_Q_rest#*|}"
+_kd_Q_done="${_kd_Q_rest2%%|*}"; _kd_Q_cancelled="${_kd_Q_rest2#*|}"
+if [[ "$_kd_Q_cancelled" == "1" ]] && [[ "$_kd_Q_done" == "0" ]]; then
+  pass "T_arrow_dispatch_Q_upper_sets_cancelled: 'Q' -> cancelled=1 done=0"
+else
+  fail "T_arrow_dispatch_Q_upper_sets_cancelled: done=${_kd_Q_done} cancelled=${_kd_Q_cancelled}"
+fi
+
+echo ""
+echo "--- T_arrow_dispatch_esc_sets_cancelled ---"
+_kd_esc="$(bash -c "
+  source '${TUI_SH}'
+  _tui_arrow_handle_key $'\\033' 0 3 '1 0 0'
+" 2>&1)"
+_kd_esc_rest="${_kd_esc#*|}"; _kd_esc_rest2="${_kd_esc_rest#*|}"
+_kd_esc_done="${_kd_esc_rest2%%|*}"; _kd_esc_cancelled="${_kd_esc_rest2#*|}"
+if [[ "$_kd_esc_cancelled" == "1" ]] && [[ "$_kd_esc_done" == "0" ]]; then
+  pass "T_arrow_dispatch_esc_sets_cancelled: bare ESC -> cancelled=1 done=0"
+else
+  fail "T_arrow_dispatch_esc_sets_cancelled: done=${_kd_esc_done} cancelled=${_kd_esc_cancelled}"
 fi
 
 # ---------------------------------------------------------------------------
