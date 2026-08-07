@@ -387,6 +387,11 @@ fi
 # Helper: parse_kd splits cursor|checked_sp|done|cancelled from the function.
 # ---------------------------------------------------------------------------
 
+# Arrow mode (including toggle-all via 'a'/'A') is gated at Bash >=4.2 in production;
+# these three tests exercise that path and require Bash >=4.2 to produce meaningful output.
+if [[ ${BASH_VERSINFO[0]} -gt 4 ]] || \
+   [[ ${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -ge 2 ]]; then
+
 echo ""
 echo "--- T_arrow_dispatch_a_lower_none_to_all_checked ---"
 _kd_a_none="$(bash -c "
@@ -446,6 +451,12 @@ if [[ "$_kd_A_done" == "0" ]] && [[ "$_kd_A_cancelled" == "0" ]]; then
   pass "T_arrow_dispatch_A_upper_all_checked_to_unchecked[flags]: done=0 cancelled=0"
 else
   fail "T_arrow_dispatch_A_upper_all_checked_to_unchecked[flags]: done=${_kd_A_done} cancelled=${_kd_A_cancelled}"
+fi
+
+else
+  skip "T_arrow_dispatch_a_lower_none_to_all_checked" "arrow mode requires Bash >=4.2; running ${BASH_VERSION}"
+  skip "T_arrow_dispatch_a_lower_mixed_to_all_checked" "arrow mode requires Bash >=4.2; running ${BASH_VERSION}"
+  skip "T_arrow_dispatch_A_upper_all_checked_to_unchecked" "arrow mode requires Bash >=4.2; running ${BASH_VERSION}"
 fi
 
 echo ""
