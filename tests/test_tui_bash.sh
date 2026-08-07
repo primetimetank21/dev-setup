@@ -327,6 +327,53 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# T_arrow_redraw_stable: regression for viewport-creep bug.
+#
+# _tui_render_list emits exactly N lines for N tools. The cursor-up escape in
+# _tui_arrow_redraw must be CSI ${N}A (not CSI ${N+1}A); using N+1 consumes
+# static header lines on successive keypresses until the cursor overshoots
+# row 0 and the terminal scrolls upward on every key event.
+#
+# This test:
+#   1. Verifies _tui_render_list line count == N (measures the correct delta).
+#   2. Calls _tui_arrow_redraw directly, captures raw bytes, and asserts:
+#      - ESC[NA is present  (fix applied)
+#      - ESC[(N+1)A absent  (viewport-creep byte sequence not emitted)
+#      Fails on the old inline code (N+1); passes on the extracted helper.
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_arrow_redraw_stable ---"
+# Part 1: line count
+render_lines="$(bash -c "
+  source '${TUI_SH}'
+  tools=\$'alpha\nbeta\ngamma'
+  _tui_render_list 0 \"\$tools\" '1 1 0' '1 0 0'
+" 2>&1 | wc -l | tr -d ' \t\r\n')"
+if [[ "$render_lines" -eq 3 ]]; then
+  pass "T_arrow_redraw_stable[line-count]: _tui_render_list emits 3 lines for 3 tools"
+else
+  fail "T_arrow_redraw_stable[line-count]: expected 3 lines, got ${render_lines}"
+fi
+# Part 2: behavioral ANSI byte assertion via _tui_arrow_redraw
+# ESC[3A = 0x1b 0x5b 0x33 0x41  (cursor up 3)
+# ESC[4A = 0x1b 0x5b 0x34 0x41  (cursor up 4 = count+1 bug)
+_redraw_hex="$(bash -c "
+  source '${TUI_SH}'
+  tools=\$'alpha\nbeta\ngamma'
+  _tui_arrow_redraw 3 0 \"\$tools\" '1 1 0' '1 0 0'
+" 2>&1 | od -An -tx1 | tr -d ' \n')"
+if echo "$_redraw_hex" | grep -qF "1b5b3341"; then
+  pass "T_arrow_redraw_stable[ansi-cursor-up]: _tui_arrow_redraw emits ESC[3A for N=3"
+else
+  fail "T_arrow_redraw_stable[ansi-cursor-up]: ESC[3A not found in redraw output (hex: ${_redraw_hex})"
+fi
+if echo "$_redraw_hex" | grep -qF "1b5b3441"; then
+  fail "T_arrow_redraw_stable[ansi-no-creep]: ESC[4A present -- count+1 viewport-creep bug"
+else
+  pass "T_arrow_redraw_stable[ansi-no-creep]: ESC[4A absent -- no viewport creep"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo ""

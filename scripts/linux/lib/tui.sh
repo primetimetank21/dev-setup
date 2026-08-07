@@ -117,6 +117,21 @@ show_tool_menu() {
 }
 
 # ---------------------------------------------------------------------------
+# _tui_arrow_redraw -- emit one in-place redraw: cursor-up N, clear-down, render
+#   $1: count (number of list lines = cursor-up delta)
+#   $2: cursor index
+#   $3: tools_nl
+#   $4: checked_arr space-joined
+#   $5: is_def_sp
+# ---------------------------------------------------------------------------
+_tui_arrow_redraw() {
+  local count="$1" cursor="$2" tools_nl="$3" checked_sp="$4" is_def_sp="$5"
+  printf '\033[%dA' "$count"
+  printf '\033[J'
+  _tui_render_list "$cursor" "$tools_nl" "$checked_sp" "$is_def_sp"
+}
+
+# ---------------------------------------------------------------------------
 # _tui_arrow_mode -- bash >= 4.2: arrow keys, Space, Enter, q/ESC
 # ---------------------------------------------------------------------------
 _tui_arrow_mode() {
@@ -159,9 +174,7 @@ _tui_arrow_mode() {
     esac
 
     if [[ $done_ -eq 0 ]]; then
-      printf '\033[%dA' $((count + 1))
-      printf '\033[J'
-      _tui_render_list "$cursor" "$tools_nl" "${checked_arr[*]}" "$is_def_sp"
+      _tui_arrow_redraw "$count" "$cursor" "$tools_nl" "${checked_arr[*]}" "$is_def_sp"
     fi
   done
 
