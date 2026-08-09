@@ -1,6 +1,6 @@
 # Architecture: dev-setup
 
-> **Last updated:** 2026-05-19
+> **Last updated:** 2026-08-09
 
 ---
 
@@ -38,7 +38,8 @@ dev-setup/
 |   |   |---- setup.sh               # Core Linux/macOS/WSL installer -- runs tools in order
 |   |   |---- uninstall.sh           # Idempotent reverse of the installer
 |   |   |---- lib/
-|   |   |   `---- log.sh             # Shared log_info / log_ok / log_warn / log_error helpers
+|   |   |   |---- log.sh             # Shared log_info / log_ok / log_warn / log_error helpers
+|   |   |   `---- tui.sh             # Bash 3.2+ interactive picker
 |   |   `---- tools/                  # Per-tool installers (sourced by core in dependency order)
 |   |       |---- auth.sh            # GitHub CLI authentication (interactive)
 |   |       |---- copilot-cli.sh     # Install GitHub Copilot CLI (pin from .tool-versions)
@@ -52,8 +53,9 @@ dev-setup/
 |       |---- uninstall.ps1          # Idempotent reverse of the installer
 |       |---- lib/
 |       |   |---- logging.ps1        # Write-Info / Write-Ok / Write-Warn / Write-Err + Assert-LastExit
-|       |   `---- path.ps1           # Refresh-SessionPath -- re-reads Machine+User PATH from registry
-|       `---- tools/                  # Per-tool installers (orchestrator + 10 modules)
+|       |   |---- path.ps1           # Refresh-SessionPath -- re-reads Machine+User PATH from registry
+|       |   `---- tui.ps1            # PS 5.1-safe ASCII picker + ordered resolver
+|       `---- tools/                  # Per-tool installer modules
 |           |---- auth.ps1           # GitHub CLI authentication (interactive)
 |           |---- copilot.ps1        # GitHub Copilot CLI (pin from .tool-versions)
 |           |---- dotfiles.ps1       # Apply config/dotfiles/ on Windows
@@ -91,8 +93,12 @@ dev-setup/
 |   |---- test_nvm_bootstrap.sh      # nvm bootstrap tests
 |   |---- test_precommit_hygiene.sh  # pre-commit hygiene checks (ancestry, ASCII, rogue-path)
 |   |---- test_remove_custom_item.ps1 # Custom item removal tests (PowerShell)
+|   |---- test_setup_flags.sh        # Bash selection flags + interactive guards
+|   |---- test_setup_flags_pwsh.ps1  # PowerShell selection flags + interactive guards
 |   |---- test_shared_logging.sh     # scripts/linux/lib/log.sh contract tests
 |   |---- test_tool_versions.sh      # .tool-versions parser + Get-ToolVersion contract tests
+|   |---- test_tui_bash.sh           # Bash picker + ordered selection tests
+|   |---- test_tui_pwsh.ps1          # PowerShell picker + resolver tests
 |   `---- test_windows_setup.ps1     # Windows setup tests (PowerShell)
 |
 |---- .devcontainer/
@@ -165,6 +171,30 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 
 ---
 
+## Tool Selection Architecture
+
+The public picker contract, including invocation, controls, headless behavior, flag precedence,
+and confirm/cancel results, is documented in the
+[README interactive picker section](./README.md#interactive-tool-picker).
+
+Internally, selection is separated from installation:
+
+1. `scripts/linux/setup.sh` and `scripts/windows/setup.ps1` own argument handling, interactive
+   eligibility, validation, and final dispatch.
+2. `scripts/linux/lib/tui.sh` and `scripts/windows/lib/tui.ps1` own menu state, rendering, and key
+   handling. They return selected tool names but never install tools.
+3. The selected names flow through the same ordered resolver used by `--only` / `-Only`.
+4. The resolver iterates the default-tool sequence first, then appends selected opt-in tools
+   alphabetically. Menu display order, user input order, and flag input order cannot reorder
+   dependency-sensitive defaults.
+5. Cancellation or an empty confirmed selection exits before dispatch.
+
+The default arrays are the authoritative install-order definitions. A tool module that is
+available but absent from the default array remains opt-in and is never added to a no-argument
+headless run.
+
+---
+
 ## Script Conventions
 
 Shared helpers live in dedicated `lib/` directories. Tool scripts **load** them rather than redefining or copy-pasting. Source of truth:
@@ -172,8 +202,10 @@ Shared helpers live in dedicated `lib/` directories. Tool scripts **load** them 
 | File                                 | Purpose                                                                                  | Loaded by                                    |
 |--------------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------|
 | `scripts/linux/lib/log.sh`           | `log_info`, `log_ok`, `log_warn`, `log_error`                                            | `setup.sh` and every `tools/*.sh`            |
+| `scripts/linux/lib/tui.sh`           | Bash 3.2+ interactive picker and menu state                                               | `scripts/linux/setup.sh`                     |
 | `scripts/windows/lib/logging.ps1`    | `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err`, `Assert-LastExit`                   | `setup.ps1` and every `tools/*.ps1`          |
 | `scripts/windows/lib/path.ps1`       | `Refresh-SessionPath` (re-reads Machine + User PATH from the registry into the session) | `setup.ps1` and any tool that mutates PATH   |
+| `scripts/windows/lib/tui.ps1`        | PS 5.1-safe ASCII picker and `Resolve-FinalToolset`                                      | `scripts/windows/setup.ps1`                  |
 | `scripts/lib/read-tool-version.sh`   | POSIX parser for `.tool-versions` (prints the pinned version to stdout)                  | Any `tools/*.sh` that needs a pinned version |
 | `scripts/lib/Read-ToolVersion.ps1`   | PowerShell `Get-ToolVersion -Name <tool>` (returns the pinned version)                   | Any `tools/*.ps1` that needs a pinned version |
 
@@ -186,12 +218,13 @@ Shared helpers live in dedicated `lib/` directories. Tool scripts **load** them 
 ```bash
 # From scripts/linux/setup.sh (lib is one level down):
 . "$(dirname "${BASH_SOURCE[0]}")/lib/log.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/lib/tui.sh"
 
 # From scripts/linux/tools/<tool>.sh (lib is one level up):
 . "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 ```
 
-Note that `setup.sh` runs each `tools/*.sh` via `bash <script>` (a subshell), so every tool script must re-source `lib/log.sh` itself; the parent scope is not inherited.
+Note that `setup.sh` runs each `tools/*.sh` via `bash <script>` (a subshell), so every tool script must re-source `lib/log.sh` itself; the parent scope is not inherited. The TUI library is orchestrator-only and is not loaded by tool installers.
 
 **PowerShell** uses dot-sourcing (`.`). At the top of `setup.ps1` or any `tools/*.ps1`, after `Set-StrictMode` / `$ErrorActionPreference`:
 
@@ -199,12 +232,13 @@ Note that `setup.sh` runs each `tools/*.sh` via `bash <script>` (a subshell), so
 # From scripts/windows/setup.ps1 (lib is alongside):
 . "$PSScriptRoot\lib\logging.ps1"
 . "$PSScriptRoot\lib\path.ps1"
+. "$PSScriptRoot\lib\tui.ps1"
 
 # From scripts/windows/tools/<tool>.ps1 (lib is one level up):
 . "$PSScriptRoot\..\lib\logging.ps1"
 ```
 
-`$PSScriptRoot` is the directory of the currently-executing file. Unlike the bash path, `setup.ps1` **dot-sources** each `tools/*.ps1`, so tool functions (`Install-Nvm`, `Install-GhCli`, ...) live in the parent scope and are invoked by name from `Main`. Tool scripts still re-dot-source any `lib/` files they need so they are also runnable standalone.
+`$PSScriptRoot` is the directory of the currently-executing file. Unlike the bash path, `setup.ps1` **dot-sources** each `tools/*.ps1`, so tool functions (`Install-Nvm`, `Install-GhCli`, ...) live in the parent scope and are invoked through `$ToolRegistry`. Tool scripts still re-dot-source any `lib/` files they need so they are also runnable standalone. The TUI library is orchestrator-only.
 
 ### Reading pinned versions from `.tool-versions`
 
@@ -280,11 +314,11 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
    # Install logic here
    ```
 
-2. **Add a `run_tool "<toolname>"` call in `scripts/linux/setup.sh`**
+2. **Decide whether the tool is default-on or opt-in**
 
-   ```bash
-   run_tool "toolname"
-   ```
+   Adding the script makes its basename available to the picker and `--only`. To install it by
+   default, also add `"<toolname>"` to `DEFAULT_TOOLS` in `scripts/linux/setup.sh` at the correct
+   dependency position. Leaving it out keeps the tool opt-in.
 
 3. **Create a companion GitHub issue** if it's a new tool install.
 
@@ -301,49 +335,59 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 
 ## Dependency Order
 
-The tool scripts in `scripts/linux/tools/` must run in this order (enforced by `scripts/linux/setup.sh`):
+The default Linux/macOS/WSL tools run in this order (defined by `DEFAULT_TOOLS` in
+`scripts/linux/setup.sh`):
 
 ```
-zsh -> uv -> nvm -> gh -> auth -> copilot-cli
+prereqs -> zsh -> uv -> nvm -> gh -> auth -> copilot-cli -> squad-cli -> dotfiles -> git-hook
 ```
 
 `copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `auth` script handles interactive GitHub CLI authentication.
+Available scripts not listed in `DEFAULT_TOOLS` are opt-in. When selected, they are appended
+alphabetically after selected defaults.
 
 ### Windows orchestrator chain
 
-The Windows orchestrator `scripts/windows/setup.ps1` is a thin router: it dot-sources two shared libraries first (`lib/logging.ps1` -> `lib/path.ps1`), then dot-sources every per-tool module under `scripts/windows/tools/` so their `Install-*` functions are defined. Dot-source order does **not** drive dependencies -- the authoritative install order is the call sequence inside the `Main` function. The chain is fixed at:
+The Windows orchestrator `scripts/windows/setup.ps1` dot-sources its shared libraries and per-tool
+modules, then maps public tool names to installer functions in `$ToolRegistry`. Dot-source order
+does **not** drive dependencies. `$DefaultTools` is the authoritative default order,
+`Resolve-FinalToolset` filters that order, and `Main` dispatches the result through the registry.
+The default chain is:
 
 ```
-git -> uv -> nvm -> gh -> auth -> vim -> psmux -> copilot -> dotfiles -> profile -> hooks
+winget-check -> git -> uv -> nvm -> gh -> auth -> vim -> psmux -> copilot -> squad-cli -> dotfiles -> profile -> git-hook
 ```
 
-Mapped to functions and the `tools/*.ps1` module that defines each:
+Mapped to registry functions and the `tools/*.ps1` module that defines each:
 
-| # | Function called by `Main` | Source module | Mirrors Linux step |
-|---|---------------------------|---------------|--------------------|
-| 1 | `Install-Git`             | `tools/git.ps1`        | (Linux: pre-installed / package manager) |
-| 2 | `Install-Uv`              | `tools/uv.ps1`         | `tools/uv.sh` |
-| 3 | `Install-Nvm`             | `tools/nvm.ps1`        | `tools/nvm.sh` |
-| 4 | `Install-GhCli`           | `tools/gh.ps1`         | `tools/gh.sh` |
-| 5 | `Invoke-GhAuth`           | `tools/auth.ps1`       | `tools/auth.sh` |
-| 6 | `Install-Vim`             | `tools/vim.ps1`        | (Linux: pre-installed / package manager) |
-| 7 | `Install-Psmux`           | `tools/psmux.ps1`      | (Linux: tmux already on PATH) |
-| 8 | `Install-CopilotCli`      | `tools/copilot.ps1`    | `tools/copilot-cli.sh` |
-| 9 | `Install-Dotfiles`        | `tools/dotfiles.ps1`   | `config/dotfiles/install.sh` (driven from `tools/zsh.sh`) |
-| 10 | `Write-PowerShellProfile`| `tools/profile.ps1`    | (Linux: shell-rc work folded into `tools/zsh.sh`) |
-| 11 | `Install-GitHook`        | inline in `setup.ps1`  | `git config core.hooksPath hooks` (same contract) |
+| # | Registry function | Source module | Mirrors Linux step |
+|---|-------------------|---------------|--------------------|
+| 1 | `Invoke-WingetGate`        | `tools/winget-check.ps1` | `tools/prereqs.sh` |
+| 2 | `Install-Git`              | `tools/git.ps1`          | (package prerequisite) |
+| 3 | `Install-Uv`               | `tools/uv.ps1`           | `tools/uv.sh` |
+| 4 | `Install-Nvm`              | `tools/nvm.ps1`          | `tools/nvm.sh` |
+| 5 | `Install-GhCli`            | `tools/gh.ps1`           | `tools/gh.sh` |
+| 6 | `Invoke-GhAuth`            | `tools/auth.ps1`         | `tools/auth.sh` |
+| 7 | `Install-Vim`              | `tools/vim.ps1`          | (platform addition) |
+| 8 | `Install-Psmux`            | `tools/psmux.ps1`        | (tmux equivalent) |
+| 9 | `Install-CopilotCli`       | `tools/copilot.ps1`      | `tools/copilot-cli.sh` |
+| 10 | `Install-SquadCli`        | `tools/squad-cli.ps1`    | `tools/squad-cli.sh` |
+| 11 | `Install-Dotfiles`        | `tools/dotfiles.ps1`     | `tools/dotfiles.sh` |
+| 12 | `Write-PowerShellProfile` | `tools/profile.ps1`      | (PowerShell profile finalizer) |
+| 13 | `Install-GitHook`         | `tools/git-hook.ps1`     | `tools/git-hook.sh` |
 
 Cross-platform invariants preserved from the Linux chain above:
 
 - `auth` (interactive `gh auth login`) runs after `gh` so the CLI is on PATH when the prompt fires.
 - `copilot` runs after `auth` so the install can detect an authenticated `gh` session.
 
-Windows-only additions vs. the Linux chain:
+Windows-specific ordering notes:
 
-- `git` runs **first** -- Windows ships without git, and every downstream step that shells out to `git` (auth, dotfiles, hooks) needs it on PATH.
+- `winget-check` runs first, then `git` -- downstream steps rely on the package manager or git.
 - `vim` and `psmux` are explicit `winget` installs because Windows has no equivalent pre-installed editor/multiplexer.
 - `dotfiles` + `profile` are Windows-specific finalizers: the Linux side rolls equivalent shell-rc work into `tools/zsh.sh` plus `config/dotfiles/install.sh`, but Windows needs a discrete PowerShell profile injection step (PS 5.1 + PS 7+ profile paths) after the dotfile templates are applied.
-- `Install-GitHook` is an inline function inside `setup.ps1` (not a separate `tools/*.ps1` module), wired last so `core.hooksPath=hooks` is set only after the working tree is in its final state.
+- `git-hook` runs last so `core.hooksPath=hooks` is set only after the working tree is in its final state.
+- Registry entries absent from `$DefaultTools` are opt-in and are appended alphabetically when selected.
 
 ---
 
@@ -395,12 +439,12 @@ All workflows live in [`.github/workflows/`](./.github/workflows).
 
 | Job | Runner | Purpose |
 |-----|--------|---------|
-| `validate-linux` | `ubuntu-latest` | Run `setup.sh`, assert zsh/uv/nvm/node/gh, idempotency re-run, alias unit + parity tests |
-| `validate-macos` | `macos-latest` | Same shape as `validate-linux` + tool-version pin tests |
-| `lint-shell-scripts` | `ubuntu-latest` | shellcheck across `setup.sh`, `scripts/linux/**`, `config/dotfiles/.aliases` |
-| `lint-powershell` | `ubuntu-latest` (pwsh) | PSScriptAnalyzer across `setup.ps1` + `scripts/windows/setup.ps1` |
-| `validate-powershell` | `windows-latest` | `Remove-CustomItem` regression + git-hooks tests under PS 7 |
-| `validate-ps51` | `windows-latest` | Syntax + PSScriptAnalyzer + profile-write + git-hooks tests under **PS 5.1** (Windows stock) |
+| `validate-linux` | `ubuntu-latest` | Installer, idempotency, aliases, tool versions, and Bash picker tests |
+| `validate-macos` | `macos-latest` | Linux-shaped validation plus Bash 3.2 picker fallback coverage |
+| `lint-shell-scripts` | `ubuntu-latest` | ShellCheck plus Bash flag, guard, and help-contract tests |
+| `lint-powershell` | `ubuntu-latest` (pwsh) | PSScriptAnalyzer across the Windows setup and TUI scripts |
+| `validate-powershell` | `windows-latest` | Windows regressions plus picker/resolver tests under PowerShell 7 |
+| `validate-ps51` | `windows-latest` | Syntax, PSScriptAnalyzer, setup flags, and picker/resolver tests under **PS 5.1** |
 
 ### `e2e-install.yml` -- end-to-end smoke test (4 jobs, PR + nightly cron)
 
