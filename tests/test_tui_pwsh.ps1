@@ -7,7 +7,7 @@
 # Usage: powershell -ExecutionPolicy Bypass -File tests\test_tui_pwsh.ps1
 # PS 5.1 ASCII-only: no smart quotes, em-dashes, arrows, or emoji.
 # Cancel path (Esc/Q) and ReadKey failure are manual-only gates (no real key-reader seam).
-# Test count: 9
+# Test count: 10
 
 $ErrorActionPreference = 'Stop'
 $TestsPassed  = 0
@@ -163,6 +163,29 @@ Test-Scenario "T_noarg_noninteractive_compat_ps: [DRIFT] no-arg + CI => run-log 
     }
     finally {
         $env:CI = $savedCI
+        Teardown-Harness
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_noninteractive_cannot_be_overridden_ps: explicit flag always suppresses menu
+# ---------------------------------------------------------------------------
+Test-Scenario "T_noninteractive_cannot_be_overridden_ps: explicit flag wins over environment" {
+    Setup-Harness
+    $savedSeam = $env:_PS_TUI_TEST_MENU
+    $env:_PS_TUI_TEST_MENU = '1'
+    try {
+        powershell -NoProfile -ExecutionPolicy Bypass -File $WinSetup `
+            -NonInteractive -ToolsDir $StubDir 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Setup exited $LASTEXITCODE" }
+        $actual   = (Get-Content $script:RunLog -ErrorAction SilentlyContinue) -join "`n"
+        $expected = (Get-Content (Join-Path $StubDir 'defaults.txt')) -join "`n"
+        if ($actual -ne $expected) {
+            throw "Non-interactive override failed.`n  Expected: $expected`n  Actual:   $actual"
+        }
+    }
+    finally {
+        $env:_PS_TUI_TEST_MENU = $savedSeam
         Teardown-Harness
     }
 }

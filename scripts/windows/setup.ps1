@@ -202,8 +202,7 @@ if ($NonInteractive -and $PSBoundParameters.ContainsKey('SelectionFile')) {
 }
 
 # ---------------------------------------------------------------------------
-# Interactive guard. Slice 1 only detects whether a future menu may run.
-# No menu is invoked until Slice 3.
+# Interactive guard. Explicit flags and headless environments suppress the menu.
 # ---------------------------------------------------------------------------
 function Test-ShouldShowMenu {
     param(
@@ -213,8 +212,6 @@ function Test-ShouldShowMenu {
         [bool]$InteractiveRequested,
         [bool]$SelectionFileSet
     )
-    # ponytail: test seam -- remove when TTY simulation available in CI
-    if ($env:_PS_TUI_TEST_MENU -eq '1') { return $true }
     if ($NonInteractiveRequested -or $OnlySet -or $SkipSet) { return $false }
     # -Interactive + -SelectionFile: bypass CI/TTY detection so CI can test the menu path.
     if ($InteractiveRequested -and $SelectionFileSet) { return $true }
