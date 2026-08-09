@@ -100,6 +100,9 @@ jobs:
       - name: Run tool version tests
         run: bash tests/test_tool_versions.sh
 
+      - name: Run TUI bash menu tests
+        run: bash tests/test_tui_bash.sh
+
       - name: Flag test - --list (Linux)
         run: bash setup.sh --list
 
@@ -182,6 +185,9 @@ jobs:
 
       - name: Run tool version tests
         run: bash tests/test_tool_versions.sh
+
+      - name: Run TUI bash menu tests
+        run: bash tests/test_tui_bash.sh
 
       - name: Run idempotency test suite
         run: bash tests/test_idempotency.sh

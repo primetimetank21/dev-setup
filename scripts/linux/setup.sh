@@ -31,6 +31,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # shellcheck disable=SC1091
 . "$(dirname "${BASH_SOURCE[0]}")/lib/log.sh"
+# shellcheck disable=SC1091
+. "$(dirname "${BASH_SOURCE[0]}")/lib/tui.sh"
 
 # ---------------------------------------------------------------------------
 # DEFAULT_TOOLS -- single ordered source of truth for a no-arg default run.
@@ -197,8 +199,7 @@ fi
 # (Note: ARG_ONLY_SET / ARG_SKIP_SET handle empty-value sentinels; build_final_toolset validates.)
 
 # ---------------------------------------------------------------------------
-# Interactive guard. Slice 1 only detects whether a future menu may run.
-# No menu is invoked until Slice 2.
+# Interactive guard. Returns 0 (true) when the menu should run.
 # ---------------------------------------------------------------------------
 is_interactive() {
   if [[ $ARG_NON_INTERACTIVE_SET -eq 1 || $ARG_ONLY_SET -eq 1 || $ARG_SKIP_SET -eq 1 ]]; then
@@ -217,9 +218,6 @@ is_interactive() {
   return 0
 }
 
-if is_interactive; then
-  : # ponytail: detection-only ceiling for Slice 1; Slice 2 wires the Bash menu here.
-fi
 
 # ---------------------------------------------------------------------------
 # Build FinalToolSet -- populates global FINAL_TOOLS (bash 3.2 safe: no
@@ -362,6 +360,37 @@ main() {
   log_info "Starting Linux/macOS setup"
   log_info "Platform: ${platform}"
   log_info "Repo root: ${REPO_ROOT}"
+
+  if is_interactive; then
+    if [[ $ARG_SELECTION_FILE_SET -eq 1 ]]; then
+      # CI/test seam: read newline-delimited selection from file
+      _MENU_SELECTION=""
+      _MENU_CANCELLED=0
+      local _sel_line
+      while IFS= read -r _sel_line || [[ -n "$_sel_line" ]]; do
+        _sel_line="${_sel_line%$'\r'}"
+        [[ -z "$_sel_line" ]] && continue
+        _MENU_SELECTION="${_MENU_SELECTION:+${_MENU_SELECTION},}${_sel_line}"
+      done < "$ARG_SELECTION_FILE"
+    else
+      local _avail_for_menu=()
+      local _t
+      while IFS= read -r _t; do
+        [[ -n "$_t" ]] && _avail_for_menu+=("$_t")
+      done < <(get_available_tools)
+      show_tool_menu DEFAULT_TOOLS _avail_for_menu
+    fi
+
+    if [[ "${_MENU_CANCELLED:-0}" -eq 1 ]]; then
+      exit 0
+    fi
+    if [[ -z "${_MENU_SELECTION:-}" ]]; then
+      log_info "Nothing selected, exiting."
+      exit 0
+    fi
+    ARG_ONLY="$_MENU_SELECTION"
+    ARG_ONLY_SET=1
+  fi
 
   build_final_toolset
 
