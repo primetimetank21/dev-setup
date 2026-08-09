@@ -144,7 +144,7 @@ echo "--- T_menu_resolve_empty ---"
 setup_harness
 # Use an empty selection file (only blank lines)
 sel_f="$(make_sel_file "")"
-out="$(bash "$LINUX_SETUP" --interactive "--selection-file=${sel_f}" "--tools-dir=${STUB_DIR}" 2>&1)" || true
+out="$(bash "$LINUX_SETUP" --interactive "--selection-file=${sel_f}" "--tools-dir=${STUB_DIR}" 2>&1)"
 exit_code=$?
 if [[ $exit_code -eq 0 ]] && [[ ! -s "$RUN_LOG" ]]; then
   if assert_contains "$out" "Nothing selected"; then
