@@ -53,8 +53,55 @@ No action needed. Setup runs automatically on container creation via the `postCr
 
 ## Selective Install
 
-By default, `setup.sh` / `setup.ps1` installs all tools in the defined order. Use flags to control
-which tools run without editing the scripts.
+`setup.sh` and `setup.ps1` share one ordered selection model. In an eligible interactive terminal,
+a no-argument run opens the tool picker. In CI, headless sessions, or when selection flags are
+provided, setup skips the picker and uses the deterministic flag/default path instead.
+
+### Interactive Tool Picker
+
+Run setup normally to open the picker in an interactive terminal, or request it explicitly:
+
+| Action | Linux / macOS / WSL | Windows |
+|--------|---------------------|---------|
+| Open when the terminal is interactive | `./setup.sh` | `.\setup.ps1` |
+| Explicitly request the picker | `./setup.sh --interactive` | `.\setup.ps1 -Interactive` |
+| Explicitly suppress the picker | `./setup.sh --non-interactive` | `.\setup.ps1 -NonInteractive` |
+
+An explicit interactive request still obeys the CI/headless safety checks. The picker is
+automatically suppressed when setup detects CI, GitHub Actions, redirected or unavailable
+interactive I/O, or no usable interactive console. A suppressed no-argument run installs the
+default tools in their defined order.
+
+For an additional non-interactive escape hatch, set `SETUP_NON_INTERACTIVE=1`:
+
+```bash
+SETUP_NON_INTERACTIVE=1 ./setup.sh
+```
+
+```powershell
+$env:SETUP_NON_INTERACTIVE = '1'
+.\setup.ps1
+```
+
+Picker behavior is consistent across platforms:
+
+- Default tools appear first in dependency order, pre-checked and labeled `(default)`.
+- Available opt-in tools follow alphabetically, unchecked and labeled `(opt-in)`.
+- Confirming installs the checked tools through the same ordered selection engine used by flags.
+- Cancelling exits successfully without installing anything and prints `Install cancelled.`
+- Confirming with every item unchecked exits successfully and prints `Nothing selected, exiting.`
+
+Controls depend on the shell:
+
+| Environment | Controls |
+|-------------|----------|
+| Bash 4.2 or newer | Up/Down to move, Space to toggle, `A` to toggle all, Enter to confirm, `Q` or Esc to cancel |
+| Bash 3.2 | Enter a tool number to toggle it, `A` to toggle all, Enter on an empty prompt to confirm, `Q` to cancel |
+| Windows PowerShell 5.1 or newer | ASCII `[x]` / `[ ]` menu with Up/Down, Space, `A`, Enter, and Esc or `Q` |
+
+For CI and automation, use `--only` / `--skip` or `-Only` / `-Skip`. These flags are the
+deterministic interface and take precedence over the picker, even if the interactive flag is also
+present.
 
 ### Available Flags
 
@@ -64,6 +111,8 @@ which tools run without editing the scripts.
 | Print usage, exit | `--help` | `-Help` |
 | Install only the named tools | `--only=a,b,c` | `-Only 'a,b,c'` |
 | Install all defaults except named tools | `--skip=a,b,c` | `-Skip 'a,b,c'` |
+| Request the interactive picker | `--interactive` | `-Interactive` |
+| Never show the interactive picker | `--non-interactive` | `-NonInteractive` |
 
 ### Linux / macOS / WSL Examples
 
