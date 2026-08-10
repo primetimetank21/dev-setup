@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Interactive tool pickers use Quiet Accent semantic colors when a compatible console is available,
+  while preserving ASCII/plain output for redirected sessions and `NO_COLOR`. (#507)
+
 ### Fixed
 
 ### Removed

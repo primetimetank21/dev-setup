@@ -7,6 +7,99 @@
 # No Write-Host. Console output via [Console]::Write / [Console]::WriteLine only.
 
 # ---------------------------------------------------------------------------
+# Quiet Accent console styling. This remains deliberately local to the TUI:
+# redirected/plain output is unchanged, and colors always restore immediately.
+# Test seam: _PS_TUI_COLOR_OVERRIDE=0|1 forces plain or colored rendering.
+# ---------------------------------------------------------------------------
+$script:_TuiWriteOverride = $null
+
+function Test-TuiColorEnabled {
+    if ($env:_PS_TUI_COLOR_OVERRIDE -eq '0') { return $false }
+    if (-not [string]::IsNullOrEmpty($env:NO_COLOR)) { return $false }
+
+    try {
+        if ($null -eq $Host.UI.RawUI) { return $false }
+        $null = [Console]::ForegroundColor
+    }
+    catch {
+        return $false
+    }
+
+    if ($env:_PS_TUI_COLOR_OVERRIDE -eq '1') { return $true }
+    return -not [Console]::IsOutputRedirected
+}
+
+function Get-TuiRoleColor {
+    param(
+        [ValidateSet('Heading', 'Focus', 'Checked', 'OptIn', 'Confirmation', 'Warning', 'Cancel')]
+        [string]$Role
+    )
+
+    switch ($Role) {
+        'Heading'      { return [ConsoleColor]::Cyan }
+        'Focus'        { return [ConsoleColor]::Cyan }
+        'Checked'      { return [ConsoleColor]::Green }
+        'OptIn'        { return [ConsoleColor]::Yellow }
+        'Confirmation' { return [ConsoleColor]::Green }
+        'Warning'      { return [ConsoleColor]::Yellow }
+        'Cancel'       { return [ConsoleColor]::Yellow }
+    }
+}
+
+function Write-TuiRaw {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+        'PSAvoidUsingWriteHost', '',
+        Justification = 'The interactive TUI must write directly to the console without Write-Host.')]
+    param(
+        [string]$Text,
+        [bool]$ErrorOutput = $false
+    )
+
+    if ($null -ne $script:_TuiWriteOverride) {
+        & $script:_TuiWriteOverride $Text $ErrorOutput
+        return
+    }
+    if ($ErrorOutput) {
+        [Console]::Error.Write($Text)
+    } else {
+        [Console]::Write($Text)
+    }
+}
+
+function Write-TuiStyled {
+    param(
+        [string]$Text,
+        [ConsoleColor]$Color,
+        [bool]$ErrorOutput = $false
+    )
+
+    if (-not (Test-TuiColorEnabled)) {
+        Write-TuiRaw -Text $Text -ErrorOutput $ErrorOutput
+        return
+    }
+
+    $previousColor = [Console]::ForegroundColor
+    try {
+        [Console]::ForegroundColor = $Color
+        Write-TuiRaw -Text $Text -ErrorOutput $ErrorOutput
+    }
+    finally {
+        [Console]::ForegroundColor = $previousColor
+    }
+}
+
+function Write-TuiLine {
+    param(
+        [string]$Text,
+        [ConsoleColor]$Color,
+        [bool]$ErrorOutput = $false
+    )
+
+    Write-TuiStyled -Text $Text -Color $Color -ErrorOutput $ErrorOutput
+    Write-TuiRaw -Text ([Environment]::NewLine) -ErrorOutput $ErrorOutput
+}
+
+# ---------------------------------------------------------------------------
 # Resolve-FinalToolset: canonical ordered tool resolver.
 # Pure function -- no exit, no console output, no validation.
 # Callers must validate tool names before calling (non-interactive path).
@@ -81,13 +174,32 @@ function Show-ToolMenu {
 
     # Render-Menu as scriptblock (closure over $items, $checked, $cursor, $nDef)
     $renderMenu = {
-        [Console]::WriteLine('Select tools to install (defaults pre-checked):')
+        Write-TuiLine -Text 'Select tools to install (defaults pre-checked):' `
+            -Color (Get-TuiRoleColor -Role 'Heading')
         [Console]::WriteLine('')
         for ($i = 0; $i -lt $items.Count; $i++) {
             $mark  = if ($checked[$i]) { '[x]' } else { '[ ]' }
             $label = if ($i -lt $nDef)  { '(default)' } else { '(opt-in)' }
             $arrow = if ($i -eq $cursor) { '>' } else { ' ' }
-            [Console]::WriteLine("  $arrow $mark $($items[$i]) $label")
+            Write-TuiRaw -Text '  '
+            if ($arrow -eq '>') {
+                Write-TuiStyled -Text $arrow -Color (Get-TuiRoleColor -Role 'Focus')
+            } else {
+                Write-TuiRaw -Text $arrow
+            }
+            Write-TuiRaw -Text ' '
+            if ($checked[$i]) {
+                Write-TuiStyled -Text $mark -Color (Get-TuiRoleColor -Role 'Checked')
+            } else {
+                Write-TuiRaw -Text $mark
+            }
+            Write-TuiRaw -Text " $($items[$i]) "
+            if ($i -lt $nDef) {
+                [Console]::WriteLine($label)
+            } else {
+                Write-TuiStyled -Text $label -Color (Get-TuiRoleColor -Role 'OptIn')
+                [Console]::WriteLine()
+            }
         }
         [Console]::WriteLine('')
         [Console]::WriteLine('  Up/Down=move  Space=toggle  A=all  Enter=confirm  Esc/Q=cancel')
@@ -118,8 +230,9 @@ function Show-ToolMenu {
         }
     } catch {
         # ReadKey failure in a nominally interactive host: one clear warning, install cancelled
-        [Console]::Error.WriteLine(
-            "WARNING: Interactive menu failed ($($_.Exception.Message)). Installation is being cancelled.")
+        Write-TuiLine -Text (
+            "WARNING: Interactive menu failed ($($_.Exception.Message)). Installation is being cancelled.") `
+            -Color (Get-TuiRoleColor -Role 'Warning') -ErrorOutput $true
         return $null
     }
 
@@ -129,5 +242,6 @@ function Show-ToolMenu {
     for ($i = 0; $i -lt $items.Count; $i++) {
         if ($checked[$i]) { $selected += $items[$i] }
     }
+    Write-TuiLine -Text 'Selection confirmed.' -Color (Get-TuiRoleColor -Role 'Confirmation')
     return ,$selected
 }
