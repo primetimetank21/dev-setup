@@ -137,8 +137,7 @@ Test-Scenario "T_quiet_accent_restores_ps: foreground color restores on success 
         $before = [Console]::ForegroundColor
         $script:_TuiWriteOverride = {
             param($Text, $ErrorOutput)
-            [void]$Text
-            [void]$ErrorOutput
+            $script:_TuiWriteCall = @($Text, $ErrorOutput)
         }
         Write-TuiStyled -Text 'role-check' -Color (Get-TuiRoleColor -Role 'Confirmation')
         if ([Console]::ForegroundColor -ne $before) {
@@ -146,7 +145,6 @@ Test-Scenario "T_quiet_accent_restores_ps: foreground color restores on success 
         }
 
         $script:_TuiWriteOverride = {
-            param($Text, $ErrorOutput)
             throw 'forced output failure'
         }
         $threw = $false
@@ -163,6 +161,7 @@ Test-Scenario "T_quiet_accent_restores_ps: foreground color restores on success 
     }
     finally {
         $script:_TuiWriteOverride = $savedWriter
+        Remove-Variable -Scope Script -Name _TuiWriteCall -ErrorAction SilentlyContinue
         $env:_PS_TUI_COLOR_OVERRIDE = $savedOverride
     }
 }
