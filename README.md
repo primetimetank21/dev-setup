@@ -67,6 +67,12 @@ Run setup normally to open the picker in an interactive terminal, or request it 
 | Explicitly request the picker | `./setup.sh --interactive` | `.\setup.ps1 -Interactive` |
 | Explicitly suppress the picker | `./setup.sh --non-interactive` | `.\setup.ps1 -NonInteractive` |
 
+![Bash interactive tool picker with defaults checked and the delta opt-in selected](docs/media/tui-demo/tui-demo.gif)
+
+*Bash picker demo. PowerShell provides an equivalent picker. For automation and
+devcontainers, use `--non-interactive` or `SETUP_NON_INTERACTIVE=1`; CI
+auto-detect also suppresses the menu, so it is never required.*
+
 An explicit interactive request still obeys the CI/headless safety checks. The picker is
 automatically suppressed when setup detects CI, GitHub Actions, redirected or unavailable
 interactive I/O, or no usable interactive console. A suppressed no-argument run installs the
