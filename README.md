@@ -90,6 +90,10 @@ Picker behavior is consistent across platforms:
 - Confirming installs the checked tools through the same ordered selection engine used by flags.
 - Cancelling exits successfully without installing anything and prints `Install cancelled.`
 - Confirming with every item unchecked exits successfully and prints `Nothing selected, exiting.`
+- In supported interactive consoles, Quiet Accent uses cyan for headings and focus, green for
+  checked markers and confirmations, and yellow for opt-ins, cancellations, and warnings.
+  The ASCII markers and labels remain the source of meaning. Styling is suppressed for redirected
+  output, `NO_COLOR`, and unsupported terminals (including Bash with `TERM=dumb`).
 
 Controls depend on the shell:
 

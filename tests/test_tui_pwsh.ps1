@@ -7,7 +7,7 @@
 # Usage: powershell -ExecutionPolicy Bypass -File tests\test_tui_pwsh.ps1
 # PS 5.1 ASCII-only: no smart quotes, em-dashes, arrows, or emoji.
 # Cancel path (Esc/Q) and ReadKey failure are manual-only gates (no real key-reader seam).
-# Test count: 10
+# Test count: 14
 
 $ErrorActionPreference = 'Stop'
 $TestsPassed  = 0
@@ -64,6 +64,107 @@ function Assert-ArrayEquals {
 # Will fail with "Cannot find path" if tui.ps1 does not exist yet (RED state).
 # ---------------------------------------------------------------------------
 . $TuiLib
+
+# ===========================================================================
+# Quiet Accent styling tests
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# T_quiet_accent_roles_ps: each semantic role maps to the selected console color.
+# ---------------------------------------------------------------------------
+Test-Scenario "T_quiet_accent_roles_ps: semantic roles map to Quiet Accent colors" {
+    $expected = @{
+        Heading      = [ConsoleColor]::Cyan
+        Focus        = [ConsoleColor]::Cyan
+        Checked      = [ConsoleColor]::Green
+        OptIn        = [ConsoleColor]::Yellow
+        Confirmation = [ConsoleColor]::Green
+        Warning      = [ConsoleColor]::Yellow
+        Cancel       = [ConsoleColor]::Yellow
+    }
+    foreach ($role in $expected.Keys) {
+        $actual = Get-TuiRoleColor -Role $role
+        if ($actual -ne $expected[$role]) {
+            throw "$role expected $($expected[$role]), got $actual"
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_quiet_accent_plain_ps: forced plain and NO_COLOR suppress console styling.
+# ---------------------------------------------------------------------------
+Test-Scenario "T_quiet_accent_plain_ps: forced plain and NO_COLOR disable styling" {
+    $savedOverride = $env:_PS_TUI_COLOR_OVERRIDE
+    $savedNoColor  = $env:NO_COLOR
+    try {
+        $env:_PS_TUI_COLOR_OVERRIDE = '0'
+        if (Test-TuiColorEnabled) { throw 'Forced-plain seam enabled styling' }
+
+        $env:_PS_TUI_COLOR_OVERRIDE = '1'
+        $env:NO_COLOR = '1'
+        if (Test-TuiColorEnabled) { throw 'NO_COLOR did not override forced color' }
+    }
+    finally {
+        $env:_PS_TUI_COLOR_OVERRIDE = $savedOverride
+        $env:NO_COLOR = $savedNoColor
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_quiet_accent_redirected_ps: a piped child process must remain plain.
+# ---------------------------------------------------------------------------
+Test-Scenario "T_quiet_accent_redirected_ps: redirected output disables styling" {
+    $command = "& { . '$TuiLib'; if (Test-TuiColorEnabled) { exit 1 } }"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command $command 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Color styling remained enabled for redirected output'
+    }
+}
+
+# ---------------------------------------------------------------------------
+# T_quiet_accent_restores_ps: forced color applies roles and restores even when
+# the output operation fails.
+# ---------------------------------------------------------------------------
+Test-Scenario "T_quiet_accent_restores_ps: foreground color restores on success and failure" {
+    $savedOverride = $env:_PS_TUI_COLOR_OVERRIDE
+    $savedWriter   = $script:_TuiWriteOverride
+    try {
+        $env:_PS_TUI_COLOR_OVERRIDE = '1'
+        if (-not (Test-TuiColorEnabled)) {
+            throw 'Console color access is unavailable for forced-color seam'
+        }
+
+        $before = [Console]::ForegroundColor
+        $script:_TuiWriteOverride = {
+            param($Text, $ErrorOutput)
+            $script:_TuiWriteCall = @($Text, $ErrorOutput)
+        }
+        Write-TuiStyled -Text 'role-check' -Color (Get-TuiRoleColor -Role 'Confirmation')
+        if ([Console]::ForegroundColor -ne $before) {
+            throw 'Foreground color did not restore after styled write'
+        }
+
+        $script:_TuiWriteOverride = {
+            throw 'forced output failure'
+        }
+        $threw = $false
+        try {
+            Write-TuiStyled -Text 'restore-check' -Color (Get-TuiRoleColor -Role 'Warning')
+        }
+        catch {
+            $threw = $true
+        }
+        if (-not $threw) { throw 'Forced output failure did not propagate' }
+        if ([Console]::ForegroundColor -ne $before) {
+            throw 'Foreground color did not restore after output failure'
+        }
+    }
+    finally {
+        $script:_TuiWriteOverride = $savedWriter
+        Remove-Variable -Scope Script -Name _TuiWriteCall -ErrorAction SilentlyContinue
+        $env:_PS_TUI_COLOR_OVERRIDE = $savedOverride
+    }
+}
 
 # ===========================================================================
 # Resolve-FinalToolset unit tests

@@ -7,8 +7,39 @@
 #   show_tool_menu  <default_tools_array_name> <available_tools_array_name>
 #       Sets globals: _MENU_SELECTION (CSV), _MENU_CANCELLED (0|1)
 #
-# Test seam: set _TUI_ARROW_NAV_OVERRIDE=0|1 to force a specific nav path.
+# Test seams: set _TUI_ARROW_NAV_OVERRIDE=0|1 to force a specific nav path,
+# and _TUI_COLOR_OVERRIDE=0|1 to force plain or colored rendering.
 # ponytail: eval for bash 3.2 nameref compat; upgrade to local -n when 4.3 is minimum.
+
+# ---------------------------------------------------------------------------
+# _tui_color_enabled -- true when menu styling is safe, or test-forced.
+# NO_COLOR always wins, including over the force-color test seam.
+# ---------------------------------------------------------------------------
+_tui_color_enabled() {
+  [[ "${_TUI_COLOR_OVERRIDE:-}" == "0" ]] && return 1
+  [[ -n "${NO_COLOR:-}" ]] && return 1
+  [[ "${_TUI_COLOR_OVERRIDE:-}" == "1" ]] && return 0
+  [[ -t 1 ]] || return 1
+  [[ "${TERM:-}" != "dumb" ]] || return 1
+  return 0
+}
+
+# Fixed native SGR styles. Each function emits plain ASCII text when disabled.
+_tui_style_heading() {
+  if _tui_color_enabled; then printf '\033[1;36m%s\033[0m' "$1"; else printf '%s' "$1"; fi
+}
+_tui_style_checked() {
+  if _tui_color_enabled; then printf '\033[32m%s\033[0m' "$1"; else printf '%s' "$1"; fi
+}
+_tui_style_optin() {
+  if _tui_color_enabled; then printf '\033[33m%s\033[0m' "$1"; else printf '%s' "$1"; fi
+}
+_tui_style_confirmation() {
+  if _tui_color_enabled; then printf '\033[32m%s\033[0m' "$1"; else printf '%s' "$1"; fi
+}
+_tui_style_warning() {
+  if _tui_color_enabled; then printf '\033[33m%s\033[0m' "$1"; else printf '%s' "$1"; fi
+}
 
 # ---------------------------------------------------------------------------
 # _tui_render_list -- draw the full menu list to stdout
@@ -36,7 +67,12 @@ _tui_render_list() {
     if [[ "$checked" == "1" ]]; then check_str="[x]"; else check_str="[ ]"; fi
     if [[ "$is_def"  == "1" ]]; then label="(default)"; else label="(opt-in)"; fi
     if [[ "$cursor"  -eq "$i" ]]; then pointer=">"; else pointer=" "; fi
-    printf '%s %s %s  %s\n' "$pointer" "$check_str" "$tool" "$label"
+    if [[ "$pointer" == ">" ]]; then _tui_style_heading "$pointer"; else printf '%s' "$pointer"; fi
+    printf ' '
+    if [[ "$checked" == "1" ]]; then _tui_style_checked "$check_str"; else printf '%s' "$check_str"; fi
+    printf ' %s  ' "$tool"
+    if [[ "$is_def" == "1" ]]; then printf '%s' "$label"; else _tui_style_optin "$label"; fi
+    printf '\n'
     i=$((i+1))
   done <<< "$tools_nl"
 }
@@ -188,7 +224,8 @@ _tui_arrow_mode() {
   IFS=' ' read -ra checked_arr <<< "$checked_sp"
 
   printf '\n'
-  printf 'Arrow keys to move, Space to toggle, Enter to confirm, q/ESC to cancel.\n\n'
+  _tui_style_heading 'Arrow keys to move, Space to toggle, Enter to confirm, q/ESC to cancel.'
+  printf '\n\n'
   _tui_render_list "$cursor" "$tools_nl" "${checked_arr[*]}" "$is_def_sp"
 
   local done_=0 k1 k2 k3 key
@@ -212,7 +249,9 @@ _tui_arrow_mode() {
 
     if [[ "$_kd_cancelled" == "1" ]]; then
       _MENU_CANCELLED=1
-      printf '\nInstall cancelled.\n'
+      printf '\n'
+      _tui_style_warning 'Install cancelled.'
+      printf '\n'
       return 0
     fi
     [[ "$_kd_done" == "1" ]] && done_=1
@@ -229,6 +268,8 @@ _tui_arrow_mode() {
     i=$((i+1))
   done <<< "$tools_nl"
 
+  _tui_style_confirmation 'Selection confirmed.'
+  printf '\n'
   _MENU_SELECTION="$sel"
 }
 
@@ -254,7 +295,8 @@ _tui_numbered_mode() {
         ;;
       q|Q)
         _MENU_CANCELLED=1
-        printf 'Install cancelled.\n'
+        _tui_style_warning 'Install cancelled.'
+        printf '\n'
         return 0
         ;;
       a|A)
@@ -281,6 +323,8 @@ _tui_numbered_mode() {
   for i in $(seq 0 $((count-1))); do
     [[ "${checked_arr[$i]}" == "1" ]] && sel="${sel:+${sel},}${tool_arr[$i]}"
   done
+  _tui_style_confirmation 'Selection confirmed.'
+  printf '\n'
   _MENU_SELECTION="$sel"
 }
 
@@ -290,14 +334,20 @@ _tui_numbered_mode() {
 # ---------------------------------------------------------------------------
 _tui_numbered_render() {
   local _tname="$1" _cname="$2" _dname="$3" _cnt="$4"
-  printf '\nArrow keys unavailable (bash 3.2). Number to toggle, a=all, Enter=confirm, q=cancel.\n'
+  printf '\n'
+  _tui_style_heading 'Arrow keys unavailable (bash 3.2). Number to toggle, a=all, Enter=confirm, q=cancel.'
+  printf '\n'
   local i check_str label _t _c _d
   for i in $(seq 0 $((_cnt-1))); do
     # shellcheck disable=SC2086
     eval "_t=\"\${${_tname}[$i]}\"; _c=\"\${${_cname}[$i]}\"; _d=\"\${${_dname}[$i]}\""
     if [[ "$_c" == "1" ]]; then check_str="[x]"; else check_str="[ ]"; fi
     if [[ "$_d" == "1" ]]; then label="(default)"; else label="(opt-in)"; fi
-    printf '%d. %s %s  %s\n' "$((i+1))" "$check_str" "$_t" "$label"
+    printf '%d. ' "$((i+1))"
+    if [[ "$_c" == "1" ]]; then _tui_style_checked "$check_str"; else printf '%s' "$check_str"; fi
+    printf ' %s  ' "$_t"
+    if [[ "$_d" == "1" ]]; then printf '%s' "$label"; else _tui_style_optin "$label"; fi
+    printf '\n'
   done
   printf '\n> '
 }

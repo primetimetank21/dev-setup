@@ -10,7 +10,8 @@
 #
 # Automated (no TTY): key dispatch logic via _tui_arrow_handle_key (cursor
 #   movement, toggle-all, Space, Enter, cancel, noop), _tui_checked_toggle_all
-#   state transitions, _tui_render_list output, and _tui_arrow_redraw ANSI bytes.
+# state transitions, color fallback/roles, _tui_render_list output, and
+# _tui_arrow_redraw ANSI bytes.
 # NOT covered (requires live interactive TTY, documented in PR):
 #   Terminal byte delivery from keyboard to read loop, ANSI in-place rendering
 #   fidelity in a real terminal (mintty, tmux, Terminal.app), numbered-toggle
@@ -76,6 +77,95 @@ if bash -c "source '${TUI_SH}'" 2>&1; then
   pass "T_tui_sh_sources_clean: tui.sh sources without error"
 else
   fail "T_tui_sh_sources_clean: tui.sh source failed"
+fi
+
+# ---------------------------------------------------------------------------
+# T_color_roles_forced: deterministic color seam covers every Quiet Accent role
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_color_roles_forced ---"
+color_hex="$(
+  _TUI_COLOR_OVERRIDE=1 NO_COLOR='' TERM=xterm bash -c "
+    source '${TUI_SH}'
+    tools=\$'alpha\nbeta'
+    _tui_style_heading 'Heading'; printf '\n'
+    _tui_render_list 0 \"\$tools\" '1 0' '1 0'
+    _tui_style_confirmation 'Selection confirmed.'; printf '\n'
+    _tui_style_warning 'Install cancelled.'; printf '\n'
+  " 2>&1 | od -An -tx1 | tr -d ' \n'
+)"
+if [[ "$color_hex" == *"1b5b313b33366d"* ]] && \
+   [[ "$color_hex" == *"1b5b33326d"* ]] && \
+   [[ "$color_hex" == *"1b5b33336d"* ]] && \
+   [[ "$color_hex" == *"1b5b306d"* ]]; then
+  pass "T_color_roles_forced: cyan, green, yellow, and reset SGR roles render"
+else
+  fail "T_color_roles_forced: expected Quiet Accent SGR roles (hex: ${color_hex})"
+fi
+
+# ---------------------------------------------------------------------------
+# T_color_plain_fallbacks: forced plain, NO_COLOR, TERM=dumb, and redirected
+# output keep the existing ASCII rendering without SGR bytes.
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_color_plain_fallbacks ---"
+plain_out="$(
+  _TUI_COLOR_OVERRIDE=0 bash -c "
+    source '${TUI_SH}'
+    tools=\$'alpha\nbeta'
+    _tui_render_list 0 \"\$tools\" '1 0' '1 0'
+  " 2>&1
+)"
+if assert_contains "$plain_out" "> [x] alpha  (default)" && \
+   assert_contains "$plain_out" "  [ ] beta  (opt-in)" && \
+   assert_not_contains "$plain_out" $'\033'; then
+  pass "T_color_plain_fallbacks[forced]: forced plain preserves ASCII list output"
+else
+  fail "T_color_plain_fallbacks[forced]: forced plain output included style bytes"
+fi
+
+no_color_out="$(
+  _TUI_COLOR_OVERRIDE=1 NO_COLOR=1 bash -c "
+    source '${TUI_SH}'
+    tools=\$'alpha\nbeta'
+    _tui_render_list 0 \"\$tools\" '1 0' '1 0'
+  " 2>&1
+)"
+if assert_not_contains "$no_color_out" $'\033'; then
+  pass "T_color_plain_fallbacks[NO_COLOR]: NO_COLOR overrides forced color"
+else
+  fail "T_color_plain_fallbacks[NO_COLOR]: NO_COLOR output included style bytes"
+fi
+
+if TERM=dumb bash -c "source '${TUI_SH}'; _tui_color_enabled" >/dev/null 2>&1; then
+  fail "T_color_plain_fallbacks[TERM-dumb]: TERM=dumb unexpectedly enabled color"
+else
+  pass "T_color_plain_fallbacks[TERM-dumb]: TERM=dumb disables color"
+fi
+
+redirected_out="$(
+  TERM=xterm bash -c "
+    source '${TUI_SH}'
+    tools=\$'alpha\nbeta'
+    _tui_render_list 0 \"\$tools\" '1 0' '1 0'
+  " 2>&1
+)"
+if assert_not_contains "$redirected_out" $'\033'; then
+  pass "T_color_plain_fallbacks[redirected]: non-TTY capture remains plain"
+else
+  fail "T_color_plain_fallbacks[redirected]: redirected output included style bytes"
+fi
+
+# ---------------------------------------------------------------------------
+# T_tui_ascii_purity: Quiet Accent remains safe for ASCII-only terminals.
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- T_tui_ascii_purity ---"
+non_ascii="$(LC_ALL=C tr -d '\000-\177' < "$TUI_SH")"
+if [[ -z "$non_ascii" ]]; then
+  pass "T_tui_ascii_purity: tui.sh contains only ASCII bytes"
+else
+  fail "T_tui_ascii_purity: tui.sh contains non-ASCII bytes"
 fi
 
 # ---------------------------------------------------------------------------
@@ -264,6 +354,23 @@ else
   echo "  Output: $numbered_out"
 fi
 
+numbered_hex="$(
+  _TUI_COLOR_OVERRIDE=1 bash -c "
+    source '${TUI_SH}'
+    _ta=(prereqs bravo)
+    _ca=(1 0)
+    _da=(1 0)
+    _tui_numbered_render _ta _ca _da 2
+  " 2>&1 | od -An -tx1 | tr -d ' \n'
+)"
+if [[ "$numbered_hex" == *"1b5b313b33366d"* ]] && \
+   [[ "$numbered_hex" == *"1b5b33326d"* ]] && \
+   [[ "$numbered_hex" == *"1b5b33336d"* ]]; then
+  pass "T_numbered_render_runs[color]: Bash 3.2 fallback applies semantic colors without cursor bytes"
+else
+  fail "T_numbered_render_runs[color]: numbered color roles missing (hex: ${numbered_hex})"
+fi
+
 # ---------------------------------------------------------------------------
 # T_render_list_runs: _tui_render_list draws list with cursor and labels
 # ---------------------------------------------------------------------------
@@ -375,6 +482,20 @@ if echo "$_redraw_hex" | grep -qF "1b5b3441"; then
   fail "T_arrow_redraw_stable[ansi-no-creep]: ESC[4A present -- count+1 viewport-creep bug"
 else
   pass "T_arrow_redraw_stable[ansi-no-creep]: ESC[4A absent -- no viewport creep"
+fi
+
+_redraw_color_hex="$(
+  _TUI_COLOR_OVERRIDE=1 bash -c "
+    source '${TUI_SH}'
+    tools=\$'alpha\nbeta\ngamma'
+    _tui_arrow_redraw 3 0 \"\$tools\" '1 1 0' '1 0 0'
+  " 2>&1 | od -An -tx1 | tr -d ' \n'
+)"
+if [[ "$_redraw_color_hex" == *"1b5b3341"* ]] && \
+   [[ "$_redraw_color_hex" != *"1b5b3441"* ]]; then
+  pass "T_arrow_redraw_stable[color]: styling preserves ESC[3A redraw geometry"
+else
+  fail "T_arrow_redraw_stable[color]: redraw geometry changed (hex: ${_redraw_color_hex})"
 fi
 
 # ---------------------------------------------------------------------------

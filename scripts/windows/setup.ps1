@@ -243,7 +243,7 @@ if (Test-ShouldShowMenu `
     }
 
     if ($null -eq $selectedNames) {
-        Write-Output 'Install cancelled.'
+        Write-TuiLine -Text 'Install cancelled.' -Color (Get-TuiRoleColor -Role 'Cancel')
         exit 0
     }
     if ($selectedNames.Count -eq 0) {
