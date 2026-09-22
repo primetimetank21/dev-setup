@@ -56,6 +56,8 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\tools\git-hook.ps1"
 . "$PSScriptRoot\tools\delta.ps1"
 . "$PSScriptRoot\tools\lazygit.ps1"
+. "$PSScriptRoot\tools\pi.ps1"
+. "$PSScriptRoot\tools\herdr.ps1"
 
 # ---------------------------------------------------------------------------
 # $DefaultTools -- single ordered source of truth for a no-arg default run.
@@ -97,6 +99,8 @@ $ToolRegistry = [ordered]@{
     'git-hook'     = { Install-GitHook }
     'delta'        = { Install-Delta }
     'lazygit'      = { Install-Lazygit }
+    'pi'           = { Install-Pi }
+    'herdr'        = { Install-Herdr }
 }
 
 # ---------------------------------------------------------------------------

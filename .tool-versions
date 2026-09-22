@@ -1,4 +1,4 @@
-nodejs 22.11.0
+nodejs 22.23.2
 nvm 0.39.7
 nvm-windows 1.2.2
 uv 0.4.18
@@ -7,3 +7,5 @@ squad-cli 0.10.0
 gh 2.92.0
 delta 0.19.2
 lazygit 0.63.0
+pi 0.86.1
+herdr 0.9.1

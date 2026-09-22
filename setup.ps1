@@ -129,6 +129,10 @@ function Invoke-WindowsSetup {
 
   Write-Info "Handing off to: scripts\windows\setup.ps1"
   & $windowsScript @_fwdParams
+  $childExit = $LASTEXITCODE
+  if ($childExit -ne 0) {
+    exit $childExit
+  }
 }
 
 Main

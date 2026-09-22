@@ -86,7 +86,7 @@ echo "--- T_lazygit_optin_stub ---"
 RUN_LOG2="$(mktemp)"
 export RUN_LOG
 RUN_LOG="$RUN_LOG2"
-bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=lazygit 2>&1 | grep -q . || true
+bash "$LINUX_SETUP" "--tools-dir=${STUB_DIR}" --only=lazygit >/dev/null 2>&1 || true
 if grep -qF "lazygit" "$RUN_LOG2" 2>/dev/null; then
   actual="$(cat "$RUN_LOG2")"
   if [ "$actual" = "lazygit" ]; then
