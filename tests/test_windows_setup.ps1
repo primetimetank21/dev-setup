@@ -1108,8 +1108,8 @@ $toolVersionScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'lib' 
 
 Test-Scenario "R-1 Get-ToolVersion returns nodejs version" {
     $ver = Get-ToolVersion -Name 'nodejs'
-    if ($ver -ne '22.11.0') {
-        throw "Expected '22.11.0', got '$ver'"
+    if ($ver -ne '22.23.2') {
+        throw "Expected '22.23.2', got '$ver'"
     }
 }
 
@@ -1124,6 +1124,13 @@ Test-Scenario "R-2b Get-ToolVersion returns nvm-windows version" {
     $ver = Get-ToolVersion -Name 'nvm-windows'
     if ($ver -ne '1.2.2') {
         throw "Expected '1.2.2', got '$ver'"
+    }
+}
+
+Test-Scenario "R-2c Get-ToolVersion returns herdr version" {
+    $ver = Get-ToolVersion -Name 'herdr'
+    if ($ver -ne '0.9.1') {
+        throw "Expected '0.9.1', got '$ver'"
     }
 }
 

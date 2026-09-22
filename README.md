@@ -12,6 +12,8 @@
 | `gh` | GitHub CLI |
 | GitHub Copilot CLI | AI pair programmer in your terminal (`gh copilot`) |
 | `squad` CLI | Multi-agent copilot orchestrator (`gosquad` launcher) |
+| `pi` | Pi coding agent CLI (opt-in via `--only=pi` / `-Only 'pi'`) |
+| `herdr` | Herdr terminal workspace manager (opt-in via `--only=herdr` / `-Only 'herdr'`) |
 | `vim` | Modal text editor -- installed on all platforms |
 | `tmux` | Terminal multiplexer (Linux/macOS) |
 | `psmux` | Terminal multiplexer (Windows) |
@@ -218,6 +220,8 @@ dev-setup/
 |   |   \-- tools/            -- Individual tool install scripts
 |   |       +-- auth.sh       -- GitHub CLI authentication (interactive)
 |   |       +-- copilot-cli.sh
+|   |       +-- herdr.sh
+|   |       +-- pi.sh
 |   |       +-- squad-cli.sh
 |       +-- gh.sh
 |   |       +-- nvm.sh
@@ -229,9 +233,9 @@ dev-setup/
 |       \-- tools/            -- Per-tool install scripts
 |           +-- auth.ps1      -- GitHub CLI authentication (interactive)
 |           +-- copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
-|           +-- profile.ps1, psmux.ps1, squad-cli.ps1
+|           +-- herdr.ps1, pi.ps1, profile.ps1, psmux.ps1, squad-cli.ps1
 |           +-- uv.ps1, vim.ps1
-|           \-- (10 files total)
+|           \-- (12 files total)
 +-- config/
 |   \-- dotfiles/             -- Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
 |       \-- install.sh        -- Dotfile installer
@@ -363,12 +367,14 @@ python scripts/lib/ascii-sweep.py             # apply in-place
 Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format). This file is the single source of truth for every tool version installed by setup, including `nvm-windows`. Setup scripts read it directly via `scripts/lib/read-tool-version.sh` (POSIX) and `scripts/lib/Read-ToolVersion.ps1` (`Get-ToolVersion`) -- no asdf or mise dependency needed.
 
 ```
-nodejs 22.11.0
+nodejs 22.23.2
 nvm 0.39.7
 nvm-windows 1.2.2
 uv 0.4.18
-copilot-cli 1.0.48
+copilot-cli 1.0.69
 gh 2.92.0
+pi 0.86.1
+herdr 0.9.1
 ```
 
 To bump a tool version, edit the version number in `.tool-versions` and re-run setup. Each line is `toolname version`, one per line. Blank lines and lines starting with `#` are ignored.

@@ -22,7 +22,7 @@ Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk aw
 dev-setup/
 |---- setup.sh                        # Entry point -- Unix (Linux / macOS / WSL); thin router
 |---- setup.ps1                       # Entry point -- Windows (PowerShell); thin router
-|---- .tool-versions                  # asdf-style pinned versions (node, nvm, uv, gh, copilot-cli)
+|---- .tool-versions                  # asdf-style pinned versions (node, nvm, uv, gh, copilot-cli, pi, herdr)
 |---- .gitattributes                  # eol=lf for *.sh / *.md / *.yml; eol=crlf for *.ps1 / *.psm1 / *.psd1
 |---- ARCHITECTURE.md                 # This file
 |---- CHANGELOG.md                    # Keep-a-Changelog format
@@ -44,7 +44,9 @@ dev-setup/
 |   |       |---- auth.sh            # GitHub CLI authentication (interactive)
 |   |       |---- copilot-cli.sh     # Install GitHub Copilot CLI (pin from .tool-versions)
 |   |       |---- gh.sh              # Install GitHub CLI (pin from .tool-versions)
+|   |       |---- herdr.sh           # Install Herdr (pin from .tool-versions)
 |   |       |---- nvm.sh             # Install nvm + Node (pin from .tool-versions)
+|   |       |---- pi.sh              # Install pi CLI (pin from .tool-versions)
 |   |       |---- uv.sh              # Install uv Python package manager (pin from .tool-versions)
 |   |       `---- zsh.sh             # Install zsh + set as default shell
 |   |
@@ -61,7 +63,9 @@ dev-setup/
 |           |---- dotfiles.ps1       # Apply config/dotfiles/ on Windows
 |           |---- gh.ps1             # GitHub CLI (pin from .tool-versions)
 |           |---- git.ps1            # Git configuration
+|           |---- herdr.ps1          # Herdr (pin from .tool-versions)
 |           |---- nvm.ps1            # nvm-windows + Node (pin from .tool-versions)
+|           |---- pi.ps1             # pi CLI (pin from .tool-versions)
 |           |---- profile.ps1        # PowerShell profile injection (PS 5.1 + PS 7+ paths)
 |           |---- psmux.ps1          # psmux terminal multiplexer (Windows tmux alias)
 |           |---- uv.ps1             # uv Python package manager (pin from .tool-versions)
@@ -414,7 +418,7 @@ Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) f
 - `scripts/lib/Read-ToolVersion.ps1` -- exposes `Get-ToolVersion -Name <toolname>` (PowerShell)
 - `scripts/lib/read-tool-version.sh` -- same contract for POSIX shells (prints to stdout)
 
-Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `uv`, `copilot-cli`, `gh`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/uv.sh`) call the library at install time so version bumps are a single-file edit.
+Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `uv`, `copilot-cli`, `gh`, `pi`, `herdr`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/uv.sh`) call the library at install time so version bumps are a single-file edit.
 
 ---
 

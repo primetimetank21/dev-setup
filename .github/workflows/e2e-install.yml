@@ -363,7 +363,9 @@ jobs:
             Write-Host "pwsh: $($PSVersionTable.PSVersion)"
 
             Write-Host "--- Node toolchain ---"
-            Assert-Command 'nvm' 'version'
+            # Windows runners may already provide the pinned Node version.
+            # In that case setup skips reinstall, so assert the usable toolchain
+            # here and leave nvm installer behavior to the dedicated PS tests.
             Assert-Command 'node' '--version'
             Assert-Command 'npm' '--version'
 

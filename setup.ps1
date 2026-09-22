@@ -129,6 +129,15 @@ function Invoke-WindowsSetup {
 
   Write-Info "Handing off to: scripts\windows\setup.ps1"
   & $windowsScript @_fwdParams
+  if (-not $?) {
+    if (Test-Path variable:LASTEXITCODE) {
+      exit $LASTEXITCODE
+    }
+    exit 1
+  }
+  if ((Test-Path variable:LASTEXITCODE) -and $LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
 }
 
 Main
