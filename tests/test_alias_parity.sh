@@ -40,7 +40,6 @@ fi
 # meaning the alias exists ONLY on that platform.
 
 ALLOWED_ALIAS_DRIFT=(
-    "gb:windows"          # git branch shortcut -- Windows only (no Linux equivalent yet)
     "..:linux"            # cd .. -- navigation shortcut, not applicable on Windows
     "...:linux"           # cd ../.. -- navigation shortcut
     "....:linux"          # cd ../../.. -- navigation shortcut

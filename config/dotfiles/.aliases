@@ -65,6 +65,7 @@ alias lh='ls -alFh'          # human-readable sizes
 
 alias ga='git add'                                                                                    # stage a file
 alias gaa='git add --all'                                                                             # stage all changes
+alias gb='git branch'                                                                                # list, create, or delete branches
 alias gc='git commit -v'                                                                              # commit with verbose diff
 alias gcm='git commit -m'                                                                             # commit with inline message
 alias gcb='git checkout -b'                                                                           # create and switch to new branch
