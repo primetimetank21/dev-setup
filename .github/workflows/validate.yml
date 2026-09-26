@@ -80,6 +80,15 @@ jobs:
           chmod +x tests/test_alias_parity.sh
           bash tests/test_alias_parity.sh
 
+      - name: Check shutdown helper syntax (Bash and Zsh)
+        run: |
+          bash --noprofile --norc -n config/dotfiles/.aliases
+          zsh -df -n config/dotfiles/.aliases
+          bash --noprofile --norc -n tests/test_shutdown_helpers.sh
+
+      - name: Run isolated shutdown helper tests (Bash and Zsh)
+        run: bash tests/test_shutdown_helpers.sh --bash "$(command -v bash)" --zsh "$(command -v zsh)"
+
       - name: Run idempotency test suite
         run: bash tests/test_idempotency.sh
 
@@ -183,6 +192,16 @@ jobs:
           bash setup.sh
           echo "Second run completed without errors"
 
+      - name: Check shutdown helper syntax (system Bash 3.2 and Zsh)
+        run: |
+          /bin/bash --version
+          /bin/bash --noprofile --norc -n config/dotfiles/.aliases
+          /bin/zsh -df -n config/dotfiles/.aliases
+          /bin/bash --noprofile --norc -n tests/test_shutdown_helpers.sh
+
+      - name: Run isolated shutdown helper tests (system Bash 3.2 and Zsh)
+        run: /bin/bash tests/test_shutdown_helpers.sh --bash /bin/bash --zsh /bin/zsh
+
       - name: Run tool version tests
         run: bash tests/test_tool_versions.sh
 
@@ -235,6 +254,9 @@ jobs:
 
       - name: Lint config/dotfiles/.aliases
         run: shellcheck -s bash config/dotfiles/.aliases
+
+      - name: Lint isolated shutdown helper harness
+        run: shellcheck tests/test_shutdown_helpers.sh
 
       - name: Run Bash flag compatibility gates
         run: bash tests/test_setup_flags.sh

@@ -9,12 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isolated shutdown-helper regression coverage under Bash/Zsh on Linux/macOS,
+  including macOS system Bash 3.2, with non-forwarding command stubs. (#514)
+
 ### Changed
 
 - Interactive tool pickers use Quiet Accent semantic colors when a compatible console is available,
   while preserving ASCII/plain output for redirected sessions and `NO_COLOR`. (#507)
+- Bash/Zsh `tsdn` now requires exactly one canonical positive decimal minute
+  argument, rejects WSL delays above 5,256,000 minutes before conversion, and
+  warns that positive Windows timeouts force application closure and risk
+  unsaved work. Native minute strings remain unconverted. (#514)
 
 ### Fixed
+
+- Route Bash/Zsh `sdn`, `tsdn`, and `cancel_tsdn` to the Windows host when a
+  Microsoft kernel marker identifies WSL, without native fallback on interop
+  failure. Preserve native Linux/macOS commands; deliberately reject conflicting
+  WSL environment hints on non-Microsoft Linux kernels and indeterminate or
+  unsupported platforms. Document custom-kernel/container detection limits. (#514)
+- Preserve actual cancellation diagnostics and failure status instead of
+  reporting every failure as "no pending shutdown" success. Cancellation remains
+  system-wide. (#514)
 
 ### Removed
 

@@ -68,6 +68,7 @@ ALLOWED_ALIAS_DRIFT=(
     "touch:windows"       # Set-FileTimestamp -- Windows-specific override
     "start_up:linux"      # shell startup function -- Linux-specific
     "create_tmux:linux"   # tmux session create -- Linux uses tmux directly
+    "_dev_setup_shutdown_platform:linux" # Private Bash/Zsh WSL/native shutdown selector
     "New-PsmuxSession:windows"  # Windows equivalent of create_tmux
     # v5.2 profile-path resolution helpers (issue #441/#442) -- Windows-only PS
     # internal functions; they query $PROFILE on PS hosts and have no Linux equiv.
