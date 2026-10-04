@@ -44,7 +44,7 @@ import time
 
 shell, kind, scenario, root, base, adapter, installer_bash = sys.argv[1:]
 work = Path(base) / (kind + '-' + scenario)
-work.mkdir()
+work.mkdir(mode=0o700)
 home = work / 'home'
 home.mkdir()
 env = {'HOME': str(home), 'ZDOTDIR': str(home), 'INPUTRC': '/dev/null',
@@ -96,6 +96,45 @@ snapshot() {
 '''
     setup += 'bind -l > widgets\n'
 else:
+    if scenario.startswith('reuse') or scenario == 'security':
+        # Discover the selected shell's standard functions tree, not its
+        # site/vendor completion directories. Native Linux and macOS use
+        # functions/Completion and functions respectively. Fail on ambiguity.
+        ambient_fpath = ''
+        if scenario.startswith('reuse'):
+            ambient = work / 'ambient-insecure'
+            ambient.mkdir(mode=0o777)
+            ambient.chmod(0o777)
+            (ambient / '_ambient_fixture').write_text('#compdef ambient-fixture\n')
+            ambient_fpath = 'fpath=(' + q(str(ambient)) + ' $fpath)\n'
+        probe = ('. ' + q(adapter) + '\n' if adapter else '') + ambient_fpath
+        probe += 'builtin printf \'%s\\0\' "${fpath[@]}"'
+        result = subprocess.run([shell, '-d', '-f', '-c', probe], env=env, cwd=work,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
+        assert result.returncode == 0, result.stderr.decode(errors='replace')
+        (work / 'native-fpath').write_bytes(result.stdout)
+        paths = list(dict.fromkeys(Path(os.fsdecode(p)) for p in result.stdout.split(b'\0') if p))
+        cores = [p for p in paths if (p / 'compinit').is_file() and
+                 (p.name == 'functions' or (p.name == 'Completion' and p.parent.name == 'functions'))]
+        assert len(cores) == 1, 'expected one native functions tree containing compinit: ' + repr(cores)
+        native_root = cores[0] if cores[0].name == 'functions' else cores[0].parent
+        assert native_root.is_absolute(), 'native function source must be absolute'
+        fixture_functions = work / 'functions'
+        fixture_functions.mkdir(mode=0o700)
+        # Flatten native fpath entries in lookup order, preserving first wins.
+        # Copy source bytes, not source permissions or compiled .zwc caches.
+        for directory in paths:
+            if not directory.is_dir() or (directory != native_root and native_root not in directory.parents):
+                continue
+            for source in sorted(directory.iterdir()):
+                target = fixture_functions / source.name
+                if source.is_file() and not source.name.endswith('.zwc') and not target.exists():
+                    target.write_bytes(source.read_bytes())
+                    target.chmod(0o600)
+        for required in ('compinit', 'compaudit', 'compdump', '_main_complete'):
+            assert (fixture_functions / required).is_file(), 'missing native function: ' + required
+        assert not (fixture_functions / '_ambient_fixture').exists(), 'ambient provider was copied'
+        isolated_fpath = 'fpath=(' + q(str(fixture_functions)) + ')\n'
     setup += 'bindkey -' + ('v' if mode == 'vi' else 'e') + '\n'
     setup += '''_test_shift() { LBUFFER+='KEEP'; }
 zle -N _test_shift
@@ -110,8 +149,14 @@ snapshot() {
 }
 '''
     if scenario.startswith('reuse'):
+        setup += ambient_fpath
+        # The real native audit must reject the injected ambient directory.
+        # Then initialize over ONLY the secure copies, without bypass flags.
+        setup += 'if . ' + q(str(fixture_functions / 'compaudit')) + ' > ambient-audit; then exit 85; fi\n'
+        setup += isolated_fpath
         setup += '''autoload -Uz compinit
 compinit -D || exit 81
+print -rl -- $fpath > active-fpath
 _test_provider() { compadd ds516-aa ds516-ab ds516-ac; }
 compdef _test_provider ds516provider
 zstyle ':completion:*' verbose yes
@@ -122,6 +167,7 @@ compinit() { print 'unexpected compinit rerun' >&2; exit 82; }
         insecure.mkdir(mode=0o777)
         insecure.chmod(0o777)
         (insecure / '_unsafe').write_text('#compdef unsafe\n')
+        setup += isolated_fpath
         setup += 'fpath=(' + q(str(insecure)) + ' $fpath)\n'
         setup += 'autoload -Uz compaudit; compaudit > security-audit\n'
         setup += 'autoload -Uz compinit; compinit -D || :\n'
@@ -170,7 +216,7 @@ if is_noop or scenario == 'security':
     if kind == 'zsh':
         assert (work / 'compdef-state').read_bytes() == b'', 'noop initialized completion'
         if scenario == 'security':
-            assert b'/insecure' in (work / 'security-audit').read_bytes(), 'unsafe fpath was not detected'
+            assert (work / 'security-audit').read_text().splitlines() == [str(insecure)], 'audit must detect only the intentional insecure directory'
             assert b'initialization aborted' in result.stderr, 'compinit security was not exercised'
     sys.exit(0)
 
@@ -209,6 +255,9 @@ def until(token, timeout=15):
 try:
     send(('. ' + q(str(startup)) + '\n').encode())
     until(b'__READY__')
+    if kind == 'zsh' and scenario.startswith('reuse'):
+        assert str(ambient) in (work / 'ambient-audit').read_text().splitlines(), 'ambient insecurity was not exercised'
+        assert (work / 'active-fpath').read_text().splitlines() == [str(fixture_functions)], 'ambient fpath leaked into compinit'
     # Only Tab and Shift+Tab entries may differ. Mode, vi command map, and all
     # other bindings must be byte-identical, even after repeated sourcing.
     before = (work / 'before').read_text(encoding='latin1').splitlines()

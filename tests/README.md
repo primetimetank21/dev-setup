@@ -40,6 +40,22 @@ unpacked local Zsh may pass `--zsh-init /absolute/path/to/test-init.zsh` to set 
 harness isolates user startup files, but system `/etc/zshenv` is still trusted.
 The fixtures execute reviewed repository code; they are not a hostile-code sandbox.
 
+Zsh provider-reuse/security fixtures copy the selected shell's **standard native
+function sources** into private fixture-owned files, preserving lookup precedence
+but excluding site/vendor directories and compiled `.zwc` caches. Discovery
+requires one standard `functions` (macOS) or `functions/Completion` (Linux) tree
+containing `compinit`; missing/ambiguous resources fail rather than falling back.
+Only those copies are on `fpath` when initializing completion. The real
+`compinit -D` and `compaudit` run with their normal security checks: no bypass
+flags, prompt acceptance, or changes to runner/global permissions.
+
+Both reuse cases inject an insecure ambient directory, verify the native audit
+rejects it, then verify the isolated `fpath` excludes it while provider integration
+and PTY cycling work. The separate security case adds one intentionally insecure
+directory to the isolated inputs and still requires detection and initialization
+abort. This avoids depending on hosted-runner user/vendor completion permissions;
+the installed shell's standard function sources remain trusted test dependencies.
+
 ## What is idempotency?
 
 A script is **idempotent** when running it multiple times produces the same
