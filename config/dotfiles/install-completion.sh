@@ -86,14 +86,14 @@ for i in 0 1; do
     text=''
     if [[ -e "$file" ]]; then
         [[ -f "$file" && -r "$file" && -w "$file" ]] || die "rc must be a readable writable regular file: $file"
-        EXISTED[$i]=true
+        EXISTED[i]=true
         # The sentinel retains all trailing newlines. Reject NUL/binary content
         # that Bash cannot represent rather than silently dropping bytes.
         text=$(cat "$file"; printf '.')
         text=${text%.}
         cmp -s "$file" <(printf '%s' "$text") || die "rc is not representable as shell text: $file"
     fi
-    BEFORE[$i]=$text
+    BEFORE[i]=$text
     remainder=${text/"$BLOCK"/}
     if [[ "$remainder" == *'dev-setup completion'* || "$remainder" == *'.dev-setup-completion.sh'* ]]; then
         die "malformed, duplicate or modified completion hook: $file (review manually)"
@@ -107,13 +107,13 @@ for i in 0 1; do
                 remainder="$prefix"$'\n'"$suffix"
             fi
         fi
-        AFTER[$i]=$remainder
+        AFTER[i]=$remainder
     elif [[ "$remainder" == "$text" ]]; then
-        AFTER[$i]="$text$BLOCK"
+        AFTER[i]="$text$BLOCK"
     else
-        AFTER[$i]=$text
+        AFTER[i]=$text
     fi
-    if [[ "${AFTER[$i]}" != "$text" ]]; then CHANGED[$i]=true; fi
+    if [[ "${AFTER[$i]}" != "$text" ]]; then CHANGED[i]=true; fi
 done
 
 printf 'Completion: Tab forward; Shift+Tab backward only with a native backward widget.\n'
@@ -141,7 +141,7 @@ trap cleanup EXIT
 for i in 0 1; do
     [[ "${CHANGED[$i]}" == true ]] || continue
     file=${FILES[$i]}
-    TEMPS[$i]=$(mktemp "$file.dev-setup-completion.tmp.XXXXXX")
+    TEMPS[i]=$(mktemp "$file.dev-setup-completion.tmp.XXXXXX")
     if [[ "${EXISTED[$i]}" == true ]]; then
         cp -p "$file" "${TEMPS[$i]}"
         backup=$(mktemp "$file.dev-setup-completion.bak.XXXXXX")
@@ -167,7 +167,7 @@ fi
 for i in 0 1; do
     [[ "${CHANGED[$i]}" == true ]] || continue
     mv -f -- "${TEMPS[$i]}" "${FILES[$i]}"
-    TEMPS[$i]=''
+    TEMPS[i]=''
 done
 if [[ "$UNINSTALL" == true && -L "$LINK" ]]; then
     [[ "$(readlink "$LINK")" == "$SOURCE" ]] || die 'helper link changed during uninstall; left in place'
