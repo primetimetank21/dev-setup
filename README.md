@@ -280,6 +280,26 @@ Full definitions:
 - **Linux/macOS:** `config/dotfiles/.aliases` (bash/zsh only -- see header for the non-POSIX features in use)
 - **Windows:** `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function)
 
+## Opt-in Native Completion Cycling
+
+Bash/Zsh users can opt in without rerunning setup or reinstalling dotfiles:
+
+```bash
+bash config/dotfiles/install-completion.sh --dry-run
+bash config/dotfiles/install-completion.sh
+```
+
+Open a fresh shell: **Tab** selects the next match, **Shift+Tab** the previous
+match. **macOS system Bash 3.2 supports forward Tab only; its existing Shift+Tab
+binding is left untouched** because that Readline lacks a native backward widget.
+Ordinary installation never opts you in. No plugins or system inputrc changes.
+
+Use `DEV_SETUP_COMPLETION=0` before the hook to disable in fresh shells, or
+`bash config/dotfiles/install-completion.sh --uninstall` to remove only this
+feature. See the [completion guide](config/dotfiles/README.md#opt-in-tab-completion-cycling-bash--zsh)
+for backups, `ZDOTDIR`, framework/login-shell ordering, terminal support, and
+optional completion providers.
+
 ## Shell Functions
 
 The following helper functions are available after setup:

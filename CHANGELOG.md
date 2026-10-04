@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Explicit completion-only Bash/Zsh opt-in with native Tab/Shift+Tab cycling,
+  separate validated rc hooks, backups, mutation-free preview, disable switch,
+  and feature-only removal. Older Readline (including macOS Bash 3.2) gets
+  forward Tab only and preserves existing Shift+Tab. Ordinary setup is unchanged.
+  Includes isolated lifecycle and actual shell/PTY tests on Linux/macOS. (#516)
 - Isolated shutdown-helper regression coverage under Bash/Zsh on Linux/macOS,
   including macOS system Bash 3.2, with non-forwarding command stubs. (#514)
 
