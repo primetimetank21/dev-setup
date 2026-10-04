@@ -2,6 +2,44 @@
 
 Idempotency test suite for the `dev-setup` scripts.
 
+## Isolated completion tests (no machine setup)
+
+```bash
+/bin/bash tests/test_completion_install.sh
+/bin/bash tests/test_completion_runtime.sh --bash /bin/bash --zsh /bin/zsh
+```
+
+These tally-based suites do **not** run `setup.sh`, source personal rc files, or
+modify the real HOME. All generated homes, copied checkouts, and PTY fixtures
+live under ignored `.pi-herdsman/completion-*` directories. They are removed on
+success and retained with a printed path on assertion failure; local evidence
+is not backed up by Git. Bash 3.2 can drive both suites. Runtime tests require
+both shell executables and **Python 3** for real pseudo-terminal interaction.
+
+- `test_completion_install.sh`: old managed-block and exact rc byte preservation
+  (CRLF, backslashes, missing final newline), quoted paths, backups, missing rc
+  files, repeated install/removal, linked-helper upgrades, dry-run, later user
+  additions, explicit `ZDOTDIR`, and fail-before-mutation handling of malformed,
+  duplicate, modified, binary, or ambiguous symlink configuration.
+- `test_completion_runtime.sh`: installs the actual hook into isolated homes;
+  verifies forward/backward file completion, command and directory completion,
+  and later overrides using real keystrokes. Compares editing mode and unrelated
+  key bindings, tests repeated sourcing, disabled/noninteractive/uninstalled
+  fresh shells, reuses Zsh initialization and a custom provider, and verifies an
+  insecure `compinit` is not bypassed. Tests both emacs and vi insertion modes.
+- Native backward-widget availability is detected at runtime. On macOS system
+  Bash 3.2, tests require forward cycling and preservation of a preexisting
+  Shift+Tab macro. A separately labeled unavailable-widget simulation exercises
+  that branch on modern Bash; it is **not** native Bash 3.2 compatibility evidence.
+
+The dedicated `validate-completion` CI matrix runs these without full setup on
+Linux and macOS, using `/bin/bash` (macOS 3.2) and `/bin/zsh`, plus syntax checks
+and ShellCheck. CI uses no shell adapters. A developer with an explicitly
+unpacked local Zsh may pass `--zsh-init /absolute/path/to/test-init.zsh` to set its
+`module_path` and `fpath`; this is test-only, not a production fallback. The
+harness isolates user startup files, but system `/etc/zshenv` is still trusted.
+The fixtures execute reviewed repository code; they are not a hostile-code sandbox.
+
 ## What is idempotency?
 
 A script is **idempotent** when running it multiple times produces the same

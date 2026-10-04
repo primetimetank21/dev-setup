@@ -7,6 +7,45 @@ on:
     branches: [main, develop]
 
 jobs:
+  validate-completion:
+    name: Isolated completion (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install test dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh shellcheck
+
+      - name: Install lint dependency (macOS)
+        if: runner.os == 'macOS'
+        run: command -v shellcheck || brew install shellcheck
+
+      - name: Verify native shells and PTY test capability
+        run: |
+          /bin/bash --version
+          /bin/zsh --version
+          python3 -c 'import pty'
+
+      - name: Syntax and lint (including system Bash 3.2 on macOS)
+        run: |
+          for script in config/dotfiles/*completion.sh tests/test_completion*.sh; do
+            /bin/bash --noprofile --norc -n "$script"
+            shellcheck "$script"
+          done
+          /bin/zsh -df -n config/dotfiles/completion.sh
+
+      - name: Isolated completion install, upgrade, and removal
+        run: /bin/bash tests/test_completion_install.sh
+
+      - name: Native shell state and PTY completion tests (no adapters)
+        run: /bin/bash tests/test_completion_runtime.sh --bash /bin/bash --zsh /bin/zsh
+
   validate-linux:
     name: Validate Linux Setup
     runs-on: ubuntu-latest

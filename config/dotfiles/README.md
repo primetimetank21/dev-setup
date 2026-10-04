@@ -13,6 +13,8 @@ These templates give every Dev Container and Codespace a sensible, consistent en
 | `.npmrc.template` | `$HOME/.npmrc` | Copy | Editable per-machine |
 | `.vimrc` | `$HOME/.vimrc` | Symlink | Vim configuration |
 | `install.sh` | -- | Script | Idempotent installer |
+| `install-completion.sh` | -- | Script | Separate, explicit completion-only opt-in |
+| `completion.sh` | `$HOME/.dev-setup-completion.sh` | Symlink | Interactive Bash/Zsh native completion bindings |
 
 ---
 
@@ -25,6 +27,145 @@ bash config/dotfiles/install.sh
 # Preview what would happen without changing anything:
 bash config/dotfiles/install.sh --dry-run
 ```
+
+---
+
+## Opt-in Tab completion cycling (Bash / Zsh)
+
+**This is not enabled by `setup.sh` or `install.sh`.** Both existing and fresh
+installations use the same separate command, without reinstalling other dotfiles:
+
+```bash
+# From the repository root, after your normal shell/framework setup:
+bash config/dotfiles/install-completion.sh --dry-run
+bash config/dotfiles/install-completion.sh
+# Open a fresh interactive shell afterward.
+```
+
+| Shell | Tab | Shift+Tab |
+|-------|-----|-----------|
+| Bash with native `menu-complete-backward` | Next match | Previous match |
+| **macOS system Bash 3.2 / older Readline** | **Next match** | **Existing binding unchanged; no backward cycling added** |
+| Zsh | Next match | Previous match |
+
+The helper detects native Readline widget availability, not a Bash version
+number. It deliberately does **not** add a macro fallback or reserve extra keys.
+Opting in explicitly overrides existing Tab and (where supported) Shift+Tab
+bindings in Bash's `emacs-standard` / `vi-insert` and Zsh's `emacs` / `viins`
+keymaps. Editing mode, vi command mode, and unrelated bindings are preserved.
+Custom keymaps outside these maps remain user-managed. The helper does nothing
+in noninteractive shells. It is not a PowerShell feature.
+
+### Ordering, terminals, and providers
+
+- The installer appends a **separate** `dev-setup completion v1` hook at the end
+  of each rc. Keep the entire hook, including its preceding separator newline,
+  intact. Existing general DevSetup managed blocks are never edited.
+- Put framework initialization, `compinit`, completion providers, and general
+  key bindings **before** this hook. Later user configuration wins; frameworks
+  loaded later may override it. If moving the hook, move its separator too.
+- Zsh's native completion works without `compinit`. If your framework already
+  initialized completion, these widget names reuse its providers/styles. This
+  helper never runs `compinit` (which would also bind unrelated keys), installs
+  a framework, or bypasses `compinit`'s security audit. Follow your framework's
+  normal initialization/security instructions for richer completion.
+- Commands, files, and directories work natively. Git branches, tool flags,
+  package names, etc. depend on separately configured completion providers
+  (such as `bash-completion` or Zsh's completion system). Their filtering and
+  ordering still apply. This is not fuzzy search or an autosuggestion plugin.
+- Shift+Tab must reach the shell as **ESC `[Z`**. Some terminals, IDEs, and
+  multiplexers intercept it or send another sequence; configure them yourself.
+  Tab/Ctrl-I are the same terminal key. Existing Readline variables and Zsh
+  completion styles may affect listing, ordering, or wraparound behavior.
+- Bash login shells, especially macOS Terminal, may not read `.bashrc` unless
+  your existing login profile sources it. This command **never edits
+  `.bash_profile`**; choose that startup arrangement yourself.
+
+### `ZDOTDIR` and ownership safety
+
+The command targets **both** `$HOME/.bashrc` and `${ZDOTDIR:-$HOME}/.zshrc`;
+Zsh need not be installed at opt-in time. If you use `ZDOTDIR`, export its
+**effective absolute path** when installing, previewing, or uninstalling:
+
+```bash
+ZDOTDIR="$HOME/.config/zsh" bash config/dotfiles/install-completion.sh
+```
+
+The directory must already exist. The command never executes `.zshenv` to
+infer configuration. If `$HOME/.zshenv` exists, an explicit `ZDOTDIR` is required
+(use `ZDOTDIR="$HOME"` if it does not relocate rc files). Ensure it matches the
+value used by your shell; changing `ZDOTDIR` later requires removing the old
+hook using the old value first. Empty/relative/missing `ZDOTDIR` is rejected.
+
+Trailing/repeated slashes and `.` or `..` components are supported for real
+directories. **Every component of the absolute `ZDOTDIR` path is checked for
+symlinks**, including ancestors: `link/`, `link/.`, `link/child`, and
+`link/../other` are all rejected if `link` is a symlink. The supplied path is
+not resolved or rewritten to silently choose a target. Use a symlink-free
+absolute path (for example, `/private/tmp/...` rather than `/tmp/...` on macOS
+when `/tmp` is a symlink). This is preflight validation, not a filesystem-race
+or sandbox guarantee.
+
+Both rc files and the helper destination are validated before any mutation.
+Symlinked rc files, symlinks in `ZDOTDIR` paths, conflicting helper links,
+user-owned files at the helper destination, and malformed/modified/duplicate
+hooks are rejected rather than overwritten. Binary/NUL rc content and paths
+containing newlines are unsupported. Spaces and shell metacharacters in paths
+are supported. If validation fails, review the indicated configuration manually;
+do not delete user configuration just to make the check pass.
+
+Existing rc files are backed up to unique
+`<rc>.dev-setup-completion.bak.XXXXXX` files before edits. Backups retain file
+permissions and are not automatically pruned or used to overwrite later edits.
+Bytes outside the owned hook are retained. When the hook is at EOF, removal
+restores the original bytes exactly, including a missing final newline. When
+text follows the hook, removal retains one separator newline if otherwise a
+nonempty, unterminated preceding line would join that following text. No extra
+separator is retained if the preceding text is empty, already ends in a newline,
+or the following text starts with a newline. This keeps later assignments
+separate without restoring a whole backup or changing any user-added bytes.
+Re-running the command does not duplicate hooks or create new backups.
+`--dry-run` performs validation but creates no files, directories, links, or backups.
+
+The helper link points into **this checkout**. Keep it in place; updating
+`completion.sh` updates already opted-in shells on their next startup, without
+rewriting hooks. To move/remove a checkout, uninstall this feature using the
+original checkout first. A link into a different checkout is a conflict, not an
+implicit migration.
+
+### Disable, remove, or recover
+
+For a temporary disable, export this **before the hook** (or in the parent
+process environment), then open a **fresh** shell:
+
+```bash
+export DEV_SETUP_COMPLETION=0
+```
+
+This leaves that fresh shell's prior bindings intact. Setting it after the
+helper already ran does not undo current-shell bindings. Unset it to re-enable
+in future shells. Do not place the switch inside the owned hook.
+
+To remove only this feature, without reinstalling or restoring other dotfiles:
+
+```bash
+bash config/dotfiles/install-completion.sh --uninstall --dry-run
+bash config/dotfiles/install-completion.sh --uninstall
+```
+
+Removal validates both targets, backs up changed rc files, removes only the
+owned hook (with the separator rule above) and expected helper link, and preserves
+later user additions. Newly created rc files are left empty rather than deleted.
+Repeated removal is safe.
+Open a fresh shell to get normal bindings back. Remove this feature separately
+**before** the general DevSetup uninstaller or deleting the checkout; the general
+uninstaller does not manage this opt-in hook.
+
+Avoid concurrent edits/installers. Replacements are prepared and backups made
+before activating hooks, with a snapshot recheck, but this is **not a multi-file
+transaction or a filesystem lock**. On an I/O failure, inspect the diagnostic,
+current hooks, helper link, and named backups; fix the underlying problem and
+rerun. Never blindly restore a backup over newer user additions.
 
 ---
 
