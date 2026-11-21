@@ -338,23 +338,46 @@ function $($function.Name) {
         }
     }
     Test-Scenario 'generated profile retains aliases and removes retired definitions (load only)' {
-        # The existing-profile fixture is source-checked above. Only definitions
-        # and process-local alias registration execute; no command helpers run.
+        # Profiles load at session scope. Test-Scenario adds a function scope,
+        # which would remove a local alias then try to replace a global AllScope
+        # alias on Windows. A disposable runspace models actual startup and keeps
+        # all generated definitions out of the surrounding test session.
         $profilePath = Join-Path $TempRoot 'profiles-LF-existing\ps51\Microsoft.PowerShell_profile.ps1'
-        . $profilePath
-        foreach ($name in $retiredAliases) {
-            if (Get-Alias -Name $name -ErrorAction SilentlyContinue) { throw "Retired alias defined: $name" }
-        }
-        foreach ($name in @('Invoke-UvRun', 'Invoke-UvSync', 'Invoke-CopilotSquad', 'Invoke-PsmuxList', 'Invoke-PsmuxKillServer', 'Invoke-PsmuxNewSession', 'Invoke-PsmuxAttach', 'New-PsmuxSession')) {
-            if (Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue) { throw "Retired function defined: $name" }
-        }
-        $expectedAliases = @{
-            ni = 'Invoke-NpmInstall'; nr = 'Invoke-NpmRun'; nrd = 'Invoke-NpmRunDev'; nrt = 'Invoke-NpmRunTest'
-            gs = 'Get-GitStatus'; ghpr = 'New-GhPR'; py = 'Invoke-Python'; c = 'Clear-Host'
-            ep = 'Edit-Profile'; sdn = 'Invoke-ShutdownNow'; tsdn = 'Invoke-TimedShutdown'; cancel_tsdn = 'Invoke-CancelTimedShutdown'
-        }
-        foreach ($name in $expectedAliases.Keys) {
-            if ((Get-Alias -Name $name).Definition -ne $expectedAliases[$name]) { throw "Retained alias changed: $name" }
+        $profileCheck = @'
+param([string]$FixtureProfilePath, [string[]]$RetiredAliasNames)
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+# Exercise Windows' built-in alias semantics even on Linux PowerShell.
+Set-Alias -Name rm -Value Remove-Item -Option AllScope -Scope Global -Force
+. $FixtureProfilePath
+foreach ($name in $RetiredAliasNames) {
+    if (Get-Alias -Name $name -ErrorAction SilentlyContinue) { throw "Retired alias defined: $name" }
+}
+foreach ($name in @('Invoke-UvRun', 'Invoke-UvSync', 'Invoke-CopilotSquad', 'Invoke-PsmuxList', 'Invoke-PsmuxKillServer', 'Invoke-PsmuxNewSession', 'Invoke-PsmuxAttach', 'New-PsmuxSession')) {
+    if (Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue) { throw "Retired function defined: $name" }
+}
+$expectedAliases = @{
+    rm = 'Remove-CustomItem'
+    ni = 'Invoke-NpmInstall'; nr = 'Invoke-NpmRun'; nrd = 'Invoke-NpmRunDev'; nrt = 'Invoke-NpmRunTest'
+    gs = 'Get-GitStatus'; ghpr = 'New-GhPR'; py = 'Invoke-Python'; c = 'Clear-Host'
+    ep = 'Edit-Profile'; sdn = 'Invoke-ShutdownNow'; tsdn = 'Invoke-TimedShutdown'; cancel_tsdn = 'Invoke-CancelTimedShutdown'
+}
+foreach ($name in $expectedAliases.Keys) {
+    if ((Get-Alias -Name $name).Definition -ne $expectedAliases[$name]) { throw "Retained alias changed: $name" }
+}
+'profile-check-passed'
+'@
+        $profileShell = [PowerShell]::Create()
+        try {
+            $null = $profileShell.AddScript($profileCheck, $false).AddArgument($profilePath).AddArgument($retiredAliases)
+            $loadOutput = @($profileShell.Invoke())
+            # Expected absence probes can set HadErrors. Require explicit
+            # completion; any terminating load/assertion error prevents it.
+            if ($loadOutput.Count -ne 1 -or $loadOutput[0].ToString() -cne 'profile-check-passed') {
+                throw ('Isolated profile startup did not complete: ' + ($profileShell.Streams.Error | Out-String))
+            }
+        } finally {
+            $profileShell.Dispose()
         }
     }
 } catch {
