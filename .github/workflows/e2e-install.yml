@@ -63,7 +63,6 @@ jobs:
 
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"
-            uv --version
             python --version || python3 --version
 
             echo "--- GitHub CLI ---"
@@ -71,9 +70,6 @@ jobs:
 
             echo "--- Editors ---"
             vim --version | head -1
-
-            echo "--- Multiplexer ---"
-            tmux -V
 
             echo "--- Dotfiles ---"
             test -f "$HOME/.zshrc" && echo ".zshrc exists"
@@ -88,11 +84,6 @@ jobs:
               echo "FAIL: core.hooksPath=$HOOKS_PATH (expected hooks)"
               exit 1
             fi
-
-            echo "--- squad-cli ---"
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            squad --version | head -1
 
             echo "All Linux assertions passed"
           '
@@ -120,10 +111,7 @@ jobs:
             export PATH="$HOME/.local/bin:$PATH"
 
             echo "--- Post-idempotency assertions ---"
-            tmux -V
-
             node --version
-            uv --version
             gh --version | head -1
             echo "Post-idempotency assertions passed (Linux)"
           '
@@ -209,7 +197,6 @@ jobs:
 
             echo "--- Python toolchain ---"
             export PATH="$HOME/.local/bin:$PATH"
-            uv --version
             python --version || python3 --version
 
             echo "--- GitHub CLI ---"
@@ -217,11 +204,6 @@ jobs:
 
             echo "--- Editors ---"
             vim --version | head -1
-
-            echo "--- Multiplexer ---"
-            tmux -V
-
-
 
             echo "--- Dotfiles ---"
             test -f "$HOME/.zshrc" && echo ".zshrc exists"
@@ -236,11 +218,6 @@ jobs:
               echo "FAIL: core.hooksPath=$HOOKS_PATH (expected hooks)"
               exit 1
             fi
-
-            echo "--- squad-cli ---"
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            squad --version | head -1
 
             echo "All macOS assertions passed"
           '
@@ -268,10 +245,7 @@ jobs:
             export PATH="$HOME/.local/bin:$PATH"
 
             echo "--- Post-idempotency assertions ---"
-            tmux -V
-
             node --version
-            uv --version
             gh --version | head -1
             echo "Post-idempotency assertions passed (macOS)"
           '
@@ -369,17 +343,11 @@ jobs:
             Assert-Command 'node' '--version'
             Assert-Command 'npm' '--version'
 
-            Write-Host "--- Python toolchain ---"
-            Assert-Command 'uv' '--version'
-
             Write-Host "--- GitHub CLI ---"
             Assert-Command 'gh' '--version'
 
             Write-Host "--- Editors ---"
             Assert-Command 'vim' '--version'
-
-            Write-Host "--- Multiplexer ---"
-            Assert-Command 'psmux' '--version'
 
             Write-Host "--- Git hooks ---"
             $hooksPath = & git config core.hooksPath 2>$null
@@ -398,9 +366,6 @@ jobs:
               Write-Host "[FAIL] PS7 profile not found: $profilePath"
               $failures += 'profile'
             }
-
-            Write-Host "--- squad-cli ---"
-            Assert-Command 'squad' '--version'
 
             if ($failures.Count -gt 0) {
               Write-Host "`nFailed assertions: $($failures -join ', ')"
@@ -447,9 +412,7 @@ jobs:
             }
 
             Write-Host "--- Post-idempotency assertions ---"
-            Assert-Command 'psmux' '--version'
             Assert-Command 'node' '--version'
-            Assert-Command 'uv' '--version'
             Assert-Command 'gh' '--version'
 
             if ($failures.Count -gt 0) {

@@ -3,7 +3,7 @@
 # Idempotent uninstaller for dev-setup (Windows).
 # - Restores dotfile .bak files in $HOME (if any exist)
 # - Removes the dev-setup profile block from PowerShell profiles
-# - Does NOT remove installed tools (uv, nvm, gh, vim, copilot, etc.)
+# - Does NOT remove installed tools (nvm, gh, vim, copilot, etc.)
 #
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File scripts/windows/uninstall.ps1

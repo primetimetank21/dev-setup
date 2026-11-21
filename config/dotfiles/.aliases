@@ -41,7 +41,6 @@
 #   - Git
 #   - GitHub CLI (gh)
 #   - Docker (optional)
-#   - Tmux
 #   - Utility
 #   - Dev shortcuts
 
@@ -103,13 +102,6 @@ alias dkc='docker-compose'
 alias dkps='docker ps'
 alias dkpsa='docker ps -a'
 
-# ── Tmux ─────────────────────────────────────────────────────────────────────
-
-alias tls="tmux ls"                           # list active tmux sessions
-alias tks="tmux kill-server"                  # kill all tmux sessions
-alias tt="tmux new-session -s tank_dev"       # create a new named tmux session
-alias ta="tmux attach"                        # attach to most recent tmux session
-
 # ── Utility ──────────────────────────────────────────────────────────────────
 
 alias c='clear'
@@ -131,36 +123,10 @@ alias ep='${EDITOR:-vim} ~/.bash_profile'    # open profile in editor
 
 alias py='python3'
 alias pip='pip3'
-alias uvr='uv run'
-alias uvs='uv sync'
 alias ni='npm install'
 alias nr='npm run'
 alias nrd='npm run dev'
 alias nrt='npm run test'
-alias gosquad='copilot --agent squad --yolo'
-
-# ── Squad HQ env (Codespaces only) ───────────────────────────────────────────
-
-if [[ -n "${CODESPACES:-}" ]]; then
-  export SQUAD_HQ_ROOT="/workspaces/clonewars-squad-hq"
-  export SQUAD_WORK_REPO="${GITHUB_REPOSITORY##*/}"
-fi
-
-# ── Functions ────────────────────────────────────────────────────────────────
-
-# Create or attach to the tank_dev tmux session
-create_tmux() {
-  local session="tank_dev"
-  if ! tmux has-session -t "$session" 2>/dev/null; then
-    tmux new-session -d -s "$session"
-  fi
-  tmux attach -t "$session"
-}
-
-# Run on shell startup — launch tmux session
-start_up() {
-  create_tmux
-}
 
 # ── Shutdown (Windows host on WSL; sudo on native Linux/macOS) ────────────────
 

@@ -2,11 +2,11 @@
 # config/dotfiles/install.sh
 #
 # Idempotent dotfile installer.
-# - Copies .gitconfig.template  → $HOME/.gitconfig  (with backup if needed)
-# - Copies .npmrc.template      → $HOME/.npmrc
-# - Symlinks .editorconfig      → $HOME/.editorconfig
-# - Symlinks .aliases           → $HOME/.aliases
-# - Copies .zshrc.template      → $HOME/.zshrc  (fresh install only)
+# - Copies .gitconfig.template  -> $HOME/.gitconfig  (with backup if needed)
+# - Copies .npmrc.template      -> $HOME/.npmrc
+# - Symlinks .editorconfig      -> $HOME/.editorconfig
+# - Symlinks .aliases           -> $HOME/.aliases
+# - Copies .zshrc.template      -> $HOME/.zshrc  (fresh install only)
 #   OR appends dev-setup managed block to existing $HOME/.zshrc
 # - Appends dev-setup managed block to existing $HOME/.bashrc
 #
@@ -15,27 +15,27 @@
 #   ./config/dotfiles/install.sh --dry-run  # show what would happen
 #
 # Env vars honoured at install time (substituted into .gitconfig):
-#   GIT_AUTHOR_NAME        → replaces YOUR_NAME
-#   GIT_AUTHOR_EMAIL       → replaces YOUR_EMAIL
-#   GIT_AUTHOR_SIGNING_KEY → replaces YOUR_SIGNING_KEY (and uncomments the line)
+#   GIT_AUTHOR_NAME        -> replaces YOUR_NAME
+#   GIT_AUTHOR_EMAIL       -> replaces YOUR_EMAIL
+#   GIT_AUTHOR_SIGNING_KEY -> replaces YOUR_SIGNING_KEY (and uncomments the line)
 
 set -euo pipefail
 
-# ── Resolve the directory containing this script ────────────────────────────
+# -- Resolve the directory containing this script ----------------------------
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ── Colour helpers ───────────────────────────────────────────────────────────
+# -- Colour helpers -----------------------------------------------------------
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
 
-ok()   { printf "${GREEN}✓ %s${RESET}\n" "$*"; }
-skip() { printf "${CYAN}→ Already installed: %s${RESET}\n" "$*"; }
+ok()   { printf "${GREEN}\342\234\223 %s${RESET}\n" "$*"; }
+skip() { printf "${CYAN}\342\206\222 Already installed: %s${RESET}\n" "$*"; }
 info() { printf "${YELLOW}  %s${RESET}\n" "$*"; }
 dry()  { printf "${YELLOW}[dry-run] %s${RESET}\n" "$*"; }
 
-# ── Parse flags ──────────────────────────────────────────────────────────────
+# -- Parse flags --------------------------------------------------------------
 DRY_RUN=false
 for arg in "$@"; do
   case "$arg" in
@@ -44,7 +44,7 @@ for arg in "$@"; do
   esac
 done
 
-# ── Helper: timestamped backup, keep last N copies ───────────────────────────
+# -- Helper: timestamped backup, keep last N copies ---------------------------
 # Usage: backup_file <target> [<keep_count>]
 # Creates <target>.bak.YYYYMMDD-HHMMSS and trims all but the N most recent.
 # DOTFILE_BACKUP_KEEP overrides the default of 5 at install time.
@@ -61,7 +61,7 @@ backup_file() {
   ls -t "${target}.bak."* 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm --
 }
 
-# ── Helper: copy a template file, skipping if destination already matches ───
+# -- Helper: copy a template file, skipping if destination already matches ---
 # Usage: install_copy <src> <dest> [<label>]
 install_copy() {
   local src="$1"
@@ -92,7 +92,7 @@ install_copy() {
   fi
 }
 
-# ── Helper: append managed block to a shell rc file if not already present ───
+# -- Helper: append managed block to a shell rc file if not already present ---
 # Usage: append_managed_block <dest> <block> [<label>]
 append_managed_block() {
   local dest="$1"
@@ -124,7 +124,7 @@ append_managed_block() {
   ok "Appended dev-setup block to $label"
 }
 
-# ── Helper: create a symlink, skipping if it already points to the right file
+# -- Helper: create a symlink, skipping if it already points to the right file
 # Usage: install_symlink <target> <link_path> [<label>]
 install_symlink() {
   local target="$1"
@@ -133,9 +133,9 @@ install_symlink() {
 
   if [[ "$DRY_RUN" == true ]]; then
     if [[ -L "$link" ]] && [[ "$(readlink "$link")" == "$target" ]]; then
-      dry "Symlink already correct: $link → $target"
+      dry "Symlink already correct: $link $(printf '\342\206\222') $target"
     else
-      dry "Would create symlink: $link → $target"
+      dry "Would create symlink: $link $(printf '\342\206\222') $target"
     fi
     return
   fi
@@ -145,7 +145,7 @@ install_symlink() {
       skip "$label"
       return
     fi
-    # Symlink exists but points somewhere else — replace it
+    # Symlink exists but points somewhere else -- replace it
     rm "$link"
   elif [[ -e "$link" ]]; then
     # Regular file in the way -- back it up
@@ -157,7 +157,7 @@ install_symlink() {
   ok "Linked $label"
 }
 
-# ── Substitute placeholders in $HOME/.gitconfig ─────────────────────────────
+# -- Substitute placeholders in $HOME/.gitconfig -----------------------------
 substitute_gitconfig() {
   local gitconfig="$HOME/.gitconfig"
   [[ -f "$gitconfig" ]] || return
@@ -188,10 +188,10 @@ substitute_gitconfig() {
   fi
 }
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# -- Main ---------------------------------------------------------------------
 printf '\n%sInstalling dotfiles from %s%s\n\n' "$CYAN" "$DOTFILES_DIR" "$RESET"
 
-# .gitconfig — copy so users can edit without touching the repo template
+# .gitconfig -- copy so users can edit without touching the repo template
 install_copy \
   "$DOTFILES_DIR/.gitconfig.template" \
   "$HOME/.gitconfig" \
@@ -202,25 +202,25 @@ if [[ "$DRY_RUN" == false ]]; then
   substitute_gitconfig
 fi
 
-# .npmrc — copy for the same reason
+# .npmrc -- copy for the same reason
 install_copy \
   "$DOTFILES_DIR/.npmrc.template" \
   "$HOME/.npmrc" \
   ".npmrc"
 
-# .editorconfig — symlink because users rarely need machine-specific overrides
+# .editorconfig -- symlink because users rarely need machine-specific overrides
 install_symlink \
   "$DOTFILES_DIR/.editorconfig" \
   "$HOME/.editorconfig" \
   ".editorconfig"
 
-# .aliases — symlink so updates to the repo are reflected immediately
+# .aliases -- symlink so updates to the repo are reflected immediately
 install_symlink \
   "$DOTFILES_DIR/.aliases" \
   "$HOME/.aliases" \
   ".aliases"
 
-# .vimrc — symlink so updates to the repo are reflected immediately
+# .vimrc -- symlink so updates to the repo are reflected immediately
 install_symlink \
   "$DOTFILES_DIR/.vimrc" \
   "$HOME/.vimrc" \
@@ -256,38 +256,6 @@ export PATH="$HOME/.local/bin:$PATH"
 
 if [[ -f "$HOME/.bashrc" ]]; then
   append_managed_block "$HOME/.bashrc" "$BASHRC_MANAGED_BLOCK" ".bashrc"
-fi
-
-# -- Codespace bootstrap: clone HQ + wire work repo --------------------------
-if [[ -n "${CODESPACES:-}" ]]; then
-  (
-    HQ_TARGET="/workspaces/clonewars-squad-hq"
-    if [[ ! -d "$HQ_TARGET/.git" ]]; then
-      if [[ -n "${HQ_CLONE_TOKEN:-}" ]]; then
-        if [[ "$DRY_RUN" == true ]]; then
-          dry "Would clone Clone HQ to $HQ_TARGET"
-        else
-          info "Cloning Clone HQ to $HQ_TARGET ..."
-          git clone "https://${HQ_CLONE_TOKEN}@github.com/primetimetank21/clonewars-squad-hq.git" "$HQ_TARGET"
-          git -C "$HQ_TARGET" remote set-url origin "https://github.com/primetimetank21/clonewars-squad-hq.git"
-          ok "HQ cloned to $HQ_TARGET"
-        fi
-      else
-        info "HQ_CLONE_TOKEN not set -- skipping HQ clone (set at github.com/settings/codespaces)"
-      fi
-    else
-      skip "HQ already at $HQ_TARGET"
-    fi
-    WORK_DIR="/workspaces/$(basename "${GITHUB_REPOSITORY:-}")"
-    if [[ -d "$WORK_DIR" && -f "$HQ_TARGET/scripts/bootstrap-codespace.sh" ]]; then
-      if [[ "$DRY_RUN" == true ]]; then
-        dry "Would run: bash $HQ_TARGET/scripts/bootstrap-codespace.sh $WORK_DIR"
-      else
-        bash "$HQ_TARGET/scripts/bootstrap-codespace.sh" "$WORK_DIR"
-        ok "Codespace bootstrap complete for $WORK_DIR"
-      fi
-    fi
-  ) || info "Codespace bootstrap incomplete -- re-run: bash /workspaces/clonewars-squad-hq/scripts/bootstrap-codespace.sh \$WORK_DIR"
 fi
 
 printf '\n%sDone.%s\n\n' "$GREEN" "$RESET"

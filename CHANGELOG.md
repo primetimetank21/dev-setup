@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Embedded squad infrastructure: removed `.squad/` directory and all internal AI-agent coordination tooling from the repository. Project coordination now handled externally. (PR #475, PR #477)
 - Branch naming convention changed from `squad/{issue}-{slug}` to `feat|fix|chore|docs|refactor/{issue}-{slug}` (conventional commit prefixes).
 - Removed all `squad-cli` tool references from documentation and examples.
+- Retired uv, Squad (`squad-cli` / `squad`, including `gosquad`), tmux, and psmux
+  from installers, defaults, pins, prerequisites, shell helpers, startup hooks,
+  and Squad-specific Codespaces bootstrap. Updated tests/CI and current examples;
+  existing machine installations are not uninstalled. (#518)
 
 ## [0.9.8] - 2026-05-19
 

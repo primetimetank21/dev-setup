@@ -177,9 +177,6 @@ cd ../main-project && npm link lib-sdk
 # Go
 # Use replace directive in go.mod:
 # replace github.com/org/lib-sdk => ../lib-sdk
-
-# Python
-cd ../lib-sdk && uv pip install -e .
 ```
 
 **Important:** Remove local links before committing. `npm link` and `go replace` are dev-only -- CI must use published packages or PR-specific refs.

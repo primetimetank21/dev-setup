@@ -447,8 +447,8 @@ Test-Scenario "F-3: GitHub CLI aliases present (ghpr, ghprl, ghprv, ghis, ghiv)"
     }
 }
 
-Test-Scenario "F-4: Dev shortcut aliases present (uvr, uvs, ni, nr, nrd, nrt, py, c)" {
-    $devAliases = @('uvr', 'uvs', 'ni', 'nr', 'nrd', 'nrt', 'py', 'c')
+Test-Scenario "F-4: Dev shortcut aliases present (ni, nr, nrd, nrt, py, c)" {
+    $devAliases = @('ni', 'nr', 'nrd', 'nrt', 'py', 'c')
     foreach ($alias in $devAliases) {
         if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
             throw "Missing dev shortcut alias '$alias' in scripts/windows/tools/profile.ps1"
@@ -479,87 +479,6 @@ Test-Scenario "F-6: PS 5.x compat - no banned patterns in profile content block"
                 }
             }
         }
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Group H: psmux aliases in PowerShell profile (Issue #140)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group H: psmux aliases in PowerShell profile (Issue #140)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-Test-Scenario "H-1: psmux alias functions exist in profile content" {
-    # Check in profile.ps1 tool file (where the profile content now lives)
-    $requiredFunctions = @('Invoke-PsmuxList', 'Invoke-PsmuxKillServer', 'Invoke-PsmuxNewSession', 'Invoke-PsmuxAttach')
-    foreach ($fn in $requiredFunctions) {
-        if ($profileToolContent -notmatch $fn) {
-            throw "Missing psmux alias function '$fn' in scripts/windows/tools/profile.ps1"
-        }
-    }
-}
-
-Test-Scenario "H-2: psmux Set-Alias entries exist for tls, tks, tt, ta" {
-    # Check in profile.ps1 tool file
-    $requiredAliases = @('tls', 'tks', 'tt', 'ta')
-    foreach ($alias in $requiredAliases) {
-        if ($profileToolContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
-            throw "Missing Set-Alias for '$alias' in scripts/windows/tools/profile.ps1"
-        }
-    }
-}
-
-Test-Scenario "H-3: New-PsmuxSession function exists in profile content" {
-    # Check in profile.ps1 tool file
-    if ($profileToolContent -notmatch 'function New-PsmuxSession') {
-        throw "New-PsmuxSession function not found in scripts/windows/tools/profile.ps1"
-    }
-}
-
-Test-Scenario "H-4: New-PsmuxSession checks for existing session before creating" {
-    # Check in profile.ps1 tool file
-    if ($profileToolContent -notmatch 'psmux ls') {
-        throw "New-PsmuxSession does not contain 'psmux ls' session check"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Group I: psmux install (Issue #139)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group I: psmux install (Issue #139)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-Test-Scenario "I-1: Install-Psmux function exists in psmux.ps1" {
-    $psmuxToolPath = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
-    $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$errors)
-    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
-    if ($fn.Count -eq 0) {
-        throw "Install-Psmux function not found in scripts/windows/tools/psmux.ps1"
-    }
-}
-
-Test-Scenario "I-2: Install-Psmux is called in Main" {
-    # Architecture change (WI-1): tools are dispatched via $DefaultTools array.
-    # Verify 'psmux' is in the $DefaultTools array in setup.ps1.
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    if ($content -notmatch "'psmux'") {
-        throw "Install-Psmux is not in DefaultTools (setup.ps1)"
-    }
-}
-
-Test-Scenario "I-3: Install-Psmux is idempotent (checks before installing)" {
-    $psmuxToolPath = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
-    $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$errors)
-    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
-    if ($fn.Count -eq 0) { throw "Install-Psmux function not found" }
-    $fnBody = $fn[0].Body.Extent.Text
-    if ($fnBody -notmatch 'Get-Command psmux') {
-        throw "Install-Psmux does not check for psmux before installing (missing Get-Command psmux)"
     }
 }
 
@@ -936,69 +855,6 @@ Test-Scenario "O-7: After Remove-Item Alias:\h, Set-Alias h succeeds without err
 }
 
 # ---------------------------------------------------------------------------
-# Group P: psmux Install (Issue #197)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group P: psmux Install (Issue #197)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-. (Join-Path $RepoRoot 'scripts\windows\lib\path.ps1')
-$psmuxToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
-$psmuxToolContent = Get-Content $psmuxToolPath -Raw
-$psmuxToolExec = $psmuxToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
-Invoke-Expression $psmuxToolExec
-
-Test-Scenario "P-1: psmux.ps1 can be dot-sourced without error and Install-Psmux is defined" {
-    # Syntax check via AST parser
-    $tokens = $null; $parseErrors = $null
-    $null = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$parseErrors)
-    if ($parseErrors.Count -gt 0) {
-        throw "psmux.ps1 has syntax errors: $($parseErrors[0].Message)"
-    }
-    # Verify function is callable after loading (loaded above via Invoke-Expression)
-    if (-not (Get-Command Install-Psmux -ErrorAction SilentlyContinue)) {
-        throw "Install-Psmux is not defined after loading psmux.ps1"
-    }
-}
-
-if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
-    Write-Skip "P-2: Install-Psmux invokes winget install when psmux missing" `
-        "psmux binary is present on this machine - not-installed code path cannot be exercised"
-} else {
-    Test-Scenario "P-2: Install-Psmux invokes 'winget install --id marlocarlo.psmux' when psmux is not installed" {
-        $script:WingetCalled = $false
-        $script:WingetArgs = $null
-        function global:winget {
-            $script:WingetCalled = $true
-            $script:WingetArgs = $args
-            $global:LASTEXITCODE = 0
-        }
-        try {
-            $output = Install-Psmux 2>&1 | Out-String
-            if (-not $script:WingetCalled) {
-                throw "Install-Psmux did not invoke winget when psmux is absent. Output: $output"
-            }
-            if (($script:WingetArgs -join ' ') -notmatch 'marlocarlo\.psmux') {
-                throw "Install-Psmux invoked winget with wrong package ID. Args: $($script:WingetArgs -join ' ')"
-            }
-        } finally {
-            Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
-        }
-    }
-}
-
-Test-Scenario "P-3: Install-Psmux is idempotent (second call does not throw)" {
-    function global:winget { $global:LASTEXITCODE = 0 }
-    try {
-        Install-Psmux | Out-Null
-        Install-Psmux | Out-Null
-    } finally {
-        Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
-    }
-}
-
-# ---------------------------------------------------------------------------
 # Group Q: Dotfiles installer (Issue #180)
 # ---------------------------------------------------------------------------
 
@@ -1134,10 +990,10 @@ Test-Scenario "R-2c Get-ToolVersion returns herdr version" {
     }
 }
 
-Test-Scenario "R-3 Get-ToolVersion returns uv version" {
-    $ver = Get-ToolVersion -Name 'uv'
-    if ($ver -ne '0.4.18') {
-        throw "Expected '0.4.18', got '$ver'"
+Test-Scenario "R-3 Get-ToolVersion returns gh version" {
+    $ver = Get-ToolVersion -Name 'gh'
+    if ($ver -ne '2.92.0') {
+        throw "Expected '2.92.0', got '$ver'"
     }
 }
 
@@ -1424,8 +1280,8 @@ Test-Scenario "X-4: Assert-LastExit throws for unexpected non-zero exit code" {
     }
 }
 
-Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
-    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
+Test-Scenario "X-5: Core winget install scripts call Assert-LastExit" {
+    $wingetScripts = @('git', 'gh', 'vim')
     foreach ($s in $wingetScripts) {
         $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
         $content = Get-Content $path -Raw
@@ -1435,15 +1291,15 @@ Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
     }
 }
 
-Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\uv.ps1') -Raw
+Test-Scenario "X-7: copilot.ps1 calls Assert-LastExit after install command" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\copilot.ps1') -Raw
     if ($content -notmatch 'Assert-LastExit') {
-        throw "uv.ps1 does not call Assert-LastExit after install command"
+        throw "copilot.ps1 does not call Assert-LastExit after install command"
     }
 }
 
 Test-Scenario "X-8: Assert-LastExit allowed codes include winget ALREADY_INSTALLED in all winget scripts" {
-    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
+    $wingetScripts = @('git', 'gh', 'vim')
     foreach ($s in $wingetScripts) {
         $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
         $content = Get-Content $path -Raw
@@ -1453,28 +1309,27 @@ Test-Scenario "X-8: Assert-LastExit allowed codes include winget ALREADY_INSTALL
     }
 }
 
-if ($null -eq (Get-Command psmux -ErrorAction SilentlyContinue)) {
-    Test-Scenario "X-9: Simulated winget failure propagates from Install-Psmux" {
-        $psmuxContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1') -Raw
-        $psmuxExec = $psmuxContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
-        Invoke-Expression $psmuxExec
-        function global:winget { $global:LASTEXITCODE = 99 }
-        $threw = $false
-        try {
-            Install-Psmux 2>&1 | Out-Null
-        } catch {
-            $threw = $true
-        } finally {
-            Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
-            $global:LASTEXITCODE = 0
-        }
-        if (-not $threw) {
-            throw "Install-Psmux did not propagate the simulated winget failure"
-        }
+Test-Scenario "X-9: Simulated winget failure propagates from Install-Vim" {
+    . (Join-Path $RepoRoot 'scripts\windows\tools\vim.ps1')
+    # Deterministic, non-forwarding stubs: never inspect an installed Vim or run winget.
+    function Get-Command {
+        param([string]$Name, [string]$ErrorAction)
+        if ($Name -ne 'vim') { throw "Unexpected command lookup: $Name" }
     }
-} else {
-    Write-Skip "X-9: Simulated winget failure propagates from Install-Psmux" `
-        "psmux is installed -- early-return path taken, winget not called"
+    function winget { $global:LASTEXITCODE = 99 }
+    function Get-ChildItem { throw "Unexpected PATH discovery after failed install" }
+    $threw = $false
+    try {
+        Install-Vim 2>&1 | Out-Null
+    } catch {
+        if ($_.Exception.Message -ne 'vim install failed') { throw }
+        $threw = $true
+    } finally {
+        $global:LASTEXITCODE = 0
+    }
+    if (-not $threw) {
+        throw "Install-Vim did not propagate the simulated winget failure"
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -2341,8 +2196,8 @@ function Invoke-HostQuery { param([string]$Exe) return $gg5MockPath }
 
 Test-Scenario "GG-5: Idempotency -- 3 runs produce exactly 1 BEGIN marker" {
     try {
-        # Seed the file with pre-existing content so the block is never at position 0.
-        # (Strip regex requires \r?\n before BEGIN marker; position-0 blocks have no preceding newline.)
+        # Preserve pre-existing content across three replacements. Byte-zero,
+        # duplicate-block and LF/CRLF boundary cases live in test_tool_retirement.ps1.
         $gg5Dir = Split-Path $gg5MockPath
         if (-not (Test-Path $gg5Dir)) { New-Item -ItemType Directory -Path $gg5Dir -Force | Out-Null }
         Set-Content $gg5MockPath "# pre-existing profile content" -Encoding ASCII
@@ -2396,59 +2251,6 @@ Test-Scenario "GG-7: Non-zero host exit -- fallback path returned" {
     }
 }
 $global:LASTEXITCODE = 0  # v5-H2: reset after native-command contamination
-
-# ---------------------------------------------------------------------------
-# Group HH: squad-cli installer (Issue #487)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group HH: squad-cli installer (#487)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-$squadCliToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1'
-$squadCliToolContent = Get-Content $squadCliToolPath -Raw
-
-Test-Scenario "HH-1: Install-SquadCli function defined in squad-cli.ps1" {
-    $found = Select-String -Path $squadCliToolPath -Pattern 'function Install-SquadCli' -Quiet
-    if (-not $found) {
-        throw "Install-SquadCli function not found in scripts/windows/tools/squad-cli.ps1"
-    }
-}
-
-Test-Scenario "HH-2: squad-cli.ps1 reads pinned version via Get-ToolVersion" {
-    if ($squadCliToolContent -notmatch "Get-ToolVersion.*-Name\s+'squad-cli'") {
-        throw "squad-cli.ps1 does not call Get-ToolVersion -Name 'squad-cli'"
-    }
-}
-
-Test-Scenario "HH-3: Install-SquadCli called in setup.ps1 Main() after Install-CopilotCli" {
-    # Architecture change (WI-1): tools are dispatched via $DefaultTools array.
-    # Verify 'squad-cli' is in DefaultTools AND appears after 'copilot'.
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
-    $copilotIdx  = $content.IndexOf("'copilot'")
-    $squadCliIdx = $content.IndexOf("'squad-cli'")
-    if ($copilotIdx -lt 0)  { throw "copilot not found in DefaultTools (setup.ps1)" }
-    if ($squadCliIdx -lt 0) { throw "squad-cli not found in DefaultTools (setup.ps1)" }
-    if ($squadCliIdx -le $copilotIdx) {
-        throw "squad-cli does not appear after copilot in DefaultTools"
-    }
-}
-
-Test-Scenario "HH-4: Missing npm guard uses Write-Warn + return (soft-fail, not exit 1)" {
-    if ($squadCliToolContent -notmatch 'Write-Warn.*npm not found') {
-        throw "squad-cli.ps1 does not use Write-Warn for missing npm (soft-fail pattern missing)"
-    }
-    # Must NOT contain exit 1 for the npm-absent path
-    $lines = $squadCliToolContent -split "`n"
-    $npmAbsentSection = $false
-    foreach ($line in $lines) {
-        if ($line -match 'npm not found') { $npmAbsentSection = $true }
-        if ($npmAbsentSection -and $line -match '\bexit 1\b') {
-            throw "squad-cli.ps1 uses exit 1 for npm-absent path -- must use return (soft-fail)"
-        }
-        if ($npmAbsentSection -and $line -match '\breturn\b') { break }
-    }
-}
 
 # ---------------------------------------------------------------------------
 # Group II: nvm.ps1 space-free install root (Issue #492)

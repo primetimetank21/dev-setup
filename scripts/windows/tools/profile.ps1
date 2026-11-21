@@ -49,6 +49,29 @@ function Write-PowerShellProfile {
     $local:beginMarker = '# BEGIN dev-setup profile'  # v5.1-F5
     $local:endMarker   = '# END dev-setup profile'    # v5.1-F5
 
+    # Strip only canonical whole-line blocks, including byte-zero and adjacent
+    # blocks left by older installs. Keep a line break when user text surrounds
+    # a block, but remove the owned separator at EOF for stable repeat writes.
+    $stripManagedBlocks = {
+        param([string]$Content)
+        $pattern = "(?ms)(?:^|\r?\n)$([regex]::Escape($beginMarker))\r?\n.*?^$([regex]::Escape($endMarker))(?:\r?\n|\z)"
+        $blocks = [regex]::Matches($Content, $pattern)
+        # Work backwards: original offsets stay valid, and separator decisions
+        # see the updated suffix instead of newlines another removal consumes.
+        for ($i = $blocks.Count - 1; $i -ge 0; $i--) {
+            $block = $blocks[$i]
+            $after = $block.Index + $block.Length
+            $separator = ''
+            if ($block.Index -gt 0 -and $after -lt $Content.Length -and
+                $Content[$block.Index - 1] -ne "`n" -and
+                $Content[$after] -ne "`r" -and $Content[$after] -ne "`n") {
+                $separator = if ($block.Value.StartsWith("`r`n")) { "`r`n" } else { "`n" }
+            }
+            $Content = $Content.Remove($block.Index, $block.Length).Insert($block.Index, $separator)
+        }
+        $Content
+    }
+
     # Resolve actual profile paths by querying each host; deduplicate case-insensitively
     $profilePaths = @(
         (Resolve-ProfilePath 'powershell' $Ps51Fallback),
@@ -62,7 +85,7 @@ function Write-PowerShellProfile {
         if ($isOrphan -and (Test-Path $legacy) -and
             (Select-String -Path $legacy -Pattern $beginMarker -Quiet)) {
             $legacyContent = Get-Content $legacy -Raw
-            $stripped = $legacyContent -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''  # v5.1-F4
+            $stripped = & $stripManagedBlocks $legacyContent
             Set-Content $legacy $stripped.TrimEnd() -NoNewline -Encoding ASCII  # v5-H1
             Write-Info "Stripped orphaned block from legacy path: $legacy"
         }
@@ -74,7 +97,7 @@ function Write-PowerShellProfile {
             Write-Info "Updating PowerShell profile shortcuts in $profilePath..."
             $raw = Get-Content $profilePath -Raw
             # Strip the managed block (handles both LF and CRLF)
-            $raw = $raw -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''
+            $raw = & $stripManagedBlocks $raw
             Set-Content $profilePath $raw -NoNewline -Encoding ASCII
         }
     }
@@ -203,12 +226,6 @@ Set-Alias -Name ghiv -Value Get-GhIssueView -Force -Scope Global
 
 # -- Dev shortcuts --------------------------------------------------------------
 
-function Invoke-UvRun { uv run $args }                      # run with uv
-Set-Alias -Name uvr -Value Invoke-UvRun -Force -Scope Global
-
-function Invoke-UvSync { uv sync $args }                    # sync uv environment
-Set-Alias -Name uvs -Value Invoke-UvSync -Force -Scope Global
-
 function Invoke-NpmInstall { npm install $args }            # npm install
 Remove-Item -Force Alias:\ni -ErrorAction SilentlyContinue
 Set-Alias -Name ni -Value Invoke-NpmInstall -Force -Scope Global
@@ -224,9 +241,6 @@ Set-Alias -Name nrt -Value Invoke-NpmRunTest -Force -Scope Global
 
 function Invoke-Python { python $args }                     # python shorthand
 Set-Alias -Name py -Value Invoke-Python -Force -Scope Global
-
-function Invoke-CopilotSquad { copilot --agent squad --yolo $args }  # run Copilot with Squad agent
-Set-Alias -Name gosquad -Value Invoke-CopilotSquad -Force -Scope Global
 
 Set-Alias -Name c -Value Clear-Host -Force -Scope Global    # clear the screen
 
@@ -244,30 +258,6 @@ Set-Alias -Name h -Value Get-History -Force -Scope Global   # command history
 function Edit-Profile { notepad $PROFILE }  # open PS profile in editor
 Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue
 Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
-
-# -- psmux (tmux for Windows) -----------------------------------------------
-
-function Invoke-PsmuxList { psmux ls $args }                    # list active psmux sessions
-Set-Alias -Name tls -Value Invoke-PsmuxList -Force -Scope Global
-
-function Invoke-PsmuxKillServer { psmux kill-server $args }     # kill all psmux sessions
-Set-Alias -Name tks -Value Invoke-PsmuxKillServer -Force -Scope Global
-
-function Invoke-PsmuxNewSession { psmux new-session -s tank_dev $args }  # create new named psmux session
-Set-Alias -Name tt -Value Invoke-PsmuxNewSession -Force -Scope Global
-
-function Invoke-PsmuxAttach { psmux attach $args }              # attach to most recent psmux session
-Set-Alias -Name ta -Value Invoke-PsmuxAttach -Force -Scope Global
-
-# Create or attach to the tank_dev psmux session (Windows equivalent of create_tmux)
-function New-PsmuxSession {
-    $session = 'tank_dev'
-    $exists = psmux ls 2>$null | Select-String -Pattern $session -Quiet
-    if (-not $exists) {
-        psmux new-session -d -s $session
-    }
-    psmux attach -t $session
-}
 
 # -- Shutdown -------------------------------------------------------------------
 
@@ -345,9 +335,9 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
         Write-Info "Writing profile content to: $profilePath"
 
         # Append to profile (create if absent).
-        # Always prepend a blank line so we don't concatenate onto any existing last line.
+        # Separate nonempty user content, but keep empty/fresh targets byte-stable.
         try {
-            if (Test-Path $profilePath) {
+            if ((Test-Path $profilePath) -and (Get-Item $profilePath).Length -gt 0) {
                 Add-Content -Path $profilePath -Value "" -Encoding ASCII
             }
             Add-Content -Path $profilePath -Value $profileContent -Encoding ASCII

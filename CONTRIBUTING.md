@@ -80,7 +80,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 **Examples:**
 
 ```
-feat(linux): add uv install script
+feat(linux): add delta install script
 fix(windows): handle missing winget gracefully
 docs(readme): add --skip-auth flag note
 chore(ci): pin shellcheck version

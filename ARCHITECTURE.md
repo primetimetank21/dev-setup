@@ -22,7 +22,7 @@ Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk aw
 dev-setup/
 |---- setup.sh                        # Entry point -- Unix (Linux / macOS / WSL); thin router
 |---- setup.ps1                       # Entry point -- Windows (PowerShell); thin router
-|---- .tool-versions                  # asdf-style pinned versions (node, nvm, uv, gh, copilot-cli, pi, herdr)
+|---- .tool-versions                  # asdf-style pinned versions (node, nvm, gh, copilot-cli, pi, herdr)
 |---- .gitattributes                  # eol=lf for *.sh / *.md / *.yml; eol=crlf for *.ps1 / *.psm1 / *.psd1
 |---- ARCHITECTURE.md                 # This file
 |---- CHANGELOG.md                    # Keep-a-Changelog format
@@ -47,7 +47,6 @@ dev-setup/
 |   |       |---- herdr.sh           # Install Herdr (pin from .tool-versions)
 |   |       |---- nvm.sh             # Install nvm + Node (pin from .tool-versions)
 |   |       |---- pi.sh              # Install pi CLI (pin from .tool-versions)
-|   |       |---- uv.sh              # Install uv Python package manager (pin from .tool-versions)
 |   |       `---- zsh.sh             # Install zsh + set as default shell
 |   |
 |   `---- windows/
@@ -67,8 +66,6 @@ dev-setup/
 |           |---- nvm.ps1            # nvm-windows + Node (pin from .tool-versions)
 |           |---- pi.ps1             # pi CLI (pin from .tool-versions)
 |           |---- profile.ps1        # PowerShell profile injection (PS 5.1 + PS 7+ paths)
-|           |---- psmux.ps1          # psmux terminal multiplexer (Windows tmux alias)
-|           |---- uv.ps1             # uv Python package manager (pin from .tool-versions)
 |           `---- vim.ps1            # Vim editor
 |
 |---- config/
@@ -289,7 +286,7 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 | Idempotency | `Get-Command <tool> -ErrorAction SilentlyContinue` before installing |
 | Logging | Dot-source `scripts/windows/lib/logging.ps1`; call `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err` |
 | Exit-code discipline | After any external install, call `Assert-LastExit -ToolName <name>` (use `-AllowedExitCodes` for cases like winget `ALREADY_INSTALLED`) |
-| PATH refresh | After an install mutates PATH, dot-source `scripts/windows/lib/path.ps1` and call `Refresh-SessionPath` so `node`, `uv`, `gh`, etc. become callable in the same session |
+| PATH refresh | After an install mutates PATH, dot-source `scripts/windows/lib/path.ps1` and call `Refresh-SessionPath` so `node`, `gh`, etc. become callable in the same session |
 | Version pinning | Read from `.tool-versions` via `Get-ToolVersion` (dot-source `scripts/lib/Read-ToolVersion.ps1`); never hard-code versions |
 | Install method | Prefer `winget`; fall back to `scoop` or direct download (see `nvm.ps1` for the portable-zip pattern) |
 | Sourcing | `setup.ps1` dot-sources each `tools/*.ps1`; tool functions live in the parent scope and are invoked by name. Tool scripts re-dot-source their own `lib/` files so they remain runnable standalone. |
@@ -343,7 +340,7 @@ The default Linux/macOS/WSL tools run in this order (defined by `DEFAULT_TOOLS` 
 `scripts/linux/setup.sh`):
 
 ```
-prereqs -> zsh -> uv -> nvm -> gh -> auth -> copilot-cli -> squad-cli -> dotfiles -> git-hook
+prereqs -> zsh -> nvm -> gh -> auth -> copilot-cli -> dotfiles -> git-hook
 ```
 
 `copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `auth` script handles interactive GitHub CLI authentication.
@@ -359,7 +356,7 @@ does **not** drive dependencies. `$DefaultTools` is the authoritative default or
 The default chain is:
 
 ```
-winget-check -> git -> uv -> nvm -> gh -> auth -> vim -> psmux -> copilot -> squad-cli -> dotfiles -> profile -> git-hook
+winget-check -> git -> nvm -> gh -> auth -> vim -> copilot -> dotfiles -> profile -> git-hook
 ```
 
 Mapped to registry functions and the `tools/*.ps1` module that defines each:
@@ -368,17 +365,14 @@ Mapped to registry functions and the `tools/*.ps1` module that defines each:
 |---|-------------------|---------------|--------------------|
 | 1 | `Invoke-WingetGate`        | `tools/winget-check.ps1` | `tools/prereqs.sh` |
 | 2 | `Install-Git`              | `tools/git.ps1`          | (package prerequisite) |
-| 3 | `Install-Uv`               | `tools/uv.ps1`           | `tools/uv.sh` |
-| 4 | `Install-Nvm`              | `tools/nvm.ps1`          | `tools/nvm.sh` |
-| 5 | `Install-GhCli`            | `tools/gh.ps1`           | `tools/gh.sh` |
-| 6 | `Invoke-GhAuth`            | `tools/auth.ps1`         | `tools/auth.sh` |
-| 7 | `Install-Vim`              | `tools/vim.ps1`          | (platform addition) |
-| 8 | `Install-Psmux`            | `tools/psmux.ps1`        | (tmux equivalent) |
-| 9 | `Install-CopilotCli`       | `tools/copilot.ps1`      | `tools/copilot-cli.sh` |
-| 10 | `Install-SquadCli`        | `tools/squad-cli.ps1`    | `tools/squad-cli.sh` |
-| 11 | `Install-Dotfiles`        | `tools/dotfiles.ps1`     | `tools/dotfiles.sh` |
-| 12 | `Write-PowerShellProfile` | `tools/profile.ps1`      | (PowerShell profile finalizer) |
-| 13 | `Install-GitHook`         | `tools/git-hook.ps1`     | `tools/git-hook.sh` |
+| 3 | `Install-Nvm`              | `tools/nvm.ps1`          | `tools/nvm.sh` |
+| 4 | `Install-GhCli`            | `tools/gh.ps1`           | `tools/gh.sh` |
+| 5 | `Invoke-GhAuth`            | `tools/auth.ps1`         | `tools/auth.sh` |
+| 6 | `Install-Vim`              | `tools/vim.ps1`          | (platform addition) |
+| 7 | `Install-CopilotCli`       | `tools/copilot.ps1`      | `tools/copilot-cli.sh` |
+| 8 | `Install-Dotfiles`        | `tools/dotfiles.ps1`     | `tools/dotfiles.sh` |
+| 9 | `Write-PowerShellProfile` | `tools/profile.ps1`      | (PowerShell profile finalizer) |
+| 10 | `Install-GitHook`         | `tools/git-hook.ps1`     | `tools/git-hook.sh` |
 
 Cross-platform invariants preserved from the Linux chain above:
 
@@ -388,7 +382,7 @@ Cross-platform invariants preserved from the Linux chain above:
 Windows-specific ordering notes:
 
 - `winget-check` runs first, then `git` -- downstream steps rely on the package manager or git.
-- `vim` and `psmux` are explicit `winget` installs because Windows has no equivalent pre-installed editor/multiplexer.
+- `vim` is an explicit `winget` install because Windows has no equivalent pre-installed editor.
 - `dotfiles` + `profile` are Windows-specific finalizers: the Linux side rolls equivalent shell-rc work into `tools/zsh.sh` plus `config/dotfiles/install.sh`, but Windows needs a discrete PowerShell profile injection step (PS 5.1 + PS 7+ profile paths) after the dotfile templates are applied.
 - `git-hook` runs last so `core.hooksPath=hooks` is set only after the working tree is in its final state.
 - Registry entries absent from `$DefaultTools` are opt-in and are appended alphabetically when selected.
@@ -418,7 +412,7 @@ Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) f
 - `scripts/lib/Read-ToolVersion.ps1` -- exposes `Get-ToolVersion -Name <toolname>` (PowerShell)
 - `scripts/lib/read-tool-version.sh` -- same contract for POSIX shells (prints to stdout)
 
-Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `uv`, `copilot-cli`, `gh`, `pi`, `herdr`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/uv.sh`) call the library at install time so version bumps are a single-file edit.
+Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `copilot-cli`, `gh`, `pi`, `herdr`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/nvm.sh`) call the library at install time so version bumps are a single-file edit.
 
 ---
 

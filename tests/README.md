@@ -2,6 +2,36 @@
 
 Idempotency test suite for the `dev-setup` scripts.
 
+## Isolated tool retirement regressions (no machine setup)
+
+```bash
+bash tests/test_tool_retirement.sh
+bash tests/test_aliases.sh
+bash tests/test_alias_parity.sh
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_tool_retirement.ps1
+```
+
+The retirement suites run the actual root/platform dispatchers in private copies
+with **non-forwarding, recording-only installers**. They check the current tool
+lists, normal unknown-tool rejection before dispatch, retained selection order,
+exclusions, repeat runs, and failure propagation. Bash also audits tracked current
+operational references (including hidden paths), simulates prerequisite package
+managers, and installs dotfiles only into private homes with Codespaces flags both
+unset and set. PowerShell writes only explicit private profile paths with a mocked
+host query, checks fresh/repeated and legacy-block replacement, and loads generated
+aliases without invoking any shutdown or session helper.
+
+Fixtures use `TMPDIR` (Bash/Unix) or `TEMP`/`TMP` (Windows), are removed on success,
+and are retained with a printed path on failure. No installed tools are removed.
+These checks do not prove live package installation or native platform activation;
+CI runs the suites with Linux/macOS Bash and Windows PowerShell 5.1/7. The separate
+E2E workflow owns fresh-runner install/idempotency checks. Historical changelog,
+design plans, author identities, and the pending replacement demo are not live
+support and are excluded from the operational-source audit.
+
 ## Isolated completion tests (no machine setup)
 
 ```bash
@@ -69,8 +99,8 @@ whether the tool is already present before attempting to install it.
 
 | # | Section | What is verified |
 |---|---------|-----------------|
-| 1 | **Tool script existence** | All five tool scripts (`zsh.sh`, `uv.sh`, `nvm.sh`, `gh.sh`, `copilot-cli.sh`) are present in `scripts/linux/tools/` |
-| 2 | **Tool PATH verification** | `zsh`, `gh`, `uv`, `nvm` (sourced), `node`, and `npm` are available after a normal install |
+| 1 | **Tool script existence** | All four tool scripts (`zsh.sh`, `nvm.sh`, `gh.sh`, `copilot-cli.sh`) are present in `scripts/linux/tools/` |
+| 2 | **Tool PATH verification** | `zsh`, `gh`, `nvm` (sourced), `node`, and `npm` are available after a normal install |
 | 3 | **Tool script second-run** | Each tool script is re-run directly; the test asserts that it exits 0 **and** emits an "already installed" (or equivalent) message |
 | 4 | **Config file integrity** | `/etc/shells` has no duplicate `zsh` entries; `~/.zshrc` has no duplicate `NVM_DIR`, `.local/bin`, or `nvm.sh` source lines |
 | 5 | **Full setup.sh second-run** | The root `setup.sh` is executed a second time; the test asserts it exits 0 |
@@ -96,7 +126,6 @@ failed -- look for `[ ] FAIL` lines in the output.
 
 [i]  INFO: --- Tool script existence ---
 [x] PASS: zsh.sh exists
-[x] PASS: uv.sh exists
 [x] PASS: nvm.sh exists
 [x] PASS: gh.sh exists
 [x] PASS: copilot-cli.sh exists
@@ -104,14 +133,12 @@ failed -- look for `[ ] FAIL` lines in the output.
 [i]  INFO: --- Tool installation verification ---
 [x] PASS: zsh is on PATH
 [x] PASS: gh CLI is on PATH
-[x] PASS: uv is on PATH (~/.local/bin)
 [x] PASS: nvm is available (sourced from /root/.nvm)
 [x] PASS: node is on PATH
 [x] PASS: npm is on PATH
 
 [i]  INFO: --- Tool script idempotency (second-run) ---
 [x] PASS: zsh.sh: idempotent -- detected existing install on second run
-[x] PASS: uv.sh: idempotent -- detected existing install on second run
 [x] PASS: nvm.sh: idempotent -- detected existing install on second run
 [x] PASS: gh.sh: idempotent -- detected existing install on second run
 [x] PASS: copilot-cli.sh: no error on second run
@@ -127,7 +154,7 @@ failed -- look for `[ ] FAIL` lines in the output.
 [x] PASS: setup.sh: second run completed without error
 
 =======================================
- Results: 21 passed, 0 failed
+ Results: 19 passed, 0 failed
 =======================================
 ```
 
@@ -136,7 +163,7 @@ failed -- look for `[ ] FAIL` lines in the output.
 | Limitation | Detail |
 |-----------|--------|
 | **nvm is a shell function** | `nvm` cannot be found via `command -v` until `$NVM_DIR/nvm.sh` is sourced. The test sources it automatically, but CI shells or non-login environments may miss it if `NVM_DIR` is unset. |
-| **uv PATH** | `uv` installs to `~/.local/bin`, which is not always on `PATH` in non-login or non-interactive shells. The test prepends it explicitly. |
+| **User-local PATH** | `~/.local/bin` is not always on `PATH` in non-login or non-interactive shells. The test prepends it for second-run tool checks. |
 | **copilot-cli.sh requires `gh auth`** | If `gh` is not authenticated, `copilot-cli.sh` exits 0 with a warning rather than installing. The test accepts this as a valid idempotent outcome (no error). |
 | **Requires prior install** | The test suite is designed to run *after* `setup.sh` has been run at least once. Running it on a clean machine without tools installed will fail the PATH and second-run checks. |
 | **Linux/macOS only** | These tests target `scripts/linux/tools/`. There is no equivalent test for the Windows PowerShell setup yet. |

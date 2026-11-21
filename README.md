@@ -7,16 +7,12 @@
 | Tool | Purpose |
 |------|---------|
 | `zsh` | Shell -- installed and set as default on Linux/macOS |
-| `uv` | Python package and environment manager (fast pip replacement) |
 | `nvm` + Node.js LTS | Node Version Manager + latest Node LTS |
 | `gh` | GitHub CLI |
 | GitHub Copilot CLI | AI pair programmer in your terminal (`gh copilot`) |
-| `squad` CLI | Multi-agent copilot orchestrator (`gosquad` launcher) |
 | `pi` | Pi coding agent CLI (opt-in via `--only=pi` / `-Only 'pi'`) |
 | `herdr` | Herdr terminal workspace manager (opt-in via `--only=herdr` / `-Only 'herdr'`) |
 | `vim` | Modal text editor -- installed on all platforms |
-| `tmux` | Terminal multiplexer (Linux/macOS) |
-| `psmux` | Terminal multiplexer (Windows) |
 | Shell aliases | Shortcuts for common git and dev commands |
 
 ## Supported Platforms
@@ -69,11 +65,9 @@ Run setup normally to open the picker in an interactive terminal, or request it 
 | Explicitly request the picker | `./setup.sh --interactive` | `.\setup.ps1 -Interactive` |
 | Explicitly suppress the picker | `./setup.sh --non-interactive` | `.\setup.ps1 -NonInteractive` |
 
-![Bash interactive tool picker with defaults checked and the delta opt-in selected](docs/media/tui-demo/tui-demo.gif)
-
-*Bash picker demo. PowerShell provides an equivalent picker. For automation and
-devcontainers, use `--non-interactive` or `SETUP_NON_INTERACTIVE=1`; CI
-auto-detect also suppresses the menu, so it is never required.*
+For automation and devcontainers, use `--non-interactive` or
+`SETUP_NON_INTERACTIVE=1`; CI auto-detect also suppresses the menu, so it is
+never required.
 
 An explicit interactive request still obeys the CI/headless safety checks. The picker is
 automatically suppressed when setup detects CI, GitHub Actions, redirected or unavailable
@@ -135,8 +129,8 @@ present.
 # Print usage
 ./setup.sh --help
 
-# Install only zsh and uv
-./setup.sh --only=zsh,uv
+# Install only zsh and gh
+./setup.sh --only=zsh,gh
 
 # Install everything except auth and copilot-cli
 ./setup.sh --skip=auth,copilot-cli
@@ -161,12 +155,12 @@ present.
 ### Caveats
 
 **`--only` / `-Only` does not auto-include prerequisites.** Selecting `--only=nvm` installs
-only nvm -- its prerequisite tools (`prereqs`, `zsh`, `uv`) are not pulled in automatically.
+only nvm -- earlier steps (`prereqs`, `zsh`) are not pulled in automatically.
 If a tool depends on earlier steps, list all required tools explicitly:
 
 ```bash
 # Correct: include prereqs before nvm
-./setup.sh --only=prereqs,uv,nvm
+./setup.sh --only=prereqs,nvm
 ```
 
 **`--only` and `--skip` are mutually exclusive.** Combining both flags exits with an error.
@@ -222,10 +216,8 @@ dev-setup/
 |   |       +-- copilot-cli.sh
 |   |       +-- herdr.sh
 |   |       +-- pi.sh
-|   |       +-- squad-cli.sh
 |       +-- gh.sh
 |   |       +-- nvm.sh
-|   |       +-- uv.sh
 |   |       \-- zsh.sh
 |   \-- windows/
 |       +-- setup.ps1         -- Orchestrator (dot-sources tools/ scripts)
@@ -233,9 +225,8 @@ dev-setup/
 |       \-- tools/            -- Per-tool install scripts
 |           +-- auth.ps1      -- GitHub CLI authentication (interactive)
 |           +-- copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
-|           +-- herdr.ps1, pi.ps1, profile.ps1, psmux.ps1, squad-cli.ps1
-|           +-- uv.ps1, vim.ps1
-|           \-- (12 files total)
+|           +-- herdr.ps1, pi.ps1, profile.ps1, vim.ps1
+|           \-- (14 files total)
 +-- config/
 |   \-- dotfiles/             -- Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
 |       \-- install.sh        -- Dotfile installer
@@ -266,11 +257,9 @@ After running setup, you get shortcuts for common git, dev, and utility commands
 
 **GitHub CLI:** `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
 
-**Dev tools:** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`, `gosquad`
+**Dev tools:** `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
 
 **Utility:** `myip`, `pb`, `h`, `ep`
-
-**tmux/psmux:** `ta` (attach), `tt` (new session), `tls` (list sessions), `tks` (kill server)
 
 **Navigation** (Linux/macOS only): `..`, `...`, `....`, `~`, `-`
 
@@ -305,18 +294,6 @@ optional completion providers.
 The following helper functions are available after setup:
 
 ### Linux / macOS / WSL
-
-**`create_tmux`** -- Create or attach to the `tank_dev` tmux session. If the session exists, attaches to it. If not, creates it first.
-
-```bash
-create_tmux
-```
-
-**`start_up`** -- Shortcut that calls `create_tmux`. Use this in your shell startup for auto-attach.
-
-```bash
-start_up
-```
 
 #### Shutdown helpers (Bash/Zsh)
 
@@ -380,14 +357,6 @@ uses non-forwarding recording stubs, never real shutdown commands. Linux/macOS
 CI includes both shells and macOS system Bash 3.2. These simulated tests do not
 prove live WSL or OS-level shutdown behavior; do not validate with a live
 schedule-then-cancel experiment.
-
-### Windows
-
-**`New-PsmuxSession`** -- Create or attach to the `tank_dev` psmux session (Windows equivalent of `create_tmux`).
-
-```powershell
-New-PsmuxSession
-```
 
 ## Git Hooks (Auto-configured)
 
@@ -453,7 +422,6 @@ Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format)
 nodejs 22.23.2
 nvm 0.39.7
 nvm-windows 1.2.2
-uv 0.4.18
 copilot-cli 1.0.69
 gh 2.92.0
 pi 0.86.1

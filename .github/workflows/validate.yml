@@ -70,15 +70,6 @@ jobs:
           fi
           echo "✅ zsh: $(zsh --version)"
 
-      - name: Validate uv installed
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          if ! command -v uv &>/dev/null; then
-            echo "❌ FAIL: uv not found on PATH"
-            exit 1
-          fi
-          echo "✅ uv: $(uv --version)"
-
       - name: Validate nvm and Node.js installed
         run: |
           export NVM_DIR="$HOME/.nvm"
@@ -118,6 +109,9 @@ jobs:
         run: |
           chmod +x tests/test_alias_parity.sh
           bash tests/test_alias_parity.sh
+
+      - name: Run isolated tool retirement regressions
+        run: bash tests/test_tool_retirement.sh
 
       - name: Check shutdown helper syntax (Bash and Zsh)
         run: |
@@ -192,15 +186,6 @@ jobs:
           fi
           echo "zsh: $(zsh --version)"
 
-      - name: Validate uv installed
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          if ! command -v uv &>/dev/null; then
-            echo "FAIL: uv not found on PATH"
-            exit 1
-          fi
-          echo "uv: $(uv --version)"
-
       - name: Validate nvm and Node.js installed
         run: |
           export NVM_DIR="$HOME/.nvm"
@@ -230,6 +215,12 @@ jobs:
           echo "--- Running setup script a second time to test idempotency ---"
           bash setup.sh
           echo "Second run completed without errors"
+
+      - name: Run isolated alias and retirement regressions (system Bash 3.2)
+        run: |
+          /bin/bash tests/test_aliases.sh
+          /bin/bash tests/test_alias_parity.sh
+          /bin/bash tests/test_tool_retirement.sh
 
       - name: Check shutdown helper syntax (system Bash 3.2 and Zsh)
         run: |
@@ -297,6 +288,9 @@ jobs:
       - name: Lint isolated shutdown helper harness
         run: shellcheck tests/test_shutdown_helpers.sh
 
+      - name: Lint isolated alias and retirement regressions
+        run: shellcheck tests/test_aliases.sh tests/test_tool_retirement.sh
+
       - name: Run Bash flag compatibility gates
         run: bash tests/test_setup_flags.sh
 
@@ -351,6 +345,9 @@ jobs:
 
       - name: Run TUI and resolver tests (pwsh)
         run: pwsh tests/test_tui_pwsh.ps1
+
+      - name: Run isolated tool retirement regressions (pwsh)
+        run: pwsh -NoProfile -File tests/test_tool_retirement.ps1
 
   validate-ps51:
     name: Validate PowerShell 5.1 Compatibility
@@ -441,6 +438,10 @@ jobs:
         shell: powershell
         run: |
           powershell -ExecutionPolicy Bypass -File tests\test_windows_setup.ps1
+
+      - name: Run isolated tool retirement regressions (PS 5.1)
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_tool_retirement.ps1
 
       - name: Run PS 5.1 flag compatibility gates
         shell: powershell

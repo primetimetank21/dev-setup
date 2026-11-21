@@ -43,13 +43,10 @@ $ErrorActionPreference = 'Stop'
 # Dot-source all tool installer modules
 . "$PSScriptRoot\tools\winget-check.ps1"
 . "$PSScriptRoot\tools\git.ps1"
-. "$PSScriptRoot\tools\uv.ps1"
 . "$PSScriptRoot\tools\nvm.ps1"
 . "$PSScriptRoot\tools\gh.ps1"
 . "$PSScriptRoot\tools\vim.ps1"
-. "$PSScriptRoot\tools\psmux.ps1"
 . "$PSScriptRoot\tools\copilot.ps1"
-. "$PSScriptRoot\tools\squad-cli.ps1"
 . "$PSScriptRoot\tools\dotfiles.ps1"
 . "$PSScriptRoot\tools\profile.ps1"
 . "$PSScriptRoot\tools\auth.ps1"
@@ -67,14 +64,11 @@ $ErrorActionPreference = 'Stop'
 $DefaultTools = @(
     'winget-check'
     'git'
-    'uv'
     'nvm'
     'gh'
     'auth'
     'vim'
-    'psmux'
     'copilot'
-    'squad-cli'
     'dotfiles'
     'profile'
     'git-hook'
@@ -85,15 +79,12 @@ $DefaultTools = @(
 $ToolRegistry = [ordered]@{
     'winget-check' = { Invoke-WingetGate }
     'git'          = { Install-Git }
-    'uv'           = { Install-Uv }
     'nvm'          = { Install-Nvm }
     'gh'           = { Install-GhCli }
     'auth'         = { Invoke-GhAuth }
     'vim'          = { Install-Vim }
-    'psmux'        = { Install-Psmux }
     'copilot'      = { Install-CopilotCli }
     'copilot-cli'  = { Install-CopilotCli }
-    'squad-cli'    = { Install-SquadCli }
     'dotfiles'     = { Install-Dotfiles }
     'profile'      = { Write-PowerShellProfile }
     'git-hook'     = { Install-GitHook }

@@ -12,7 +12,7 @@
 # Assumes: tools are already installed (run after setup.sh).
 #
 # Environment notes:
-#   - uv installs to ~/.local/bin -- not on PATH by default in non-login shells
+#   - User-local tools may need ~/.local/bin on PATH in non-login shells
 #   - nvm is a shell function, not a binary -- must be sourced from $NVM_DIR/nvm.sh
 #   - copilot-cli.sh skips install (exit 0) when gh is not authenticated
 #
@@ -131,7 +131,6 @@ echo ""
 # -- 1. Tool script existence --------------------------------------------------
 info "--- Tool script existence ---"
 assert_file_exists "${TOOLS_DIR}/zsh.sh"        "zsh.sh exists"
-assert_file_exists "${TOOLS_DIR}/uv.sh"         "uv.sh exists"
 assert_file_exists "${TOOLS_DIR}/nvm.sh"        "nvm.sh exists"
 assert_file_exists "${TOOLS_DIR}/gh.sh"         "gh.sh exists"
 assert_file_exists "${TOOLS_DIR}/copilot-cli.sh" "copilot-cli.sh exists"
@@ -143,9 +142,8 @@ info "--- Tool installation verification ---"
 assert_command_exists "zsh" "zsh is on PATH"
 assert_command_exists "gh"  "gh CLI is on PATH"
 
-# uv installs to ~/.local/bin -- add it to PATH for this session if needed
+# Keep user-local tools on PATH for second-run checks
 export PATH="$HOME/.local/bin:$PATH"
-assert_command_exists "uv" "uv is on PATH (~/.local/bin)"
 
 # nvm is a shell function -- must be sourced; it is not a binary on PATH
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
@@ -166,7 +164,6 @@ assert_command_exists "npm"  "npm is on PATH"
 echo ""
 info "--- Tool script idempotency (second-run) ---"
 assert_idempotent_tool_script "${TOOLS_DIR}/zsh.sh"         "zsh.sh"
-assert_idempotent_tool_script "${TOOLS_DIR}/uv.sh"          "uv.sh"
 assert_idempotent_tool_script "${TOOLS_DIR}/nvm.sh"         "nvm.sh"
 assert_idempotent_tool_script "${TOOLS_DIR}/gh.sh"          "gh.sh"
 assert_idempotent_tool_script "${TOOLS_DIR}/copilot-cli.sh" "copilot-cli.sh"
