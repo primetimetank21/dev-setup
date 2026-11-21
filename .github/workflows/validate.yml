@@ -65,40 +65,40 @@ jobs:
       - name: Validate zsh installed
         run: |
           if ! command -v zsh &>/dev/null; then
-            echo "❌ FAIL: zsh not found on PATH"
+            echo "FAIL: zsh not found on PATH"
             exit 1
           fi
-          echo "✅ zsh: $(zsh --version)"
+          echo "OK: zsh: $(zsh --version)"
 
       - name: Validate nvm and Node.js installed
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
           if ! command -v nvm &>/dev/null; then
-            echo "❌ FAIL: nvm not available"
+            echo "FAIL: nvm not available"
             exit 1
           fi
           if ! command -v node &>/dev/null; then
-            echo "❌ FAIL: node not found on PATH"
+            echo "FAIL: node not found on PATH"
             exit 1
           fi
-          echo "✅ nvm: $(nvm --version)"
-          echo "✅ node: $(node --version)"
-          echo "✅ npm: $(npm --version)"
+          echo "OK: nvm: $(nvm --version)"
+          echo "OK: node: $(node --version)"
+          echo "OK: npm: $(npm --version)"
 
       - name: Validate gh CLI installed
         run: |
           if ! command -v gh &>/dev/null; then
-            echo "❌ FAIL: gh not found on PATH"
+            echo "FAIL: gh not found on PATH"
             exit 1
           fi
-          echo "✅ gh: $(gh --version | head -1)"
+          echo "OK: gh: $(gh --version | head -1)"
 
       - name: Test idempotency (run setup a second time)
         run: |
           echo "--- Running setup script a second time to test idempotency ---"
           bash setup.sh
-          echo "✅ Second run completed without errors"
+          echo "OK: Second run completed without errors"
 
       - name: Run alias unit tests
         run: |
