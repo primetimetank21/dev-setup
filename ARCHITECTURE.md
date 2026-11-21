@@ -1,6 +1,6 @@
 # Architecture: dev-setup
 
-> **Last updated:** 2026-08-09
+> **Last updated:** 2026-11-21
 
 ---
 
@@ -12,7 +12,7 @@
 - Dev Containers
 - Fresh Linux, macOS, or Windows machines
 
-Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk away. Every tool this project installs is safe to re-install -- the scripts check first and skip if already present.
+The entry points resolve a selection and run its steps in dependency order. Interactive terminals can use the picker; unattended runs use explicit flags or defaults. Version-aware skips make repeated setup practical, but configuration steps can still overwrite owned files or refresh profile blocks. Start with the [human overview](README.md), [agent guide](AGENTS.md) or [setup reference](docs/setup.md) as appropriate.
 
 ---
 
@@ -27,7 +27,9 @@ dev-setup/
 |---- ARCHITECTURE.md                 # This file
 |---- CHANGELOG.md                    # Keep-a-Changelog format
 |---- CONTRIBUTING.md                 # Contribution guide
-|---- README.md                       # Project overview and quick start
+|---- README.md                       # Concise human overview and quick start
+|---- AGENTS.md                       # Agent source map, constraints and safe checks
+|---- docs/                           # Detailed setup and shutdown references
 |
 |---- scripts/
 |   |---- lib/                        # Cross-platform shared libraries (PS + sh)
@@ -40,7 +42,7 @@ dev-setup/
 |   |   |---- lib/
 |   |   |   |---- log.sh             # Shared log_info / log_ok / log_warn / log_error helpers
 |   |   |   `---- tui.sh             # Bash 3.2+ interactive picker
-|   |   `---- tools/                  # Per-tool installers (sourced by core in dependency order)
+|   |   `---- tools/                  # Per-tool installers (executed in dependency order)
 |   |       |---- auth.sh            # GitHub CLI authentication (interactive)
 |   |       |---- copilot-cli.sh     # Install GitHub Copilot CLI (pin from .tool-versions)
 |   |       |---- gh.sh              # Install GitHub CLI (pin from .tool-versions)
@@ -80,7 +82,7 @@ dev-setup/
 |       `---- README.md              # Documents each dotfile and install behaviour
 |
 |---- hooks/                          # Git hooks; auto-wired via `git config core.hooksPath hooks`
-|   |---- pre-commit                 # Branch ancestry + ASCII guard + shellcheck
+|   |---- pre-commit                 # ASCII guard + protected-branch refusal + shellcheck
 |   |---- prepare-commit-msg         # Rewrite auto-merge/revert messages into Conventional Commits form
 |   |---- commit-msg                 # Enforce Conventional Commits format (hard reject on non-conforming)
 |   `---- pre-push                   # Block direct pushes to main; advisory shellcheck + PSScriptAnalyzer
@@ -92,7 +94,7 @@ dev-setup/
 |   |---- test_git_hooks.ps1         # Git hook tests (PowerShell)
 |   |---- test_idempotency.sh        # Idempotency tests (bash)
 |   |---- test_nvm_bootstrap.sh      # nvm bootstrap tests
-|   |---- test_precommit_hygiene.sh  # pre-commit hygiene checks (ancestry, ASCII, rogue-path)
+|   |---- test_precommit_hygiene.sh  # Historical/targeted pre-commit regression cases
 |   |---- test_remove_custom_item.ps1 # Custom item removal tests (PowerShell)
 |   |---- test_setup_flags.sh        # Bash selection flags + interactive guards
 |   |---- test_setup_flags_pwsh.ps1  # PowerShell selection flags + interactive guards
@@ -176,7 +178,7 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 
 The public picker contract, including invocation, controls, headless behavior, flag precedence,
 and confirm/cancel results, is documented in the
-[README interactive picker section](./README.md#interactive-tool-picker).
+[setup guide](docs/setup.md#interactive-tool-picker).
 
 Internally, selection is separated from installation:
 
@@ -272,7 +274,7 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 |------------|------|
 | Shebang | `#!/usr/bin/env bash` |
 | Safety flags | `set -euo pipefail` at top of every script |
-| Idempotency | Check `command -v <tool>` before installing; skip if present |
+| Idempotency | For versioned tools, compare the installed version with the pin; skip only when the requested state already holds |
 | Logging | Source `scripts/linux/lib/log.sh`; call `log_info`, `log_ok`, `log_warn`, `log_error` |
 | Version pinning | Read from `.tool-versions` via `sh scripts/lib/read-tool-version.sh <tool>`; never hard-code versions |
 | Sourcing | `setup.sh` runs each `tools/*.sh` via `bash <script>` (subshell); tool scripts re-source `lib/log.sh` themselves |
@@ -283,48 +285,27 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 | Convention | Rule |
 |------------|------|
 | Safety | `Set-StrictMode -Version Latest` + `$ErrorActionPreference = 'Stop'` |
-| Idempotency | `Get-Command <tool> -ErrorAction SilentlyContinue` before installing |
+| Idempotency | For versioned tools, compare the installed version with the shared pin before deciding to skip |
 | Logging | Dot-source `scripts/windows/lib/logging.ps1`; call `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err` |
 | Exit-code discipline | After any external install, call `Assert-LastExit -ToolName <name>` (use `-AllowedExitCodes` for cases like winget `ALREADY_INSTALLED`) |
 | PATH refresh | After an install mutates PATH, dot-source `scripts/windows/lib/path.ps1` and call `Refresh-SessionPath` so `node`, `gh`, etc. become callable in the same session |
 | Version pinning | Read from `.tool-versions` via `Get-ToolVersion` (dot-source `scripts/lib/Read-ToolVersion.ps1`); never hard-code versions |
 | Install method | Prefer `winget`; fall back to `scoop` or direct download (see `nvm.ps1` for the portable-zip pattern) |
 | Sourcing | `setup.ps1` dot-sources each `tools/*.ps1`; tool functions live in the parent scope and are invoked by name. Tool scripts re-dot-source their own `lib/` files so they remain runnable standalone. |
-| Profile injection | `Write-PowerShellProfile` writes aliases to **both** PS 5.1 (`Documents\WindowsPowerShell\`) and PS 7+ (`Documents\PowerShell\`) paths; sentinel strip+re-inject makes it idempotent |
-| Alias registration | All `Set-Alias` calls use `-Force -Scope Global` so aliases work in the current session immediately |
+| Profile injection | `Write-PowerShellProfile` resolves each host's `$PROFILE`, falls back when needed, deduplicates paths and replaces canonical managed blocks. Current writes are ASCII; see configuration cautions in the setup guide |
+| Alias registration | Generated profile aliases use `-Force -Scope Global` when the profile is loaded at startup; writing the profile does not activate it in an already-running session |
 
 ---
 
 ## How to Add a New Tool (Linux/macOS)
 
-1. **Create `scripts/linux/tools/<toolname>.sh`**
-
-   ```bash
-   #!/usr/bin/env bash
-   # scripts/linux/tools/<toolname>.sh -- Install <toolname>
-   set -euo pipefail
-
-   log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-   log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
-
-   if command -v <toolname> &>/dev/null; then
-     log_ok "<toolname> already installed: $(<toolname> --version)"
-     exit 0
-   fi
-
-   # Install logic here
-   ```
-
-2. **Decide whether the tool is default-on or opt-in**
-
-   Adding the script makes its basename available to the picker and `--only`. To install it by
-   default, also add `"<toolname>"` to `DEFAULT_TOOLS` in `scripts/linux/setup.sh` at the correct
-   dependency position. Leaving it out keeps the tool opt-in.
-
-3. **Create a companion GitHub issue** if it's a new tool install.
+1. Add a standalone `scripts/linux/tools/<name>.sh` using the canonical logging library and the [version-aware pinning pattern](CONTRIBUTING.md#tool-version-pin-enforcement). Do not copy logging helpers or use a bare executable-presence guard for a versioned tool.
+2. Keep the tool opt-in unless default inclusion is part of the approved change. Add it to `DEFAULT_TOOLS` only at the intended dependency position.
+3. For Windows parity, add the module, dot-source it and register it in `$ToolRegistry`; update `$DefaultTools` only when intended. Preserve aliases and canonical ordering.
+4. Update selection/failure tests, native CI coverage and default-order fixtures when affected. Check with `bash scripts/dev/regenerate-baseline-fixtures.sh --check`.
+5. Update the concise overview or linked setup reference as appropriate. Verify actual `--list` / `-List` output rather than maintaining a duplicate tool registry in prose.
 
 ---
-
 ## How to Add a New Platform
 
 1. Create a directory under `scripts/<platform>/`
@@ -391,66 +372,34 @@ Windows-specific ordering notes:
 
 ## Idempotency Guarantee
 
-Every script in this project must be safe to run multiple times. The pattern is:
+Installers aim to skip work when the requested version/configuration is already present. For versioned tools, compare the installed version with the pin; do not treat a bare `command -v` / `Get-Command` check as sufficient.
 
-```bash
-if <already installed check>; then
-  log_ok "<tool> already installed"
-  exit 0
-fi
-# install
-```
-
-This means running `bash setup.sh` on a fully-configured machine is a no-op.
+Repeatability is **not** a guarantee that a configured machine is a no-op. Dotfile copies may overwrite differing content with bounded backup retention; profile steps update managed configuration. See [configuration and backups](docs/setup.md#configuration-and-backups). Exercise full repeated installations only in CI or a deliberately disposable environment.
 
 ---
-
 ## Tool Version Pinning (`.tool-versions`)
 
-Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) file (asdf-style: `name<space>version`, one per line). Both the Linux and Windows installers read pins through a shared library so the same version is installed across all platforms:
+Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) file (asdf-style: `name<space>version`, one per line). Version-aware Linux and Windows installers read the shared registry through these helpers; package-manager limitations can cause logged drift:
 
 - `scripts/lib/Read-ToolVersion.ps1` -- exposes `Get-ToolVersion -Name <toolname>` (PowerShell)
 - `scripts/lib/read-tool-version.sh` -- same contract for POSIX shells (prints to stdout)
 
-Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `copilot-cli`, `gh`, `pi`, `herdr`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/nvm.sh`) call the library at install time so version bumps are a single-file edit.
+Use the registry itself for the current names and values rather than a duplicated version list. The Node installers read the `nodejs` pin. See [version-pin enforcement](CONTRIBUTING.md#tool-version-pin-enforcement) for update/skip behavior and platform constraints.
 
 ---
 
 ## Git Hooks
 
-Hooks live in [`hooks/`](./hooks) and are wired automatically by the installers via `git config core.hooksPath hooks` (no manual install step). Four hooks ship today:
-
-| Hook | Role |
-|------|------|
-| `pre-commit` | Branch-ancestry guard (feature branches must descend from `develop`), ASCII-only enforcement for staged `*.ps1`, refusal to commit on `develop`/`main`/`master`, shellcheck on staged `*.sh` |
-| `prepare-commit-msg` | Rewrites git auto-generated `Merge ...` and `Revert "..."` messages into Conventional Commits form so `commit-msg` accepts them |
-| `commit-msg` | Enforces Conventional Commits format (`type(scope): description`). Hard reject on non-conforming. |
-| `pre-push` | Blocks direct pushes to `main`; runs shellcheck on changed `*.sh` (advisory) and PSScriptAnalyzer on changed `*.ps1` (advisory) |
+The `git-hook` step sets `core.hooksPath=hooks`; it does not make every hook executable. [CONTRIBUTING.md](CONTRIBUTING.md#git-hooks) is the canonical description of actual hook checks, optional-tool skips and the nonexecutable message-rewrite helper. Verify the configured path/modes rather than assuming every shipped file is active.
 
 ---
 
 ## CI Workflows
 
-All workflows live in [`.github/workflows/`](./.github/workflows).
+Actual triggers, runners and job definitions live in [`.github/workflows/`](.github/workflows/), rather than in a duplicated job-count table.
 
-### `validate.yml` -- main CI gate (6 jobs)
+- [`validate.yml`](.github/workflows/validate.yml) runs on PRs and pushes to `main`/`develop`. It covers Linux/macOS installation, shell and PowerShell lint, Windows regressions, native PowerShell 5.1, and isolated completion on Linux/macOS. Selection, retirement, aliases and non-forwarding shutdown checks are included in the relevant platform jobs.
+- [`e2e-install.yml`](.github/workflows/e2e-install.yml) runs platform install smoke tests on PRs, its scheduled run and manual dispatch, with an aggregate result. These jobs modify disposable hosted runners, not a contributor's workstation.
+- [`sprint-end-labels.yml`](.github/workflows/sprint-end-labels.yml) is optional maintainer metadata automation. See [label automation](CONTRIBUTING.md#sprint-end-label-automation) before using its write mode.
 
-| Job | Runner | Purpose |
-|-----|--------|---------|
-| `validate-linux` | `ubuntu-latest` | Installer, idempotency, aliases, tool versions, and Bash picker tests |
-| `validate-macos` | `macos-latest` | Linux-shaped validation plus Bash 3.2 picker fallback coverage |
-| `lint-shell-scripts` | `ubuntu-latest` | ShellCheck plus Bash flag, guard, and help-contract tests |
-| `lint-powershell` | `ubuntu-latest` (pwsh) | PSScriptAnalyzer across the Windows setup and TUI scripts |
-| `validate-powershell` | `windows-latest` | Windows regressions plus picker/resolver tests under PowerShell 7 |
-| `validate-ps51` | `windows-latest` | Syntax, PSScriptAnalyzer, setup flags, and picker/resolver tests under **PS 5.1** |
-
-### `e2e-install.yml` -- end-to-end smoke test (4 jobs, PR + nightly cron)
-
-| Job | Runner | Purpose |
-|-----|--------|---------|
-| `e2e-linux` | `ubuntu-latest` | Run `setup.sh` on a fresh runner; assert every tool is reachable from a login shell |
-| `e2e-macos` | `macos-latest` | Same shape as `e2e-linux` |
-| `e2e-windows` | `windows-latest` | Run `setup.ps1`; PowerShell + winget path |
-| `summary` | `ubuntu-latest` | Aggregates the three platform results (`needs: [...]`, `if: always()`) and fails the workflow if any platform failed |
-
-Initially `continue-on-error: true` per platform job; the `summary` job is the single fail-gate. Triggers: `pull_request`, nightly `cron: 0 4 * * *`, and `workflow_dispatch`.
+Native macOS/Bash 3.2 and Windows/PowerShell 5.1 execution remain distinct from Linux parser checks or emulation. [AGENTS.md](AGENTS.md#safe-validation) and [tests/README.md](tests/README.md) identify safe local entry points and the suites that require an isolated machine.

@@ -1,6 +1,6 @@
 # Contributing to dev-setup
 
-Welcome! This guide explains the contribution workflow for dev-setup.
+This guide owns the contributor workflow. Coding agents should also read [AGENTS.md](AGENTS.md); installation guidance is in [README.md](README.md) and the [setup reference](docs/setup.md).
 
 ---
 
@@ -49,7 +49,7 @@ git checkout -b {type}/{issue-number}-{slug}
 
 **Never fork a feature branch from another feature branch.** Branching from a peer's branch pulls in their unmerged commits, inflating your PR diff and making review harder. If you see commits in your PR that don't belong to your issue, your branch was not forked from `develop`.
 
-**All feature branches MUST be cut from `develop`, not `main`.** The pre-commit hook validates this: if you commit to a feature branch that is not an ancestor of `develop`, the hook warns that you may have accidentally forked from `main` or another feature branch. To fix: `git rebase develop` before pushing.
+**All feature branches MUST be cut from `develop`, not `main`.** Verify the base and outgoing diff yourself: the current pre-commit hook refuses protected-branch commits but does not enforce ancestry. Do not assume a passing hook caught unrelated branch history. Correct a wrongly based branch before publication; do not rewrite published history without explicit permission.
 
 ---
 
@@ -82,7 +82,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 ```
 feat(linux): add delta install script
 fix(windows): handle missing winget gracefully
-docs(readme): add --skip-auth flag note
+docs(readme): clarify --skip=auth usage
 chore(ci): pin shellcheck version
 refactor(auth): extract is_non_interactive helper
 test(idempotency): verify nvm double-install is safe
@@ -102,7 +102,7 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ## Merge Strategy
 
-**ALL merges use regular merge commits** (`--merge` or `gh pr merge --no-squash`).
+**ALL merges use regular merge commits** (`gh pr merge --merge`).
 
 **Never squash** -- not for feature PRs to `develop`, not for sprint wrap PRs (`develop` -> `main`). This is a hard team rule.
 
@@ -141,7 +141,9 @@ All `.ps1` scripts in this repo must run on **PowerShell 5.1** (the version ship
 
 ### Testing on PS 5.1
 
-Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manual testing on a Windows machine is the current standard. See issue #109 for the CI validation track.
+The `validate-ps51` job in [validate.yml](.github/workflows/validate.yml) runs native Windows PowerShell 5.1 checks, including the isolated retirement suite. A Linux `pwsh` run or parser check is useful but is not native PS5.1 evidence. Use hosted CI or a deliberately disposable Windows environment for the native gate.
+
+Profile load-only tests must model startup scope. Windows built-in aliases such as `rm` can carry `AllScope`; loading a generated profile inside an extra test-function scope is not equivalent to session startup. The retirement suite uses a disposable runspace and retains hard failures for unexpected aliases and load errors.
 
 ### Reference: Known PS 5.x regressions caught in this repo
 
@@ -154,18 +156,18 @@ Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manu
 
 ## Git Hooks
 
-Git hooks are **configured automatically** by `setup.sh` / `setup.ps1` via `git config core.hooksPath hooks`. You do not need to copy or symlink anything manually.
+The selected `git-hook` setup step configures `core.hooksPath=hooks` in the current repository. It does not copy hooks or change their executable modes. On Unix, Git ignores nonexecutable hooks.
 
-After running setup, the following hooks are active:
+| Hook | Actual behavior |
+|---|---|
+| `pre-commit` | Checks staged `.ps1`, `.md` and `.sh` content for non-ASCII; refuses commits on `develop`/`main`/`master`; runs ShellCheck on staged `.sh` files when installed. It does **not** check branch ancestry. |
+| `commit-msg` | Enforces the accepted Conventional Commit grammar. |
+| `pre-push` | Blocks direct pushes to `main`; shell and PowerShell lint are advisory and depend on locally available tools. |
+| `prepare-commit-msg` | A merge/revert message-rewrite helper. Its tracked Unix mode is nonexecutable, so do not assume it runs. Write a conforming message explicitly. |
 
-| Hook | Behavior |
-|------|----------|
-| `pre-commit` | Checks staged `.sh` files with shellcheck. Blocks commit on errors; silently skips if shellcheck not installed. |
-| `commit-msg` | Enforces Conventional Commits format. Hard reject on non-conforming messages. |
-| `pre-push` | Blocks direct pushes to `main`. Runs shellcheck/PSScriptAnalyzer on changed files (advisory--never blocks). |
+Check the actual installation with `git config --get core.hooksPath` and inspect [the hook files](hooks/) before relying on them. A passing hook is not a substitute for CI; missing optional lint tools are not proof of a clean lint run. Do not bypass failures to ship a change.
 
-See README > Git Hooks (Auto-configured) for details on each hook's checks and how to bypass with `--no-verify`.
-
+The optional `python3 scripts/lib/ascii-sweep.py --dry-run` helper previews Markdown punctuation cleanup. It preserves fenced code blocks, whereas the commit gate checks the whole staged file. Inspect the proposed scope and correct fenced content deliberately rather than sweeping unrelated history.
 ### Installing PSScriptAnalyzer locally (optional)
 
 To get PS lint feedback during `pre-push`, install the module once in PowerShell:
@@ -411,7 +413,7 @@ Numbers are unbounded and consistent with established project history.
 
 ---
 
-For the full technical overview, team ownership map, and architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+For the implementation map and tool contracts, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -508,3 +510,20 @@ variable). Optionally pair with `2>$null` or `2>&1 | Out-Null` to silence
 stderr noise. The trailing reset is load-bearing for any script invoked from
 a workflow `shell: pwsh` step via `& .\path\to\script.ps1` -- without it the
 GH Actions wrapper fails the step on the next inspection of `$LASTEXITCODE`.
+
+---
+
+## Sprint-end label automation
+
+The optional [script](scripts/sprint-end-labels.sh) and [manual workflow](.github/workflows/sprint-end-labels.yml) transition issues/PRs carrying a selected sprint label from `release:backlog` to an agreed `release:shipped-X.Y.Z` label. This writes GitHub metadata and requires the owner's authorization.
+
+Use an **explicit dry run** when inspecting scope. The shell script's default is write mode, even though the workflow input defaults to a dry run.
+
+```bash
+scripts/sprint-end-labels.sh \
+  --sprint sprint:17 \
+  --release-label release:shipped-0.9.7 \
+  --dry-run
+```
+
+The command above uses historical labels as an example. Review the selected items before changing the arguments or omitting `--dry-run`. The implementation verifies label state after operations and preserves type/area/priority labels; its retry/failure details live with the script. Inspect the `test_sprint_end_labels` harnesses before running them, rather than exercising writes against real issues as a test.
