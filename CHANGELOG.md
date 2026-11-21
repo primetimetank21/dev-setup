@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Concise human README, agent-facing repository guide, and canonical setup/shutdown references with corrected configuration, pinning, hook and native-test guidance. (#519)
+- Rerecorded selective-install demo from the actual reduced Bash/WSL picker, with cancellation before installation and source-bound capture notes. (#519)
 - Explicit completion-only Bash/Zsh opt-in with native Tab/Shift+Tab cycling,
   separate validated rc hooks, backups, mutation-free preview, disable switch,
   and feature-only removal. Older Readline (including macOS Bash 3.2) gets

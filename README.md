@@ -1,488 +1,102 @@
 # dev-setup
 
-> One-command developer environment setup for Linux, macOS, WSL, Windows, and GitHub Codespaces.
+Development setup for Debian/Ubuntu Linux, macOS, WSL, Windows and Dev Containers. Choose tools interactively or use repeatable selection flags.
 
-## What This Installs
-
-| Tool | Purpose |
-|------|---------|
-| `zsh` | Shell -- installed and set as default on Linux/macOS |
-| `nvm` + Node.js LTS | Node Version Manager + latest Node LTS |
-| `gh` | GitHub CLI |
-| GitHub Copilot CLI | AI pair programmer in your terminal (`gh copilot`) |
-| `pi` | Pi coding agent CLI (opt-in via `--only=pi` / `-Only 'pi'`) |
-| `herdr` | Herdr terminal workspace manager (opt-in via `--only=herdr` / `-Only 'herdr'`) |
-| `vim` | Modal text editor -- installed on all platforms |
-| Shell aliases | Shortcuts for common git and dev commands |
-
-## Supported Platforms
-
-| Platform | Status | Entry point |
-|----------|:------:|-------------|
-| Linux (native) | [x] | `bash setup.sh` |
-| macOS | [x] | `bash setup.sh` |
-| WSL (Windows Subsystem for Linux) | [x] | `bash setup.sh` |
-| Windows (native PowerShell) | [x] | `powershell -ExecutionPolicy Bypass -File setup.ps1` |
-| Dev Container / GitHub Codespace | [x] | Automatic (runs on container creation) |
+**Setup changes your machine.** It installs software and can change shell configuration, dotfiles and profiles. Review the selected steps and [configuration/backup behavior](docs/setup.md#configuration-and-backups) before using it on a personalized machine.
 
 ## Quick Start
 
-### Linux / macOS / WSL
+Clone into a location you intend to keep; some shell configuration links back to this checkout.
 
-```bash
+```sh
 git clone https://github.com/primetimetank21/dev-setup.git
 cd dev-setup
+```
+
+**Linux / macOS / WSL**
+
+```bash
 bash setup.sh
 ```
 
-> **GitHub Authentication:** During setup, `scripts/linux/tools/auth.sh` (Linux/macOS/WSL) or `scripts/windows/tools/auth.ps1` (Windows) checks whether you are already authenticated with the GitHub CLI. If not, it launches `gh auth login` interactively so you can complete authentication. In non-interactive environments (CI, GitHub Codespaces, piped stdin), the prompt is skipped automatically and a warning is printed -- run `gh auth login` manually after setup completes if you need to authenticate.
-
-### Windows (PowerShell)
+**Windows PowerShell 5.1 or newer**
 
 ```powershell
-git clone https://github.com/primetimetank21/dev-setup.git
-cd dev-setup
-powershell -ExecutionPolicy Bypass -File setup.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-### Dev Container / GitHub Codespace
+An eligible interactive terminal opens the tool picker. **CI/headless sessions install the defaults instead.** Dev Containers and Codespaces run setup on creation; see the [container guide](.devcontainer/README.md).
 
-No action needed. Setup runs automatically on container creation via the `postCreateCommand` hook.
+## What This Installs
+
+| Selection | Includes |
+|---|---|
+| Common defaults | NVM/Node.js, GitHub CLI, Copilot CLI, dotfiles and repository Git hooks |
+| Linux / macOS / WSL | Git, curl, Vim and Zsh; Linux also gets build tools |
+| Windows | Git, Vim and PowerShell profile shortcuts |
+| Opt-in tools | `delta`, `lazygit`, `pi`, `herdr` |
+
+Pinned tool versions are defined in [`.tool-versions`](.tool-versions). Node targets the pinned version, not an implicit latest-LTS upgrade. Exact availability and order come from `--list` / `-List`.
 
 ## Selective Install
 
-`setup.sh` and `setup.ps1` share one ordered selection model. In an eligible interactive terminal,
-a no-argument run opens the tool picker. In CI, headless sessions, or when selection flags are
-provided, setup skips the picker and uses the deterministic flag/default path instead.
+![Real Bash picker turning off auth, selecting delta and lazygit, then cancelling without installation](docs/media/tui-demo/tui-demo.gif)
 
-### Interactive Tool Picker
+Recorded from tested Bash/WSL output; no installers ran. [Recording notes](docs/media/tui-demo/README.md).
 
-Run setup normally to open the picker in an interactive terminal, or request it explicitly:
-
-| Action | Linux / macOS / WSL | Windows |
-|--------|---------------------|---------|
-| Open when the terminal is interactive | `./setup.sh` | `.\setup.ps1` |
-| Explicitly request the picker | `./setup.sh --interactive` | `.\setup.ps1 -Interactive` |
-| Explicitly suppress the picker | `./setup.sh --non-interactive` | `.\setup.ps1 -NonInteractive` |
-
-For automation and devcontainers, use `--non-interactive` or
-`SETUP_NON_INTERACTIVE=1`; CI auto-detect also suppresses the menu, so it is
-never required.
-
-An explicit interactive request still obeys the CI/headless safety checks. The picker is
-automatically suppressed when setup detects CI, GitHub Actions, redirected or unavailable
-interactive I/O, or no usable interactive console. A suppressed no-argument run installs the
-default tools in their defined order.
-
-For an additional non-interactive escape hatch, set `SETUP_NON_INTERACTIVE=1`:
+List tools without installing anything:
 
 ```bash
-SETUP_NON_INTERACTIVE=1 ./setup.sh
+bash setup.sh --list
 ```
 
-```powershell
-$env:SETUP_NON_INTERACTIVE = '1'
-.\setup.ps1
-```
-
-Picker behavior is consistent across platforms:
-
-- Default tools appear first in dependency order, pre-checked and labeled `(default)`.
-- Available opt-in tools follow alphabetically, unchecked and labeled `(opt-in)`.
-- Confirming installs the checked tools through the same ordered selection engine used by flags.
-- Cancelling exits successfully without installing anything and prints `Install cancelled.`
-- Confirming with every item unchecked exits successfully and prints `Nothing selected, exiting.`
-- In supported interactive consoles, Quiet Accent uses cyan for headings and focus, green for
-  checked markers and confirmations, and yellow for opt-ins, cancellations, and warnings.
-  The ASCII markers and labels remain the source of meaning. Styling is suppressed for redirected
-  output, `NO_COLOR`, and unsupported terminals (including Bash with `TERM=dumb`).
-
-Controls depend on the shell:
-
-| Environment | Controls |
-|-------------|----------|
-| Bash 4.2 or newer | Up/Down to move, Space to toggle, `A` to toggle all, Enter to confirm, `Q` or Esc to cancel |
-| Bash 3.2 | Enter a tool number to toggle it, `A` to toggle all, Enter on an empty prompt to confirm, `Q` to cancel |
-| Windows PowerShell 5.1 or newer | ASCII `[x]` / `[ ]` menu with Up/Down, Space, `A`, Enter, and Esc or `Q` |
-
-For CI and automation, use `--only` / `--skip` or `-Only` / `-Skip`. These flags are the
-deterministic interface and take precedence over the picker, even if the interactive flag is also
-present.
-
-### Available Flags
-
-| Flag | Linux / macOS / WSL | Windows |
-|------|---------------------|---------|
-| List available tools, exit (no install) | `--list` | `-List` |
-| Print usage, exit | `--help` | `-Help` |
-| Install only the named tools | `--only=a,b,c` | `-Only 'a,b,c'` |
-| Install all defaults except named tools | `--skip=a,b,c` | `-Skip 'a,b,c'` |
-| Request the interactive picker | `--interactive` | `-Interactive` |
-| Never show the interactive picker | `--non-interactive` | `-NonInteractive` |
-
-### Linux / macOS / WSL Examples
+Install a small explicit selection:
 
 ```bash
-# List all selectable tool names
-./setup.sh --list
-
-# Print usage
-./setup.sh --help
-
-# Install only zsh and gh
-./setup.sh --only=zsh,gh
-
-# Install everything except auth and copilot-cli
-./setup.sh --skip=auth,copilot-cli
+bash setup.sh --only=prereqs,nvm,gh
 ```
 
-### Windows Examples
+PowerShell equivalents:
 
 ```powershell
-# List all selectable tool names
 .\setup.ps1 -List
-
-# Print usage
-.\setup.ps1 -Help
-
-# Install only vim and gh
-.\setup.ps1 -Only 'vim,gh'
-
-# Install everything except auth and copilot-cli
-.\setup.ps1 -Skip 'auth,copilot-cli'
+.\setup.ps1 -Only 'winget-check,git,nvm,gh'
 ```
 
-### Caveats
+Use the process-scoped PowerShell prefix from Quick Start if your session blocks scripts.
 
-**`--only` / `-Only` does not auto-include prerequisites.** Selecting `--only=nvm` installs
-only nvm -- earlier steps (`prereqs`, `zsh`) are not pulled in automatically.
-If a tool depends on earlier steps, list all required tools explicitly:
+- `--only` / `-Only` selects named tools; **dependencies are not added automatically**.
+- `--skip` / `-Skip` omits named defaults. It cannot be combined with `--only` / `-Only`.
+- `--non-interactive` / `-NonInteractive` suppresses the picker; **it is not a dry run**.
+- The picker can cancel without installing anything. Controls vary between Bash 3.2, newer Bash and PowerShell.
 
-```bash
-# Correct: include prereqs before nvm
-./setup.sh --only=prereqs,nvm
-```
+[Full flag reference, picker controls and examples](docs/setup.md#tool-selection)
 
-**`--only` and `--skip` are mutually exclusive.** Combining both flags exits with an error.
+## After Setup
 
-**`--list` takes precedence.** If `--list` is passed alongside `--only` or `--skip`, the tool
-list is printed and setup exits without installing anything.
+Open a fresh terminal to load new shell/profile configuration. Run `gh auth login` if authentication was skipped. Merely sourcing an updated file may leave old aliases in an already-running shell.
 
-Tool names are validated against the available list. An unknown name exits with an error and
-prints the available tools. Use `--list` / `-List` to see valid names before running.
-
-## Post-Setup Steps
-
-After running setup, complete these steps to activate your tools:
-
-### Linux / macOS / WSL
-
-1. **Activate Node.js:**
-   ```bash
-   nvm install --lts
-   nvm use --lts
-   ```
-
-2. **Dotfiles:** Your shell config (`.zshrc`/`.bashrc`) and aliases are automatically installed during setup. Restart your terminal or run `source ~/.zshrc` (or `source ~/.bashrc` for bash) to load them.
-
-### Windows
-
-1. **Activate Node.js:** Open a new terminal and run:
-   ```powershell
-   nvm install lts
-   nvm use lts
-   ```
-
-2. **Aliases:** PowerShell aliases are automatically added to your profile. Restart your terminal to load them.
-
-## Repo Structure
-
-```
-dev-setup/
-+-- setup.sh                  -- Entry point for Linux / macOS / WSL
-+-- setup.ps1                 -- Entry point for Windows (PowerShell)
-+-- ARCHITECTURE.md           -- Technical architecture and team ownership map
-+-- CHANGELOG.md              -- Release history (Keep a Changelog format)
-+-- CONTRIBUTING.md           -- Contribution guide
-+-- scripts/
-|   +-- lib/
-|   |   +-- read-tool-version.sh  -- POSIX sh: reads pinned version from .tool-versions
-|   |   +-- Read-ToolVersion.ps1  -- PowerShell: Get-ToolVersion function
-|   |   \-- ascii-sweep.py        -- Sweep .md files for non-ASCII; preserves fenced code blocks (#322A)
-|   +-- linux/
-|   |   +-- setup.sh          -- Core Linux/macOS installer (orchestrates tool scripts)
-|   |   \-- tools/            -- Individual tool install scripts
-|   |       +-- auth.sh       -- GitHub CLI authentication (interactive)
-|   |       +-- copilot-cli.sh
-|   |       +-- herdr.sh
-|   |       +-- pi.sh
-|       +-- gh.sh
-|   |       +-- nvm.sh
-|   |       \-- zsh.sh
-|   \-- windows/
-|       +-- setup.ps1         -- Orchestrator (dot-sources tools/ scripts)
-|       +-- uninstall.ps1     -- Idempotent reverse of the installer
-|       \-- tools/            -- Per-tool install scripts
-|           +-- auth.ps1      -- GitHub CLI authentication (interactive)
-|           +-- copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
-|           +-- herdr.ps1, pi.ps1, profile.ps1, vim.ps1
-|           \-- (14 files total)
-+-- config/
-|   \-- dotfiles/             -- Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
-|       \-- install.sh        -- Dotfile installer
-+-- hooks/
-|   +-- commit-msg            -- Enforce Conventional Commits
-|   +-- pre-commit            -- 4-check hygiene gate (branch ancestry + ASCII on .ps1/.md/.sh + branch refusal + shellcheck); see Git Hooks below
-|   +-- prepare-commit-msg    -- Rewrite merge/revert messages to Conventional Commits form; see Git Hooks below
-|   \-- pre-push             -- Block pushes to main; advisory linting
-+-- tests/                    -- Validation tests (bash + PowerShell)
-|   +-- test_aliases.sh
-|   +-- test_git_hooks.ps1
-|   +-- test_idempotency.sh
-|   +-- test_remove_custom_item.ps1
-|   \-- test_windows_setup.ps1
-+-- .devcontainer/            -- Dev Container / Codespace configuration
-+-- .github/workflows/        -- CI validation and automation
-```
-
-Root entry points (`setup.sh`, `setup.ps1`) are thin routers -- they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
+[Post-setup checks and troubleshooting](docs/setup.md#after-setup)
 
 ## Shell Aliases
 
-After running setup, you get shortcuts for common git, dev, and utility commands. All aliases work on both Linux/macOS and Windows.
+Shared shortcuts cover Git, GitHub CLI, npm and common utilities. Platform-specific differences are intentional; see the [shell reference](config/dotfiles/README.md#shell-aliases-and-functions).
 
-### Alias Groups
+### Opt-in Native Completion Cycling
 
-**Git shortcuts:** `ga`, `gaa`, `gc`, `gcm`, `gcb`, `gco`, `gd`, `gds`, `gf`, `gfp`, `ggs`, `ggsls`, `ggsp`, `gl`, `glog`, `gp`, `gpf`, `gpl`, `grb`, `grbi`, `grs`, `grss`, `gs`
+Tab cycling is a separate Bash/Zsh opt-in; ordinary setup never enables it. macOS system Bash 3.2 supports forward Tab only. See [installation, disable and recovery instructions](config/dotfiles/README.md#opt-in-tab-completion-cycling-bash--zsh).
 
-**GitHub CLI:** `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
+### Shutdown Helpers (Bash/Zsh)
 
-**Dev tools:** `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
+Shutdown shortcuts affect the whole machine; under WSL they target the **Windows host**. Timed Windows shutdown can force applications closed and lose unsaved work. Read the [shutdown reference](docs/shutdown.md) before using them.
 
-**Utility:** `myip`, `pb`, `h`, `ep`
+## Documentation
 
-**Navigation** (Linux/macOS only): `..`, `...`, `....`, `~`, `-`
-
-**ls shortcuts** (Linux/macOS only): `ll`, `la`, `l`, `lh`
-
-Full definitions:
-- **Linux/macOS:** `config/dotfiles/.aliases` (bash/zsh only -- see header for the non-POSIX features in use)
-- **Windows:** `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function)
-
-## Opt-in Native Completion Cycling
-
-Bash/Zsh users can opt in without rerunning setup or reinstalling dotfiles:
-
-```bash
-bash config/dotfiles/install-completion.sh --dry-run
-bash config/dotfiles/install-completion.sh
-```
-
-Open a fresh shell: **Tab** selects the next match, **Shift+Tab** the previous
-match. **macOS system Bash 3.2 supports forward Tab only; its existing Shift+Tab
-binding is left untouched** because that Readline lacks a native backward widget.
-Ordinary installation never opts you in. No plugins or system inputrc changes.
-
-Use `DEV_SETUP_COMPLETION=0` before the hook to disable in fresh shells, or
-`bash config/dotfiles/install-completion.sh --uninstall` to remove only this
-feature. See the [completion guide](config/dotfiles/README.md#opt-in-tab-completion-cycling-bash--zsh)
-for backups, `ZDOTDIR`, framework/login-shell ordering, terminal support, and
-optional completion providers.
-
-## Shell Functions
-
-The following helper functions are available after setup:
-
-### Linux / macOS / WSL
-
-#### Shutdown helpers (Bash/Zsh)
-
-**`sdn`** requests immediate shutdown, **`tsdn <minutes>`** schedules shutdown,
-and **`cancel_tsdn`** cancels a pending shutdown system-wide (not just requests
-created by these helpers). In WSL they target the **Windows host**, not just the
-Linux distribution. Native Linux/macOS keep their existing commands:
-
-| Helper | WSL (Windows host) | Native Linux | macOS |
-|--------|--------------------|--------------|-------|
-| `sdn` | `shutdown.exe /s /t 0` | `sudo shutdown -h now` | `sudo shutdown -h now` |
-| `tsdn M` | `shutdown.exe /s /t S` (`S = M * 60`) | `sudo shutdown -h +M` | `sudo shutdown -h +M` |
-| `cancel_tsdn` | `shutdown.exe /a` | `sudo shutdown -c` | `sudo killall shutdown` |
-
-`tsdn` requires **exactly one positive decimal integer with no leading zeros**
-(for example, `1` or `30`). Missing/extra arguments, zero, negatives, fractions,
-and nonnumeric input fail without running a shutdown command. WSL accepts up to
-**5,256,000 minutes** (315,360,000 seconds); larger values are rejected before
-arithmetic. Native Linux/macOS receive the original minute string without
-conversion or the Windows ceiling; their own command limits still apply.
-
-> **Windows data-loss warning:** A positive Windows `/t` timeout implicitly
-> forces applications to close, even without `/f`, and unsaved work may be lost.
-> WSL timed requests emit this warning to stderr. There is no extra confirmation.
-> See Microsoft's [`shutdown` reference](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/shutdown).
-> A zero-timeout request is not a guarantee of instantaneous power-off.
-
-Platform selection happens only when a helper is invoked, using `uname -s` and,
-on Linux only, a successful nonempty read of `/proc/version`:
-
-| Detection | Result |
-|-----------|--------|
-| Linux + case-insensitive Microsoft kernel marker | WSL, even when both WSL environment variables are absent |
-| Linux + non-Microsoft kernel + `WSL_DISTRO_NAME` and `WSL_INTEROP` both unset/empty | Native Linux, even if `shutdown.exe` is on PATH |
-| Linux + non-Microsoft kernel + either WSL variable nonempty | Ambiguous: diagnostic, nonzero status, no operation |
-| Linux + missing/unreadable/empty/failed kernel probe | Indeterminate: diagnostic, nonzero status, no operation, regardless of WSL variables |
-| Darwin | macOS; inherited WSL variables are ignored and `/proc/version` is not read |
-| Unsupported OS or failed OS probe | Diagnostic, nonzero status, no operation |
-
-Stale WSL variables on native Linux are **intentionally rejected** as ambiguous.
-Establish the actual platform and correct the environment manually; the helpers
-never clear variables or retry automatically. This is a **heuristic, not a
-security boundary**: custom WSL kernels without the Microsoft marker are
-ambiguous when WSL hints remain, but indistinguishable from native Linux when
-all hints are removed. Custom kernels and nested containers are outside initial
-coverage; do not assume universal or fail-safe detection.
-
-WSL requires `shutdown.exe` on PATH and Windows-process interop enabled. The
-helpers check command availability without executing a probe. Missing interop
-or execution failures **never fall back to Linux shutdown**, use a hard-coded
-Windows drive path, or automatically abort/reschedule. Actual command output
-and exit status are preserved, including permission and cancellation failures;
-not every cancellation failure means "no pending shutdown." Shell exit codes
-are not interpreted as Win32 error numbers. The native PowerShell profile is
-unchanged by this Bash/Zsh routing contract.
-
-The isolated regression suite is `bash tests/test_shutdown_helpers.sh`; it
-requires both Bash and Zsh (optional `--bash /absolute/path` and
-`--zsh /absolute/path`). It extracts only the production helper definitions and
-uses non-forwarding recording stubs, never real shutdown commands. Linux/macOS
-CI includes both shells and macOS system Bash 3.2. These simulated tests do not
-prove live WSL or OS-level shutdown behavior; do not validate with a live
-schedule-then-cancel experiment.
-
-## Git Hooks (Auto-configured)
-
-Both `setup.sh` and `setup.ps1` automatically configure git to use this repo's hooks directory:
-
-```bash
-git config core.hooksPath hooks
-```
-
-No manual copying needed. After running setup, four hooks are active:
-
-### `pre-commit`
-
-Six ordered hygiene checks (fastest-first); the commit is blocked if any check fails:
-
-1. **Branch ancestry** -- feature branches must descend from `develop`. Catches accidental forks-of-forks.
-2. **ASCII-only content** on staged `.ps1`, `.md`, and `.sh` files. PS 5.1 on Windows uses CP1252, so non-ASCII bytes (em dashes, smart quotes, curly apostrophes) break string literals; Markdown and shell sources should also stay ASCII-clean for portable `grep`/`sed`/`diff`. If a `.md` file trips this check, run `python scripts/lib/ascii-sweep.py --dry-run` to preview fixes, then drop `--dry-run` to apply (see below). The sweep preserves fenced code blocks verbatim, so any non-ASCII inside ``` ... ``` must be cleaned by hand.
-3. **Refuse direct commits on `develop` / `main` / `master`** -- create a feature branch first.
-4. **Shellcheck** on staged `.sh` files. Silently skipped if `shellcheck` is not installed.
-
-### `commit-msg`
-
-Enforces **Conventional Commits** format:
-
-```
-type(scope): description
-```
-
-Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. Hard reject on non-conforming messages.
-
-### `prepare-commit-msg`
-
-Rewrites git's auto-generated merge/revert commit messages into Conventional Commits form so `commit-msg` can validate them (e.g. `Merge pull request #N from USER/BRANCH` -> `merge(pr): #N from USER/BRANCH`, `Revert "SUBJECT"` -> `revert: SUBJECT`). Non-matching messages are left unchanged.
-
-### `pre-push`
-
-1. **Blocks** direct pushes to `main` (hard stop).
-2. **Runs shellcheck** on changed `.sh` files -- advisory, never blocks (Linux/macOS).
-3. **Runs PSScriptAnalyzer** on changed `.ps1` files -- advisory, never blocks (requires `pwsh` + PSScriptAnalyzer module; silently skipped if absent).
-
-Use `--no-verify` to bypass hooks in emergencies.
-
-### ASCII sweep helper (`scripts/lib/ascii-sweep.py`)
-
-Auto-replaces common non-ASCII characters in repo source files -- em/en dashes, smart quotes, ellipsis, arrows, box-drawing glyphs, status emoji -- with ASCII equivalents. The usual trigger is `pre-commit` Check 2 rejecting a commit because a Markdown file picked up Unicode punctuation from a paste.
-
-```bash
-python scripts/lib/ascii-sweep.py --dry-run   # preview replacements
-python scripts/lib/ascii-sweep.py             # apply in-place
-```
-
-**When NOT to use it:** the sweep deliberately preserves fenced code blocks (``` ... ```) verbatim, so it will not touch non-ASCII inside code fences. The `pre-commit` ASCII check does NOT respect fence boundaries -- if your non-ASCII bytes are inside a code fence (e.g. a file-tree drawn with box-drawing glyphs), the sweep will report them as "remaining" and you must hand-convert. Added in Sprint 13 (#322A / PR #335).
-
----
-
-## Customization
-
-### Version Pinning
-
-Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format). This file is the single source of truth for every tool version installed by setup, including `nvm-windows`. Setup scripts read it directly via `scripts/lib/read-tool-version.sh` (POSIX) and `scripts/lib/Read-ToolVersion.ps1` (`Get-ToolVersion`) -- no asdf or mise dependency needed.
-
-```
-nodejs 22.23.2
-nvm 0.39.7
-nvm-windows 1.2.2
-copilot-cli 1.0.69
-gh 2.92.0
-pi 0.86.1
-herdr 0.9.1
-```
-
-To bump a tool version, edit the version number in `.tool-versions` and re-run setup. Each line is `toolname version`, one per line. Blank lines and lines starting with `#` are ignored.
-
-**Dotfiles:** Edit or add templates in `config/dotfiles/`. Each file is copied into your home directory on first run. Existing files are not overwritten unless you pass `--force`.
-
-**Adding a tool:** Scripts must be idempotent -- check whether the tool is already installed before doing anything.
-
-- **Linux:** Drop `scripts/linux/tools/<name>.sh`. Add `"<name>"` to the `DEFAULT_TOOLS` array in `scripts/linux/setup.sh` at the desired position to include it in the default run. A script present in `tools/` but absent from `DEFAULT_TOOLS` is available (selectable later via `--only`) but not installed by default.
-- **Windows:** Drop `scripts/windows/tools/<name>.ps1` defining an `Install-<Name>` function. Register it in `$ToolRegistry` (`'<name>' = { Install-<Name> }`) and add `'<name>'` to `$DefaultTools`, both in `scripts/windows/setup.ps1`.
-
-## CI Workflows
-
-### Sprint-End Label Automation
-
-When a sprint wraps, every issue and PR carrying its `sprint:N` label needs the same end-state transition:
-
-- remove `release:backlog` (if present)
-- add `release:shipped-X.Y.Z` (if missing)
-
-Type, area, and priority labels are never touched.
-
-This is done by `scripts/sprint-end-labels.sh` and the matching workflow `.github/workflows/sprint-end-labels.yml`.
-
-**Manual / local run (dry-run by default for safety):**
-
-```bash
-scripts/sprint-end-labels.sh \
-  --sprint sprint:17 \
-  --release-label release:shipped-1.17.0 \
-  --dry-run
-```
-
-Remove `--dry-run` to apply changes.
-
-**Workflow trigger:** Actions tab -> "Sprint End Labels" -> Run workflow. Inputs: `sprint_label`, `release_label`, `dry_run` (defaults to `true`).
-
-**Verification (HARD REQUIREMENT):** After every label op, the script re-queries the issue and asserts the desired state. On mismatch it retries the read (not the write) with exponential backoff -- 1s, 2s, 4s -- then fails loudly. The CLI's exit code alone is treated as necessary-but-not-sufficient.
-
-**Idempotent:** Safe to run twice. A second run finds no work to do.
-
-**Tested by:** `tests/test_sprint_end_labels.ps1` -- six scenarios including a function-override harness that exercises both the retry-and-succeed and fail-loudly-after-3 paths without hitting the GitHub API.
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor workflow: branch naming (`feat|fix|chore|docs|refactor/{issue}-{slug}` from `develop`), PR checklist, Conventional Commits format, test harness pattern.
-
-All commits follow **Conventional Commits** format: `type(scope): description`. Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. The `commit-msg` hook enforces this; `prepare-commit-msg` rewrite auto-converts merge/revert messages to Conventional Commits form.
-
-PRs to `develop` use **regular merge commits** (not squash) for full history preservation. Release cuts from `develop` to `main` also use regular merges.
-
-### Project Resources
-
-- [ARCHITECTURE.md](./ARCHITECTURE.md) -- full technical overview, OS detection logic, script conventions, Windows dependency order, and a guide for adding a new tool.
-- [CONTRIBUTING.md](./CONTRIBUTING.md) -- contributor workflow, branch naming, PR checklist, test harness pattern.
-- [CHANGELOG.md](./CHANGELOG.md) -- release history in Keep a Changelog format.
-
----
-
-For deeper technical detail -- OS detection logic, script conventions, decision records -- see [ARCHITECTURE.md](./ARCHITECTURE.md).
+| For | Start here |
+|---|---|
+| Installing, selecting tools, backups and removal | [Setup guide](docs/setup.md) |
+| Dotfiles, aliases and completion | [Shell configuration](config/dotfiles/README.md) |
+| Contributors | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Coding agents | [AGENTS.md](AGENTS.md) |
+| Implementation details | [Architecture](ARCHITECTURE.md) |
+| Release history | [Changelog](CHANGELOG.md) |
