@@ -9,24 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## [0.10.0] - 2026-11-21 -- Sprint 19: Lean setup and clearer docs
+
+### Added
+
 - Concise human README, agent-facing repository guide, and canonical setup/shutdown references with corrected configuration, pinning, hook and native-test guidance. (#519)
+  Delivery: (#521).
 - Rerecorded selective-install demo from the actual reduced Bash/WSL picker, with cancellation before installation and source-bound capture notes. (#519)
 - Explicit completion-only Bash/Zsh opt-in with native Tab/Shift+Tab cycling,
   separate validated rc hooks, backups, mutation-free preview, disable switch,
   and feature-only removal. Older Readline (including macOS Bash 3.2) gets
   forward Tab only and preserves existing Shift+Tab. Ordinary setup is unchanged.
   Includes isolated lifecycle and actual shell/PTY tests on Linux/macOS. (#516)
+  Delivery: (#517).
 - Isolated shutdown-helper regression coverage under Bash/Zsh on Linux/macOS,
   including macOS system Bash 3.2, with non-forwarding command stubs. (#514)
+
+- Ordered modular tool selection with `--list`, `--help`, `--only` and `--skip`, shared dependency-sensitive ordering, explicit prerequisite selection, fixtures and native flag smoke checks. (#468) (#474) (#496) (#497) (#498) (#499) (#500)
+- Interactive Bash and PowerShell pickers with headless guards, a Bash 3.2 line-input fallback, cancellation/empty-selection exits and documented controls. Initial demo support was subsequently refreshed for the final toolset. (#495) (#503) (#504) (#505) (#506) (#508) (#510)
+- Opt-in delta, lazygit, Pi and Herdr installers; none joins the default install set. (#466) (#467) (#501) (#502) (#511)
+- The Bash/Zsh `gb` shortcut forwards to `git branch`, matching the existing Windows shortcut. (#512) (#513)
+- Bash/PowerShell changelog-fold helpers and the PowerShell counterpart of release-label automation. (#415) (#421) (#423) (#438)
 
 ### Changed
 
 - Interactive tool pickers use Quiet Accent semantic colors when a compatible console is available,
   while preserving ASCII/plain output for redirected sessions and `NO_COLOR`. (#507)
+  Delivery: (#509).
 - Bash/Zsh `tsdn` now requires exactly one canonical positive decimal minute
   argument, rejects WSL delays above 5,256,000 minutes before conversion, and
   warns that positive Windows timeouts force application closure and risk
   unsaved work. Native minute strings remain unconverted. (#514)
+
+- Node.js pin updated from 22.11.0 to 22.23.2 and Copilot CLI from 1.0.48 to 1.0.69. The delivered pin, not the earlier issue proposal, is authoritative. (#490) (#493)
+- Historical design plans gained a documented convention and YAML front matter; obsolete coordination/review commentary was removed. (#483) (#484) (#485)
+- Added `.mailmap` for historical contributor-identity normalization. (#422)
+- Historical coordination records, archival/compression, review bookkeeping and placeholder cleanup were completed during development, then superseded by removal of the embedded infrastructure. These are not active workflow features. (#411) (#412) (#413) (#443) (#449) (#450) (#452) (#453) (#454) (#456) (#457) (#459) (#460) (#463) (#464) (#465) (#469)
+- Pre-retirement spawn hygiene, worktree guidance, history-size gating and reviewer routing were introduced during development and later retired with the embedded coordination system. (#414) (#416) (#417) (#418) (#419) (#420) (#444) (#445)
+- Closed an obsolete coordination-only deduplication request as not planned; no shipped feature is claimed for that disposition. (#455)
 
 ### Fixed
 
@@ -35,9 +61,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failure. Preserve native Linux/macOS commands; deliberately reject conflicting
   WSL environment hints on non-Microsoft Linux kernels and indeterminate or
   unsupported platforms. Document custom-kernel/container detection limits. (#514)
+  Delivery: (#515).
 - Preserve actual cancellation diagnostics and failure status instead of
   reporting every failure as "no pending shutdown" success. Cancellation remains
   system-wide. (#514)
+
+- Repaired setup idempotency around Zsh registration and managed shell-rc wiring. Configuration steps can still overwrite owned template targets with backups; repeated setup is not a blanket no-op guarantee. (#429) (#432) (#439) (#440)
+- Bounded Copilot version probes in Codespaces and loaded NVM where npm-dependent installers need it. (#435) (#436)
+- Resolved each PowerShell host's actual profile path, including redirected Documents/OneDrive layouts, with fallback and legacy-orphan cleanup. (#441) (#442) (#458)
+- Avoided a spaced Windows NVM installation root that could break `nvm use`. (#492) (#494)
+- Improved helper-test isolation, tag/sandbox resolution, PowerShell flag/CRLF parity, explicit POSIX detection and CI/library coverage. (#424) (#425) (#427) (#430) (#431) (#433) (#434) (#437) (#451) (#461) (#462)
+- Preserved line separation while refreshing byte-zero, adjacent and blank-separated canonical PowerShell profile blocks. Native PS5.1 regression checks now model startup scope rather than a nested test-function scope. (#518)
 
 ### Removed
 
@@ -48,6 +82,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from installers, defaults, pins, prerequisites, shell helpers, startup hooks,
   and Squad-specific Codespaces bootstrap. Updated tests/CI and current examples;
   existing machine installations are not uninstalled. (#518)
+  Delivery: (#520).
+
+- Completed retirement of embedded coordination workflows, bundled agent infrastructure, old PR/branch naming and remaining live references. (#475) (#476) (#477) (#478) (#479) (#480) (#481) (#482)
+- Intermediate development additions/restorations of `gosquad`, Squad CLI defaults and Squad-specific Codespaces bootstrap were superseded by the final retirement. They are not supported features in this release. (#472) (#473) (#487) (#489) (#491)
 
 ## [0.9.8] - 2026-05-19
 
