@@ -40,6 +40,10 @@ Pinned tool versions are defined in [`.tool-versions`](.tool-versions). Node tar
 
 ## Selective Install
 
+![Real Bash picker turning off auth, selecting delta and lazygit, then cancelling without installation](docs/media/tui-demo/tui-demo.gif)
+
+Recorded from tested Bash/WSL output; no installers ran. [Recording notes](docs/media/tui-demo/README.md).
+
 List tools without installing anything:
 
 ```bash
