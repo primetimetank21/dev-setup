@@ -36,13 +36,13 @@ else
     fail "nvm version: expected '$expected', got '$got'"
 fi
 
-# Test 3: uv returns expected value
-expected="0.4.18"
-got="$(sh "$READER" uv)"
+# Test 3: gh returns expected value
+expected="2.92.0"
+got="$(sh "$READER" gh)"
 if [ "$got" = "$expected" ]; then
-    pass "uv version is $expected"
+    pass "gh version is $expected"
 else
-    fail "uv version: expected '$expected', got '$got'"
+    fail "gh version: expected '$expected', got '$got'"
 fi
 
 # Test 4: pi returns expected value

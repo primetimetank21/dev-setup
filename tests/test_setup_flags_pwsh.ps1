@@ -213,7 +213,7 @@ Test-Scenario "T_root_help: root setup.ps1 -Help exits 0" {
 # ---------------------------------------------------------------------------
 # WI-2: -Only selective install
 # Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
-# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, herdr, lazygit, pi
 # ---------------------------------------------------------------------------
 
 function Assert-LogStr {
@@ -432,7 +432,7 @@ Test-Scenario "T_backward_compat_gate: no-arg run logs all defaults in order" {
 # ---------------------------------------------------------------------------
 # WI-3: -Skip selective exclusion
 # Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
-# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, herdr, lazygit, pi
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------

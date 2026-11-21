@@ -204,7 +204,7 @@ fi
 # ---------------------------------------------------------------------------
 # WI-2: --only selective install
 # Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
-# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, herdr, lazygit, pi
 # ---------------------------------------------------------------------------
 
 # Helper: compare run-log content to a literal expected string
@@ -412,7 +412,7 @@ teardown_harness
 # ---------------------------------------------------------------------------
 # WI-3: --skip selective exclusion
 # Stub defaults.txt order: prereqs, alpha, bravo, charlie, dotfiles, git-hook
-# Opt-in stubs (in dir but NOT in defaults.txt): delta, uv
+# Opt-in stubs (in dir but NOT in defaults.txt): delta, herdr, lazygit, pi
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------

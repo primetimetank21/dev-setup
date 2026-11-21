@@ -30,10 +30,10 @@ if [[ "$platform" == "macos" ]]; then
     log_warn "Homebrew not found -- install it from https://brew.sh and re-run setup"
     exit 0
   fi
-  brew install curl git vim tmux
+  brew install curl git vim
 else
   sudo apt-get update -qq
-  sudo apt-get install -y curl git build-essential vim tmux
+  sudo apt-get install -y curl git build-essential vim
 fi
 
 log_ok "Prerequisites installed"

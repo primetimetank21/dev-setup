@@ -42,12 +42,10 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 DEFAULT_TOOLS=(
   "prereqs"
   "zsh"
-  "uv"
   "nvm"
   "gh"
   "auth"
   "copilot-cli"
-  "squad-cli"
   "dotfiles"
   "git-hook"
 )

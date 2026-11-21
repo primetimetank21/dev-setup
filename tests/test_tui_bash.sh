@@ -14,7 +14,7 @@
 # _tui_arrow_redraw ANSI bytes.
 # NOT covered (requires live interactive TTY, documented in PR):
 #   Terminal byte delivery from keyboard to read loop, ANSI in-place rendering
-#   fidelity in a real terminal (mintty, tmux, Terminal.app), numbered-toggle
+#   fidelity in a real terminal (mintty, Terminal.app), numbered-toggle
 #   interactive input, ESC/Q from within a live menu session.
 
 set -uo pipefail
@@ -211,7 +211,7 @@ rm -f "$sel_f" "$expected_f"; teardown_harness
 echo ""
 echo "--- T_menu_resolve_optin ---"
 setup_harness
-# stub opt-ins: delta, lazygit, uv (not in defaults.txt)
+# stub opt-ins: delta, herdr, lazygit, pi (not in defaults.txt)
 # Select prereqs + delta (opt-in) -> expected: prereqs then delta
 sel_f="$(make_sel_file prereqs delta)"
 expected_f="$(mktemp)"
