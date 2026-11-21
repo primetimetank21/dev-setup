@@ -206,7 +206,7 @@ verify_with_retry 999 'release:shipped-1.0.0' 'present'
 echo "VERIFY_OK"
 "@
         $driverPath = Join-Path $shimDir 'driver.sh'
-        Set-Content -Path $driverPath -Value $driver -Encoding ASCII -NoNewline
+        Set-Content -Path $driverPath -Value ($driver.Replace("`r", '')) -Encoding ASCII -NoNewline
 
         $driverPosix = $driverPath.Replace('\','/')
         $out  = (& $bashPath $driverPosix 2>&1) -join "`n"
@@ -261,7 +261,7 @@ verify_with_retry 999 'release:shipped-1.0.0' 'present'
 echo "UNREACHABLE"
 "@
         $driverPath = Join-Path $shimDir 'driver.sh'
-        Set-Content -Path $driverPath -Value $driver -Encoding ASCII -NoNewline
+        Set-Content -Path $driverPath -Value ($driver.Replace("`r", '')) -Encoding ASCII -NoNewline
         $driverPosix = $driverPath.Replace('\','/')
 
         $out  = (& $bashPath $driverPosix 2>&1) -join "`n"
@@ -342,7 +342,7 @@ fi
 echo "PASS_CRLF"
 "@
         $driverPath = Join-Path $shimDir 'driver.sh'
-        Set-Content -Path $driverPath -Value $driver -Encoding ASCII -NoNewline
+        Set-Content -Path $driverPath -Value ($driver.Replace("`r", '')) -Encoding ASCII -NoNewline
 
         $driverPosix = $driverPath.Replace('\','/')
         $out  = (& $bashPath $driverPosix 2>&1) -join "`n"

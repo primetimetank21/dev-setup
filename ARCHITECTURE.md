@@ -1,7 +1,6 @@
 # Architecture: dev-setup
 
-> **Owner:** Mickey (Lead) -- Issue #3  
-> **Last updated:** 2026-05-19 (Sprint 11 (formerly Sprint T) refresh -- closes #229)
+> **Last updated:** 2026-11-21
 
 ---
 
@@ -13,7 +12,7 @@
 - Dev Containers
 - Fresh Linux, macOS, or Windows machines
 
-Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk away. Every tool this project installs is safe to re-install -- the scripts check first and skip if already present.
+The entry points resolve a selection and run its steps in dependency order. Interactive terminals can use the picker; unattended runs use explicit flags or defaults. Version-aware skips make repeated setup practical, but configuration steps can still overwrite owned files or refresh profile blocks. Start with the [human overview](README.md), [agent guide](AGENTS.md) or [setup reference](docs/setup.md) as appropriate.
 
 ---
 
@@ -23,12 +22,14 @@ Run `bash setup.sh` (Unix) or `powershell -File setup.ps1` (Windows) and walk aw
 dev-setup/
 |---- setup.sh                        # Entry point -- Unix (Linux / macOS / WSL); thin router
 |---- setup.ps1                       # Entry point -- Windows (PowerShell); thin router
-|---- .tool-versions                  # asdf-style pinned versions (node, nvm, uv, gh, copilot-cli, squad-cli)
-|---- .gitattributes                  # eol=lf for *.sh / *.md / *.yml; eol=crlf for *.ps1 / *.psm1 / *.psd1 (#231)
+|---- .tool-versions                  # asdf-style pinned versions (node, nvm, gh, copilot-cli, pi, herdr)
+|---- .gitattributes                  # eol=lf for *.sh / *.md / *.yml; eol=crlf for *.ps1 / *.psm1 / *.psd1
 |---- ARCHITECTURE.md                 # This file
 |---- CHANGELOG.md                    # Keep-a-Changelog format
 |---- CONTRIBUTING.md                 # Contribution guide
-|---- README.md                       # Project overview and quick start
+|---- README.md                       # Concise human overview and quick start
+|---- AGENTS.md                       # Agent source map, constraints and safe checks
+|---- docs/                           # Detailed setup and shutdown references
 |
 |---- scripts/
 |   |---- lib/                        # Cross-platform shared libraries (PS + sh)
@@ -36,17 +37,18 @@ dev-setup/
 |   |   `---- read-tool-version.sh   # Same contract for POSIX shells (prints version to stdout)
 |   |
 |   |---- linux/
-|   |   |---- setup.sh               # Core Linux/macOS/WSL installer (Donald) -- runs tools in order
+|   |   |---- setup.sh               # Core Linux/macOS/WSL installer -- runs tools in order
 |   |   |---- uninstall.sh           # Idempotent reverse of the installer
 |   |   |---- lib/
-|   |   |   `---- log.sh             # Shared log_info / log_ok / log_warn / log_error helpers
-|   |   `---- tools/                  # Per-tool installers (sourced by core in dependency order)
+|   |   |   |---- log.sh             # Shared log_info / log_ok / log_warn / log_error helpers
+|   |   |   `---- tui.sh             # Bash 3.2+ interactive picker
+|   |   `---- tools/                  # Per-tool installers (executed in dependency order)
 |   |       |---- auth.sh            # GitHub CLI authentication (interactive)
 |   |       |---- copilot-cli.sh     # Install GitHub Copilot CLI (pin from .tool-versions)
 |   |       |---- gh.sh              # Install GitHub CLI (pin from .tool-versions)
+|   |       |---- herdr.sh           # Install Herdr (pin from .tool-versions)
 |   |       |---- nvm.sh             # Install nvm + Node (pin from .tool-versions)
-|   |       |---- squad-cli.sh       # Install squad-cli (npm; pin from .tool-versions)
-|   |       |---- uv.sh              # Install uv Python package manager (pin from .tool-versions)
+|   |       |---- pi.sh              # Install pi CLI (pin from .tool-versions)
 |   |       `---- zsh.sh             # Install zsh + set as default shell
 |   |
 |   `---- windows/
@@ -54,22 +56,22 @@ dev-setup/
 |       |---- uninstall.ps1          # Idempotent reverse of the installer
 |       |---- lib/
 |       |   |---- logging.ps1        # Write-Info / Write-Ok / Write-Warn / Write-Err + Assert-LastExit
-|       |   `---- path.ps1           # Refresh-SessionPath -- re-reads Machine+User PATH from registry
-|       `---- tools/                  # Per-tool installers (orchestrator + 10 modules; PR #195 split)
-|           |---- auth.ps1           # GitHub CLI authentication (interactive; moved from top-level in PR #297)
+|       |   |---- path.ps1           # Refresh-SessionPath -- re-reads Machine+User PATH from registry
+|       |   `---- tui.ps1            # PS 5.1-safe ASCII picker + ordered resolver
+|       `---- tools/                  # Per-tool installer modules
+|           |---- auth.ps1           # GitHub CLI authentication (interactive)
 |           |---- copilot.ps1        # GitHub Copilot CLI (pin from .tool-versions)
 |           |---- dotfiles.ps1       # Apply config/dotfiles/ on Windows
 |           |---- gh.ps1             # GitHub CLI (pin from .tool-versions)
 |           |---- git.ps1            # Git configuration
+|           |---- herdr.ps1          # Herdr (pin from .tool-versions)
 |           |---- nvm.ps1            # nvm-windows + Node (pin from .tool-versions)
+|           |---- pi.ps1             # pi CLI (pin from .tool-versions)
 |           |---- profile.ps1        # PowerShell profile injection (PS 5.1 + PS 7+ paths)
-|           |---- psmux.ps1          # psmux terminal multiplexer (Windows tmux alias)
-|           |---- squad-cli.ps1      # squad-cli (npm; pin from .tool-versions)
-|           |---- uv.ps1             # uv Python package manager (pin from .tool-versions)
 |           `---- vim.ps1            # Vim editor
 |
 |---- config/
-|   `---- dotfiles/                   # Dotfile templates (Pluto #8, #10, #11)
+|   `---- dotfiles/                   # Dotfile templates
 |       |---- .aliases               # Shell aliases (git, dev, utility)
 |       |---- .editorconfig          # Editor formatting rules
 |       |---- .gitconfig.template    # Git config template
@@ -80,8 +82,8 @@ dev-setup/
 |       `---- README.md              # Documents each dotfile and install behaviour
 |
 |---- hooks/                          # Git hooks; auto-wired via `git config core.hooksPath hooks`
-|   |---- pre-commit                 # Branch ancestry + ASCII *.ps1 guard + .squad path allow-list + shellcheck
-|   |---- prepare-commit-msg         # Rewrite auto-merge/revert messages into Conventional Commits form (#212)
+|   |---- pre-commit                 # ASCII guard + protected-branch refusal + shellcheck
+|   |---- prepare-commit-msg         # Rewrite auto-merge/revert messages into Conventional Commits form
 |   |---- commit-msg                 # Enforce Conventional Commits format (hard reject on non-conforming)
 |   `---- pre-push                   # Block direct pushes to main; advisory shellcheck + PSScriptAnalyzer
 |
@@ -92,10 +94,14 @@ dev-setup/
 |   |---- test_git_hooks.ps1         # Git hook tests (PowerShell)
 |   |---- test_idempotency.sh        # Idempotency tests (bash)
 |   |---- test_nvm_bootstrap.sh      # nvm bootstrap tests
-|   |---- test_precommit_hygiene.sh  # pre-commit hygiene checks (ancestry, ASCII, rogue-path)
+|   |---- test_precommit_hygiene.sh  # Historical/targeted pre-commit regression cases
 |   |---- test_remove_custom_item.ps1 # Custom item removal tests (PowerShell)
+|   |---- test_setup_flags.sh        # Bash selection flags + interactive guards
+|   |---- test_setup_flags_pwsh.ps1  # PowerShell selection flags + interactive guards
 |   |---- test_shared_logging.sh     # scripts/linux/lib/log.sh contract tests
 |   |---- test_tool_versions.sh      # .tool-versions parser + Get-ToolVersion contract tests
+|   |---- test_tui_bash.sh           # Bash picker + ordered selection tests
+|   |---- test_tui_pwsh.ps1          # PowerShell picker + resolver tests
 |   `---- test_windows_setup.ps1     # Windows setup tests (PowerShell)
 |
 |---- .devcontainer/
@@ -103,28 +109,11 @@ dev-setup/
 |   `---- README.md                  # Dev container documentation
 |
 |---- .github/
-|   `---- workflows/                  # CI + squad automation (Chip) -- see "CI Workflows" below
+|   `---- workflows/                  # CI workflows
 |       |---- validate.yml           # Main CI validation (6 jobs)
 |       |---- e2e-install.yml        # E2E smoke test on fresh runners (PR + nightly cron + summary)
-|       |---- squad-heartbeat.yml    # Ralph -- reacts to issue/PR events to keep the loop alive
-|       |---- squad-history-check.yml # Enforce agent history.md updates on squad:* PRs
-|       |---- squad-issue-assign.yml # Trigger work when squad:{member} label applied
-|       |---- squad-label-enforce.yml # Mutual exclusivity for managed label namespaces
-|       |---- squad-triage.yml       # Triage flow when bare `squad` label applied
-|       `---- sync-squad-labels.yml  # Sync label set from .squad/team.md roster
+|       `---- sprint-end-labels.yml  # Sprint label automation
 |
-`---- .squad/                         # Squad coordination (most subdirs are not "shipped" via npm; see CONTRIBUTING.md)
-    |---- agents/                    # charter.md + history.md per agent (see Squad Roster)
-    |---- skills/                    # Reusable SKILL.md library (tool-version-pin, pwsh-lastexitcode, ...)
-    |---- decisions/                 # Canonical permanent decision records (committed)
-    |   `---- inbox/                 # Per-agent decision drafts (gitignored)
-    |---- retros/                    # Sprint retrospectives
-    |---- templates/                 # loop.md, ceremonies.md, agent + workflow templates
-    |---- orchestration-log/         # Per-sprint orchestration logs (union-merge)
-    |---- team.md                    # Squad roster definition (drives sync-squad-labels.yml)
-    |---- routing.md                 # Issue -> agent routing rules
-    |---- ceremonies.md              # Sprint ceremony cadence
-    `---- decisions.md               # Append-only decisions log (union-merge)
 ```
 
 ---
@@ -185,6 +174,30 @@ Uses PowerShell's built-in `$IsWindows`, `$IsLinux`, `$IsMacOS` booleans. If Pow
 
 ---
 
+## Tool Selection Architecture
+
+The public picker contract, including invocation, controls, headless behavior, flag precedence,
+and confirm/cancel results, is documented in the
+[setup guide](docs/setup.md#interactive-tool-picker).
+
+Internally, selection is separated from installation:
+
+1. `scripts/linux/setup.sh` and `scripts/windows/setup.ps1` own argument handling, interactive
+   eligibility, validation, and final dispatch.
+2. `scripts/linux/lib/tui.sh` and `scripts/windows/lib/tui.ps1` own menu state, rendering, and key
+   handling. They return selected tool names but never install tools.
+3. The selected names flow through the same ordered resolver used by `--only` / `-Only`.
+4. The resolver iterates the default-tool sequence first, then appends selected opt-in tools
+   alphabetically. Menu display order, user input order, and flag input order cannot reorder
+   dependency-sensitive defaults.
+5. Cancellation or an empty confirmed selection exits before dispatch.
+
+The default arrays are the authoritative install-order definitions. A tool module that is
+available but absent from the default array remains opt-in and is never added to a no-argument
+headless run.
+
+---
+
 ## Script Conventions
 
 Shared helpers live in dedicated `lib/` directories. Tool scripts **load** them rather than redefining or copy-pasting. Source of truth:
@@ -192,8 +205,10 @@ Shared helpers live in dedicated `lib/` directories. Tool scripts **load** them 
 | File                                 | Purpose                                                                                  | Loaded by                                    |
 |--------------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------|
 | `scripts/linux/lib/log.sh`           | `log_info`, `log_ok`, `log_warn`, `log_error`                                            | `setup.sh` and every `tools/*.sh`            |
+| `scripts/linux/lib/tui.sh`           | Bash 3.2+ interactive picker and menu state                                               | `scripts/linux/setup.sh`                     |
 | `scripts/windows/lib/logging.ps1`    | `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err`, `Assert-LastExit`                   | `setup.ps1` and every `tools/*.ps1`          |
 | `scripts/windows/lib/path.ps1`       | `Refresh-SessionPath` (re-reads Machine + User PATH from the registry into the session) | `setup.ps1` and any tool that mutates PATH   |
+| `scripts/windows/lib/tui.ps1`        | PS 5.1-safe ASCII picker and `Resolve-FinalToolset`                                      | `scripts/windows/setup.ps1`                  |
 | `scripts/lib/read-tool-version.sh`   | POSIX parser for `.tool-versions` (prints the pinned version to stdout)                  | Any `tools/*.sh` that needs a pinned version |
 | `scripts/lib/Read-ToolVersion.ps1`   | PowerShell `Get-ToolVersion -Name <tool>` (returns the pinned version)                   | Any `tools/*.ps1` that needs a pinned version |
 
@@ -206,12 +221,13 @@ Shared helpers live in dedicated `lib/` directories. Tool scripts **load** them 
 ```bash
 # From scripts/linux/setup.sh (lib is one level down):
 . "$(dirname "${BASH_SOURCE[0]}")/lib/log.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/lib/tui.sh"
 
 # From scripts/linux/tools/<tool>.sh (lib is one level up):
 . "$(dirname "${BASH_SOURCE[0]}")/../lib/log.sh"
 ```
 
-Note that `setup.sh` runs each `tools/*.sh` via `bash <script>` (a subshell), so every tool script must re-source `lib/log.sh` itself; the parent scope is not inherited.
+Note that `setup.sh` runs each `tools/*.sh` via `bash <script>` (a subshell), so every tool script must re-source `lib/log.sh` itself; the parent scope is not inherited. The TUI library is orchestrator-only and is not loaded by tool installers.
 
 **PowerShell** uses dot-sourcing (`.`). At the top of `setup.ps1` or any `tools/*.ps1`, after `Set-StrictMode` / `$ErrorActionPreference`:
 
@@ -219,12 +235,13 @@ Note that `setup.sh` runs each `tools/*.sh` via `bash <script>` (a subshell), so
 # From scripts/windows/setup.ps1 (lib is alongside):
 . "$PSScriptRoot\lib\logging.ps1"
 . "$PSScriptRoot\lib\path.ps1"
+. "$PSScriptRoot\lib\tui.ps1"
 
 # From scripts/windows/tools/<tool>.ps1 (lib is one level up):
 . "$PSScriptRoot\..\lib\logging.ps1"
 ```
 
-`$PSScriptRoot` is the directory of the currently-executing file. Unlike the bash path, `setup.ps1` **dot-sources** each `tools/*.ps1`, so tool functions (`Install-Nvm`, `Install-GhCli`, ...) live in the parent scope and are invoked by name from `Main`. Tool scripts still re-dot-source any `lib/` files they need so they are also runnable standalone.
+`$PSScriptRoot` is the directory of the currently-executing file. Unlike the bash path, `setup.ps1` **dot-sources** each `tools/*.ps1`, so tool functions (`Install-Nvm`, `Install-GhCli`, ...) live in the parent scope and are invoked through `$ToolRegistry`. Tool scripts still re-dot-source any `lib/` files they need so they are also runnable standalone. The TUI library is orchestrator-only.
 
 ### Reading pinned versions from `.tool-versions`
 
@@ -257,7 +274,7 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 |------------|------|
 | Shebang | `#!/usr/bin/env bash` |
 | Safety flags | `set -euo pipefail` at top of every script |
-| Idempotency | Check `command -v <tool>` before installing; skip if present |
+| Idempotency | For versioned tools, compare the installed version with the pin; skip only when the requested state already holds |
 | Logging | Source `scripts/linux/lib/log.sh`; call `log_info`, `log_ok`, `log_warn`, `log_error` |
 | Version pinning | Read from `.tool-versions` via `sh scripts/lib/read-tool-version.sh <tool>`; never hard-code versions |
 | Sourcing | `setup.sh` runs each `tools/*.sh` via `bash <script>` (subshell); tool scripts re-source `lib/log.sh` themselves |
@@ -268,48 +285,27 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 | Convention | Rule |
 |------------|------|
 | Safety | `Set-StrictMode -Version Latest` + `$ErrorActionPreference = 'Stop'` |
-| Idempotency | `Get-Command <tool> -ErrorAction SilentlyContinue` before installing |
+| Idempotency | For versioned tools, compare the installed version with the shared pin before deciding to skip |
 | Logging | Dot-source `scripts/windows/lib/logging.ps1`; call `Write-Info`, `Write-Ok`, `Write-Warn`, `Write-Err` |
-| Exit-code discipline | After any external install, call `Assert-LastExit -ToolName <name>` (use `-AllowedExitCodes` for cases like winget `ALREADY_INSTALLED`); see `.squad/skills/pwsh-lastexitcode/SKILL.md` |
-| PATH refresh | After an install mutates PATH, dot-source `scripts/windows/lib/path.ps1` and call `Refresh-SessionPath` so `node`, `uv`, `gh`, etc. become callable in the same session |
+| Exit-code discipline | After any external install, call `Assert-LastExit -ToolName <name>` (use `-AllowedExitCodes` for cases like winget `ALREADY_INSTALLED`) |
+| PATH refresh | After an install mutates PATH, dot-source `scripts/windows/lib/path.ps1` and call `Refresh-SessionPath` so `node`, `gh`, etc. become callable in the same session |
 | Version pinning | Read from `.tool-versions` via `Get-ToolVersion` (dot-source `scripts/lib/Read-ToolVersion.ps1`); never hard-code versions |
 | Install method | Prefer `winget`; fall back to `scoop` or direct download (see `nvm.ps1` for the portable-zip pattern) |
 | Sourcing | `setup.ps1` dot-sources each `tools/*.ps1`; tool functions live in the parent scope and are invoked by name. Tool scripts re-dot-source their own `lib/` files so they remain runnable standalone. |
-| Profile injection | `Write-PowerShellProfile` writes aliases to **both** PS 5.1 (`Documents\WindowsPowerShell\`) and PS 7+ (`Documents\PowerShell\`) paths; sentinel strip+re-inject makes it idempotent |
-| Alias registration | All `Set-Alias` calls use `-Force -Scope Global` so aliases work in the current session immediately |
+| Profile injection | `Write-PowerShellProfile` resolves each host's `$PROFILE`, falls back when needed, deduplicates paths and replaces canonical managed blocks. Current writes are ASCII; see configuration cautions in the setup guide |
+| Alias registration | Generated profile aliases use `-Force -Scope Global` when the profile is loaded at startup; writing the profile does not activate it in an already-running session |
 
 ---
 
 ## How to Add a New Tool (Linux/macOS)
 
-1. **Create `scripts/linux/tools/<toolname>.sh`**
-
-   ```bash
-   #!/usr/bin/env bash
-   # scripts/linux/tools/<toolname>.sh -- Install <toolname>
-   set -euo pipefail
-
-   log_info()  { printf '\033[0;34m[INFO]\033[0m  %s\n' "$*"; }
-   log_ok()    { printf '\033[0;32m[OK]\033[0m    %s\n' "$*"; }
-
-   if command -v <toolname> &>/dev/null; then
-     log_ok "<toolname> already installed: $(<toolname> --version)"
-     exit 0
-   fi
-
-   # Install logic here
-   ```
-
-2. **Add a `run_tool "<toolname>"` call in `scripts/linux/setup.sh`**
-
-   ```bash
-   run_tool "toolname"
-   ```
-
-3. **Create a companion GitHub issue** labeled `squad:donald` (if it's a new tool install).
+1. Add a standalone `scripts/linux/tools/<name>.sh` using the canonical logging library and the [version-aware pinning pattern](CONTRIBUTING.md#tool-version-pin-enforcement). Do not copy logging helpers or use a bare executable-presence guard for a versioned tool.
+2. Keep the tool opt-in unless default inclusion is part of the approved change. Add it to `DEFAULT_TOOLS` only at the intended dependency position.
+3. For Windows parity, add the module, dot-source it and register it in `$ToolRegistry`; update `$DefaultTools` only when intended. Preserve aliases and canonical ordering.
+4. Update selection/failure tests, native CI coverage and default-order fixtures when affected. Check with `bash scripts/dev/regenerate-baseline-fixtures.sh --check`.
+5. Update the concise overview or linked setup reference as appropriate. Verify actual `--list` / `-List` output rather than maintaining a duplicate tool registry in prose.
 
 ---
-
 ## How to Add a New Platform
 
 1. Create a directory under `scripts/<platform>/`
@@ -321,197 +317,89 @@ Reference implementations: `scripts/linux/tools/nvm.sh` and `scripts/windows/too
 
 ## Dependency Order
 
-The tool scripts in `scripts/linux/tools/` must run in this order (enforced by `scripts/linux/setup.sh`):
+The default Linux/macOS/WSL tools run in this order (defined by `DEFAULT_TOOLS` in
+`scripts/linux/setup.sh`):
 
 ```
-zsh -> uv -> nvm -> gh -> auth -> copilot-cli -> squad-cli
+prereqs -> zsh -> nvm -> gh -> auth -> copilot-cli -> dotfiles -> git-hook
 ```
 
-`copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `auth` script handles interactive GitHub CLI authentication (issue #9). `squad-cli` depends on `nvm` (Node/npm).
+`copilot-cli` depends on `gh` being installed and (ideally) authenticated. The `auth` script handles interactive GitHub CLI authentication.
+Available scripts not listed in `DEFAULT_TOOLS` are opt-in. When selected, they are appended
+alphabetically after selected defaults.
 
 ### Windows orchestrator chain
 
-The Windows orchestrator `scripts/windows/setup.ps1` is a thin router: it dot-sources two shared libraries first (`lib/logging.ps1` -> `lib/path.ps1`), then dot-sources every per-tool module under `scripts/windows/tools/` so their `Install-*` functions are defined. Dot-source order does **not** drive dependencies -- the authoritative install order is the call sequence inside the `Main` function. The chain is fixed at:
+The Windows orchestrator `scripts/windows/setup.ps1` dot-sources its shared libraries and per-tool
+modules, then maps public tool names to installer functions in `$ToolRegistry`. Dot-source order
+does **not** drive dependencies. `$DefaultTools` is the authoritative default order,
+`Resolve-FinalToolset` filters that order, and `Main` dispatches the result through the registry.
+The default chain is:
 
 ```
-git -> uv -> nvm -> gh -> auth -> vim -> psmux -> copilot -> squad-cli -> dotfiles -> profile -> hooks
+winget-check -> git -> nvm -> gh -> auth -> vim -> copilot -> dotfiles -> profile -> git-hook
 ```
 
-Mapped to functions and the `tools/*.ps1` module that defines each:
+Mapped to registry functions and the `tools/*.ps1` module that defines each:
 
-| # | Function called by `Main` | Source module | Mirrors Linux step |
-|---|---------------------------|---------------|--------------------|
-| 1 | `Install-Git`             | `tools/git.ps1`        | (Linux: pre-installed / package manager) |
-| 2 | `Install-Uv`              | `tools/uv.ps1`         | `tools/uv.sh` |
-| 3 | `Install-Nvm`             | `tools/nvm.ps1`        | `tools/nvm.sh` |
-| 4 | `Install-GhCli`           | `tools/gh.ps1`         | `tools/gh.sh` |
-| 5 | `Invoke-GhAuth`           | `tools/auth.ps1`       | `tools/auth.sh` |
-| 6 | `Install-Vim`             | `tools/vim.ps1`        | (Linux: pre-installed / package manager) |
-| 7 | `Install-Psmux`           | `tools/psmux.ps1`      | (Linux: tmux already on PATH) |
-| 8 | `Install-CopilotCli`      | `tools/copilot.ps1`    | `tools/copilot-cli.sh` |
-| 9 | `Install-SquadCli`        | `tools/squad-cli.ps1`  | `tools/squad-cli.sh` |
-| 10 | `Install-Dotfiles`       | `tools/dotfiles.ps1`   | `config/dotfiles/install.sh` (driven from `tools/zsh.sh`) |
-| 11 | `Write-PowerShellProfile`| `tools/profile.ps1`    | (Linux: shell-rc work folded into `tools/zsh.sh`) |
-| 12 | `Install-GitHook`        | inline in `setup.ps1`  | `git config core.hooksPath hooks` (same contract) |
+| # | Registry function | Source module | Mirrors Linux step |
+|---|-------------------|---------------|--------------------|
+| 1 | `Invoke-WingetGate`        | `tools/winget-check.ps1` | `tools/prereqs.sh` |
+| 2 | `Install-Git`              | `tools/git.ps1`          | (package prerequisite) |
+| 3 | `Install-Nvm`              | `tools/nvm.ps1`          | `tools/nvm.sh` |
+| 4 | `Install-GhCli`            | `tools/gh.ps1`           | `tools/gh.sh` |
+| 5 | `Invoke-GhAuth`            | `tools/auth.ps1`         | `tools/auth.sh` |
+| 6 | `Install-Vim`              | `tools/vim.ps1`          | (platform addition) |
+| 7 | `Install-CopilotCli`       | `tools/copilot.ps1`      | `tools/copilot-cli.sh` |
+| 8 | `Install-Dotfiles`        | `tools/dotfiles.ps1`     | `tools/dotfiles.sh` |
+| 9 | `Write-PowerShellProfile` | `tools/profile.ps1`      | (PowerShell profile finalizer) |
+| 10 | `Install-GitHook`         | `tools/git-hook.ps1`     | `tools/git-hook.sh` |
 
 Cross-platform invariants preserved from the Linux chain above:
 
 - `auth` (interactive `gh auth login`) runs after `gh` so the CLI is on PATH when the prompt fires.
 - `copilot` runs after `auth` so the install can detect an authenticated `gh` session.
-- `squad-cli` runs after `nvm` because the install path is `npm i -g @bradygaster/squad-cli` and needs Node on PATH.
 
-Windows-only additions vs. the Linux chain:
+Windows-specific ordering notes:
 
-- `git` runs **first** -- Windows ships without git, and every downstream step that shells out to `git` (auth, dotfiles, hooks) needs it on PATH.
-- `vim` and `psmux` are explicit `winget` installs because Windows has no equivalent pre-installed editor/multiplexer.
+- `winget-check` runs first, then `git` -- downstream steps rely on the package manager or git.
+- `vim` is an explicit `winget` install because Windows has no equivalent pre-installed editor.
 - `dotfiles` + `profile` are Windows-specific finalizers: the Linux side rolls equivalent shell-rc work into `tools/zsh.sh` plus `config/dotfiles/install.sh`, but Windows needs a discrete PowerShell profile injection step (PS 5.1 + PS 7+ profile paths) after the dotfile templates are applied.
-- `Install-GitHook` is an inline function inside `setup.ps1` (not a separate `tools/*.ps1` module), wired last so `core.hooksPath=hooks` is set only after the working tree is in its final state.
-
-History: the per-tool layout under `scripts/windows/tools/` was introduced in PR #195 (split out from a monolithic `setup.ps1`); `auth.ps1` moved from `scripts/windows/` into `tools/` in PR #297, and the call site in `Main` was updated at the same time. The chain documented above is current as of Sprint 12.
+- `git-hook` runs last so `core.hooksPath=hooks` is set only after the working tree is in its final state.
+- Registry entries absent from `$DefaultTools` are opt-in and are appended alphabetically when selected.
 
 ---
 
 ## Idempotency Guarantee
 
-Every script in this project must be safe to run multiple times. The pattern is:
+Installers aim to skip work when the requested version/configuration is already present. For versioned tools, compare the installed version with the pin; do not treat a bare `command -v` / `Get-Command` check as sufficient.
 
-```bash
-if <already installed check>; then
-  log_ok "<tool> already installed"
-  exit 0
-fi
-# install
-```
-
-This means running `bash setup.sh` on a fully-configured machine is a no-op.
+Repeatability is **not** a guarantee that a configured machine is a no-op. Dotfile copies may overwrite differing content with bounded backup retention; profile steps update managed configuration. See [configuration and backups](docs/setup.md#configuration-and-backups). Exercise full repeated installations only in CI or a deliberately disposable environment.
 
 ---
-
 ## Tool Version Pinning (`.tool-versions`)
 
-Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) file (asdf-style: `name<space>version`, one per line). Both the Linux and Windows installers read pins through a shared library so the same version is installed across all platforms:
+Tool versions are pinned in the repo-root [`.tool-versions`](./.tool-versions) file (asdf-style: `name<space>version`, one per line). Version-aware Linux and Windows installers read the shared registry through these helpers; package-manager limitations can cause logged drift:
 
 - `scripts/lib/Read-ToolVersion.ps1` -- exposes `Get-ToolVersion -Name <toolname>` (PowerShell)
 - `scripts/lib/read-tool-version.sh` -- same contract for POSIX shells (prints to stdout)
 
-Currently pinned: `nodejs`, `nvm`, `nvm-windows`, `uv`, `copilot-cli`, `squad-cli`, `gh`. Tool installers (e.g. `scripts/windows/tools/nvm.ps1`, `scripts/linux/tools/uv.sh`) call the library at install time so version bumps are a single-file edit. See `.squad/skills/tool-version-pin/SKILL.md` for the pattern.
-
-Companion skill: `.squad/skills/pwsh-lastexitcode/SKILL.md` -- the `$LASTEXITCODE = 0` reset pattern required when chaining native commands across pwsh `&` script-call boundaries (CI gating discipline).
+Use the registry itself for the current names and values rather than a duplicated version list. The Node installers read the `nodejs` pin. See [version-pin enforcement](CONTRIBUTING.md#tool-version-pin-enforcement) for update/skip behavior and platform constraints.
 
 ---
 
 ## Git Hooks
 
-Hooks live in [`hooks/`](./hooks) and are wired automatically by the installers via `git config core.hooksPath hooks` (no manual install step). Four hooks ship today:
-
-| Hook | Role |
-|------|------|
-| `pre-commit` | Branch-ancestry guard (`squad/*` must descend from `develop`), ASCII-only enforcement for staged `*.ps1`, `.squad/` path allow-list (incl. `decisions/*.md`, `retros/*.md`, and `templates/*.template`), refusal to commit on `develop`/`main`/`master`, shellcheck on staged `*.sh` |
-| `prepare-commit-msg` | Rewrites git auto-generated `Merge ...` and `Revert "..."` messages into Conventional Commits form so `commit-msg` accepts them (added in #212) |
-| `commit-msg` | Enforces Conventional Commits format (`type(scope): description`). Hard reject on non-conforming. |
-| `pre-push` | Blocks direct pushes to `main`; runs shellcheck on changed `*.sh` (advisory) and PSScriptAnalyzer on changed `*.ps1` (advisory) |
-
-The pre-commit allow-list is the canonical source of truth for which paths under `.squad/` may be staged. See `hooks/pre-commit` Check 3 for the full table.
+The `git-hook` step sets `core.hooksPath=hooks`; it does not make every hook executable. [CONTRIBUTING.md](CONTRIBUTING.md#git-hooks) is the canonical description of actual hook checks, optional-tool skips and the nonexecutable message-rewrite helper. Verify the configured path/modes rather than assuming every shipped file is active.
 
 ---
 
 ## CI Workflows
 
-All workflows live in [`.github/workflows/`](./.github/workflows). Owned by Chip.
+Actual triggers, runners and job definitions live in [`.github/workflows/`](.github/workflows/), rather than in a duplicated job-count table.
 
-### `validate.yml` -- main CI gate (6 jobs)
+- [`validate.yml`](.github/workflows/validate.yml) runs on PRs and pushes to `main`/`develop`. It covers Linux/macOS installation, shell and PowerShell lint, Windows regressions, native PowerShell 5.1, and isolated completion on Linux/macOS. Selection, retirement, aliases and non-forwarding shutdown checks are included in the relevant platform jobs.
+- [`e2e-install.yml`](.github/workflows/e2e-install.yml) runs platform install smoke tests on PRs, its scheduled run and manual dispatch, with an aggregate result. These jobs modify disposable hosted runners, not a contributor's workstation.
+- [`sprint-end-labels.yml`](.github/workflows/sprint-end-labels.yml) is optional maintainer metadata automation. See [label automation](CONTRIBUTING.md#sprint-end-label-automation) before using its write mode.
 
-| Job | Runner | Purpose |
-|-----|--------|---------|
-| `validate-linux` | `ubuntu-latest` | Run `setup.sh`, assert zsh/uv/nvm/node/gh, idempotency re-run, alias unit + parity tests |
-| `validate-macos` | `macos-latest` | Same shape as `validate-linux` + tool-version pin tests (added Sprint 10 (formerly Sprint S)) |
-| `lint-shell-scripts` | `ubuntu-latest` | shellcheck across `setup.sh`, `scripts/linux/**`, `config/dotfiles/.aliases` |
-| `lint-powershell` | `ubuntu-latest` (pwsh) | PSScriptAnalyzer across `setup.ps1` + `scripts/windows/setup.ps1` |
-| `validate-powershell` | `windows-latest` | `Remove-CustomItem` regression + git-hooks tests under PS 7 |
-| `validate-ps51` | `windows-latest` | Syntax + PSScriptAnalyzer + profile-write + git-hooks tests under **PS 5.1** (Windows stock) |
-
-### `e2e-install.yml` -- end-to-end smoke test (4 jobs, PR + nightly cron)
-
-| Job | Runner | Purpose |
-|-----|--------|---------|
-| `e2e-linux` | `ubuntu-latest` | Run `setup.sh` on a fresh runner; assert every tool is reachable from a login shell; `squad --version` regression for `session persistence may fail` warning (#255) |
-| `e2e-macos` | `macos-latest` | Same shape as `e2e-linux` |
-| `e2e-windows` | `windows-latest` | Run `setup.ps1`; PowerShell + winget path |
-| `summary` | `ubuntu-latest` | Aggregates the three platform results (`needs: [...]`, `if: always()`) and fails the workflow if any platform failed (added in #253) |
-
-Initially `continue-on-error: true` per platform job; the `summary` job is the single fail-gate. Triggers: `pull_request`, nightly `cron: 0 4 * * *`, and `workflow_dispatch`.
-
-### Squad automation (Chip + Ralph)
-
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `squad-heartbeat.yml` | `issues` (closed/labeled), `pull_request` (closed), manual | Ralph -- react to completed work / new squad work to keep the loop alive |
-| `squad-history-check.yml` | `pull_request` to `develop`/`main` | Enforce `agents/{name}/history.md` updates when a `squad:*` label is present |
-| `squad-issue-assign.yml` | `issues` (labeled with `squad:{member}`) | Drop the "Assigned to {Member}" instructional comment |
-| `squad-label-enforce.yml` | `issues` (labeled) | Enforce mutual exclusivity for `go:`, `release:`, `type:`, `priority:` namespaces |
-| `squad-triage.yml` | `issues` (labeled `squad`) | Lead-agent triage on bare `squad` label |
-| `sync-squad-labels.yml` | push to `.squad/team.md`, manual | Sync GitHub labels to match the roster |
-
----
-
-## Squad Roster
-
-The squad lives under [`.squad/agents/`](./.squad/agents) -- each agent owns a directory with `charter.md` (identity, boundaries, voice) and `history.md` (append-only work log).
-
-**Core engineering agents (own code / tests / config):**
-
-| Agent | Role | Owns |
-|-------|------|------|
-| Mickey | Lead | Architecture, code review, scope decisions, triage |
-| Donald | Linux/macOS engineer | `scripts/linux/`, POSIX tool installers |
-| Goofy | Windows engineer | `scripts/windows/`, hooks |
-| Chip | Test / CI engineer | `tests/`, `.github/workflows/`, `.devcontainer/` |
-| Pluto | Dotfiles & shell config | `config/dotfiles/` |
-
-**Role-based agents (own process / quality / history):**
-
-| Agent | Role | Trigger |
-|-------|------|---------|
-| Doc | Fact-checker | review/verify/fact-check/audit keywords; writes from a dedicated worktree per sprint (see `.squad/decisions/doc-and-jiminy-automation.md`) |
-| Jiminy | Conscience / auditor | post-batch audit gate after multi-agent batches (>=3 agents); enforced by `.squad/templates/loop.md` and `.squad/templates/ceremonies.md` |
-| Scribe | History & changelog steward | Sprint wrap fold of `history.md` and `CHANGELOG.md` curation |
-| Ralph | Heartbeat | Runs as `squad-heartbeat.yml` workflow on issue/PR events; not a human-facing agent |
-
-Permanent cross-agent decisions live in `.squad/decisions/*.md` (e.g., `doc-and-jiminy-automation.md`, `mickey-architecture-entry-point.md`, `pluto-dotfiles.md`). Drafts land in `.squad/decisions/inbox/` (gitignored) before being promoted.
-
----
-
-## Team Ownership Map
-
-| Path | Owner | Issue(s) |
-|------|-------|----------|
-| `setup.sh` (root) | Mickey | #3 |
-| `setup.ps1` (root) | Mickey | #3 |
-| `.tool-versions` | Mickey | Sprint 10 |
-| `scripts/lib/` | Mickey | Sprint 10 |
-| `scripts/linux/setup.sh` | Donald | #1 |
-| `scripts/linux/lib/log.sh` | Donald | -- |
-| `scripts/linux/uninstall.sh` | Donald | -- |
-| `scripts/linux/tools/auth.sh` | Donald | #9 |
-| `scripts/linux/tools/zsh.sh` | Donald | #4 |
-| `scripts/linux/tools/uv.sh` | Donald | #5 |
-| `scripts/linux/tools/nvm.sh` | Donald | #6 |
-| `scripts/linux/tools/gh.sh` | Donald | #7 |
-| `scripts/linux/tools/copilot-cli.sh` | Donald | #7 |
-| `scripts/linux/tools/squad-cli.sh` | Donald | -- |
-| `scripts/windows/setup.ps1` | Goofy | #2, #195 |
-| `scripts/windows/lib/` | Goofy | #195 |
-| `scripts/windows/tools/` | Goofy | #195 |
-| `scripts/windows/tools/auth.ps1` | Goofy | #2 |
-| `scripts/windows/uninstall.ps1` | Goofy | -- |
-| `hooks/pre-commit` | Goofy | #138 |
-| `hooks/prepare-commit-msg` | Goofy | #212 |
-| `hooks/commit-msg` | Goofy | #138 |
-| `hooks/pre-push` | Goofy | #138, #147 |
-| `tests/` | Chip | -- |
-| `config/dotfiles/` | Pluto | #8, #10, #11 |
-| `.devcontainer/` | Chip | -- |
-| `.github/workflows/` | Chip | #12, #13, #253 |
-| `.squad/agents/` | Each agent owns their own directory | -- |
-| `.squad/skills/` | Authoring agent (Mickey reviews) | -- |
-| `.squad/decisions/` | Mickey (curator) | -- |
+Native macOS/Bash 3.2 and Windows/PowerShell 5.1 execution remain distinct from Linux parser checks or emulation. [AGENTS.md](AGENTS.md#safe-validation) and [tests/README.md](tests/README.md) identify safe local entry points and the suites that require an isolated machine.

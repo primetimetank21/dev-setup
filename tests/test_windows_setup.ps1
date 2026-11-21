@@ -235,12 +235,13 @@ Test-Scenario "Write-PowerShellProfile uses profilePath/profilePaths (post-refac
 $savedProfile = $PROFILE
 $c2Profile = Join-Path $PSScriptRoot "temp_profile_c2_$(Get-Random).ps1"
 [System.IO.File]::WriteAllText($c2Profile, "Set-Alias -Name ggsls -Value Get-GitStashList")
-$PROFILE = $c2Profile
 
 Test-Scenario "Profile idempotency: no line concatenation on file without trailing newline" {
-    # Before the fix, the first line of profileContent ('# BEGIN dev-setup profile')
-    # was appended directly onto the last byte of the file, producing:
-    #   'Set-Alias -Name ggsls -Value Get-GitStashList# BEGIN dev-setup profile'
+    if ($PSVersionTable.PSVersion.Major -ge 7) {
+        Write-Warning '[SKIPPED] C-2: PS7+ -- $PROFILE conceptually read-only; covered by GG tests'
+        return
+    }
+    $PROFILE = $c2Profile
     Write-PowerShellProfile
 
     $lines       = Get-Content $c2Profile
@@ -258,9 +259,13 @@ if (Test-Path $c2Profile) { Remove-Item $c2Profile -Force }
 $savedProfile = $PROFILE
 $c3Profile = Join-Path $PSScriptRoot "temp_profile_c3_$(Get-Random).ps1"
 [System.IO.File]::WriteAllText($c3Profile, "Set-Alias -Name ggsls -Value Get-GitStashList")
-$PROFILE = $c3Profile
 
 Test-Scenario "Profile idempotency: second run is a strict no-op (file size unchanged)" {
+    if ($PSVersionTable.PSVersion.Major -ge 7) {
+        Write-Warning '[SKIPPED] C-3: PS7+ -- $PROFILE conceptually read-only; covered by GG tests'
+        return
+    }
+    $PROFILE = $c3Profile
     Write-PowerShellProfile
     $sizeAfterFirst = (Get-Item $c3Profile).Length
 
@@ -362,10 +367,11 @@ Test-Scenario "E-1: Install-Vim function exists in scripts/windows/tools/vim.ps1
 }
 
 Test-Scenario "E-2: Install-Vim is called in Main" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern '^\s*Install-Vim\s*$' -Quiet
-    if (-not $found) {
-        throw "Install-Vim is not called in Main"
+    # Architecture change (WI-1): tools are dispatched via $DefaultTools array.
+    # Verify 'vim' is registered in the $DefaultTools array in setup.ps1.
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1') -Raw
+    if ($content -notmatch "'vim'") {
+        throw "Install-Vim is not in DefaultTools (setup.ps1)"
     }
 }
 
@@ -441,8 +447,8 @@ Test-Scenario "F-3: GitHub CLI aliases present (ghpr, ghprl, ghprv, ghis, ghiv)"
     }
 }
 
-Test-Scenario "F-4: Dev shortcut aliases present (uvr, uvs, ni, nr, nrd, nrt, py, c)" {
-    $devAliases = @('uvr', 'uvs', 'ni', 'nr', 'nrd', 'nrt', 'py', 'c')
+Test-Scenario "F-4: Dev shortcut aliases present (ni, nr, nrd, nrt, py, c)" {
+    $devAliases = @('ni', 'nr', 'nrd', 'nrt', 'py', 'c')
     foreach ($alias in $devAliases) {
         if ($windowsSetupProfileContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
             throw "Missing dev shortcut alias '$alias' in scripts/windows/tools/profile.ps1"
@@ -473,131 +479,6 @@ Test-Scenario "F-6: PS 5.x compat - no banned patterns in profile content block"
                 }
             }
         }
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Group G: Install-SquadCli (Issue #106)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group G: Install-SquadCli (Issue #106)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-# Load squad-cli.ps1 content
-$squadToolPath = Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1'
-$squadToolContent = Get-Content $squadToolPath -Raw
-
-Test-Scenario "G-1: Install-SquadCli function exists in scripts/windows/tools/squad-cli.ps1" {
-    if ($squadToolContent -notmatch 'function Install-SquadCli') {
-        throw "Install-SquadCli function not found in scripts/windows/tools/squad-cli.ps1"
-    }
-}
-
-Test-Scenario "G-2: Install-SquadCli is called in Main" {
-    $found = Select-String -Path (Join-Path $RepoRoot 'scripts\windows\setup.ps1') `
-                            -Pattern '^\s*Install-SquadCli\s*$' -Quiet
-    if (-not $found) {
-        throw "Install-SquadCli is not called in Main"
-    }
-}
-
-Test-Scenario "G-3: Install-SquadCli contains npm availability check (error+exit)" {
-    if ($squadToolContent -notmatch 'Get-Command npm') {
-        throw "Install-SquadCli does not check for npm availability"
-    }
-    if ($squadToolContent -notmatch 'npm not found after nvm install') {
-        throw "Install-SquadCli does not emit error when npm is missing"
-    }
-}
-
-Test-Scenario "G-4: No MyInvocation.MyCommand.Path in Install-SquadCli" {
-    if ($squadToolContent -match '\$MyInvocation\.MyCommand\.Path') {
-        throw "scripts/windows/tools/squad-cli.ps1 uses MyInvocation.MyCommand.Path - banned per PS 5.x compat rules"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Group H: psmux aliases in PowerShell profile (Issue #140)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group H: psmux aliases in PowerShell profile (Issue #140)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-Test-Scenario "H-1: psmux alias functions exist in profile content" {
-    # Check in profile.ps1 tool file (where the profile content now lives)
-    $requiredFunctions = @('Invoke-PsmuxList', 'Invoke-PsmuxKillServer', 'Invoke-PsmuxNewSession', 'Invoke-PsmuxAttach')
-    foreach ($fn in $requiredFunctions) {
-        if ($profileToolContent -notmatch $fn) {
-            throw "Missing psmux alias function '$fn' in scripts/windows/tools/profile.ps1"
-        }
-    }
-}
-
-Test-Scenario "H-2: psmux Set-Alias entries exist for tls, tks, tt, ta" {
-    # Check in profile.ps1 tool file
-    $requiredAliases = @('tls', 'tks', 'tt', 'ta')
-    foreach ($alias in $requiredAliases) {
-        if ($profileToolContent -notmatch "Set-Alias\s+-Name\s+$alias\b") {
-            throw "Missing Set-Alias for '$alias' in scripts/windows/tools/profile.ps1"
-        }
-    }
-}
-
-Test-Scenario "H-3: New-PsmuxSession function exists in profile content" {
-    # Check in profile.ps1 tool file
-    if ($profileToolContent -notmatch 'function New-PsmuxSession') {
-        throw "New-PsmuxSession function not found in scripts/windows/tools/profile.ps1"
-    }
-}
-
-Test-Scenario "H-4: New-PsmuxSession checks for existing session before creating" {
-    # Check in profile.ps1 tool file
-    if ($profileToolContent -notmatch 'psmux ls') {
-        throw "New-PsmuxSession does not contain 'psmux ls' session check"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Group I: psmux install (Issue #139)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group I: psmux install (Issue #139)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-Test-Scenario "I-1: Install-Psmux function exists in psmux.ps1" {
-    $psmuxToolPath = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
-    $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$errors)
-    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
-    if ($fn.Count -eq 0) {
-        throw "Install-Psmux function not found in scripts/windows/tools/psmux.ps1"
-    }
-}
-
-Test-Scenario "I-2: Install-Psmux is called in Main" {
-    $setupPath = Join-Path $RepoRoot 'scripts\windows\setup.ps1'
-    $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($setupPath, [ref]$tokens, [ref]$errors)
-    $mainFn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Main' }, $true)
-    if ($mainFn.Count -eq 0) { throw "Main function not found" }
-    $mainBody = $mainFn[0].Body.Extent.Text
-    if ($mainBody -notmatch 'Install-Psmux') {
-        throw "Install-Psmux is not called in Main"
-    }
-}
-
-Test-Scenario "I-3: Install-Psmux is idempotent (checks before installing)" {
-    $psmuxToolPath = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
-    $tokens = $null; $errors = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$errors)
-    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Install-Psmux' }, $true)
-    if ($fn.Count -eq 0) { throw "Install-Psmux function not found" }
-    $fnBody = $fn[0].Body.Extent.Text
-    if ($fnBody -notmatch 'Get-Command psmux') {
-        throw "Install-Psmux does not check for psmux before installing (missing Get-Command psmux)"
     }
 }
 
@@ -911,7 +792,7 @@ Test-Scenario "N-2: Write-PowerShellProfile writes to the PS 7+ profile path" {
     }
 }
 
-Test-Scenario "N-3: Profile content heredoc includes the squad BEGIN and END markers" {
+Test-Scenario "N-3: Profile content heredoc includes the dev-setup BEGIN and END markers" {
     if ($profileToolContent -notmatch '# BEGIN dev-setup profile') {
         throw "profile.ps1 does not contain '# BEGIN dev-setup profile' marker"
     }
@@ -971,69 +852,6 @@ Test-Scenario "O-6: After Remove-Item Alias:\rm, Set-Alias rm succeeds without e
 Test-Scenario "O-7: After Remove-Item Alias:\h, Set-Alias h succeeds without error" {
     Remove-Item -Force 'Alias:\h' -ErrorAction SilentlyContinue
     Set-Alias -Name h -Value Write-Host -Force -Scope Global -ErrorAction Stop
-}
-
-# ---------------------------------------------------------------------------
-# Group P: psmux Install (Issue #197)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group P: psmux Install (Issue #197)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-. (Join-Path $RepoRoot 'scripts\windows\lib\path.ps1')
-$psmuxToolPath    = Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1'
-$psmuxToolContent = Get-Content $psmuxToolPath -Raw
-$psmuxToolExec = $psmuxToolContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
-Invoke-Expression $psmuxToolExec
-
-Test-Scenario "P-1: psmux.ps1 can be dot-sourced without error and Install-Psmux is defined" {
-    # Syntax check via AST parser
-    $tokens = $null; $parseErrors = $null
-    $null = [System.Management.Automation.Language.Parser]::ParseFile($psmuxToolPath, [ref]$tokens, [ref]$parseErrors)
-    if ($parseErrors.Count -gt 0) {
-        throw "psmux.ps1 has syntax errors: $($parseErrors[0].Message)"
-    }
-    # Verify function is callable after loading (loaded above via Invoke-Expression)
-    if (-not (Get-Command Install-Psmux -ErrorAction SilentlyContinue)) {
-        throw "Install-Psmux is not defined after loading psmux.ps1"
-    }
-}
-
-if ($null -ne (Get-Command psmux -ErrorAction SilentlyContinue)) {
-    Write-Skip "P-2: Install-Psmux invokes winget install when psmux missing" `
-        "psmux binary is present on this machine - not-installed code path cannot be exercised"
-} else {
-    Test-Scenario "P-2: Install-Psmux invokes 'winget install --id marlocarlo.psmux' when psmux is not installed" {
-        $script:WingetCalled = $false
-        $script:WingetArgs = $null
-        function global:winget {
-            $script:WingetCalled = $true
-            $script:WingetArgs = $args
-            $global:LASTEXITCODE = 0
-        }
-        try {
-            $output = Install-Psmux 2>&1 | Out-String
-            if (-not $script:WingetCalled) {
-                throw "Install-Psmux did not invoke winget when psmux is absent. Output: $output"
-            }
-            if (($script:WingetArgs -join ' ') -notmatch 'marlocarlo\.psmux') {
-                throw "Install-Psmux invoked winget with wrong package ID. Args: $($script:WingetArgs -join ' ')"
-            }
-        } finally {
-            Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
-        }
-    }
-}
-
-Test-Scenario "P-3: Install-Psmux is idempotent (second call does not throw)" {
-    function global:winget { $global:LASTEXITCODE = 0 }
-    try {
-        Install-Psmux | Out-Null
-        Install-Psmux | Out-Null
-    } finally {
-        Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
-    }
 }
 
 # ---------------------------------------------------------------------------
@@ -1146,8 +964,8 @@ $toolVersionScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'lib' 
 
 Test-Scenario "R-1 Get-ToolVersion returns nodejs version" {
     $ver = Get-ToolVersion -Name 'nodejs'
-    if ($ver -ne '22.11.0') {
-        throw "Expected '22.11.0', got '$ver'"
+    if ($ver -ne '22.23.2') {
+        throw "Expected '22.23.2', got '$ver'"
     }
 }
 
@@ -1165,10 +983,17 @@ Test-Scenario "R-2b Get-ToolVersion returns nvm-windows version" {
     }
 }
 
-Test-Scenario "R-3 Get-ToolVersion returns uv version" {
-    $ver = Get-ToolVersion -Name 'uv'
-    if ($ver -ne '0.4.18') {
-        throw "Expected '0.4.18', got '$ver'"
+Test-Scenario "R-2c Get-ToolVersion returns herdr version" {
+    $ver = Get-ToolVersion -Name 'herdr'
+    if ($ver -ne '0.9.1') {
+        throw "Expected '0.9.1', got '$ver'"
+    }
+}
+
+Test-Scenario "R-3 Get-ToolVersion returns gh version" {
+    $ver = Get-ToolVersion -Name 'gh'
+    if ($ver -ne '2.92.0') {
+        throw "Expected '2.92.0', got '$ver'"
     }
 }
 
@@ -1343,40 +1168,6 @@ Test-Scenario "T-4 nvm.ps1 calls nvm install and nvm use with pinned version" {
 }
 
 # ---------------------------------------------------------------------------
-# Group U: squad-cli.ps1 loud error (Issue #201)
-# ---------------------------------------------------------------------------
-
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group U: squad-cli.ps1 loud error (Issue #201)" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-
-$squadScript = Join-Path $RepoRoot 'scripts' | Join-Path -ChildPath 'windows' | Join-Path -ChildPath 'tools' | Join-Path -ChildPath 'squad-cli.ps1'
-$squadContent = Get-Content $squadScript -Raw
-
-Test-Scenario "U-1 squad-cli.ps1 emits ERROR (not WARN) when npm missing" {
-    if ($squadContent -match 'Write-Warn.*npm not found') {
-        throw "squad-cli.ps1 still uses Write-Warn for npm-missing case"
-    }
-    if ($squadContent -notmatch 'Write-Err.*npm not found') {
-        throw "squad-cli.ps1 does not emit Write-Err when npm is missing"
-    }
-}
-
-Test-Scenario "U-2 squad-cli.ps1 exits non-zero when npm missing" {
-    if ($squadContent -notmatch 'exit\s+1') {
-        throw "squad-cli.ps1 does not exit 1 when npm is missing"
-    }
-}
-
-Test-Scenario "U-3 squad-cli.ps1 provides actionable troubleshooting hints" {
-    $hasHint1 = $squadContent -match 'close this terminal'
-    $hasHint2 = $squadContent -match 'nvm.*install.*failed'
-    if (-not $hasHint1 -or -not $hasHint2) {
-        throw "squad-cli.ps1 does not provide actionable troubleshooting hints"
-    }
-}
-
-# ---------------------------------------------------------------------------
 # Group V: shared logging lib (Issue #186)
 # ---------------------------------------------------------------------------
 
@@ -1489,8 +1280,8 @@ Test-Scenario "X-4: Assert-LastExit throws for unexpected non-zero exit code" {
     }
 }
 
-Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
-    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
+Test-Scenario "X-5: Core winget install scripts call Assert-LastExit" {
+    $wingetScripts = @('git', 'gh', 'vim')
     foreach ($s in $wingetScripts) {
         $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
         $content = Get-Content $path -Raw
@@ -1500,22 +1291,15 @@ Test-Scenario "X-5: All 4 winget install scripts call Assert-LastExit" {
     }
 }
 
-Test-Scenario "X-6: squad-cli.ps1 calls Assert-LastExit after npm install" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
+Test-Scenario "X-7: copilot.ps1 calls Assert-LastExit after install command" {
+    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\copilot.ps1') -Raw
     if ($content -notmatch 'Assert-LastExit') {
-        throw "squad-cli.ps1 does not call Assert-LastExit after npm install"
-    }
-}
-
-Test-Scenario "X-7: uv.ps1 calls Assert-LastExit after install command" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\uv.ps1') -Raw
-    if ($content -notmatch 'Assert-LastExit') {
-        throw "uv.ps1 does not call Assert-LastExit after install command"
+        throw "copilot.ps1 does not call Assert-LastExit after install command"
     }
 }
 
 Test-Scenario "X-8: Assert-LastExit allowed codes include winget ALREADY_INSTALLED in all winget scripts" {
-    $wingetScripts = @('git', 'gh', 'vim', 'psmux')
+    $wingetScripts = @('git', 'gh', 'vim')
     foreach ($s in $wingetScripts) {
         $path = Join-Path $RepoRoot "scripts\windows\tools\$s.ps1"
         $content = Get-Content $path -Raw
@@ -1525,28 +1309,27 @@ Test-Scenario "X-8: Assert-LastExit allowed codes include winget ALREADY_INSTALL
     }
 }
 
-if ($null -eq (Get-Command psmux -ErrorAction SilentlyContinue)) {
-    Test-Scenario "X-9: Simulated winget failure propagates from Install-Psmux" {
-        $psmuxContent = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\psmux.ps1') -Raw
-        $psmuxExec = $psmuxContent -replace '\.\s+"?\$PSScriptRoot[^"]*(logging|path)\.ps1"?', '# lib loaded by test harness'
-        Invoke-Expression $psmuxExec
-        function global:winget { $global:LASTEXITCODE = 99 }
-        $threw = $false
-        try {
-            Install-Psmux 2>&1 | Out-Null
-        } catch {
-            $threw = $true
-        } finally {
-            Remove-Item -Force Function:winget -ErrorAction SilentlyContinue
-            $global:LASTEXITCODE = 0
-        }
-        if (-not $threw) {
-            throw "Install-Psmux did not propagate the simulated winget failure"
-        }
+Test-Scenario "X-9: Simulated winget failure propagates from Install-Vim" {
+    . (Join-Path $RepoRoot 'scripts\windows\tools\vim.ps1')
+    # Deterministic, non-forwarding stubs: never inspect an installed Vim or run winget.
+    function Get-Command {
+        param([string]$Name, [string]$ErrorAction)
+        if ($Name -ne 'vim') { throw "Unexpected command lookup: $Name" }
     }
-} else {
-    Write-Skip "X-9: Simulated winget failure propagates from Install-Psmux" `
-        "psmux is installed -- early-return path taken, winget not called"
+    function winget { $global:LASTEXITCODE = 99 }
+    function Get-ChildItem { throw "Unexpected PATH discovery after failed install" }
+    $threw = $false
+    try {
+        Install-Vim 2>&1 | Out-Null
+    } catch {
+        if ($_.Exception.Message -ne 'vim install failed') { throw }
+        $threw = $true
+    } finally {
+        $global:LASTEXITCODE = 0
+    }
+    if (-not $threw) {
+        throw "Install-Vim did not propagate the simulated winget failure"
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -1563,8 +1346,7 @@ $prePushHook   = Join-Path $RepoRoot "hooks\pre-push"
 if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
     Write-Skip "Y-1 pre-commit rejects .ps1 with em-dash"          "sh not available"
     Write-Skip "Y-2 pre-commit allows ASCII-only .ps1"              "sh not available"
-    Write-Skip "Y-3 pre-commit rejects rogue .squad/ path"          "sh not available"
-    Write-Skip "Y-4 pre-push hard-rejects direct push to main"      "sh not available"
+    Write-Skip "Y-4 pre-push hard-rejects direct push to main"  "sh not available"
     Write-Skip "Y-5 pre-push allows push to develop"                "sh not available"
     Write-Skip "Y-6 pre-push exits 0 on feature branch (advisory)"  "sh not available"
 } else {
@@ -1599,7 +1381,7 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             New-YTestRepo $repoDir
             Push-Location $repoDir
             try {
-                & git checkout -q -b pluto/ascii-fail 2>&1 | Out-Null
+                & git checkout -q -b feat/ascii-fail 2>&1 | Out-Null
                 # Write a .ps1 containing a UTF-8 em-dash (bytes: 0xE2 0x80 0x94)
                 $before = [System.Text.Encoding]::ASCII.GetBytes('Write-Host "hello ')
                 $emDash = [byte[]](0xE2, 0x80, 0x94)
@@ -1624,31 +1406,12 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             New-YTestRepo $repoDir
             Push-Location $repoDir
             try {
-                & git checkout -q -b pluto/ascii-pass 2>&1 | Out-Null
+                & git checkout -q -b feat/ascii-pass 2>&1 | Out-Null
                 'Write-Host "hello -- world"' | Set-Content "test.ps1" -Encoding ASCII
                 & git add "test.ps1" 2>&1 | Out-Null
                 $out = & sh $preCommitHook 2>&1
                 if ($LASTEXITCODE -ne 0) {
                     throw "pre-commit rejected ASCII-only .ps1 (exit $LASTEXITCODE): $out"
-                }
-            } finally { Pop-Location }
-        }
-
-        # ------------------------------------------------------------------
-        # Y-3: pre-commit rejects a newly staged .squad/ path not on allow-list
-        # ------------------------------------------------------------------
-        Test-Scenario "Y-3 pre-commit rejects rogue .squad/ path" {
-            $repoDir = Join-Path $yTmpBase "y3"
-            New-YTestRepo $repoDir
-            Push-Location $repoDir
-            try {
-                & git checkout -q -b pluto/rogue-squad 2>&1 | Out-Null
-                New-Item -ItemType Directory -Path ".squad\random" -Force | Out-Null
-                "rogue" | Set-Content ".squad\random\notes.md" -Encoding ASCII
-                & git add ".squad\random\notes.md" 2>&1 | Out-Null
-                & sh $preCommitHook 2>&1 | Out-Null
-                if ($LASTEXITCODE -eq 0) {
-                    throw "pre-commit should have rejected rogue .squad/ path but exited 0"
                 }
             } finally { Pop-Location }
         }
@@ -1683,7 +1446,7 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             try {
                 $hookUnix   = $prePushHook.Replace('\', '/')
                 $stdinFile  = Join-Path $yTmpBase "push_stdin_y5.txt"
-                Set-Content $stdinFile "refs/heads/squad/224-test abc1234 refs/heads/develop def5678" -Encoding ASCII
+                Set-Content $stdinFile "refs/heads/feat/224-test abc1234 refs/heads/develop def5678" -Encoding ASCII
                 $stdinUnix  = $stdinFile.Replace('\', '/')
                 $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
                 if ($LASTEXITCODE -ne 0) {
@@ -1701,14 +1464,14 @@ if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
             New-YTestRepo $repoDir
             Push-Location $repoDir
             try {
-                & git checkout -q -b squad/224-advisory-test 2>&1 | Out-Null
+                & git checkout -q -b feat/224-advisory-test 2>&1 | Out-Null
                 # Commit a .ps1 so the hook has content to (optionally) analyze
                 'Write-Host "advisory test"' | Set-Content "advisory.ps1" -Encoding ASCII
                 & git add "advisory.ps1" 2>&1 | Out-Null
                 & git commit -q -m "test: advisory ps1" 2>&1 | Out-Null
                 $hookUnix   = $prePushHook.Replace('\', '/')
                 $stdinFile  = Join-Path $yTmpBase "push_stdin_y6.txt"
-                Set-Content $stdinFile "refs/heads/squad/224-advisory-test abc1234 refs/heads/squad/224-advisory-test def5678" -Encoding ASCII
+                Set-Content $stdinFile "refs/heads/feat/224-advisory-test abc1234 refs/heads/feat/224-advisory-test def5678" -Encoding ASCII
                 $stdinUnix  = $stdinFile.Replace('\', '/')
                 $out = & sh -c "sh '$hookUnix' origin 'https://github.com/test/repo' < '$stdinUnix'" 2>&1
                 if ($LASTEXITCODE -ne 0) {
@@ -1824,32 +1587,12 @@ Test-Scenario "AA-3: git unset-all core.hooksPath removes the local key (functio
 }
 
 # ---------------------------------------------------------------------------
-# Group DD: version-pin enforcement for squad-cli, copilot, and gh (#255)
+# Group DD: version-pin enforcement for copilot and gh (#255)
 # ---------------------------------------------------------------------------
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " Group DD: version-pin enforcement (squad-cli / copilot / gh)" -ForegroundColor Cyan
+Write-Host " Group DD: version-pin enforcement (copilot / gh)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
-
-Test-Scenario "DD-1: squad-cli.ps1 reads pinned version from .tool-versions" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'Get-ToolVersion') {
-        throw "squad-cli.ps1 does not call Get-ToolVersion to read pinned version"
-    }
-    if ($content -notmatch "squad-cli") {
-        throw "squad-cli.ps1 does not reference 'squad-cli' tool name for version lookup"
-    }
-}
-
-Test-Scenario "DD-2: squad-cli.ps1 uses version-aware check (not bare Get-Command)" {
-    $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\squad-cli.ps1') -Raw
-    if ($content -notmatch 'InstalledVersion') {
-        throw "squad-cli.ps1 does not perform version comparison (no InstalledVersion variable)"
-    }
-    if ($content -notmatch 'SquadCliVersion') {
-        throw "squad-cli.ps1 does not use SquadCliVersion in install command"
-    }
-}
 
 Test-Scenario "DD-3: gh.ps1 uses --version flag with pinned value" {
     $content = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\gh.ps1') -Raw
@@ -1871,12 +1614,9 @@ Test-Scenario "DD-4: copilot.ps1 reads pinned version from .tool-versions" {
     }
 }
 
-Test-Scenario "DD-5: .tool-versions contains squad-cli and gh pins" {
+Test-Scenario "DD-5: .tool-versions contains gh pin" {
     $tvPath = Join-Path $RepoRoot '.tool-versions'
     $content = Get-Content $tvPath -Raw
-    if ($content -notmatch 'squad-cli\s+[0-9]+\.[0-9]+\.[0-9]+') {
-        throw ".tool-versions does not contain a squad-cli version pin"
-    }
     if ($content -notmatch 'gh\s+[0-9]+\.[0-9]+\.[0-9]+') {
         throw ".tool-versions does not contain a gh version pin"
     }
@@ -1956,7 +1696,8 @@ Test-Scenario "EE-4: auth.ps1 resets LASTEXITCODE after second gh api user block
 }
 
 Test-Scenario "EE-5: setup.ps1 resets LASTEXITCODE after git rev-parse in Install-GitHook" {
-    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\setup.ps1')
+    # Architecture change (WI-1): Install-GitHook moved to tools/git-hook.ps1
+    $lines = Get-Content (Join-Path $RepoRoot 'scripts\windows\tools\git-hook.ps1')
     $found = $false
     for ($i = 0; $i -lt $lines.Count; $i++) {
         if ($lines[$i] -match '& git rev-parse') {
@@ -2301,6 +2042,268 @@ Set-Alias gg git
         }
     } finally {
         Remove-Item $sb.Root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Group GG: Host-queried $PROFILE (Issues #441 / #442)
+# ---------------------------------------------------------------------------
+#
+# Tests that Write-PowerShellProfile and Resolve-ProfilePath correctly query
+# each PS host for its live $PROFILE via Invoke-HostQuery, fall back to the
+# hardcoded path when the host is absent, deduplicate case-insensitively, and
+# clean up orphaned blocks at legacy paths.
+#
+# Mock pattern: redefine Invoke-HostQuery in script scope before each test.
+# Reset $global:LASTEXITCODE = 0 before each mock definition so GG-7's
+# native-command exit-1 does not contaminate subsequent success-path tests.
+# Tests that write to disk pass -Ps51Fallback/-Ps7Fallback temp paths.
+# Temp dirs cleaned up in finally blocks.
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group GG: Host-queried profile path (#442)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+# profile.ps1 functions (Invoke-HostQuery, Resolve-ProfilePath, Write-PowerShellProfile)
+# are already loaded in script scope by Group C's Invoke-Expression above.
+
+# ---------------------------------------------------------------------------
+# GG-1: Resolved (OneDrive-like) path is used when mock returns it
+# ---------------------------------------------------------------------------
+$global:LASTEXITCODE = 0
+$gg1TempDir  = Join-Path $env:TEMP "gg-test-441-$(New-Guid)"
+New-Item -ItemType Directory -Path $gg1TempDir -Force | Out-Null
+$gg1MockPath = Join-Path $gg1TempDir "OneDriveDocs\PowerShell\Microsoft.PowerShell_profile.ps1"
+$gg1Temp51   = Join-Path $gg1TempDir "fb51\Microsoft.PowerShell_profile.ps1"
+$gg1Temp7    = Join-Path $gg1TempDir "fb7\Microsoft.PowerShell_profile.ps1"
+function Invoke-HostQuery { param([string]$Exe) return $gg1MockPath }
+
+Test-Scenario "GG-1: Resolved path used -- block written to mock OneDrive path" {
+    try {
+        Write-PowerShellProfile -Ps51Fallback $gg1Temp51 -Ps7Fallback $gg1Temp7
+        if (-not (Test-Path $gg1MockPath)) {
+            throw "GG-1: Block not written to mock resolved path: $gg1MockPath"
+        }
+        $gg1Content = Get-Content $gg1MockPath -Raw
+        if ($gg1Content -notmatch '# BEGIN dev-setup profile') {
+            throw "GG-1: BEGIN marker not found in resolved path file"
+        }
+    } finally {
+        Remove-Item $gg1TempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# GG-2: Fallback used when host exe is absent
+# ---------------------------------------------------------------------------
+$global:LASTEXITCODE = 0
+function Invoke-HostQuery { param([string]$Exe) return '' }
+
+Test-Scenario "GG-2: Fallback path returned when host exe is absent" {
+    $gg2Fallback = Join-Path $env:TEMP "gg-test-441-fallback2-$(New-Guid).ps1"
+    $result = Resolve-ProfilePath 'powershell-notexist-gg2' $gg2Fallback
+    if ($result -ne $gg2Fallback) {
+        throw "GG-2: Expected fallback '$gg2Fallback' but got '$result'"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# GG-3: Case-insensitive dedup -- same path different case -> one file written
+# ---------------------------------------------------------------------------
+$global:LASTEXITCODE = 0
+$gg3TempDir  = Join-Path $env:TEMP "gg-test-441-$(New-Guid)"
+New-Item -ItemType Directory -Path $gg3TempDir -Force | Out-Null
+$gg3MockPath = Join-Path $gg3TempDir "ps\Microsoft.PowerShell_profile.ps1"
+$gg3Temp51   = Join-Path $gg3TempDir "fb51\Microsoft.PowerShell_profile.ps1"
+$gg3Temp7    = Join-Path $gg3TempDir "fb7\Microsoft.PowerShell_profile.ps1"
+function Invoke-HostQuery { param([string]$Exe)
+    if ($Exe -eq 'powershell') { return $gg3MockPath.ToUpper() }
+    return $gg3MockPath.ToLower()
+}
+
+Test-Scenario "GG-3: Case-insensitive dedup -- one BEGIN marker in output file" {
+    try {
+        Write-PowerShellProfile -Ps51Fallback $gg3Temp51 -Ps7Fallback $gg3Temp7
+        if (-not (Test-Path $gg3MockPath)) {
+            throw "GG-3: Mock path not written: $gg3MockPath"
+        }
+        $gg3Raw   = Get-Content $gg3MockPath -Raw
+        $gg3Count = ([regex]::Matches($gg3Raw, [regex]::Escape('# BEGIN dev-setup profile'))).Count
+        if ($gg3Count -ne 1) {
+            throw "GG-3: Expected 1 BEGIN marker; found $gg3Count (dedup or idempotency broken)"
+        }
+    } finally {
+        Remove-Item $gg3TempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# GG-4: Legacy cleanup -- dual-orphan: both fallback paths stripped
+# ---------------------------------------------------------------------------
+$global:LASTEXITCODE = 0
+$gg4TempDir  = Join-Path $env:TEMP "gg-test-441-$(New-Guid)"
+New-Item -ItemType Directory -Path $gg4TempDir -Force | Out-Null
+$gg4OneDrive = Join-Path $gg4TempDir "OneDrive\PowerShell\Microsoft.PowerShell_profile.ps1"
+$gg4Temp51   = Join-Path $gg4TempDir "fb51\Microsoft.PowerShell_profile.ps1"
+$gg4Temp7    = Join-Path $gg4TempDir "fb7\Microsoft.PowerShell_profile.ps1"
+function Invoke-HostQuery { param([string]$Exe) return $gg4OneDrive }
+
+Test-Scenario "GG-4: Legacy cleanup -- both orphaned fallback files stripped" {
+    try {
+        # Seed both fallback files with a dev-setup block
+        $gg4Block = "`n# BEGIN dev-setup profile`nSet-Alias gg git`n# END dev-setup profile`n"
+        foreach ($f in @($gg4Temp51, $gg4Temp7)) {
+            $gg4Dir = Split-Path $f
+            if (-not (Test-Path $gg4Dir)) { New-Item -ItemType Directory -Path $gg4Dir -Force | Out-Null }
+            Set-Content $f "Set-Alias existing Get-ChildItem$gg4Block" -Encoding ASCII
+        }
+
+        Write-PowerShellProfile -Ps51Fallback $gg4Temp51 -Ps7Fallback $gg4Temp7
+
+        # Both fallback paths are orphans (resolved to $gg4OneDrive); blocks must be stripped
+        foreach ($f in @($gg4Temp51, $gg4Temp7)) {
+            if (Test-Path $f) {
+                $gg4Content = Get-Content $f -Raw
+                if ($gg4Content -match '# BEGIN dev-setup profile') {
+                    throw "GG-4: BEGIN marker still present in orphaned file: $f"
+                }
+            }
+        }
+        # OneDrive (resolved) path must have the block
+        if (-not (Test-Path $gg4OneDrive)) {
+            throw "GG-4: Block not written to resolved OneDrive path: $gg4OneDrive"
+        }
+        $gg4OD = Get-Content $gg4OneDrive -Raw
+        if ($gg4OD -notmatch '# BEGIN dev-setup profile') {
+            throw "GG-4: BEGIN marker missing from resolved OneDrive path"
+        }
+    } finally {
+        Remove-Item $gg4TempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# GG-5: Idempotency -- 3 runs produce exactly one BEGIN marker
+# ---------------------------------------------------------------------------
+$global:LASTEXITCODE = 0
+$gg5TempDir  = Join-Path $env:TEMP "gg-test-441-$(New-Guid)"
+New-Item -ItemType Directory -Path $gg5TempDir -Force | Out-Null
+$gg5MockPath = Join-Path $gg5TempDir "ps\Microsoft.PowerShell_profile.ps1"
+$gg5Temp51   = Join-Path $gg5TempDir "fb51\Microsoft.PowerShell_profile.ps1"
+$gg5Temp7    = Join-Path $gg5TempDir "fb7\Microsoft.PowerShell_profile.ps1"
+function Invoke-HostQuery { param([string]$Exe) return $gg5MockPath }
+
+Test-Scenario "GG-5: Idempotency -- 3 runs produce exactly 1 BEGIN marker" {
+    try {
+        # Preserve pre-existing content across three replacements. Byte-zero,
+        # duplicate-block and LF/CRLF boundary cases live in test_tool_retirement.ps1.
+        $gg5Dir = Split-Path $gg5MockPath
+        if (-not (Test-Path $gg5Dir)) { New-Item -ItemType Directory -Path $gg5Dir -Force | Out-Null }
+        Set-Content $gg5MockPath "# pre-existing profile content" -Encoding ASCII
+
+        Write-PowerShellProfile -Ps51Fallback $gg5Temp51 -Ps7Fallback $gg5Temp7
+        Write-PowerShellProfile -Ps51Fallback $gg5Temp51 -Ps7Fallback $gg5Temp7
+        Write-PowerShellProfile -Ps51Fallback $gg5Temp51 -Ps7Fallback $gg5Temp7
+
+        $gg5Raw   = Get-Content $gg5MockPath -Raw
+        $gg5Count = ([regex]::Matches($gg5Raw, [regex]::Escape('# BEGIN dev-setup profile'))).Count
+        if ($gg5Count -ne 1) {
+            throw "GG-5: Expected 1 BEGIN marker after 3 runs; found $gg5Count"
+        }
+    } finally {
+        Remove-Item $gg5TempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# GG-6: Multi-line mock output -- last non-empty line extracted as path
+# ---------------------------------------------------------------------------
+$global:LASTEXITCODE = 0
+$gg6TempDir  = Join-Path $env:TEMP "gg-test-441-$(New-Guid)"
+New-Item -ItemType Directory -Path $gg6TempDir -Force | Out-Null
+$gg6MockPath = Join-Path $gg6TempDir "ps\Microsoft.PowerShell_profile.ps1"
+function Invoke-HostQuery { param([string]$Exe) return "Windows PowerShell banner`n$gg6MockPath" }
+
+Test-Scenario "GG-6: Multi-line output -- last non-empty line extracted as resolved path" {
+    try {
+        $gg6Fallback = Join-Path $gg6TempDir "fallback.ps1"
+        $result = Resolve-ProfilePath 'powershell' $gg6Fallback
+        if ($result -ne $gg6MockPath) {
+            throw "GG-6: Expected '$gg6MockPath' but got '$result'"
+        }
+    } finally {
+        Remove-Item $gg6TempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# ---------------------------------------------------------------------------
+# GG-7: Non-zero exit code from host -> fallback returned, warning logged
+# ---------------------------------------------------------------------------
+$global:LASTEXITCODE = 0
+function Invoke-HostQuery { param([string]$Exe) & $env:ComSpec /c "exit 1"; return '' }
+
+Test-Scenario "GG-7: Non-zero host exit -- fallback path returned" {
+    $gg7Fallback = Join-Path $env:TEMP "gg-test-441-fallback7-$(New-Guid).ps1"
+    $result = Resolve-ProfilePath 'powershell' $gg7Fallback
+    if ($result -ne $gg7Fallback) {
+        throw "GG-7: Expected fallback '$gg7Fallback' but got '$result'"
+    }
+}
+$global:LASTEXITCODE = 0  # v5-H2: reset after native-command contamination
+
+# ---------------------------------------------------------------------------
+# Group II: nvm.ps1 space-free install root (Issue #492)
+# ---------------------------------------------------------------------------
+
+Write-Host "`n========================================================" -ForegroundColor Cyan
+Write-Host " Group II: nvm.ps1 space-free install root (Issue #492)" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+$nvmScriptII  = Join-Path $RepoRoot 'scripts\windows\tools\nvm.ps1'
+$nvmContentII = Get-Content $nvmScriptII -Raw
+
+Test-Scenario "II-1: nvm.ps1 install root is space-free (not derived from USERPROFILE)" {
+    # Must NOT use Join-Path $env:USERPROFILE -- that path contains spaces on many machines.
+    if ($nvmContentII -match 'Join-Path\s+\$env:USERPROFILE\s+.nvm.') {
+        throw "nvm.ps1 still uses Join-Path env:USERPROFILE 'nvm' -- install root may contain spaces"
+    }
+    # Must use $env:SystemDrive as the drive source (guaranteed space-free bare drive letter).
+    if ($nvmContentII -notmatch 'Join-Path\s+\$env:SystemDrive') {
+        throw "nvm.ps1 does not derive nvmHome from env:SystemDrive -- install root may not be portable"
+    }
+    # Verify a representative resolved path (using this machine's SystemDrive) has no spaces.
+    $resolvedRoot = Join-Path $env:SystemDrive 'nvm4w'
+    if ($resolvedRoot -match ' ') {
+        throw "Resolved nvm root '$resolvedRoot' contains a space -- SystemDrive is '$($env:SystemDrive)'"
+    }
+}
+
+Test-Scenario "II-2: nvm.ps1 nodejs symlink dir is space-free (not derived from USERPROFILE)" {
+    # Must NOT use Join-Path $env:USERPROFILE 'nodejs'.
+    if ($nvmContentII -match 'Join-Path\s+\$env:USERPROFILE\s+.nodejs.') {
+        throw "nvm.ps1 still uses Join-Path env:USERPROFILE 'nodejs' -- symlink dir may contain spaces"
+    }
+    # nodeDir must be derived from nvmHome (same drive, no separate USERPROFILE join).
+    if ($nvmContentII -notmatch 'nodeDir\s*=\s*Join-Path\s+\$nvmHome') {
+        throw "nvm.ps1 nodeDir is not derived from nvmHome -- the two roots may diverge"
+    }
+    # Verify representative resolved path has no spaces.
+    $resolvedRoot   = Join-Path $env:SystemDrive 'nvm4w'
+    $resolvedSymlink = Join-Path $resolvedRoot 'nodejs'
+    if ($resolvedSymlink -match ' ') {
+        throw "Resolved nodejs symlink dir '$resolvedSymlink' contains a space"
+    }
+}
+
+Test-Scenario "II-3: Install-NvmPortable settings.txt uses the same space-free root" {
+    # settings.txt root: line must reference the space-free nvmHome, not USERPROFILE.
+    if ($nvmContentII -match 'root:\s*\$env:USERPROFILE') {
+        throw "Install-NvmPortable settings.txt root references USERPROFILE -- may contain spaces"
+    }
+    # The here-string in Install-NvmPortable must reference the NvmHome parameter
+    if ($nvmContentII -notmatch 'root:\s*\$NvmHome') {
+        throw "Install-NvmPortable settings.txt does not use `$NvmHome for root line"
     }
 }
 

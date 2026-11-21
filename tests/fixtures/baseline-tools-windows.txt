@@ -1,0 +1,10 @@
+winget-check
+git
+nvm
+gh
+auth
+vim
+copilot
+dotfiles
+profile
+git-hook

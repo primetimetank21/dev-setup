@@ -1,0 +1,8 @@
+prereqs
+zsh
+nvm
+gh
+auth
+copilot-cli
+dotfiles
+git-hook

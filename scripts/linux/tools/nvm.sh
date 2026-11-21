@@ -2,7 +2,6 @@
 # scripts/linux/tools/nvm.sh -- Install nvm (Node Version Manager) + pinned Node
 #
 # Called by: scripts/linux/setup.sh
-# Owner:     Goofy (#2) / Donald (#4)
 # Idempotent: yes -- checks if pinned Node version is already installed
 
 set -euo pipefail

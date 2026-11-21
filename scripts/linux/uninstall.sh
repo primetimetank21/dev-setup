@@ -4,7 +4,7 @@
 # Idempotent uninstaller for dev-setup.
 # - Restores dotfile .bak files created by config/dotfiles/install.sh
 # - Removes dev-setup managed blocks from ~/.zshrc and ~/.bashrc
-# - Does NOT remove installed tools (uv, nvm, gh, vim, copilot, etc.)
+# - Does NOT remove installed tools (nvm, gh, vim, copilot, etc.)
 #
 # Usage:
 #   ./scripts/linux/uninstall.sh
@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 . "${SCRIPT_DIR}/lib/log.sh"
 
-# ── Restore dotfile .bak files ───────────────────────────────────────────────
+# -- Restore dotfile .bak files -----------------------------------------------
 # Restores the newest timestamped backup (.bak.YYYYMMDD-HHMMSS).
 # That is the state just before the most recent install run.
 # To recover the original-original, use the oldest .bak.* file manually.
@@ -52,7 +52,7 @@ for dotfile in "${DOTFILES[@]}"; do
   restore_backup "$dotfile"
 done
 
-# ── Remove managed blocks from shell rc files ────────────────────────────────
+# -- Remove managed blocks from shell rc files --------------------------------
 remove_managed_block() {
   local file="$1"
   local begin_marker="# --- dev-setup managed block (do not edit) ---"
@@ -79,9 +79,9 @@ remove_managed_block() {
 remove_managed_block "$HOME/.zshrc"
 remove_managed_block "$HOME/.bashrc"
 
-# ── Unset core.hooksPath ─────────────────────────────────────────────────────
+# -- Unset core.hooksPath -----------------------------------------------------
 git config --unset-all core.hooksPath 2>/dev/null || true
 log_ok "core.hooksPath unset (git falls back to per-repo .git/hooks)"
 
-# ── Summary ──────────────────────────────────────────────────────────────────
-printf '\n'; log_ok "Uninstalled. Tools (uv, nvm, gh, etc.) remain. Remove them manually if you wish."; printf '\n'
+# -- Summary ------------------------------------------------------------------
+printf '\n'; log_ok "Uninstalled. Tools (nvm, gh, etc.) remain. Remove them manually if you wish."; printf '\n'

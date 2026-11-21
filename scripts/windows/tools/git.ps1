@@ -1,6 +1,5 @@
 # scripts/windows/tools/git.ps1 - Git for Windows installer
 #
-# Owner: Goofy (#2)
 # Installs Git for Windows (includes Git Bash - MinGW bash)
 
 Set-StrictMode -Version Latest

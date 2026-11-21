@@ -1,330 +1,102 @@
 # dev-setup
 
-> One-command developer environment setup for Linux, macOS, WSL, Windows, and GitHub Codespaces.
+Development setup for Debian/Ubuntu Linux, macOS, WSL, Windows and Dev Containers. Choose tools interactively or use repeatable selection flags.
 
-## What This Installs
-
-| Tool | Purpose |
-|------|---------|
-| `zsh` | Shell -- installed and set as default on Linux/macOS |
-| `uv` | Python package and environment manager (fast pip replacement) |
-| `nvm` + Node.js LTS | Node Version Manager + latest Node LTS |
-| `gh` | GitHub CLI |
-| GitHub Copilot CLI | AI pair programmer in your terminal (`gh copilot`) |
-| `vim` | Modal text editor -- installed on all platforms |
-| `tmux` | Terminal multiplexer (Linux/macOS) |
-| `psmux` | Terminal multiplexer (Windows) |
-| `squad-cli` | AI agent orchestration tool (installed via npm) |
-| Shell aliases | Shortcuts for common git and dev commands |
-
-## Supported Platforms
-
-| Platform | Status | Entry point |
-|----------|:------:|-------------|
-| Linux (native) | [x] | `bash setup.sh` |
-| macOS | [x] | `bash setup.sh` |
-| WSL (Windows Subsystem for Linux) | [x] | `bash setup.sh` |
-| Windows (native PowerShell) | [x] | `powershell -ExecutionPolicy Bypass -File setup.ps1` |
-| Dev Container / GitHub Codespace | [x] | Automatic (runs on container creation) |
+**Setup changes your machine.** It installs software and can change shell configuration, dotfiles and profiles. Review the selected steps and [configuration/backup behavior](docs/setup.md#configuration-and-backups) before using it on a personalized machine.
 
 ## Quick Start
 
-### Linux / macOS / WSL
+Clone into a location you intend to keep; some shell configuration links back to this checkout.
 
-```bash
+```sh
 git clone https://github.com/primetimetank21/dev-setup.git
 cd dev-setup
+```
+
+**Linux / macOS / WSL**
+
+```bash
 bash setup.sh
 ```
 
-> **GitHub Authentication:** During setup, `scripts/linux/tools/auth.sh` (Linux/macOS/WSL) or `scripts/windows/tools/auth.ps1` (Windows) checks whether you are already authenticated with the GitHub CLI. If not, it launches `gh auth login` interactively so you can complete authentication. In non-interactive environments (CI, GitHub Codespaces, piped stdin), the prompt is skipped automatically and a warning is printed -- run `gh auth login` manually after setup completes if you need to authenticate.
-
-### Windows (PowerShell)
+**Windows PowerShell 5.1 or newer**
 
 ```powershell
-git clone https://github.com/primetimetank21/dev-setup.git
-cd dev-setup
-powershell -ExecutionPolicy Bypass -File setup.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-### Dev Container / GitHub Codespace
+An eligible interactive terminal opens the tool picker. **CI/headless sessions install the defaults instead.** Dev Containers and Codespaces run setup on creation; see the [container guide](.devcontainer/README.md).
 
-No action needed. Setup runs automatically on container creation via the `postCreateCommand` hook.
+## What This Installs
 
-## Post-Setup Steps
+| Selection | Includes |
+|---|---|
+| Common defaults | NVM/Node.js, GitHub CLI, Copilot CLI, dotfiles and repository Git hooks |
+| Linux / macOS / WSL | Git, curl, Vim and Zsh; Linux also gets build tools |
+| Windows | Git, Vim and PowerShell profile shortcuts |
+| Opt-in tools | `delta`, `lazygit`, `pi`, `herdr` |
 
-After running setup, complete these steps to activate your tools:
+Pinned tool versions are defined in [`.tool-versions`](.tool-versions). Node targets the pinned version, not an implicit latest-LTS upgrade. Exact availability and order come from `--list` / `-List`.
 
-### Linux / macOS / WSL
+## Selective Install
 
-1. **Activate Node.js:**
-   ```bash
-   nvm install --lts
-   nvm use --lts
-   ```
+![Real Bash picker turning off auth, selecting delta and lazygit, then cancelling without installation](docs/media/tui-demo/tui-demo.gif)
 
-2. **Dotfiles:** Your shell config (`.zshrc`/`.bashrc`) and aliases are automatically installed during setup. Restart your terminal or run `source ~/.zshrc` (or `source ~/.bashrc` for bash) to load them.
+Recorded from tested Bash/WSL output; no installers ran. [Recording notes](docs/media/tui-demo/README.md).
 
-### Windows
+List tools without installing anything:
 
-1. **Activate Node.js:** Open a new terminal and run:
-   ```powershell
-   nvm install lts
-   nvm use lts
-   ```
-
-2. **Aliases:** PowerShell aliases are automatically added to your profile. Restart your terminal to load them.
-
-## Repo Structure
-
-```
-dev-setup/
-+-- setup.sh                  -- Entry point for Linux / macOS / WSL
-+-- setup.ps1                 -- Entry point for Windows (PowerShell)
-+-- ARCHITECTURE.md           -- Technical architecture and team ownership map
-+-- CHANGELOG.md              -- Release history (Keep a Changelog format)
-+-- CONTRIBUTING.md           -- Contribution guide
-+-- scripts/
-|   +-- lib/
-|   |   +-- read-tool-version.sh  -- POSIX sh: reads pinned version from .tool-versions
-|   |   +-- Read-ToolVersion.ps1  -- PowerShell: Get-ToolVersion function
-|   |   \-- ascii-sweep.py        -- Sweep .md files for non-ASCII; preserves fenced code blocks (#322A)
-|   +-- linux/
-|   |   +-- setup.sh          -- Core Linux/macOS installer (orchestrates tool scripts)
-|   |   \-- tools/            -- Individual tool install scripts
-|   |       +-- auth.sh       -- GitHub CLI authentication (interactive)
-|   |       +-- copilot-cli.sh
-|   |       +-- gh.sh
-|   |       +-- nvm.sh
-|   |       +-- squad-cli.sh  -- squad-cli (npm)
-|   |       +-- uv.sh
-|   |       \-- zsh.sh
-|   \-- windows/
-|       +-- setup.ps1         -- Orchestrator (dot-sources tools/ scripts)
-|       +-- uninstall.ps1     -- Idempotent reverse of the installer
-|       \-- tools/            -- Per-tool install scripts
-|           +-- auth.ps1      -- GitHub CLI authentication (interactive)
-|           +-- copilot.ps1, dotfiles.ps1, gh.ps1, git.ps1, nvm.ps1
-|           +-- profile.ps1, psmux.ps1, squad-cli.ps1
-|           +-- uv.ps1, vim.ps1
-|           \-- (11 files total)
-+-- config/
-|   \-- dotfiles/             -- Dotfile templates (.aliases, .gitconfig, .editorconfig, etc.)
-|       \-- install.sh        -- Dotfile installer
-+-- hooks/
-|   +-- commit-msg            -- Enforce Conventional Commits
-|   +-- pre-commit            -- 6-check hygiene gate (branch ancestry + ASCII on .ps1/.md/.sh + .squad/ allow-list + inbox guard + branch refusal + shellcheck); see Git Hooks below
-|   +-- prepare-commit-msg    -- Rewrite merge/revert messages to Conventional Commits form; see Git Hooks below
-|   \-- pre-push             -- Block pushes to main; advisory linting
-+-- tests/                    -- Validation tests (bash + PowerShell)
-|   +-- test_aliases.sh
-|   +-- test_git_hooks.ps1
-|   +-- test_idempotency.sh
-|   +-- test_remove_custom_item.ps1
-|   \-- test_windows_setup.ps1
-+-- .devcontainer/            -- Dev Container / Codespace configuration
-+-- .github/workflows/        -- CI validation and squad automation
-\-- .squad/                   -- Squad coordination (committed; not installed onto end-user machines)
-    +-- agents/                 -- per-agent charter.md + history.md (9 agents: Mickey, Donald, Goofy, Pluto, Chip, Jiminy, Doc, Scribe, Ralph)
-    +-- decisions.md            -- append-only decision log (<= 50KB gate)
-    +-- decisions-archive.md    -- historical decisions fold here when main >= 50KB
-    +-- skills/                 -- formalized agent skills and patterns (15+ skills)
-    +-- routing.md              -- work routing table + spawn-prompt hygiene rules
-    +-- retros/                 -- sprint retrospectives (committed; pre-commit allow-listed)
-    \-- ...                     -- see ARCHITECTURE.md for the full breakdown
+```bash
+bash setup.sh --list
 ```
 
-Root entry points (`setup.sh`, `setup.ps1`) are thin routers -- they detect the OS and delegate to the appropriate script under `scripts/`. They install nothing themselves.
+Install a small explicit selection:
+
+```bash
+bash setup.sh --only=prereqs,nvm,gh
+```
+
+PowerShell equivalents:
+
+```powershell
+.\setup.ps1 -List
+.\setup.ps1 -Only 'winget-check,git,nvm,gh'
+```
+
+Use the process-scoped PowerShell prefix from Quick Start if your session blocks scripts.
+
+- `--only` / `-Only` selects named tools; **dependencies are not added automatically**.
+- `--skip` / `-Skip` omits named defaults. It cannot be combined with `--only` / `-Only`.
+- `--non-interactive` / `-NonInteractive` suppresses the picker; **it is not a dry run**.
+- The picker can cancel without installing anything. Controls vary between Bash 3.2, newer Bash and PowerShell.
+
+[Full flag reference, picker controls and examples](docs/setup.md#tool-selection)
+
+## After Setup
+
+Open a fresh terminal to load new shell/profile configuration. Run `gh auth login` if authentication was skipped. Merely sourcing an updated file may leave old aliases in an already-running shell.
+
+[Post-setup checks and troubleshooting](docs/setup.md#after-setup)
 
 ## Shell Aliases
 
-After running setup, you get shortcuts for common git, dev, and utility commands. All aliases work on both Linux/macOS and Windows.
+Shared shortcuts cover Git, GitHub CLI, npm and common utilities. Platform-specific differences are intentional; see the [shell reference](config/dotfiles/README.md#shell-aliases-and-functions).
 
-### Alias Groups
+### Opt-in Native Completion Cycling
 
-**Git shortcuts:** `ga`, `gaa`, `gc`, `gcm`, `gcb`, `gco`, `gd`, `gds`, `gf`, `gfp`, `ggs`, `ggsls`, `ggsp`, `gl`, `glog`, `gp`, `gpf`, `gpl`, `grb`, `grbi`, `grs`, `grss`, `gs`
+Tab cycling is a separate Bash/Zsh opt-in; ordinary setup never enables it. macOS system Bash 3.2 supports forward Tab only. See [installation, disable and recovery instructions](config/dotfiles/README.md#opt-in-tab-completion-cycling-bash--zsh).
 
-**GitHub CLI:** `ghpr`, `ghprl`, `ghprv`, `ghis`, `ghiv`
+### Shutdown Helpers (Bash/Zsh)
 
-**Dev tools:** `uvr`, `uvs`, `ni`, `nr`, `nrd`, `nrt`, `py`, `c`
+Shutdown shortcuts affect the whole machine; under WSL they target the **Windows host**. Timed Windows shutdown can force applications closed and lose unsaved work. Read the [shutdown reference](docs/shutdown.md) before using them.
 
-**Utility:** `myip`, `pb`, `h`, `ep`
+## Documentation
 
-**tmux/psmux:** `ta` (attach), `tt` (new session), `tls` (list sessions), `tks` (kill server)
-
-**Navigation** (Linux/macOS only): `..`, `...`, `....`, `~`, `-`
-
-**ls shortcuts** (Linux/macOS only): `ll`, `la`, `l`, `lh`
-
-Full definitions:
-- **Linux/macOS:** `config/dotfiles/.aliases` (bash/zsh only -- see header for the non-POSIX features in use)
-- **Windows:** `scripts/windows/setup.ps1` (the `Write-PowerShellProfile` function)
-
-## Shell Functions
-
-Three helper functions are available after setup:
-
-### Linux / macOS / WSL
-
-**`create_tmux`** -- Create or attach to the `tank_dev` tmux session. If the session exists, attaches to it. If not, creates it first.
-
-```bash
-create_tmux
-```
-
-**`start_up`** -- Shortcut that calls `create_tmux`. Use this in your shell startup for auto-attach.
-
-```bash
-start_up
-```
-
-### Windows
-
-**`New-PsmuxSession`** -- Create or attach to the `tank_dev` psmux session (Windows equivalent of `create_tmux`).
-
-```powershell
-New-PsmuxSession
-```
-
-## Git Hooks (Auto-configured)
-
-Both `setup.sh` and `setup.ps1` automatically configure git to use this repo's hooks directory:
-
-```bash
-git config core.hooksPath hooks
-```
-
-No manual copying needed. After running setup, four hooks are active:
-
-### `pre-commit`
-
-Six ordered hygiene checks (fastest-first); the commit is blocked if any check fails:
-
-1. **Branch ancestry** -- `squad/*` (and per-agent `mickey/*`, `goofy/*`, etc.) branches must descend from `develop`. Catches accidental forks-of-forks.
-2. **ASCII-only content** on staged `.ps1`, `.md`, and `.sh` files. PS 5.1 on Windows uses CP1252, so non-ASCII bytes (em dashes, smart quotes, curly apostrophes) break string literals; Markdown and shell sources should also stay ASCII-clean for portable `grep`/`sed`/`diff`. If a `.md` file trips this check, run `python scripts/lib/ascii-sweep.py --dry-run` to preview fixes, then drop `--dry-run` to apply (see below). The sweep preserves fenced code blocks verbatim, so any non-ASCII inside ``` ... ``` must be cleaned by hand. Scope extended from `.ps1` only to `.ps1 + .md + .sh` in Sprint 13 (#322B / PR #334).
-3. **Rogue path check** under `.squad/` -- only paths in the hook's allow-list (e.g. `.squad/agents/*/charter.md`, `.squad/decisions/*.md`, `.squad/retros/*.md`) may be staged.
-4. **Staged inbox guard** -- rejects anything staged under `.squad/decisions/inbox/` (that directory is gitignored; staged content there indicates a `git add -f` accident).
-5. **Refuse direct commits on `develop` / `main` / `master`** -- create a feature branch first.
-6. **Shellcheck** on staged `.sh` files. Silently skipped if `shellcheck` is not installed.
-
-### `commit-msg`
-
-Enforces **Conventional Commits** format:
-
-```
-type(scope): description
-```
-
-Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. Hard reject on non-conforming messages.
-
-### `prepare-commit-msg`
-
-Rewrites git's auto-generated merge/revert commit messages into Conventional Commits form so `commit-msg` can validate them (e.g. `Merge pull request #N from USER/BRANCH` -> `merge(pr): #N from USER/BRANCH`, `Revert "SUBJECT"` -> `revert: SUBJECT`). Non-matching messages are left unchanged.
-
-### `pre-push`
-
-1. **Blocks** direct pushes to `main` (hard stop).
-2. **Runs shellcheck** on changed `.sh` files -- advisory, never blocks (Linux/macOS).
-3. **Runs PSScriptAnalyzer** on changed `.ps1` files -- advisory, never blocks (requires `pwsh` + PSScriptAnalyzer module; silently skipped if absent).
-
-Use `--no-verify` to bypass hooks in emergencies.
-
-### ASCII sweep helper (`scripts/lib/ascii-sweep.py`)
-
-Auto-replaces common non-ASCII characters in repo source files -- em/en dashes, smart quotes, ellipsis, arrows, box-drawing glyphs, status emoji -- with ASCII equivalents. The usual trigger is `pre-commit` Check 2 rejecting a commit because a Markdown file picked up Unicode punctuation from a paste.
-
-```bash
-python scripts/lib/ascii-sweep.py --dry-run   # preview replacements
-python scripts/lib/ascii-sweep.py             # apply in-place
-```
-
-**When NOT to use it:** the sweep deliberately preserves fenced code blocks (``` ... ```) verbatim, so it will not touch non-ASCII inside code fences. The `pre-commit` ASCII check does NOT respect fence boundaries -- if your non-ASCII bytes are inside a code fence (e.g. a file-tree drawn with box-drawing glyphs), the sweep will report them as "remaining" and you must hand-convert. Added in Sprint 13 (#322A / PR #335).
-
----
-
-## Customization
-
-### Version Pinning
-
-Tool versions are pinned in `.tool-versions` at the repo root (asdf/mise format). This file is the single source of truth for every tool version installed by setup, including `nvm-windows`. Setup scripts read it directly via `scripts/lib/read-tool-version.sh` (POSIX) and `scripts/lib/Read-ToolVersion.ps1` (`Get-ToolVersion`) -- no asdf or mise dependency needed.
-
-```
-nodejs 22.11.0
-nvm 0.39.7
-nvm-windows 1.2.2
-uv 0.4.18
-copilot-cli 1.0.48
-squad-cli 0.9.4
-gh 2.92.0
-```
-
-To bump a tool version, edit the version number in `.tool-versions` and re-run setup. Each line is `toolname version`, one per line. Blank lines and lines starting with `#` are ignored.
-
-**Dotfiles:** Edit or add templates in `config/dotfiles/`. Each file is copied into your home directory on first run. Existing files are not overwritten unless you pass `--force`.
-
-**Adding a tool:** Drop a new script in `scripts/linux/tools/` (or `scripts/windows/`) following the naming pattern of existing tools, then call it from `scripts/linux/setup.sh` (or the Windows equivalent). Scripts must be idempotent -- check whether the tool is already installed before doing anything.
-
-## CI Workflows
-
-### Sprint-End Label Automation
-
-When a sprint wraps, every issue and PR carrying its `sprint:N` label needs the same end-state transition:
-
-- remove `release:backlog` (if present)
-- add `release:shipped-X.Y.Z` (if missing)
-
-Type, area, squad, and priority labels are never touched.
-
-This is done by `scripts/sprint-end-labels.sh` and the matching workflow `.github/workflows/sprint-end-labels.yml`.
-
-**Manual / local run (dry-run by default for safety):**
-
-```bash
-scripts/sprint-end-labels.sh \
-  --sprint sprint:17 \
-  --release-label release:shipped-1.17.0 \
-  --dry-run
-```
-
-Remove `--dry-run` to apply changes.
-
-**Workflow trigger:** Actions tab -> "Sprint End Labels" -> Run workflow. Inputs: `sprint_label`, `release_label`, `dry_run` (defaults to `true`).
-
-**Verification (HARD REQUIREMENT):** After every label op, the script re-queries the issue and asserts the desired state. On mismatch it retries the read (not the write) with exponential backoff -- 1s, 2s, 4s -- then fails loudly. The CLI's exit code alone is treated as necessary-but-not-sufficient. See `.squad/skills/gh-label-verify-retry/SKILL.md` for the pattern.
-
-**Idempotent:** Safe to run twice. A second run finds no work to do.
-
-**Tested by:** `tests/test_sprint_end_labels.ps1` -- six scenarios including a function-override harness that exercises both the retry-and-succeed and fail-loudly-after-3 paths without hitting the GitHub API.
-
-## Contributing
-
-This repo is maintained by the **dev-setup squad** -- a team of nine specialized AI agents, each owning a slice of the codebase:
-
-**Engineering:** Mickey (Lead/Architecture), Donald (Bash/Linux/macOS), Goofy (PowerShell/Windows), Pluto (Dotfiles/Config), Chip (Tests/CI)
-
-**Process & Hygiene:** Jiminy (Squad Ops Auditor), Doc (Fact-Checker), Scribe (Session Logger), Ralph (Work Queue Monitor)
-
-Human contributors are welcome too.
-
-### Squad Resources
-
-- [ARCHITECTURE.md](./ARCHITECTURE.md) -- full technical overview, OS detection logic, script conventions, Windows dependency order, team ownership map, and a guide for adding a new tool.
-- [CONTRIBUTING.md](./CONTRIBUTING.md) -- contributor workflow: branch naming (`squad/{issue}-{slug}` from `develop`), PR checklist, Conventional Commits, test harness pattern, sprint naming convention.
-- [CHANGELOG.md](./CHANGELOG.md) -- release history in Keep a Changelog format. Sprints use numeric naming (Sprint 1 through Sprint 16); historical letter-named sprints (Q, R, S, T) appear as `Sprint N (formerly Sprint X)` aliases for grep continuity.
-- `.squad/routing.md` -- work routing table (who handles what by task type; spawn-prompt hygiene rules).
-- `.squad/skills/` -- formalized agent skills and decision patterns (15+ skills covering architecture, testing, Unix/Windows patterns, and squad operations).
-- `.squad/decisions.md` / `.squad/decisions-archive.md` -- team decision log (decisions.md keeps entries under 50KB gate; older entries fold to archive).
-- `.squad/agents/` -- per-agent charter (role, scope, trigger rules), history.md (session logs, keeps entries under 15KB gate), and team timeout policy.
-- `.squad/retros/` -- sprint retrospectives (v0.9.4+ format).
-
-### Squad Conventions
-
-All commits follow **Conventional Commits** format: `type(scope): description`. Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`. The `commit-msg` hook enforces this; `prepare-commit-msg` rewrite auto-converts merge/revert messages to Conventional Commits form.
-
-PRs to `develop` use **squash merges** (feature PRs, sprint work). Release cuts from `develop` to `main` use **regular (non-squash) merges** for clean release lineage.
-
-All squad files (charters, histories, decisions, retros) are ASCII-only. Use `python scripts/lib/ascii-sweep.py` to auto-convert em dashes, smart quotes, and other Unicode punctuation to ASCII equivalents.
-
----
-
-For deeper technical detail -- OS detection logic, script conventions, decision records -- see [ARCHITECTURE.md](./ARCHITECTURE.md).
+| For | Start here |
+|---|---|
+| Installing, selecting tools, backups and removal | [Setup guide](docs/setup.md) |
+| Dotfiles, aliases and completion | [Shell configuration](config/dotfiles/README.md) |
+| Contributors | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Coding agents | [AGENTS.md](AGENTS.md) |
+| Implementation details | [Architecture](ARCHITECTURE.md) |
+| Release history | [Changelog](CHANGELOG.md) |

@@ -19,7 +19,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 READER="${REPO_ROOT}/scripts/lib/read-tool-version.sh"
 
 # Test 1: nodejs returns expected value
-expected="22.11.0"
+expected="22.23.2"
 got="$(sh "$READER" nodejs)"
 if [ "$got" = "$expected" ]; then
     pass "nodejs version is $expected"
@@ -36,16 +36,34 @@ else
     fail "nvm version: expected '$expected', got '$got'"
 fi
 
-# Test 3: uv returns expected value
-expected="0.4.18"
-got="$(sh "$READER" uv)"
+# Test 3: gh returns expected value
+expected="2.92.0"
+got="$(sh "$READER" gh)"
 if [ "$got" = "$expected" ]; then
-    pass "uv version is $expected"
+    pass "gh version is $expected"
 else
-    fail "uv version: expected '$expected', got '$got'"
+    fail "gh version: expected '$expected', got '$got'"
 fi
 
-# Test 4: unknown tool exits non-zero
+# Test 4: pi returns expected value
+expected="0.86.1"
+got="$(sh "$READER" pi)"
+if [ "$got" = "$expected" ]; then
+    pass "pi version is $expected"
+else
+    fail "pi version: expected '$expected', got '$got'"
+fi
+
+# Test 5: herdr returns expected value
+expected="0.9.1"
+got="$(sh "$READER" herdr)"
+if [ "$got" = "$expected" ]; then
+    pass "herdr version is $expected"
+else
+    fail "herdr version: expected '$expected', got '$got'"
+fi
+
+# Test 6: unknown tool exits non-zero
 if sh "$READER" nonexistent-tool >/dev/null 2>&1; then
     fail "nonexistent tool should exit non-zero"
 else

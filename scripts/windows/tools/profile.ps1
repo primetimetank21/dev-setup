@@ -1,6 +1,5 @@
 # scripts/windows/tools/profile.ps1 - PowerShell profile writer
 #
-# Owner: Goofy (#2)
 # Writes dev-setup shortcuts to PowerShell profile (both PS 5.1 and PS 7+)
 
 Set-StrictMode -Version Latest
@@ -8,15 +7,89 @@ $ErrorActionPreference = 'Stop'
 
 . "$PSScriptRoot\..\lib\logging.ps1"
 
-function Write-PowerShellProfile {
-    $beginMarker = '# BEGIN dev-setup profile'
-    $endMarker   = '# END dev-setup profile'
+function Invoke-HostQuery {
+    param([string]$Exe)
+    & $Exe -NoProfile -NonInteractive -NoLogo -Command '$PROFILE' 2>$null
+}
 
-    # Write to BOTH PS 5.1 and PS 7+ profile paths explicitly
-    $profilePaths = @(
-        [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),  # PS 5.1
-        [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')          # PS 7+
+function Resolve-ProfilePath {
+    param([string]$HostExe, [string]$FallbackPath)
+
+    if (-not (Get-Command $HostExe -ErrorAction SilentlyContinue)) {
+        Write-Host "[INFO]  $HostExe not found - fallback: $FallbackPath"
+        return $FallbackPath
+    }
+    try {
+        $raw = Invoke-HostQuery -Exe $HostExe
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[WARN]  $HostExe exited $LASTEXITCODE - fallback: $FallbackPath"
+            return $FallbackPath
+        }
+        $resolved = ($raw.Trim() -split '\r?\n' | Where-Object { $_ } | Select-Object -Last 1).Trim()
+        if ([string]::IsNullOrEmpty($resolved)) { return $FallbackPath }
+        if ($resolved -notmatch '^[A-Za-z]:\\') { return $FallbackPath }
+        Write-Host "[INFO]  Resolved $HostExe profile: $resolved"
+        return $resolved
+    } catch {
+        Write-Host "[WARN]  Query failed for $HostExe - fallback: $FallbackPath"
+        return $FallbackPath
+    }
+}
+
+function Write-PowerShellProfile {
+    param(
+        # v5.2-D1: optional params allow test override; defaults mirror production paths
+        [string]$Ps51Fallback = [System.IO.Path]::Combine($HOME, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),
+        [string]$Ps7Fallback  = [System.IO.Path]::Combine($HOME, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
     )
+    # ALL path-resolution and write logic lives inside this function.
+    # Dot-sourcing profile.ps1 defines functions only; it does NOT execute
+    # resolution or writes. Tests define mock Invoke-HostQuery AFTER
+    # dot-sourcing and BEFORE calling Write-PowerShellProfile.
+    $local:beginMarker = '# BEGIN dev-setup profile'  # v5.1-F5
+    $local:endMarker   = '# END dev-setup profile'    # v5.1-F5
+
+    # Strip only canonical whole-line blocks, including byte-zero and adjacent
+    # blocks left by older installs. Keep a line break when user text surrounds
+    # a block, but remove the owned separator at EOF for stable repeat writes.
+    $stripManagedBlocks = {
+        param([string]$Content)
+        $pattern = "(?ms)(?:^|\r?\n)$([regex]::Escape($beginMarker))\r?\n.*?^$([regex]::Escape($endMarker))(?:\r?\n|\z)"
+        $blocks = [regex]::Matches($Content, $pattern)
+        # Work backwards: original offsets stay valid, and separator decisions
+        # see the updated suffix instead of newlines another removal consumes.
+        for ($i = $blocks.Count - 1; $i -ge 0; $i--) {
+            $block = $blocks[$i]
+            $after = $block.Index + $block.Length
+            $separator = ''
+            if ($block.Index -gt 0 -and $after -lt $Content.Length -and
+                $Content[$block.Index - 1] -ne "`n" -and
+                $Content[$after] -ne "`r" -and $Content[$after] -ne "`n") {
+                $separator = if ($block.Value.StartsWith("`r`n")) { "`r`n" } else { "`n" }
+            }
+            $Content = $Content.Remove($block.Index, $block.Length).Insert($block.Index, $separator)
+        }
+        $Content
+    }
+
+    # Resolve actual profile paths by querying each host; deduplicate case-insensitively
+    $profilePaths = @(
+        (Resolve-ProfilePath 'powershell' $Ps51Fallback),
+        (Resolve-ProfilePath 'pwsh' $Ps7Fallback)
+    ) | Sort-Object { $_.ToLower() } -Unique
+
+    # Legacy cleanup: strip orphaned blocks at fallback paths not in the resolved set
+    $legacyPaths = @($Ps51Fallback, $Ps7Fallback)
+    foreach ($legacy in $legacyPaths) {
+        $isOrphan = @($profilePaths | Where-Object { $_.ToLower() -eq $legacy.ToLower() }).Count -eq 0
+        if ($isOrphan -and (Test-Path $legacy) -and
+            (Select-String -Path $legacy -Pattern $beginMarker -Quiet)) {
+            $legacyContent = Get-Content $legacy -Raw
+            $stripped = & $stripManagedBlocks $legacyContent
+            Set-Content $legacy $stripped.TrimEnd() -NoNewline -Encoding ASCII  # v5-H1
+            Write-Info "Stripped orphaned block from legacy path: $legacy"
+        }
+    }
 
     foreach ($profilePath in $profilePaths) {
         # If the managed block already exists, strip it out so we can re-inject fresh
@@ -24,7 +97,7 @@ function Write-PowerShellProfile {
             Write-Info "Updating PowerShell profile shortcuts in $profilePath..."
             $raw = Get-Content $profilePath -Raw
             # Strip the managed block (handles both LF and CRLF)
-            $raw = $raw -replace "(?s)\r?\n$([regex]::Escape($beginMarker)).*?$([regex]::Escape($endMarker))\r?\n?", ''
+            $raw = & $stripManagedBlocks $raw
             Set-Content $profilePath $raw -NoNewline -Encoding ASCII
         }
     }
@@ -153,12 +226,6 @@ Set-Alias -Name ghiv -Value Get-GhIssueView -Force -Scope Global
 
 # -- Dev shortcuts --------------------------------------------------------------
 
-function Invoke-UvRun { uv run $args }                      # run with uv
-Set-Alias -Name uvr -Value Invoke-UvRun -Force -Scope Global
-
-function Invoke-UvSync { uv sync $args }                    # sync uv environment
-Set-Alias -Name uvs -Value Invoke-UvSync -Force -Scope Global
-
 function Invoke-NpmInstall { npm install $args }            # npm install
 Remove-Item -Force Alias:\ni -ErrorAction SilentlyContinue
 Set-Alias -Name ni -Value Invoke-NpmInstall -Force -Scope Global
@@ -192,30 +259,6 @@ function Edit-Profile { notepad $PROFILE }  # open PS profile in editor
 Remove-Item -Force Alias:\ep -ErrorAction SilentlyContinue
 Set-Alias -Name ep -Value Edit-Profile -Force -Scope Global
 
-# -- psmux (tmux for Windows) -----------------------------------------------
-
-function Invoke-PsmuxList { psmux ls $args }                    # list active psmux sessions
-Set-Alias -Name tls -Value Invoke-PsmuxList -Force -Scope Global
-
-function Invoke-PsmuxKillServer { psmux kill-server $args }     # kill all psmux sessions
-Set-Alias -Name tks -Value Invoke-PsmuxKillServer -Force -Scope Global
-
-function Invoke-PsmuxNewSession { psmux new-session -s tank_dev $args }  # create new named psmux session
-Set-Alias -Name tt -Value Invoke-PsmuxNewSession -Force -Scope Global
-
-function Invoke-PsmuxAttach { psmux attach $args }              # attach to most recent psmux session
-Set-Alias -Name ta -Value Invoke-PsmuxAttach -Force -Scope Global
-
-# Create or attach to the tank_dev psmux session (Windows equivalent of create_tmux)
-function New-PsmuxSession {
-    $session = 'tank_dev'
-    $exists = psmux ls 2>$null | Select-String -Pattern $session -Quiet
-    if (-not $exists) {
-        psmux new-session -d -s $session
-    }
-    psmux attach -t $session
-}
-
 # -- Shutdown -------------------------------------------------------------------
 
 function Invoke-ShutdownNow {
@@ -247,9 +290,13 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
 # END dev-setup profile
 '@
 
-    # Diagnostics: log both profile paths being targeted (PS 5.1 vs PS 7+)
-    Write-Info "PS 5.1 profile path: $($profilePaths[0])"
-    Write-Info "PS 7+  profile path: $($profilePaths[1])"
+    # Diagnostics: log resolved profile paths (may be deduplicated to one entry)
+    Write-Info "PS 5.1 profile path (resolved): $($profilePaths[0])"
+    if (@($profilePaths).Count -gt 1) {
+        Write-Info "PS 7+  profile path (resolved): $($profilePaths[1])"
+    } else {
+        Write-Info "PS 7+  profile path (resolved): (same as PS 5.1 after dedup)"
+    }
 
     # Diagnostics: log execution policy before writing - helps diagnose load failures on PS 5.1
     $execPolicy = Get-ExecutionPolicy -Scope CurrentUser
@@ -288,9 +335,9 @@ Set-Alias -Name cancel_tsdn -Value Invoke-CancelTimedShutdown -Force -Scope Glob
         Write-Info "Writing profile content to: $profilePath"
 
         # Append to profile (create if absent).
-        # Always prepend a blank line so we don't concatenate onto any existing last line.
+        # Separate nonempty user content, but keep empty/fresh targets byte-stable.
         try {
-            if (Test-Path $profilePath) {
+            if ((Test-Path $profilePath) -and (Get-Item $profilePath).Length -gt 0) {
                 Add-Content -Path $profilePath -Value "" -Encoding ASCII
             }
             Add-Content -Path $profilePath -Value $profileContent -Encoding ASCII

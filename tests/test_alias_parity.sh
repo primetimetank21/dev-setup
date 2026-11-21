@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/test_alias_parity.sh — Alias parity check between Linux and Windows
+# tests/test_alias_parity.sh -- Alias parity check between Linux and Windows
 #
 # Extracts alias/function names from:
 #   - config/dotfiles/.aliases          (Linux: alias X=..., function X() {...})
@@ -13,12 +13,12 @@
 #   bash tests/test_alias_parity.sh
 #
 # Exit codes:
-#   0 — all aliases in parity (or drift is documented)
-#   1 — undocumented alias drift detected
+#   0 -- all aliases in parity (or drift is documented)
+#   1 -- undocumented alias drift detected
 
 set -uo pipefail
 
-# ── Path setup ────────────────────────────────────────────────────────────────
+# -- Path setup ----------------------------------------------------------------
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LINUX_ALIASES="$REPO_ROOT/config/dotfiles/.aliases"
@@ -34,74 +34,105 @@ if [[ ! -f "$WINDOWS_PROFILE" ]]; then
     exit 1
 fi
 
-# ── Allowed drift ─────────────────────────────────────────────────────────────
+# -- Allowed drift -------------------------------------------------------------
 # Aliases that intentionally exist on one platform but not the other.
 # Format: "alias_name:platform" where platform is "linux" or "windows"
 # meaning the alias exists ONLY on that platform.
 
 ALLOWED_ALIAS_DRIFT=(
-    "gb:windows"          # git branch shortcut — Windows only (no Linux equivalent yet)
-    "..:linux"            # cd .. — navigation shortcut, not applicable on Windows
-    "...:linux"           # cd ../.. — navigation shortcut
-    "....:linux"          # cd ../../.. — navigation shortcut
-    "~:linux"             # cd ~ — navigation shortcut
-    "-:linux"             # cd - — navigation shortcut
-    "ls:linux"            # ls --color=auto — ls is not aliased on Windows
-    "ll:linux"            # ls -alF — ls variant
-    "la:linux"            # ls -A — ls variant
-    "l:linux"             # ls -CF — ls variant
-    "lh:linux"            # ls -alFh — ls variant
-    "path:linux"          # echo PATH — Linux-specific
-    "reload:linux"        # source ~/.zshrc — Linux-specific
-    "ports:linux"         # ss -tulnp — Linux-specific
-    "vb:linux"            # vim ~/.bashrc — Linux-specific
-    "sb:linux"            # source ~/.bashrc — Linux-specific
-    "vz:linux"            # vim ~/.zshrc — Linux-specific
-    "sz:linux"            # source ~/.zshrc — Linux-specific
-    "vv:linux"            # vim ~/.vimrc — Linux-specific
-    "va:linux"            # vim ~/.aliases — Linux-specific
-    "pip:linux"           # pip3 — handled differently on Windows
-    "dk:linux"            # docker — not aliased on Windows
-    "dkc:linux"           # docker-compose — not aliased on Windows
-    "dkps:linux"          # docker ps — not aliased on Windows
-    "dkpsa:linux"         # docker ps -a — not aliased on Windows
-    "rm:windows"          # Remove-CustomItem — Windows-specific override
-    "touch:windows"       # Set-FileTimestamp — Windows-specific override
-    "start_up:linux"      # shell startup function — Linux-specific
-    "create_tmux:linux"   # tmux session create — Linux uses tmux directly
-    "New-PsmuxSession:windows"  # Windows equivalent of create_tmux
+    "..:linux"            # cd .. -- navigation shortcut, not applicable on Windows
+    "...:linux"           # cd ../.. -- navigation shortcut
+    "....:linux"          # cd ../../.. -- navigation shortcut
+    "~:linux"             # cd ~ -- navigation shortcut
+    "-:linux"             # cd - -- navigation shortcut
+    "ls:linux"            # ls --color=auto -- ls is not aliased on Windows
+    "ll:linux"            # ls -alF -- ls variant
+    "la:linux"            # ls -A -- ls variant
+    "l:linux"             # ls -CF -- ls variant
+    "lh:linux"            # ls -alFh -- ls variant
+    "path:linux"          # echo PATH -- Linux-specific
+    "reload:linux"        # source ~/.zshrc -- Linux-specific
+    "ports:linux"         # ss -tulnp -- Linux-specific
+    "vb:linux"            # vim ~/.bashrc -- Linux-specific
+    "sb:linux"            # source ~/.bashrc -- Linux-specific
+    "vz:linux"            # vim ~/.zshrc -- Linux-specific
+    "sz:linux"            # source ~/.zshrc -- Linux-specific
+    "vv:linux"            # vim ~/.vimrc -- Linux-specific
+    "va:linux"            # vim ~/.aliases -- Linux-specific
+    "pip:linux"           # pip3 -- handled differently on Windows
+    "dk:linux"            # docker -- not aliased on Windows
+    "dkc:linux"           # docker-compose -- not aliased on Windows
+    "dkps:linux"          # docker ps -- not aliased on Windows
+    "dkpsa:linux"         # docker ps -a -- not aliased on Windows
+    "rm:windows"          # Remove-CustomItem -- Windows-specific override
+    "touch:windows"       # Set-FileTimestamp -- Windows-specific override
+    "_dev_setup_shutdown_platform:linux" # Private Bash/Zsh WSL/native shutdown selector
+    # v5.2 profile-path resolution helpers (issue #441/#442) -- Windows-only PS
+    # internal functions; they query $PROFILE on PS hosts and have no Linux equiv.
+    "Invoke-HostQuery:windows"      # Windows-only PS helper: resolves PS host type
+    "Resolve-ProfilePath:windows"   # Windows-only PS helper: resolves $PROFILE path
 )
 
-# ── Extract Linux aliases ─────────────────────────────────────────────────────
+# -- Extract Linux aliases -----------------------------------------------------
 
 extract_linux_aliases() {
     local file="$1"
     # Extract alias names: lines matching "alias NAME=..."
-    grep -E '^\s*alias\s+' "$file" \
-        | sed -E "s/^\s*alias\s+([^=]+)=.*/\1/" \
-        | sed 's/^-- //'
+    grep -E '^[[:space:]]*alias[[:space:]]+' "$file" \
+        | sed -E "s/^[[:space:]]*alias[[:space:]]+([^=]+)=.*/\1/" \
+        | sed -E 's/^--[[:space:]]+//'
 
     # Extract function names: lines matching "funcname() {"
-    grep -E '^\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\(\)\s*\{' "$file" \
-        | sed -E 's/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\).*/\1/'
+    grep -E '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(\)[[:space:]]*\{' "$file" \
+        | sed -E 's/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*\(\).*/\1/'
 }
 
-# ── Extract Windows aliases ───────────────────────────────────────────────────
+# -- Extract Windows aliases ---------------------------------------------------
 
 extract_windows_aliases() {
     local file="$1"
     # Extract Set-Alias -Name X names
-    grep -iE '^\s*Set-Alias\s+-Name\s+' "$file" \
-        | sed -E 's/.*-Name\s+([^ ]+).*/\1/'
+    grep -iE '^[[:space:]]*Set-Alias[[:space:]]+-Name[[:space:]]+' "$file" \
+        | sed -E 's/.*-Name[[:space:]]+([^[:space:]]+).*/\1/'
 
     # Extract function names (exclude helper/internal functions)
     # Internal functions: Write-Info, Write-Ok, Write-Warn, Write-Err, Write-PowerShellProfile
-    grep -E '^\s*function\s+[A-Za-z]' "$file" \
-        | sed -E 's/^\s*function\s+([A-Za-z_][A-Za-z0-9_-]*).*/\1/' \
-        | grep -vE '^(Write-Info|Write-Ok|Write-Warn|Write-Err|Write-PowerShellProfile|Remove-CustomItem|Set-FileTimestamp|Get-GitStatus|Invoke-GitCommit|Get-GitBranch|Add-GitFiles|Get-GitLogPretty|Get-GitLog|Invoke-GitFetch|Invoke-GitFetchPrune|Invoke-GitStash|Get-GitStashList|Add-GitAllFiles|Invoke-GitCommitMessage|New-GitBranch|Invoke-GitCheckout|Get-GitDiff|Get-GitDiffStaged|Invoke-GitStashPop|Invoke-GitPush|Invoke-GitPushForce|Invoke-GitPull|Invoke-GitRebase|Invoke-GitRebaseInteractive|Invoke-GitRestore|Invoke-GitRestoreStaged|New-GhPR|Get-GhPRList|Get-GhPRView|Get-GhIssueList|Get-GhIssueView|Invoke-UvRun|Invoke-UvSync|Invoke-NpmInstall|Invoke-NpmRun|Invoke-NpmRunDev|Invoke-NpmRunTest|Invoke-Python|Get-MyIp|Invoke-PingBing|Edit-Profile|Invoke-PsmuxList|Invoke-PsmuxKillServer|Invoke-PsmuxNewSession|Invoke-PsmuxAttach|Invoke-ShutdownNow|Invoke-TimedShutdown|Invoke-CancelTimedShutdown)$'
+    grep -E '^[[:space:]]*function[[:space:]]+[A-Za-z]' "$file" \
+        | sed -E 's/^[[:space:]]*function[[:space:]]+([A-Za-z_][A-Za-z0-9_-]*).*/\1/' \
+        | grep -vE '^(Write-Info|Write-Ok|Write-Warn|Write-Err|Write-PowerShellProfile|Remove-CustomItem|Set-FileTimestamp|Get-GitStatus|Invoke-GitCommit|Get-GitBranch|Add-GitFiles|Get-GitLogPretty|Get-GitLog|Invoke-GitFetch|Invoke-GitFetchPrune|Invoke-GitStash|Get-GitStashList|Add-GitAllFiles|Invoke-GitCommitMessage|New-GitBranch|Invoke-GitCheckout|Get-GitDiff|Get-GitDiffStaged|Invoke-GitStashPop|Invoke-GitPush|Invoke-GitPushForce|Invoke-GitPull|Invoke-GitRebase|Invoke-GitRebaseInteractive|Invoke-GitRestore|Invoke-GitRestoreStaged|New-GhPR|Get-GhPRList|Get-GhPRView|Get-GhIssueList|Get-GhIssueView|Invoke-NpmInstall|Invoke-NpmRun|Invoke-NpmRunDev|Invoke-NpmRunTest|Invoke-Python|Get-MyIp|Invoke-PingBing|Edit-Profile|Invoke-ShutdownNow|Invoke-TimedShutdown|Invoke-CancelTimedShutdown)$'
 }
 
-# ── Compare ───────────────────────────────────────────────────────────────────
+# -- Extractor whitespace regressions ------------------------------------------
+# Data only: these declarations are never sourced or executed. Temporary files
+# allow both grep passes to read the same input, including leading/mixed tabs.
+FIXTURE="$(mktemp -d "${TMPDIR:-/tmp}/alias-parity.XXXXXX")" || exit 1
+trap 'rm -rf -- "$FIXTURE"' EXIT
+printf '%s\n' \
+    "alias plain='ignored'" \
+    $'\talias\tindented=ignored' \
+    $'  alias --\t-=ignored' \
+    $'\tfixture_fn () { :; }' > "$FIXTURE/linux"
+printf '%s\n' \
+    'Set-Alias -Name plain -Value Ignored' \
+    $'\tSet-Alias\t-Name\tindented\t-Value Ignored' \
+    $'  function\tFixture-Helper {}' > "$FIXTURE/windows"
+EXTRACTION_FAILURES=0
+if linux_probe="$(extract_linux_aliases "$FIXTURE/linux")" && \
+    [[ "$linux_probe" == $'plain\nindented\n-\nfixture_fn' ]]; then
+    echo '[PASS] Linux extraction handles spaces and tabs.'
+else
+    echo '[FAIL] Linux whitespace extraction.'
+    EXTRACTION_FAILURES=$((EXTRACTION_FAILURES + 1))
+fi
+if windows_probe="$(extract_windows_aliases "$FIXTURE/windows")" && \
+    [[ "$windows_probe" == $'plain\nindented\nFixture-Helper' ]]; then
+    echo '[PASS] Windows extraction handles spaces and tabs.'
+else
+    echo '[FAIL] Windows whitespace extraction.'
+    EXTRACTION_FAILURES=$((EXTRACTION_FAILURES + 1))
+fi
+
+# -- Compare -------------------------------------------------------------------
 
 echo ""
 echo ">>> tests/test_alias_parity.sh -- Cross-platform alias parity check"
@@ -169,9 +200,9 @@ if [[ -n "$WINDOWS_ONLY" ]]; then
     echo ""
 fi
 
-# ── Result ────────────────────────────────────────────────────────────────────
+# -- Result --------------------------------------------------------------------
 
-if [[ "$UNDOCUMENTED_DRIFT" -eq 0 ]]; then
+if [[ "$UNDOCUMENTED_DRIFT" -eq 0 && "$EXTRACTION_FAILURES" -eq 0 ]]; then
     if [[ -z "$LINUX_ONLY" && -z "$WINDOWS_ONLY" ]]; then
         echo "[PASS] Alias sets are identical across platforms."
     else
@@ -179,7 +210,7 @@ if [[ "$UNDOCUMENTED_DRIFT" -eq 0 ]]; then
     fi
     exit 0
 else
-    echo "[FAIL] $UNDOCUMENTED_DRIFT undocumented alias difference(s) found."
+    echo "[FAIL] $UNDOCUMENTED_DRIFT undocumented alias difference(s); $EXTRACTION_FAILURES extraction failure(s)."
     echo ""
     echo "To fix: either add the alias to both platforms, or document the"
     echo "difference in the ALLOWED_ALIAS_DRIFT list in this test file."

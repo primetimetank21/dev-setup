@@ -1,7 +1,6 @@
 # scripts/windows/tools/auth.ps1 - GitHub authentication check and prompt
 #
 # Called by: scripts/windows/setup.ps1 (after gh CLI is installed)
-# Owner:     Goofy (#2)
 # Idempotent: yes - exits cleanly if already authenticated
 #
 # Mirrors scripts/linux/tools/auth.sh behavior:

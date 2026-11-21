@@ -1,6 +1,6 @@
 # Contributing to dev-setup
 
-Welcome! This repo is maintained by the **Disney Classic Squad** -- a team of specialized AI agents each owning a slice of the codebase. Human contributors are equally welcome. This guide explains how to work alongside the squad.
+This guide owns the contributor workflow. Coding agents should also read [AGENTS.md](AGENTS.md); installation guidance is in [README.md](README.md) and the [setup reference](docs/setup.md).
 
 ---
 
@@ -17,20 +17,22 @@ The branch protection rule has `enforce_admins` intentionally **disabled**. Why?
 All work happens on a dedicated branch. **Never commit directly to `develop` or `main`.**
 
 ```
-squad/{issue-number}-{kebab-slug}
+{type}/{issue-number}-{kebab-slug}
 ```
 
+Where `type` is one of: `feat`, `fix`, `chore`, `docs`, `refactor`.
+
 **Examples:**
-- `squad/42-add-nvm-install`
-- `squad/17-fix-zsh-detection`
-- `squad/8-dotfile-editorconfig`
+- `feat/42-add-nvm-install`
+- `fix/17-fix-zsh-detection`
+- `chore/8-dotfile-editorconfig`
 
 Base branch is **always `develop`**:
 
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b squad/{issue-number}-{slug}
+git checkout -b {type}/{issue-number}-{slug}
 ```
 
 ---
@@ -42,14 +44,12 @@ git checkout -b squad/{issue-number}-{slug}
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b squad/{issue-number}-{slug}
+git checkout -b {type}/{issue-number}-{slug}
 ```
 
-**Never fork a squad branch from another squad branch.** Branching from a peer's branch pulls in their unmerged commits, inflating your PR diff and making review harder. If you see commits in your PR that don't belong to your issue, your branch was not forked from `develop`.
+**Never fork a feature branch from another feature branch.** Branching from a peer's branch pulls in their unmerged commits, inflating your PR diff and making review harder. If you see commits in your PR that don't belong to your issue, your branch was not forked from `develop`.
 
-> This rule exists because "branch ancestry bleed" occurred 3 times in Sprint 6. Every time it's violated, PR review quality degrades.
-
-**All squad branches MUST be cut from `develop`, not `main`.** The pre-commit hook validates this: if you commit to a `squad/*` branch that is not an ancestor of `develop`, the hook warns that you may have accidentally forked from `main` or another squad branch. To fix: `git rebase develop` before pushing.
+**All feature branches MUST be cut from `develop`, not `main`.** Verify the base and outgoing diff yourself: the current pre-commit hook refuses protected-branch commits but does not enforce ancestry. Do not assume a passing hook caught unrelated branch history. Correct a wrongly based branch before publication; do not rewrite published history without explicit permission.
 
 ---
 
@@ -63,7 +63,7 @@ Before opening a pull request, confirm all of the following:
 - [ ] CI is green before requesting review
 - [ ] Commit messages follow conventional commits
 - [ ] One issue per PR
-- [ ] Mickey approval required before merge
+- [ ] Approval from a maintainer required before merge
 
 ---
 
@@ -80,9 +80,9 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 **Examples:**
 
 ```
-feat(linux): add uv install script
+feat(linux): add delta install script
 fix(windows): handle missing winget gracefully
-docs(readme): add --skip-auth flag note
+docs(readme): clarify --skip=auth usage
 chore(ci): pin shellcheck version
 refactor(auth): extract is_non_interactive helper
 test(idempotency): verify nvm double-install is safe
@@ -94,16 +94,15 @@ Keep the summary under 72 characters. Add a body if the change needs more contex
 
 ## Code Review
 
-- **Mickey** is the lead reviewer -- all PRs require Mickey's approval before merge.
+- All PRs require approval from a maintainer before merge.
 - **CI must be green** before requesting review. Do not ask for review on a failing PR.
-- Reviewers may request changes or reassign work to a different squad member.
-- If Mickey rejects a PR, a *different* agent (not the original author) will be assigned to revise.
+- Reviewers may request changes or reassign work to a different contributor.
 
 ---
 
 ## Merge Strategy
 
-**ALL merges use regular merge commits** (`--merge` or `gh pr merge --no-squash`).
+**ALL merges use regular merge commits** (`gh pr merge --merge`).
 
 **Never squash** -- not for feature PRs to `develop`, not for sprint wrap PRs (`develop` -> `main`). This is a hard team rule.
 
@@ -142,7 +141,9 @@ All `.ps1` scripts in this repo must run on **PowerShell 5.1** (the version ship
 
 ### Testing on PS 5.1
 
-Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manual testing on a Windows machine is the current standard. See issue #109 for the CI validation track.
+The `validate-ps51` job in [validate.yml](.github/workflows/validate.yml) runs native Windows PowerShell 5.1 checks, including the isolated retirement suite. A Linux `pwsh` run or parser check is useful but is not native PS5.1 evidence. Use hosted CI or a deliberately disposable Windows environment for the native gate.
+
+Profile load-only tests must model startup scope. Windows built-in aliases such as `rm` can carry `AllScope`; loading a generated profile inside an extra test-function scope is not equivalent to session startup. The retirement suite uses a disposable runspace and retains hard failures for unexpected aliases and load errors.
 
 ### Reference: Known PS 5.x regressions caught in this repo
 
@@ -155,18 +156,18 @@ Since the dev environment runs PS 7+, you cannot natively run PS 5.1 tests. Manu
 
 ## Git Hooks
 
-Git hooks are **configured automatically** by `setup.sh` / `setup.ps1` via `git config core.hooksPath hooks`. You do not need to copy or symlink anything manually.
+The selected `git-hook` setup step configures `core.hooksPath=hooks` in the current repository. It does not copy hooks or change their executable modes. On Unix, Git ignores nonexecutable hooks.
 
-After running setup, the following hooks are active:
+| Hook | Actual behavior |
+|---|---|
+| `pre-commit` | Checks staged `.ps1`, `.md` and `.sh` content for non-ASCII; refuses commits on `develop`/`main`/`master`; runs ShellCheck on staged `.sh` files when installed. It does **not** check branch ancestry. |
+| `commit-msg` | Enforces the accepted Conventional Commit grammar. |
+| `pre-push` | Blocks direct pushes to `main`; shell and PowerShell lint are advisory and depend on locally available tools. |
+| `prepare-commit-msg` | A merge/revert message-rewrite helper. Its tracked Unix mode is nonexecutable, so do not assume it runs. Write a conforming message explicitly. |
 
-| Hook | Behavior |
-|------|----------|
-| `pre-commit` | Checks staged `.sh` files with shellcheck. Blocks commit on errors; silently skips if shellcheck not installed. |
-| `commit-msg` | Enforces Conventional Commits format. Hard reject on non-conforming messages. |
-| `pre-push` | Blocks direct pushes to `main`. Runs shellcheck/PSScriptAnalyzer on changed files (advisory--never blocks). |
+Check the actual installation with `git config --get core.hooksPath` and inspect [the hook files](hooks/) before relying on them. A passing hook is not a substitute for CI; missing optional lint tools are not proof of a clean lint run. Do not bypass failures to ship a change.
 
-See README > Git Hooks (Auto-configured) for details on each hook's checks and how to bypass with `--no-verify`.
-
+The optional `python3 scripts/lib/ascii-sweep.py --dry-run` helper previews Markdown punctuation cleanup. It preserves fenced code blocks, whereas the commit gate checks the whole staged file. Inspect the proposed scope and correct fenced content deliberately rather than sweeping unrelated history.
 ### Installing PSScriptAnalyzer locally (optional)
 
 To get PS lint feedback during `pre-push`, install the module once in PowerShell:
@@ -198,65 +199,15 @@ A direct push to `main` is permitted ONLY when ALL of the following conditions a
 1. A critical regression or broken state is on `main` that blocks users
 2. The fix is small, surgical, and fully understood (not exploratory)
 3. `develop` itself is broken or the PR pipeline cannot be expedited
-4. The repo owner (Earl Tankard) explicitly authorizes the override in session
+4. The repo owner explicitly authorizes the override in session
 
 **Required audit trail:**
 
 - Commit message must include `[hotfix-override]` annotation
-- A squad decision record must be written to `.squad/decisions/inbox/` documenting: what was pushed, why, and who authorized
-- The override must be referenced in the next sprint retro
+- The override must be documented in decision records or session notes
+- The override must be referenced in the next sprint retro if applicable
 
 **Reference:** The 2026-04-18 hotfix session (PS 5.x `$MyInvocation.MyCommand.Path` regression) is the canonical example of an authorized override.
-
----
-
----
-
-## Parallel Agent Work
-
-### Why worktree isolation matters
-
-In Sprint 4, two Chip agents ran simultaneously on issues #41 and #43, both sharing the same git working tree. Chip-issue-43 checked out `squad/43` while Chip-issue-41 was mid-commit on a different branch. The result: wrong content landed on the wrong branch, and PR #51 had to be closed and recreated. This is a classic branch-checkout race condition.
-
-### How to enable it
-
-Set `SQUAD_WORKTREES=1` before starting any Squad session where parallel work is expected:
-
-```bash
-export SQUAD_WORKTREES=1
-```
-
-Or add it permanently to your `.env` / shell profile. The devcontainer sets it by default in `remoteEnv`.
-
-When enabled, the Squad coordinator creates an isolated `git worktree` for each issue before handing control to the agent. Branch checkouts inside one worktree never affect any other.
-
-### Worktree path convention
-
-```
-{repo-parent}/{repo-name}-{issue-number}
-```
-
-**Example:** for issue #56 inside `/workspaces/dev-setup`, the worktree is created at:
-
-```
-/workspaces/dev-setup-56/
-```
-
-Each worktree has its own index and working files but shares the same `.git` object store with the main repo -- no extra disk space for history, just the working tree.
-
-### Cleaning up
-
-Worktrees are not automatically removed. After a PR is merged, clean up with:
-
-```bash
-git worktree remove /workspaces/dev-setup-56
-```
-
-Or list all active worktrees with `git worktree list`.
-
-### Merging Squad PRs from worktrees
-
-When merging a Squad PR that was developed in a worktree, follow the worktree-remove-FIRST pattern (remove the worktree and delete the local branch BEFORE `gh pr merge --delete-branch`). See `.squad/skills/worktree-remove-first/SKILL.md` for the five-step sequence and the gh CLI quirk it sidesteps.
 
 ---
 
@@ -409,12 +360,8 @@ For the broader rationale around test isolation and second-run safety, see
 ## Group Letter Assignment (parallel test work)
 
 Behavioral tests in `tests/test_windows_setup.ps1` are organized by alphabetic groups
-(Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel agents may extend this
-file in the same sprint, the **coordinator pre-assigns Group letters in each spawn prompt**
-to prevent collisions. Sprint 9 (formerly Sprint R) example: Chip #267 picked "Group X" independently while
-Goofy #268 also picked "Group X" - required a manual rename to Group Y during rebase.
-Going forward, the coordinator's spawn checklist includes Group letter assignment for any
-agent that may add tests to this file.
+(Group A, B, ..., V, W, X, Y, Z, AA, BB, ...). When 2+ parallel contributors may extend this
+file, group letters should be pre-assigned to prevent collisions during rebase.
 
 ---
 
@@ -457,21 +404,16 @@ docs that used the letter names.
 
 - Next sprint after Sprint 11 = **Sprint 12** (NOT Sprint U).
 - CHANGELOG release headers MUST include `-- Sprint N: short-name` suffix (matches the 0.1.0-0.7.0 pattern).
-- Retro file naming: `.squad/retros/YYYY-MM-DD-sprint-N-retro.md` (numeric).
 - Retro files renamed to numeric (e.g., `2026-05-16-sprint-8-hotfix-retro.md`).
-- Out-of-cadence hotfix sprints (a la Sprint 8-hotfix) get a `-hotfix` suffix in retro filename:
-  `.squad/retros/YYYY-MM-DD-sprint-N-hotfix-retro.md` -- the version header attribution stays
-  on the numeric parent (e.g., `Sprint 8 + Sprint 8-hotfix`).
+- Out-of-cadence hotfix sprints get a `-hotfix` suffix in retro filename.
 
 ### Why this matters
 
-The letter scheme caused real confusion: Sprint 8 silently vanished from CHANGELOG headers
-between 0.7.0 and 0.8.0, and the alphabet runs out. Numbers are unbounded and consistent
-with the established 1-7 history.
+Numbers are unbounded and consistent with established project history.
 
 ---
 
-For the full technical overview, team ownership map, and architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+For the implementation map and tool contracts, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -485,24 +427,24 @@ silently keeps whatever version the runner cached and never upgrades on version 
 
 1. **Pin** the desired version in `.tool-versions`:
    ```
-   squad-cli 0.9.4
    gh 2.92.0
+   copilot-cli 1.0.48
    ```
 
 2. **Read** the pin at install time using the shared helpers:
    ```bash
    # Bash/POSIX (Linux/macOS)
-   VERSION="$(sh scripts/lib/read-tool-version.sh squad-cli)"
+   VERSION="$(sh scripts/lib/read-tool-version.sh gh)"
    ```
    ```powershell
    # PowerShell (Windows)
    . "$PSScriptRoot\..\..\lib\Read-ToolVersion.ps1"
-   $Version = Get-ToolVersion -Name 'squad-cli'
+   $Version = Get-ToolVersion -Name 'gh'
    ```
 
 3. **Detect** the installed version:
    ```bash
-   INSTALLED="$(squad --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+   INSTALLED="$(gh --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
    ```
 
 4. **Branch** on comparison:
@@ -511,16 +453,18 @@ silently keeps whatever version the runner cached and never upgrades on version 
 
 5. **Install explicitly with version**:
    ```bash
-   npm install -g "@bradygaster/squad-cli@${VERSION}"
+   # For npm-based tools
+   npm install -g "package-name@${VERSION}"
    ```
    ```powershell
+   # For winget-based tools
    winget install --id GitHub.cli --version $Version ...
    ```
 
 ### Why this matters
 
 The bare-idempotency anti-pattern (`if command -v X; then exit 0; fi`) was the root
-cause of issue #255: squad-cli, copilot-cli, and gh silently stayed at cached/older
+cause of issue #255: copilot-cli and gh silently stayed at cached/older
 versions on CI runners. Fix PRs that bumped `.tool-versions` had no effect because the
 old binary was already present. Version-aware guards eliminate this silent drift.
 
@@ -567,57 +511,19 @@ stderr noise. The trailing reset is load-bearing for any script invoked from
 a workflow `shell: pwsh` step via `& .\path\to\script.ps1` -- without it the
 GH Actions wrapper fails the step on the next inspection of `$LASTEXITCODE`.
 
-See `.squad/skills/pwsh-lastexitcode/SKILL.md` for the full pattern, a
-detection checklist, and the call-site audit. The discovery PR is #277
-(`fix(uninstall): unset core.hooksPath`); the skill closes #288.
-
 ---
 
-## Squad Operational Gates (Coordinator dispatch)
+## Sprint-end label automation
 
-Two operational SOPs govern Coordinator-side spawn behavior. Both are codified at
-three independent surfaces (charter + `.squad/templates/loop.md` + `.squad/templates/ceremonies.md`)
-so a single forgotten checkpoint doesn't silently break the SOP. Source decision:
-`.squad/decisions/doc-and-jiminy-automation.md` (closes #289, #290).
+The optional [script](scripts/sprint-end-labels.sh) and [manual workflow](.github/workflows/sprint-end-labels.yml) transition issues/PRs carrying a selected sprint label from `release:backlog` to an agreed `release:shipped-X.Y.Z` label. This writes GitHub metadata and requires the owner's authorization.
 
-### Doc subagent runs in a dedicated worktree (#289)
-
-Doc (Fact Checker) is a `general-purpose` subagent that inherits the Coordinator's
-CWD by default. To prevent his `.squad/agents/doc/history.md` writes from landing
-as `M` on `develop` in the primary worktree (Sprint 10 anti-pattern: required PRs
-#281 + #283), Doc runs in a dedicated per-sprint worktree.
-
-**Sprint kickoff (Coordinator, one-time per sprint):**
+Use an **explicit dry run** when inspecting scope. The shell script's default is write mode, even though the workflow input defaults to a dry run.
 
 ```bash
-git worktree add ../dev-setup-doc -b squad/doc-history-sprint-<N>
+scripts/sprint-end-labels.sh \
+  --sprint sprint:17 \
+  --release-label release:shipped-0.9.7 \
+  --dry-run
 ```
 
-**Every Doc spawn prompt** MUST begin with an explicit CWD directive pointing at
-`..\dev-setup-doc`. Doc commits + pushes after every fact-check. At sprint wrap,
-the Coordinator opens ONE fold PR from `squad/doc-history-sprint-<N>` into
-`develop`. Target: 1 fold PR per sprint (down from 2 in Sprint 10).
-
-### Jiminy auto-dispatch after >= 3-agent batches and at session-end (#290)
-
-The Jiminy dispatch SOP from PR #280 (Coordinator MUST invoke Jiminy after every
-3+ agent batch and at session-end) is now enforced at three surfaces:
-
-1. `.squad/agents/jiminy/charter.md` -> `Triggers` table (canonical).
-2. `.squad/templates/loop.md` -> "Squad Operational Gates" (Gate 1 post-batch, Gate 2 session-end).
-3. `.squad/templates/ceremonies.md` -> `Sprint Wrap` ceremony, step 1.
-
-**Trigger condition (Gate 1):** 3 or more agent spawns in a single Coordinator
-turn, counted excluding Scribe (which runs silently in background by design).
-**Action:** Spawn Jiminy BEFORE returning results to the user. Wait for
-`Jiminy clear` or resolve the dirty report.
-
-**Trigger condition (Gate 2):** user signals session-end OR work queue empties
-after a full sprint. **Action:** Jiminy full sweep; BLOCKS session close on dirty
-state. Ralph runs after Jiminy for stale-branch cleanup.
-
-If you (Coordinator or human contributor) ever notice a >= 3-agent batch landed
-without a Jiminy run, that is a Sprint Retro action item, not a one-off
-self-correction. File a `retro-action` issue.
-
-
+The command above uses historical labels as an example. Review the selected items before changing the arguments or omitting `--dry-run`. The implementation verifies label state after operations and preserves type/area/priority labels; its retry/failure details live with the script. Inspect the `test_sprint_end_labels` harnesses before running them, rather than exercising writes against real issues as a test.

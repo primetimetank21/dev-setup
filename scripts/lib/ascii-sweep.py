@@ -81,7 +81,7 @@ SUBS = {
     # Media controls
     "\u23ED": ">>|",
     "\u23EE": "|<<",
-    # Squad status emoji
+    # Status emoji
     "\U0001F534": "[RED]",
     "\U0001F7E0": "[ORANGE]",
     "\U0001F7E1": "[YELLOW]",

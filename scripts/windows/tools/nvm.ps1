@@ -1,6 +1,5 @@
 # scripts/windows/tools/nvm.ps1 - nvm-windows + Node.js installer
 #
-# Owner: Goofy (#2)
 # Installs nvm-windows (Node Version Manager for Windows), then auto-installs
 # the pinned Node.js version from .tool-versions so node/npm are usable in
 # the same setup session.
@@ -39,8 +38,8 @@ function Install-Nvm {
     # -- Install nvm-windows if missing ------------------------------------
     if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
         $nvmVersion = Get-ToolVersion -Name 'nvm-windows'
-        $nvmHome    = Join-Path $env:USERPROFILE 'nvm'
-        $nodeDir    = Join-Path $env:USERPROFILE 'nodejs'
+        $nvmHome    = Join-Path $env:SystemDrive 'nvm4w'
+        $nodeDir    = Join-Path $nvmHome 'nodejs'
 
         # If portable nvm is already extracted, just put it on PATH.
         if (Test-Path (Join-Path $nvmHome 'nvm.exe')) {

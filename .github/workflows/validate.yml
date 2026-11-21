@@ -7,6 +7,45 @@ on:
     branches: [main, develop]
 
 jobs:
+  validate-completion:
+    name: Isolated completion (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install test dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh shellcheck
+
+      - name: Install lint dependency (macOS)
+        if: runner.os == 'macOS'
+        run: command -v shellcheck || brew install shellcheck
+
+      - name: Verify native shells and PTY test capability
+        run: |
+          /bin/bash --version
+          /bin/zsh --version
+          python3 -c 'import pty'
+
+      - name: Syntax and lint (including system Bash 3.2 on macOS)
+        run: |
+          for script in config/dotfiles/*completion.sh tests/test_completion*.sh; do
+            /bin/bash --noprofile --norc -n "$script"
+            shellcheck "$script"
+          done
+          /bin/zsh -df -n config/dotfiles/completion.sh
+
+      - name: Isolated completion install, upgrade, and removal
+        run: /bin/bash tests/test_completion_install.sh
+
+      - name: Native shell state and PTY completion tests (no adapters)
+        run: /bin/bash tests/test_completion_runtime.sh --bash /bin/bash --zsh /bin/zsh
+
   validate-linux:
     name: Validate Linux Setup
     runs-on: ubuntu-latest
@@ -26,49 +65,40 @@ jobs:
       - name: Validate zsh installed
         run: |
           if ! command -v zsh &>/dev/null; then
-            echo "❌ FAIL: zsh not found on PATH"
+            echo "FAIL: zsh not found on PATH"
             exit 1
           fi
-          echo "✅ zsh: $(zsh --version)"
-
-      - name: Validate uv installed
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          if ! command -v uv &>/dev/null; then
-            echo "❌ FAIL: uv not found on PATH"
-            exit 1
-          fi
-          echo "✅ uv: $(uv --version)"
+          echo "OK: zsh: $(zsh --version)"
 
       - name: Validate nvm and Node.js installed
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
           if ! command -v nvm &>/dev/null; then
-            echo "❌ FAIL: nvm not available"
+            echo "FAIL: nvm not available"
             exit 1
           fi
           if ! command -v node &>/dev/null; then
-            echo "❌ FAIL: node not found on PATH"
+            echo "FAIL: node not found on PATH"
             exit 1
           fi
-          echo "✅ nvm: $(nvm --version)"
-          echo "✅ node: $(node --version)"
-          echo "✅ npm: $(npm --version)"
+          echo "OK: nvm: $(nvm --version)"
+          echo "OK: node: $(node --version)"
+          echo "OK: npm: $(npm --version)"
 
       - name: Validate gh CLI installed
         run: |
           if ! command -v gh &>/dev/null; then
-            echo "❌ FAIL: gh not found on PATH"
+            echo "FAIL: gh not found on PATH"
             exit 1
           fi
-          echo "✅ gh: $(gh --version | head -1)"
+          echo "OK: gh: $(gh --version | head -1)"
 
       - name: Test idempotency (run setup a second time)
         run: |
           echo "--- Running setup script a second time to test idempotency ---"
           bash setup.sh
-          echo "✅ Second run completed without errors"
+          echo "OK: Second run completed without errors"
 
       - name: Run alias unit tests
         run: |
@@ -79,6 +109,47 @@ jobs:
         run: |
           chmod +x tests/test_alias_parity.sh
           bash tests/test_alias_parity.sh
+
+      - name: Run isolated tool retirement regressions
+        run: bash tests/test_tool_retirement.sh
+
+      - name: Check shutdown helper syntax (Bash and Zsh)
+        run: |
+          bash --noprofile --norc -n config/dotfiles/.aliases
+          zsh -df -n config/dotfiles/.aliases
+          bash --noprofile --norc -n tests/test_shutdown_helpers.sh
+
+      - name: Run isolated shutdown helper tests (Bash and Zsh)
+        run: bash tests/test_shutdown_helpers.sh --bash "$(command -v bash)" --zsh "$(command -v zsh)"
+
+      - name: Run idempotency test suite
+        run: bash tests/test_idempotency.sh
+
+      - name: Run nvm bootstrap tests
+        run: bash tests/test_nvm_bootstrap.sh
+
+      - name: Run shared logging tests
+        run: bash tests/test_shared_logging.sh
+
+      - name: Configure git for pre-commit hygiene test
+        run: |
+          git config --global init.defaultBranch master
+          git config core.hooksPath hooks
+
+      - name: Run pre-commit hygiene tests
+        run: bash tests/test_precommit_hygiene.sh
+
+      - name: Run tool version tests
+        run: bash tests/test_tool_versions.sh
+
+      - name: Run TUI bash menu tests
+        run: bash tests/test_tui_bash.sh
+
+      - name: Flag test - --list (Linux)
+        run: bash setup.sh --list
+
+      - name: Flag test - --only (Linux)
+        run: bash setup.sh --only=zsh
 
   validate-macos:
     name: Validate macOS Setup
@@ -115,15 +186,6 @@ jobs:
           fi
           echo "zsh: $(zsh --version)"
 
-      - name: Validate uv installed
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          if ! command -v uv &>/dev/null; then
-            echo "FAIL: uv not found on PATH"
-            exit 1
-          fi
-          echo "uv: $(uv --version)"
-
       - name: Validate nvm and Node.js installed
         run: |
           export NVM_DIR="$HOME/.nvm"
@@ -154,8 +216,47 @@ jobs:
           bash setup.sh
           echo "Second run completed without errors"
 
+      - name: Run isolated alias and retirement regressions (system Bash 3.2)
+        run: |
+          /bin/bash tests/test_aliases.sh
+          /bin/bash tests/test_alias_parity.sh
+          /bin/bash tests/test_tool_retirement.sh
+
+      - name: Check shutdown helper syntax (system Bash 3.2 and Zsh)
+        run: |
+          /bin/bash --version
+          /bin/bash --noprofile --norc -n config/dotfiles/.aliases
+          /bin/zsh -df -n config/dotfiles/.aliases
+          /bin/bash --noprofile --norc -n tests/test_shutdown_helpers.sh
+
+      - name: Run isolated shutdown helper tests (system Bash 3.2 and Zsh)
+        run: /bin/bash tests/test_shutdown_helpers.sh --bash /bin/bash --zsh /bin/zsh
+
       - name: Run tool version tests
         run: bash tests/test_tool_versions.sh
+
+      - name: Run TUI bash menu tests
+        run: bash tests/test_tui_bash.sh
+
+      - name: Run idempotency test suite
+        run: bash tests/test_idempotency.sh
+
+      - name: Run nvm bootstrap tests
+        run: bash tests/test_nvm_bootstrap.sh
+
+      - name: Run shared logging tests
+        run: bash tests/test_shared_logging.sh
+
+      - name: Configure git for pre-commit hygiene test
+        run: |
+          git config --global init.defaultBranch master
+          git config core.hooksPath hooks
+
+      - name: Run pre-commit hygiene tests
+        run: bash tests/test_precommit_hygiene.sh
+
+      - name: Flag smoke - --list (macOS)
+        run: bash setup.sh --list
 
   lint-shell-scripts:
     name: Lint Shell Scripts
@@ -184,6 +285,15 @@ jobs:
       - name: Lint config/dotfiles/.aliases
         run: shellcheck -s bash config/dotfiles/.aliases
 
+      - name: Lint isolated shutdown helper harness
+        run: shellcheck tests/test_shutdown_helpers.sh
+
+      - name: Lint isolated alias and retirement regressions
+        run: shellcheck tests/test_aliases.sh tests/test_tool_retirement.sh
+
+      - name: Run Bash flag compatibility gates
+        run: bash tests/test_setup_flags.sh
+
   lint-powershell:
     name: Lint PowerShell Scripts
     runs-on: ubuntu-latest
@@ -204,6 +314,9 @@ jobs:
       - name: Analyze scripts/windows/setup.ps1
         run: pwsh -Command "Invoke-ScriptAnalyzer -Path scripts/windows/setup.ps1 -EnableExit"
 
+      - name: Analyze scripts/windows/lib/tui.ps1
+        run: pwsh -Command "Invoke-ScriptAnalyzer -Path scripts/windows/lib/tui.ps1 -EnableExit"
+
   validate-powershell:
     name: Validate PowerShell Functions
     runs-on: windows-latest
@@ -220,6 +333,21 @@ jobs:
 
       - name: Run git hooks tests
         run: pwsh tests/test_git_hooks.ps1
+
+      - name: Run changelog fold tests
+        run: pwsh tests/test_changelog_fold.ps1
+
+      - name: Run sprint-end labels tests
+        run: pwsh tests/test_sprint_end_labels.ps1
+
+      - name: Flag test - -List (PowerShell)
+        run: .\setup.ps1 -List
+
+      - name: Run TUI and resolver tests (pwsh)
+        run: pwsh tests/test_tui_pwsh.ps1
+
+      - name: Run isolated tool retirement regressions (pwsh)
+        run: pwsh -NoProfile -File tests/test_tool_retirement.ps1
 
   validate-ps51:
     name: Validate PowerShell 5.1 Compatibility
@@ -264,12 +392,28 @@ jobs:
           }
           Write-Host "Syntax check passed"
 
+      - name: Syntax check tui.ps1 (PS 5.1)
+        shell: powershell
+        run: |
+          $errors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            "$env:GITHUB_WORKSPACE\scripts\windows\lib\tui.ps1",
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "Syntax check passed"
+
       - name: Run PSScriptAnalyzer under PS 5.1
         shell: powershell
         run: |
           Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
           $results = @()
           $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\scripts\windows\setup.ps1"
+          $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\scripts\windows\lib\tui.ps1"
           $results += Invoke-ScriptAnalyzer -Path "$env:GITHUB_WORKSPACE\setup.ps1"
           if ($results.Count -gt 0) {
             $results | Format-Table -AutoSize
@@ -295,6 +439,20 @@ jobs:
         run: |
           powershell -ExecutionPolicy Bypass -File tests\test_windows_setup.ps1
 
+      - name: Run isolated tool retirement regressions (PS 5.1)
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_tool_retirement.ps1
+
+      - name: Run PS 5.1 flag compatibility gates
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File tests\test_setup_flags_pwsh.ps1
+
+      - name: Run TUI and resolver tests (PS 5.1)
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File tests\test_tui_pwsh.ps1
+
       - name: Configure git hooks path
         shell: powershell
         run: |
@@ -304,3 +462,14 @@ jobs:
         shell: powershell
         run: |
           powershell -ExecutionPolicy Bypass -File tests\test_git_hooks.ps1
+
+      - name: Run sprint-end labels tests (PS 5.1)
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File tests\test_sprint_end_labels_pwsh.ps1
+
+      - name: Flag test - -List (PS 5.1)
+        shell: powershell
+        run: |
+          .\setup.ps1 -List
+          Write-Host "Flag -List OK (PS 5.1)"

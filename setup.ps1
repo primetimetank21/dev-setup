@@ -4,15 +4,43 @@
 # platform-specific installer. It does NOT install any tools itself.
 #
 # Usage:
-#   powershell -ExecutionPolicy Bypass -File setup.ps1
+#   powershell -ExecutionPolicy Bypass -File setup.ps1 [OPTIONS]
 #
-# Supported platforms:
-#   Windows (native PowerShell)
+# Flags forwarded to scripts\windows\setup.ps1:
+# -List, -Help, -Only, -Skip, -Interactive, -NonInteractive
 #
 # For Linux/macOS/WSL, use setup.sh instead.
 
+[CmdletBinding()]
+param(
+    [string]$Only    = '',
+    [string]$Skip    = '',
+    [switch]$List,
+    [switch]$Help,
+    [switch]$Interactive,
+    [switch]$NonInteractive,
+    [string]$ToolsDir = '',
+    [string]$SelectionFile = ''
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# Build the forward hashtable at script scope so PSAnalyzer sees param usage.
+# Use $PSBoundParameters.ContainsKey so an explicitly-passed empty string
+# ("-Only ''") is forwarded to the child and triggers the child's exit-1 guard,
+# not silently dropped (empty string is falsy; "if ($Only)" would skip it).
+$_fwdParams = @{}
+if ($PSBoundParameters.ContainsKey('Only')) { $_fwdParams['Only']    = $Only }
+if ($PSBoundParameters.ContainsKey('Skip')) { $_fwdParams['Skip']    = $Skip }
+if ($List.IsPresent)                        { $_fwdParams['List']    = $true }
+if ($Help.IsPresent)                        { $_fwdParams['Help']    = $true }
+if ($Interactive.IsPresent)                 { $_fwdParams['Interactive'] = $true }
+if ($NonInteractive.IsPresent)              { $_fwdParams['NonInteractive'] = $true }
+if ($ToolsDir)                              { $_fwdParams['ToolsDir'] = $ToolsDir }
+if ($PSBoundParameters.ContainsKey('SelectionFile')) {
+    $_fwdParams['SelectionFile'] = $SelectionFile
+}
 
 # -- Logging helpers -----------------------------------------------------------
 
@@ -100,7 +128,16 @@ function Invoke-WindowsSetup {
   }
 
   Write-Info "Handing off to: scripts\windows\setup.ps1"
-  & $windowsScript
+  & $windowsScript @_fwdParams
+  if (-not $?) {
+    if (Test-Path variable:LASTEXITCODE) {
+      exit $LASTEXITCODE
+    }
+    exit 1
+  }
+  if ((Test-Path variable:LASTEXITCODE) -and $LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
 }
 
 Main

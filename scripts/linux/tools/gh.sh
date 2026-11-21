@@ -2,7 +2,6 @@
 # scripts/linux/tools/gh.sh -- Install GitHub CLI (gh) at pinned version
 #
 # Called by: scripts/linux/setup.sh
-# Owner:     Donald / Goofy (#255)
 # Idempotent: yes -- version-aware; upgrades if installed version != pinned version.
 #
 # Linux: downloads the pinned release tarball from GitHub releases (reliable
